@@ -26,6 +26,11 @@ describe('LocalStore', () => {
     expect(votes).toEqual([{ forkId: 'f1', name: 'Alex', choice: 'b' }]);
   });
 
+  it('a saved flex: true reloads as flex true', async () => {
+    await new LocalStore().saveResponse('Saulie', { flex: true });
+    expect((await new LocalStore().load()).responses.Saulie?.flex).toBe(true);
+  });
+
   it('corrupt tp:sugg loads as []', async () => {
     localStorage.setItem('tp:sugg', '{not json');
     expect((await new LocalStore().load()).suggestions).toEqual([]);
