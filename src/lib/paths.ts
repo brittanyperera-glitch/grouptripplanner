@@ -2,11 +2,17 @@ import type { Hub, Leg } from '../types';
 
 const HUBS: Hub[] = ['AIR', 'Colombo', 'Sigiriya', 'Kandy', 'Kitulgala', 'Nuwara Eliya', 'Ella', 'Tissa', 'Udawalawe', 'Weligama'];
 const cache = new WeakMap<Leg[], (a: Hub, b: Hub) => number>();
+// Also by content: a worker hands over a fresh copy of the legs on every call, and the planner's
+// caches key on the returned function's identity.
+const byContent = new Map<string, (a: Hub, b: Hub) => number>();
 
-/** All-pairs shortest drive hours (Floyd-Warshall), memoised per legs array. */
+/** All-pairs shortest drive hours (Floyd-Warshall), memoised per legs array and per legs content. */
 export function shortest(legs: Leg[]): (a: Hub, b: Hub) => number {
   const hit = cache.get(legs);
   if (hit) return hit;
+  const key = JSON.stringify(legs.map(l => [l.a, l.b, l.hours]));
+  const same = byContent.get(key);
+  if (same) { cache.set(legs, same); return same; }
   const hubs = [...HUBS];
   for (const l of legs) for (const h of [l.a, l.b]) if (!hubs.includes(h)) hubs.push(h);
   const idx = new Map(hubs.map((h, i) => [h, i]));
@@ -26,5 +32,7 @@ export function shortest(legs: Leg[]): (a: Hub, b: Hub) => number {
     return dist[i][j];
   };
   cache.set(legs, fn);
+  if (byContent.size >= 8) byContent.delete(byContent.keys().next().value!);
+  byContent.set(key, fn);
   return fn;
 }
