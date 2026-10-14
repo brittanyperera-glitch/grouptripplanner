@@ -45,7 +45,7 @@ button,textarea{font:inherit;color:inherit}
 .saved{color:var(--muted);font-size:13px}
 h2{margin:16px 0 0;font-size:20px;font-weight:800;font-stretch:112%}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:grid;grid-template-columns:130px minmax(0,1fr);margin-top:10px}
-.card.removed{opacity:.55}
+.card[data-removed="true"]{opacity:.55}
 .ph{background:var(--line) center/cover no-repeat;min-height:130px}
 .noph{display:grid;place-items:center;color:var(--muted);font-size:12px;text-align:center;padding:8px}
 .info{padding:12px 14px;display:flex;flex-direction:column;gap:5px;min-width:0}
@@ -84,7 +84,7 @@ try{picks=JSON.parse(localStorage.getItem('shortlist-picks')||'{}')}catch(e){}
 const msg=t=>{document.getElementById('msg').textContent=t};
 function card(i){const p=picks[i.id]||{};const k=p.keep===true,r=p.keep===false;
   const ph=i.photo?'<div class="ph" style="background-image:url(img/'+i.photo+'.jpg)" role="img" aria-label="'+esc(i.name)+'"></div>':'<div class="ph noph">Photo needed</div>';
-  return '<div class="card'+(r?' removed':'')+'" id="c-'+i.id+'">'+ph+'<div class="info">'
+  return '<div class="card" data-removed="'+r+'" id="c-'+i.id+'">'+ph+'<div class="info">'
     +'<span class="nm">'+esc(i.name)+'</span>'
     +'<span class="loc">'+esc(i.loc)+(i.g?' · <a href="'+esc(i.g.url)+'" target="_blank" rel="noopener">map</a>':'')+'</span>'
     +'<div>'+esc(i.about)+'</div>'
