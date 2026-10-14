@@ -23,11 +23,11 @@ export default function Suggest({ open }: { open: boolean }) {
     <section className="body" aria-label="Ideas">
       <div className="big">Something missing?</div>
       {open && <div className="sub">New ideas won't change this plan</div>}
-      <input className="field" aria-label="Title" placeholder="Tea factory tour near Nuwara Eliya" value={title} onChange={e => setTitle(e.target.value)} />
+      <input className="field" aria-label="Title" placeholder="Tea factory tour near Nuwara Eliya" maxLength={80} value={title} onChange={e => setTitle(e.target.value)} />
       <select className="field" aria-label="Area" value={area} onChange={e => setArea(e.target.value as Area)}>
         {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
       </select>
-      <textarea className="field" aria-label="Note" placeholder="Why it's worth it (optional)" rows={2} value={note} onChange={e => setNote(e.target.value)} />
+      <textarea className="field" aria-label="Note" placeholder="Why it's worth it (optional)" rows={2} maxLength={300} value={note} onChange={e => setNote(e.target.value)} />
       <button className="cta" style={{ flex: 'none' }} disabled={!title.trim()} onClick={send}>Suggest it</button>
       {pending.length > 0 && (
         <div>
