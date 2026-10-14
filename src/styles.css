@@ -180,3 +180,4 @@ a { color: inherit; }
 /* Welcome title above the name picker */
 h1.big { margin: 0; }
 .ask { font-weight: 800; font-size: 18px; margin-top: 10px; }
+.body > h1.big:first-child { margin-top: 18px; }

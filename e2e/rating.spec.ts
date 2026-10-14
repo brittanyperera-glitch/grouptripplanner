@@ -8,7 +8,11 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: scheme });
     await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Trip Planning. Optimized.' })).toBeVisible();
+    await shot(page, `${scheme}-1-name`);
     await page.getByRole('button', { name: 'Alex', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('solo wolf');
+    await shot(page, `${scheme}-1b-quip`);
     await page.getByRole('button', { name: /^9 days/ }).click();
     await page.getByRole('button', { name: /^Balanced/ }).click();
     const must = page.getByRole('button', { name: 'Must', exact: true });
