@@ -2,7 +2,8 @@ import { AREAS, AREA_HUB, PACE_HOURS } from '../types';
 import type { Area, Day, DayEntry, Hub, Item, Plan, PlanInput, Slot } from '../types';
 import { shortest } from './paths';
 
-const SLOT_ORDER: Record<Slot, number> = { sunrise: 0, morning: 1, afternoon: 2, sunset: 3, evening: 4, late: 5, any: 6 };
+// "any" fills daytime; ordering it last put e.g. a temple visit after late-night kottu.
+const SLOT_ORDER: Record<Slot, number> = { sunrise: 0, morning: 1, any: 2, afternoon: 3, sunset: 4, evening: 5, late: 6 };
 const RAIN_AREAS: Area[] = ['Hill country', 'Ella'];
 const NIGHT_SLOTS: Slot[] = ['sunset', 'evening', 'late'];
 const CHECKIN = 3;

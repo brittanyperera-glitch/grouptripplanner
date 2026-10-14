@@ -136,3 +136,24 @@ describe('plan, amendment B rules', () => {
     expect(p.days.at(-2)!.entries.some(e => e.kind === 'drive' && e.to === 'AIR')).toBe(true);
   });
 });
+
+describe('plan, day order (T7 U4)', () => {
+  it('no daytime activity follows a sunset, evening or late one on the same day', () => {
+    const night = new Set(['sunset', 'evening', 'late']);
+    const slotOf = Object.fromEntries(items.map(i => [i.id, i.slot]));
+    const all = items.map(i => i.id);
+    const plans = [
+      plan({ items, scores: Object.fromEntries(all.map(id => [id, 1])), days: 9, pace: 1, legs: L }),
+      plan({ items, scores: Object.fromEntries(all.map(id => [id, 4])), days: 14, pace: 0, legs: L }),
+    ];
+    for (const p of plans) for (const d of p.days) {
+      let seenNight = false;
+      for (const e of d.entries) {
+        if (e.kind !== 'activity' || !e.itemId) continue;
+        const isNight = night.has(slotOf[e.itemId]);
+        expect(seenNight && !isNight, `day ${d.n}: ${e.label} after an evening item`).toBe(false);
+        if (isNight) seenNight = true;
+      }
+    }
+  });
+});
