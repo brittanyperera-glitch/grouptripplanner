@@ -1,0 +1,92 @@
+import { describe, it, expect } from 'vitest';
+import catalogue from '../data/catalogue.json'; import legs from '../data/legs.json';
+import { groupResult, personPlan } from './group';
+import { emptyRanking, type AppState, type Item, type Leg, type Person, type Response } from '../types';
+const items = catalogue.items as Item[]; const L = legs as Leg[];
+const resp = (name: Person, days: number | null, flex: boolean, must: string[], keen: string[] = []): Response => {
+  const r = emptyRanking(); r.must = must.map(m => [m]); r.keen = keen.map(k => [k]);
+  return { name, days, flex, pace: 1, ranking: r, rated: [...must, ...keen], submitted: true, updatedAt: '' };
+};
+const base = (): AppState => ({ responses: {
+  Brittany: resp('Brittany', 9, false, ['sigiriya', 'galle'], ['polonnaruwa']),
+  Alex: resp('Alex', 14, false, ['yala'], ['polonnaruwa']),
+  Antek: resp('Antek', null, true, ['rafting', 'knuckles', 'anuradhapura', 'diyaluma', 'hiriketiya']),
+  Lazza: resp('Lazza', 11, false, ['train'], ['polonnaruwa']),
+  Saulie: resp('Saulie', 9, false, ['surf', 'whales', 'horton', 'lipton']),
+}, suggestions: [], votes: [] });
+
+describe('group', () => {
+  it('stays closed until all five submit', () => {
+    const s = base(); s.responses.Saulie!.submitted = false;
+    const g = groupResult(s, items, L);
+    expect(g.open).toBe(false); expect(g.base).toBeNull(); expect(g.final).toBeNull();
+    expect(g.knockouts).toEqual([]); expect(g.results).toEqual([]); expect(g.extras).toEqual([]);
+  });
+  it('uses the shortest committed length, flexible as 14', () => {
+    expect(groupResult(base(), items, L).days).toBe(9);
+  });
+  it('deterministic knockouts and a non-empty extras list', () => {
+    const g1 = groupResult(base(), items, L), g2 = groupResult(base(), items, L);
+    expect(g1.knockouts.length).toBeGreaterThan(0); expect(g1.knockouts.map(k => k.forkId)).toEqual(g2.knockouts.map(k => k.forkId));
+    expect(g1.extras.length).toBeGreaterThan(0);
+  });
+  it('resolves forks sequentially, never deadlocks, and every fork id is stable across calls', () => {
+    const s = base(); let g = groupResult(s, items, L);
+    const ids1 = g.knockouts.map(k => k.forkId);
+    expect(groupResult(s, items, L).knockouts.map(k => k.forkId)).toEqual(ids1);
+    for (let round = 0; round < 6 && !g.final; round++) {
+      for (const k of g.knockouts) for (const name of ['Brittany', 'Alex', 'Lazza'] as const) s.votes.push({ forkId: k.forkId, name, choice: 'a' });
+      g = groupResult(s, items, L);
+    }
+    expect(g.final).not.toBeNull();
+    expect(g.final!.days.length).toBe(9);
+    const winners = g.results.filter(r => r.winner === 'a').map(r => r.a[0]);
+    for (const w of winners) expect(g.final!.chosen).toContain(w);
+    expect(g.knockouts.length).toBe(0);
+  });
+  it('three votes resolve a fork even if two people never vote', () => {
+    const s = base(); const g = groupResult(s, items, L); const k = g.knockouts[0];
+    for (const name of ['Alex', 'Antek', 'Saulie'] as const) s.votes.push({ forkId: k.forkId, name, choice: 'b' });
+    const g2 = groupResult(s, items, L);
+    expect(g2.results.find(r => r.forkId === k.forkId)?.winner).toBe('b');
+  });
+  it('two votes alone leave the fork open', () => {
+    const s = base(); const k = groupResult(s, items, L).knockouts[0];
+    for (const name of ['Alex', 'Antek'] as const) s.votes.push({ forkId: k.forkId, name, choice: 'a' });
+    const g2 = groupResult(s, items, L);
+    expect(g2.results.find(r => r.forkId === k.forkId)).toBeUndefined();
+    const open = g2.knockouts.find(x => x.forkId === k.forkId)!;
+    expect(open.votes.a).toEqual(['Alex', 'Antek']); expect(open.votes.b).toEqual([]);
+    expect(g2.final).toBeNull();
+  });
+  it('ignores votes on fork ids that are not in the current list', () => {
+    const s = base(); s.votes.push({ forkId: 'ko:nope:', name: 'Alex', choice: 'a' });
+    expect(groupResult(s, items, L).knockouts.map(k => k.forkId)).toEqual(groupResult(base(), items, L).knockouts.map(k => k.forkId));
+  });
+  it('group plan never claims it does not fit', () => {
+    const g = groupResult(base(), items, L);
+    expect(g.base!.missingMusts).toEqual([]);
+  });
+});
+
+describe('personPlan', () => {
+  it('a classic Musts-only plan fits and reports no fit-days', () => {
+    const p = personPlan(base().responses.Brittany!, items, L);
+    expect(p.fits).toBe(true); expect(p.mustFit).toBeNull(); expect(p.days.length).toBe(9);
+  });
+  it('too many heavy Musts do not fit and report the days needed', () => {
+    const r = base().responses.Antek!; r.flex = false; r.days = 5;
+    const p = personPlan(r, items, L);
+    expect(p.fits).toBe(false); expect(p.mustFit).toBeGreaterThan(5);
+  });
+  it('defaults to 9 days and balanced pace', () => {
+    const r = base().responses.Lazza!; r.days = null; r.pace = null;
+    expect(personPlan(r, items, L).days.length).toBe(9);
+  });
+});
+
+describe('group performance', () => {
+  it('group logic is fast enough', () => {
+    const t = performance.now(); groupResult(base(), items, L); expect(performance.now() - t).toBeLessThan(4000);
+  });
+});
