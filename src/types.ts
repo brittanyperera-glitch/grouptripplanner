@@ -21,7 +21,11 @@ export interface PlanInput {
   items: Item[]; scores: Record<string, number>; days: number; pace: Pace; legs: Leg[];
   mustIds?: string[]; forceIn?: string[]; forceOut?: string[];
 }
-export interface DayEntry { kind: 'drive' | 'activity' | 'train' | 'free'; label: string; hours: number; itemId?: string; from?: Hub; to?: Hub }
+// hours = total time the entry takes from the day (scheduling). For activities, onSite + roundTrip = hours.
+export interface DayEntry {
+  kind: 'drive' | 'activity' | 'train' | 'free'; label: string; hours: number; itemId?: string; from?: Hub; to?: Hub;
+  onSite?: number; roundTrip?: number;
+}
 export interface Day { n: number; area: Area | null; entries: DayEntry[]; spare: number; rainSlack: boolean }
 export interface Plan {
   route: Hub[]; areas: Area[]; days: Day[]; chosen: string[]; dropped: string[];
