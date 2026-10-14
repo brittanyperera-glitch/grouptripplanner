@@ -65,6 +65,14 @@ const SIDE_TRIP = {
   junglebeach: 2 * legHours('Weligama', /Jungle Beach/),
   galle: 2 * legHours('Weligama', /Galle Fort/),
   lavinia: 2 * legHours('Colombo', /Mount Lavinia/),
+  delft: 2 * legHours('Jaffna', /Kurikadduwan/),
+  nainativu: 2 * legHours('Jaffna', /Kurikadduwan/),
+  pigeon: 2 * legHours('Trincomalee', /Nilaveli/),
+  aukana: 2 * legHours('Sigiriya', /Aukana/),
+  buduruwagala: 2 * legHours('Ella', /Buduruwagala/),
+  wewurukannala: 2 * legHours('Weligama', /Wewurukannala/),
+  rekawa: 2 * legHours('Weligama', /Rekawa/),
+  tea: 2 * legHours('Nuwara Eliya', /Labookellie/),
   pidurangala: 0.3,
 };
 
@@ -91,7 +99,7 @@ const items = cat.items.map((it) => {
 });
 
 // Sanity: 37 items, all hubs connected.
-if (items.length !== 37) throw new Error(`expected 37 items, got ${items.length}`);
+if (items.length !== 46) throw new Error(`expected 46 items, got ${items.length}`);
 const hubs = ['AIR', 'Colombo', 'Jaffna', 'Trincomalee', 'Sigiriya', 'Kandy', 'Kitulgala', 'Nuwara Eliya', 'Ella', 'Tissa', 'Udawalawe', 'Weligama'];
 const d = Object.fromEntries(hubs.map((a) => [a, Object.fromEntries(hubs.map((b) => [b, a === b ? 0 : Infinity]))]));
 for (const l of legs) { d[l.a][l.b] = Math.min(d[l.a][l.b], l.hours); d[l.b][l.a] = Math.min(d[l.b][l.a], l.hours); }

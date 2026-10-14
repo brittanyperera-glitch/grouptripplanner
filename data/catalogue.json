@@ -2,6 +2,8 @@
  "_note": "Candidate activities for Brittany to curate. hours = time on site incl. queues, not travel. slot = when it has to happen. Facts from research/*.md; google fields filled from research/google_listings.md.",
  "areas": [
   "Colombo",
+  "North",
+  "East coast",
   "Cultural Triangle",
   "Kandy and Knuckles",
   "Kitulgala",
@@ -330,19 +332,19 @@
   },
   {
    "id": "tea",
-   "name": "Tea factory tour",
+   "name": "Damro Labookellie tea estate",
    "area": "Hill country",
    "hours": 1.5,
    "slot": "daytime",
-   "fee": "small",
+   "fee": "free entry, tea extra",
+   "about": "Hillside tea estate on the Nuwara Eliya road: walk the rows, see the factory, then tea and cake in the lounge.",
+   "warn": "Busy with tour buses; go early",
    "photo": "tea",
-   "about": "Tour of a working tea factory, ending with a tasting.",
    "google": {
-    "rating": "3.6",
-    "reviews": "584",
-    "url": "https://www.google.com/maps/search/Pedro%20Tea%20Estate,%20Nuwara%20Eliya,%20Sri%20Lanka"
-   },
-   "warn": "The Pedro factory rates only 3.6 on Google and its old estate listing is closed; we'd pick a better-rated estate"
+    "rating": "4.4",
+    "reviews": "7,934",
+    "url": "https://www.google.com/maps/search/Labookellie+Tea+Lounge,+Sri+Lanka"
+   }
   },
   {
    "id": "ellarock",
@@ -569,6 +571,149 @@
    "fee": "free",
    "photo": "beachday",
    "about": "A whole day off: beach, swim, nap, repeat."
+  },
+  {
+   "id": "jaffna",
+   "name": "Jaffna town: Nallur temple, fort and crab curry",
+   "area": "North",
+   "hours": 5,
+   "slot": "morning",
+   "fee": "fort about USD 5, temple free",
+   "warn": "A long way north: 7.5 h from the airport. At Nallur: modest dress, men go in shirtless, shoes off. December is monsoon season up here",
+   "about": "Tamil heart of the island: the golden Nallur Kovil, the Dutch fort, and Jaffna crab curry.",
+   "photo": "jaffna",
+   "google": {
+    "rating": "4.7",
+    "reviews": "6,016",
+    "url": "https://www.google.com/maps/search/Nallur+Kandaswamy+Kovil+Jaffna,+Sri+Lanka"
+   }
+  },
+  {
+   "id": "delft",
+   "name": "Delft Island day trip",
+   "area": "North",
+   "hours": 7,
+   "slot": "morning",
+   "fee": "ferry about LKR 100, tuk-tuk tour LKR 1,500-2,500",
+   "warn": "December is monsoon season up here: expect rain, and boats can be cancelled. Navy ferry out about 8 to 9am, back 14:30. Don't ride the wild ponies",
+   "about": "Ferry to a remote coral-stone island with wild ponies, a giant baobab and old Dutch ruins.",
+   "photo": "delft",
+   "google": {
+    "rating": "4.4",
+    "reviews": "344",
+    "url": "https://www.google.com/maps/search/Delft+Island,+Sri+Lanka"
+   }
+  },
+  {
+   "id": "nainativu",
+   "name": "Nainativu (Nagadeepa) island temples",
+   "area": "North",
+   "hours": 4,
+   "slot": "morning",
+   "fee": "boat about LKR 100",
+   "warn": "December is monsoon season up here: expect rain, and boats can be cancelled. Modest dress",
+   "about": "Short boat hop to a sacred island with a Hindu and a Buddhist temple side by side.",
+   "photo": "nainativu",
+   "google": {
+    "rating": "4.7",
+    "reviews": "1,737",
+    "url": "https://www.google.com/maps/search/Nagadeepa+Purana+Viharaya+Nainativu,+Sri+Lanka"
+   }
+  },
+  {
+   "id": "trinco",
+   "name": "Trincomalee: Koneswaram temple and Fort Frederick",
+   "area": "East coast",
+   "hours": 2.5,
+   "slot": "morning",
+   "fee": "free or small donation",
+   "warn": "December is monsoon season on the east coast: expect rain. Cover shoulders and knees, shoes off",
+   "about": "Clifftop Hindu temple above the ocean, reached through a colonial fort with deer roaming inside.",
+   "photo": "trinco",
+   "google": {
+    "rating": "4.6",
+    "reviews": "6,033",
+    "url": "https://www.google.com/maps/search/Koneswaram+Temple+Trincomalee,+Sri+Lanka"
+   }
+  },
+  {
+   "id": "pigeon",
+   "name": "Pigeon Island snorkelling",
+   "area": "East coast",
+   "hours": 3,
+   "slot": "morning",
+   "fee": "park USD 25-48 plus boat LKR 3,000-5,000",
+   "warn": "A weather call in December: the Navy can stop boats in the monsoon. Don't touch the coral",
+   "about": "Boat from Nilaveli to a marine park with reef sharks, turtles and coral, when the sea allows.",
+   "photo": "pigeon",
+   "google": {
+    "rating": "3.8",
+    "reviews": "176",
+    "url": "https://www.google.com/maps/search/Pigeon+Island+National+Park,+Sri+Lanka"
+   }
+  },
+  {
+   "id": "aukana",
+   "name": "Aukana Buddha at dawn",
+   "area": "Cultural Triangle",
+   "hours": 1,
+   "slot": "sunrise",
+   "fee": "LKR 1,000-3,250 (sources disagree)",
+   "warn": "Long trousers or sarong",
+   "about": "12 m standing Buddha carved from one rock in the 5th century, best lit at sunrise.",
+   "photo": "aukana",
+   "google": {
+    "rating": "4.8",
+    "reviews": "2,187",
+    "url": "https://www.google.com/maps/search/Avukana+Buddha+Statue,+Sri+Lanka"
+   }
+  },
+  {
+   "id": "buduruwagala",
+   "name": "Buduruwagala rock carvings",
+   "area": "Ella",
+   "hours": 1,
+   "slot": "morning",
+   "fee": "about USD 3",
+   "warn": "Modest dress",
+   "about": "Sri Lanka's tallest rock-carved standing Buddha, with six figures cut into the cliff beside a lake.",
+   "photo": "buduruwagala",
+   "google": {
+    "rating": "4.7",
+    "reviews": "1,318",
+    "url": "https://www.google.com/maps/search/Buduruwagala+Rock+Temple,+Sri+Lanka"
+   }
+  },
+  {
+   "id": "wewurukannala",
+   "name": "Wewurukannala giant Buddha",
+   "area": "South coast",
+   "hours": 1.5,
+   "slot": "late afternoon",
+   "fee": "small fee",
+   "warn": "Modest dress",
+   "about": "The island's biggest seated Buddha, 50 m tall, reached through a kitsch 'tunnel of hell'.",
+   "photo": "wewurukannala",
+   "google": {
+    "rating": "4.2",
+    "reviews": "2,178",
+    "url": "https://www.google.com/maps/search/Wewurukannala+Buduraja+Maha+Viharaya,+Sri+Lanka"
+   }
+  },
+  {
+   "id": "rekawa",
+   "name": "Rekawa night turtle watch",
+   "area": "South coast",
+   "hours": 2.5,
+   "slot": "evening",
+   "fee": "LKR 500-1,000",
+   "warn": "Wild nesting turtles, so a sighting isn't guaranteed and December is the quieter season. No torches or flash. Book through the community project; the Google listing found may be a different operator",
+   "about": "Community-run night watch where ex-poachers now guard the nests; you wait on the beach for turtles to come ashore.",
+   "google": {
+    "rating": "3.3",
+    "reviews": "980",
+    "url": "https://www.google.com/maps/search/Rekawa+Turtle+Conservation+Project,+Sri+Lanka"
+   }
   }
  ]
 }

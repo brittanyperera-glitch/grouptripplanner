@@ -11,11 +11,14 @@ const LOCATION = {
   polonnaruwa: 'Polonnaruwa, 1 h 20 from Sigiriya', elephants: 'Kaudulla or Hurulu, near Habarana', anuradhapura: 'Anuradhapura, 1 h 30 from Sigiriya',
   village: 'Hiriwadunna, near Habarana', tooth: 'Kandy', knuckles: 'Riverston, Knuckles range, 2 h 30 from Kandy',
   rafting: 'Kitulgala, Kelani river', train: 'Nanu Oya to Ella', horton: 'Horton Plains, 1 h 10 from Nuwara Eliya',
-  tea: 'Near Nuwara Eliya', ellarock: 'Ella', littleadams: 'Ella', ninearch: 'Demodara, Ella', zipline: 'Ella',
+  tea: 'Labookellie, 30 min from Nuwara Eliya', ellarock: 'Ella', littleadams: 'Ella', ninearch: 'Demodara, Ella', zipline: 'Ella',
   diyaluma: 'Koslanda, 1 h 15 from Ella', lipton: 'Haputale, 1 h 15 from Ella', yala: 'Yala, 40 min from Tissamaharama',
   udawalawe: 'Udawalawe', surf: 'Weligama bay', whales: 'Mirissa harbour, 15 min from Weligama', galle: 'Galle Fort, 45 min from Weligama',
   coconut: 'Mirissa', hiriketiya: 'Hiriketiya, near Dickwella, 1 h from Weligama', junglebeach: 'Unawatuna, 45 min from Weligama',
   beachday: 'South coast, Weligama or Mirissa',
+  jaffna: 'Jaffna, 5 h from Sigiriya', delft: 'Delft Island, ferry from Kurikadduwan (45 min from Jaffna)', nainativu: 'Nainativu, boat from Kurikadduwan',
+  trinco: 'Trincomalee, 2 h from Sigiriya', pigeon: 'Nilaveli, 30 min from Trincomalee', aukana: 'Aukana, 1 h 10 from Sigiriya',
+  buduruwagala: 'Near Wellawaya, 50 min from Ella', wewurukannala: 'Dickwella, 1 h from Weligama', rekawa: 'Rekawa beach near Tangalle, 1 h 15 from Weligama',
 };
 const missing = cat.items.filter(i => !LOCATION[i.id]).map(i => i.id);
 if (missing.length) throw new Error('no location for: ' + missing.join(', '));
