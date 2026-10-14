@@ -18,3 +18,6 @@
 | 16 Hiriketiya Beach Dickwella -> Tissamaharama | 1 hr 43 min | 94.5 | Fastest route via Southern Expressway/E01, tolls. Alternative 1 hr 54 min (98.0 km, B101) |
 | 17 Kandy -> Nuwara Eliya | 2 hr 50 min | 75.7 | Fastest now (traffic) via A5. Alternative 2 hr 52 min (73.3 km) |
 | 18 Udawalawe National Park -> Tissamaharama | 1 hr 10 min | 56.1 | Fastest route via B427 and A2, lighter traffic than usual |
+| 19 Colombo -> Kitulgala | 2 hr 59 min | 101 | Fastest now (traffic) via Avissawella - Hatton - Nuwara Eliya Hwy/A7, tolls. Alternatives 3 hr 24 min (86.9 km, Avissawella Rd) and 3 hr 7 min (99.3 km, B445) |
+| 20 Bandaranaike International Airport -> Kitulgala | 2 hr 44 min | 83.7 | Fastest despite usual traffic via B445 and A7. Alternative 2 hr 54 min (88.6 km, A7) |
+| 21 Kitulgala -> Weligama | 4 hr 26 min | 208 | Fastest now (traffic) via Southern Expressway/E01, tolls. Alternatives 4 hr 30 min (201 km, A4/E01) and 5 hr 46 min (204 km, A7) |

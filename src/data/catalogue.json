@@ -25,6 +25,7 @@
     "reviews": "4,647",
     "url": "https://www.google.com/maps/search/Pettah%20Market,%20Colombo,%20Sri%20Lanka"
    },
+   "when": "morning",
    "sideTrip": 0,
    "credit": "Adam Jones from Kelowna, BC, Canada, CC BY-SA 2.0"
   },
@@ -38,6 +39,7 @@
    "book": "a day ahead",
    "photo": "foodtour",
    "about": "Evening tuk-tuk loop through Colombo's street stalls: kottu, hoppers, isso wade and short eats.",
+   "when": "evening",
    "sideTrip": 0,
    "credit": "Pierre André Leclercq, CC BY-SA 2.0"
   },
@@ -55,6 +57,7 @@
     "reviews": "17,370",
     "url": "https://www.google.com/maps/search/Galle%20Face%20Green,%20Colombo,%20Sri%20Lanka"
    },
+   "when": "sunset",
    "sideTrip": 0,
    "credit": "Mayooresan, CC BY-SA 3.0"
   },
@@ -73,6 +76,7 @@
     "reviews": "5,702",
     "url": "https://www.google.com/maps/search/Ministry%20of%20Crab,%20Colombo,%20Sri%20Lanka"
    },
+   "when": "evening",
    "sideTrip": 0,
    "credit": "Masha999, CC BY-SA 4.0"
   },
@@ -90,6 +94,7 @@
     "reviews": "14,055",
     "url": "https://www.google.com/maps/search/Gangaramaya%20Temple,%20Colombo,%20Sri%20Lanka"
    },
+   "when": "any",
    "sideTrip": 0,
    "credit": "Pierre André Leclercq, CC BY-SA 4.0"
   },
@@ -98,7 +103,7 @@
    "name": "Geoffrey Bawa's Number 11",
    "area": "Colombo",
    "hours": 1,
-   "slot": "fixed tour times",
+   "slot": "morning",
    "fee": "LKR 5,000",
    "book": "guided tours only, weekdays 10:00, 14:00, 15:30",
    "photo": "bawa",
@@ -108,6 +113,7 @@
     "reviews": "585",
     "url": "https://www.google.com/maps/search/Number%2011%20Geoffrey%20Bawa,%20Colombo,%20Sri%20Lanka"
    },
+   "when": "fixed tour times",
    "sideTrip": 0,
    "credit": "Andrés Moreno, CC BY-SA 2.0"
   },
@@ -125,6 +131,7 @@
     "reviews": "12,589",
     "url": "https://www.google.com/maps/search/Lotus%20Tower%20Colombo,%20Sri%20Lanka"
    },
+   "when": "evening",
    "sideTrip": 0,
    "credit": "Mohamed Rilwan1210, CC BY-SA 4.0"
   },
@@ -143,6 +150,7 @@
     "reviews": "4,514",
     "url": "https://www.google.com/maps/search/Mount%20Lavinia%20Beach,%20Sri%20Lanka"
    },
+   "when": "afternoon",
    "sideTrip": 1.36,
    "credit": "Alexey Komarov, CC BY 3.0"
   },
@@ -151,7 +159,7 @@
    "name": "Late-night kottu at Pilawoos",
    "area": "Colombo",
    "hours": 1,
-   "slot": "late night",
+   "slot": "late",
    "fee": "cheap",
    "photo": "kottu",
    "about": "Late-night kottu roti from a Colombo institution open round the clock.",
@@ -161,6 +169,7 @@
     "url": "https://www.google.com/maps/search/Pilawoos%20Hotel%20restaurant%20Colombo"
    },
    "warn": "Rated 3.4 on Google; it's about the 3am kottu, not the service",
+   "when": "late night",
    "sideTrip": 0,
    "credit": "Dankesie, CC BY-SA 4.0"
   },
@@ -169,7 +178,7 @@
    "name": "Sigiriya Rock",
    "area": "Cultural Triangle",
    "hours": 3,
-   "slot": "gate opening",
+   "slot": "sunrise",
    "fee": "USD 35",
    "book": "online, recommended",
    "photo": "sigiriya",
@@ -179,6 +188,7 @@
     "reviews": "24,355",
     "url": "https://www.google.com/maps/search/Sigiriya%20Rock%20Fortress,%20Sri%20Lanka"
    },
+   "when": "gate opening",
    "sideTrip": 0,
    "credit": "Dronepicr, CC BY 3.0"
   },
@@ -197,6 +207,7 @@
     "reviews": "11,464",
     "url": "https://www.google.com/maps/search/Pidurangala%20Rock%20Temple,%20Sri%20Lanka"
    },
+   "when": "sunrise",
    "sideTrip": 0.3,
    "credit": "Nipuna Gamage, CC BY-SA 4.0"
   },
@@ -215,6 +226,7 @@
     "reviews": "17,020",
     "url": "https://www.google.com/maps/search/Dambulla%20Cave%20Temple,%20Sri%20Lanka"
    },
+   "when": "morning",
    "sideTrip": 1.14,
    "credit": "Philip Nalangan, CC BY 4.0"
   },
@@ -232,6 +244,7 @@
     "reviews": "1,424",
     "url": "https://www.google.com/maps/search/Polonnaruwa%20Ancient%20City,%20Sri%20Lanka"
    },
+   "when": "morning",
    "sideTrip": 2.7,
    "credit": "Philip Nalangan, CC BY 4.0"
   },
@@ -250,6 +263,7 @@
     "reviews": "227",
     "url": "https://www.google.com/maps/search/Kaudulla%20National%20Park,%20Sri%20Lanka"
    },
+   "when": "afternoon",
    "sideTrip": 1.54,
    "credit": "David Stanley from Nanaimo, Canada, CC BY 2.0"
   },
@@ -268,6 +282,7 @@
     "reviews": "15,071",
     "url": "https://www.google.com/maps/search/Anuradhapura%20sacred%20city,%20Sri%20Lanka"
    },
+   "when": "morning",
    "sideTrip": 3.06,
    "credit": "Z thomas, CC BY-SA 4.0"
   },
@@ -280,6 +295,7 @@
    "fee": "about USD 15-30",
    "photo": "village",
    "about": "Village visit by cart and canoe, then a home-cooked rice and curry lunch.",
+   "when": "any",
    "sideTrip": 0,
    "credit": "me, CC BY-SA 4.0"
   },
@@ -288,7 +304,7 @@
    "name": "Temple of the Tooth, evening puja",
    "area": "Kandy and Knuckles",
    "hours": 1.5,
-   "slot": "18:30",
+   "slot": "evening",
    "fee": "LKR 3,000",
    "warn": "No shorts or bare shoulders",
    "photo": "tooth",
@@ -298,6 +314,7 @@
     "reviews": "33,680",
     "url": "https://www.google.com/maps/search/Temple%20of%20the%20Sacred%20Tooth%20Relic,%20Kandy,%20Sri%20Lanka"
    },
+   "when": "18:30",
    "sideTrip": 0,
    "credit": "A.Savin, FAL"
   },
@@ -316,6 +333,7 @@
     "reviews": "826",
     "url": "https://www.google.com/maps/search/Mini%20World%27s%20End,%20Riverston,%20Sri%20Lanka"
    },
+   "when": "morning",
    "sideTrip": 5.06,
    "credit": "Nethupa Lekamge, CC BY-SA 4.0"
   },
@@ -334,6 +352,7 @@
     "reviews": "293",
     "url": "https://www.google.com/maps/search/Kitulgala%20white%20water%20rafting,%20Sri%20Lanka"
    },
+   "when": "morning",
    "sideTrip": 0,
    "credit": "Pol van den Scheetek…, CC BY 3.0"
   },
@@ -342,12 +361,13 @@
    "name": "Nanu Oya to Ella train",
    "area": "Hill country",
    "hours": 2.5,
-   "slot": "09:00 or 14:30",
+   "slot": "morning",
    "fee": "about LKR 4,000 reserved",
    "book": "seats open 30 days ahead",
    "warn": "The Kandy section is shut until at least early 2027, so we drive to Nanu Oya",
    "photo": "train",
    "about": "The best-scenery stretch of the hill country railway, tea fields all the way.",
+   "when": "09:00 or 14:30",
    "sideTrip": 0.2,
    "credit": "Angshuman Chatterjee, CC BY-SA 3.0"
   },
@@ -366,6 +386,7 @@
     "reviews": "10,690",
     "url": "https://www.google.com/maps/search/Horton%20Plains%20National%20Park,%20Sri%20Lanka"
    },
+   "when": "sunrise",
    "sideTrip": 2.4,
    "credit": "Pamuditha2000, CC BY-SA 4.0"
   },
@@ -374,7 +395,7 @@
    "name": "Tea factory tour",
    "area": "Hill country",
    "hours": 1.5,
-   "slot": "daytime",
+   "slot": "any",
    "fee": "small",
    "photo": "tea",
    "about": "Tour of a working tea factory, ending with a tasting.",
@@ -384,6 +405,7 @@
     "url": "https://www.google.com/maps/search/Pedro%20Tea%20Estate,%20Nuwara%20Eliya,%20Sri%20Lanka"
    },
    "warn": "The Pedro factory rates only 3.6 on Google and its old estate listing is closed; we'd pick a better-rated estate",
+   "when": "daytime",
    "sideTrip": 0,
    "credit": "Bergentroll, CC0"
   },
@@ -392,7 +414,7 @@
    "name": "Ella Rock hike",
    "area": "Ella",
    "hours": 4.5,
-   "slot": "06:00 start",
+   "slot": "sunrise",
    "fee": "free",
    "warn": "Slippery when wet, leeches in December",
    "photo": "ellarock",
@@ -402,6 +424,7 @@
     "reviews": "2,078",
     "url": "https://www.google.com/maps/search/Ella%20Rock,%20Sri%20Lanka"
    },
+   "when": "06:00 start",
    "sideTrip": 0,
    "credit": "Gayan Perera, CC BY-SA 4.0"
   },
@@ -419,6 +442,7 @@
     "reviews": "1,282",
     "url": "https://www.google.com/maps/search/Little%20Adam%27s%20Peak,%20Ella,%20Sri%20Lanka"
    },
+   "when": "sunrise",
    "sideTrip": 0,
    "credit": "Bcd4e6, CC BY-SA 4.0"
   },
@@ -427,7 +451,7 @@
    "name": "Nine Arch Bridge",
    "area": "Ella",
    "hours": 1,
-   "slot": "train times",
+   "slot": "any",
    "fee": "free",
    "warn": "Never on the track when a train is due",
    "photo": "ninearch",
@@ -437,6 +461,7 @@
     "reviews": "461",
     "url": "https://www.google.com/maps/search/Nine%20Arch%20Bridge,%20Ella,%20Sri%20Lanka"
    },
+   "when": "train times",
    "sideTrip": 0,
    "credit": "A.Savin, FAL"
   },
@@ -445,7 +470,7 @@
    "name": "Flying Ravana zipline",
    "area": "Ella",
    "hours": 1,
-   "slot": "daytime",
+   "slot": "any",
    "fee": "about USD 32-40",
    "book": "a day ahead",
    "about": "Ella's zipline park, half a kilometre over the jungle valley.",
@@ -454,6 +479,7 @@
     "reviews": "4,438",
     "url": "https://www.google.com/maps/search/Flying%20Ravana%20zipline,%20Ella,%20Sri%20Lanka"
    },
+   "when": "daytime",
    "sideTrip": 0
   },
   {
@@ -461,7 +487,7 @@
    "name": "Diyaluma Falls upper pools",
    "area": "Ella",
    "hours": 5,
-   "slot": "late morning",
+   "slot": "morning",
    "fee": "guide about LKR 625",
    "warn": "High December flow, slippery rock; there has been a fatal fall",
    "photo": "diyaluma",
@@ -471,6 +497,7 @@
     "reviews": "4,942",
     "url": "https://www.google.com/maps/search/Diyaluma%20Falls,%20Sri%20Lanka"
    },
+   "when": "late morning",
    "sideTrip": 2.5,
    "credit": "SarangaRodrigo, CC BY-SA 4.0"
   },
@@ -488,6 +515,7 @@
     "reviews": "5,674",
     "url": "https://www.google.com/maps/search/Lipton%27s%20Seat,%20Haputale,%20Sri%20Lanka"
    },
+   "when": "sunrise",
    "sideTrip": 2.5,
    "credit": "Vyacheslav Argenberg, CC BY 4.0"
   },
@@ -496,7 +524,7 @@
    "name": "Yala leopard safari",
    "area": "Wild south",
    "hours": 4.5,
-   "slot": "gate opening",
+   "slot": "sunrise",
    "fee": "about USD 45 pp plus jeep",
    "warn": "Very busy with jeeps; sightings not guaranteed",
    "photo": "leopard",
@@ -506,6 +534,7 @@
     "reviews": "6,308",
     "url": "https://www.google.com/maps/search/Yala%20National%20Park,%20Sri%20Lanka"
    },
+   "when": "gate opening",
    "sideTrip": 1.24,
    "hub": "Tissa",
    "credit": "Asirilak, CC BY-SA 4.0"
@@ -524,6 +553,7 @@
     "reviews": "7,120",
     "url": "https://www.google.com/maps/search/Udawalawe%20National%20Park,%20Sri%20Lanka"
    },
+   "when": "morning",
    "sideTrip": 0,
    "credit": "Z thomas, CC BY-SA 4.0"
   },
@@ -542,6 +572,7 @@
     "reviews": "1,068",
     "url": "https://www.google.com/maps/search/Weligama%20Beach,%20Sri%20Lanka"
    },
+   "when": "morning",
    "sideTrip": 0,
    "credit": "Annelicious i, CC BY-SA 4.0"
   },
@@ -550,7 +581,7 @@
    "name": "Whale watching, responsible operator",
    "area": "South coast",
    "hours": 5,
-   "slot": "06:30",
+   "slot": "sunrise",
    "fee": "about USD 40-60",
    "book": "1-2 days ahead",
    "warn": "Most Mirissa boats run illegal swims; we use one with a good record. Seasickness common",
@@ -561,6 +592,7 @@
     "reviews": "953",
     "url": "https://www.google.com/maps/search/Raja%20and%20the%20Whales,%20Mirissa,%20Sri%20Lanka"
    },
+   "when": "06:30",
    "sideTrip": 0.56,
    "credit": "Peter van der Sluijs, CC BY-SA 3.0"
   },
@@ -569,7 +601,7 @@
    "name": "Galle Fort and sunset",
    "area": "South coast",
    "hours": 3,
-   "slot": "late afternoon",
+   "slot": "afternoon",
    "fee": "free",
    "photo": "galle",
    "about": "Walled colonial town with cafes, ramparts and a lighthouse.",
@@ -578,6 +610,7 @@
     "reviews": "22,584",
     "url": "https://www.google.com/maps/search/Galle%20Fort,%20Sri%20Lanka"
    },
+   "when": "late afternoon",
    "sideTrip": 1.54,
    "credit": "Jan Kranendonk (https://www.jankranendonk.nl), CC BY-SA 4.0"
   },
@@ -595,6 +628,7 @@
     "reviews": "10,473",
     "url": "https://www.google.com/maps/search/Coconut%20Tree%20Hill,%20Mirissa,%20Sri%20Lanka"
    },
+   "when": "sunset",
    "sideTrip": 0,
    "credit": "Swanthika, CC BY-SA 4.0"
   },
@@ -611,6 +645,7 @@
     "reviews": "2,848",
     "url": "https://www.google.com/maps/search/Hiriketiya%20Beach,%20Dickwella,%20Sri%20Lanka"
    },
+   "when": "any",
    "sideTrip": 2.14
   },
   {
@@ -627,6 +662,7 @@
     "reviews": "2,971",
     "url": "https://www.google.com/maps/search/Jungle%20Beach,%20Unawatuna,%20Sri%20Lanka"
    },
+   "when": "morning",
    "sideTrip": 1.46,
    "credit": "Hirushini Dematagoda, CC BY-SA 4.0"
   },
@@ -639,6 +675,7 @@
    "fee": "free",
    "photo": "beachday",
    "about": "A whole day off: beach, swim, nap, repeat.",
+   "when": "any",
    "sideTrip": 0,
    "credit": "Praveenshashika, CC BY-SA 4.0"
   }

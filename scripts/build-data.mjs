@@ -68,10 +68,20 @@ const SIDE_TRIP = {
   pidurangala: 0.3,
 };
 
+// Raw catalogue timing text -> planner Slot. The raw text is kept as `when` for display.
+const SLOT = {
+  'sunrise': 'sunrise', 'gate opening': 'sunrise', '06:00 start': 'sunrise', '06:30': 'sunrise',
+  'morning': 'morning', 'late morning': 'morning', '09:00 or 14:30': 'morning', 'fixed tour times': 'morning',
+  'afternoon': 'afternoon', 'late afternoon': 'afternoon',
+  'sunset': 'sunset', 'evening': 'evening', '18:30': 'evening', 'late night': 'late',
+  'any': 'any', 'daytime': 'any', 'train times': 'any',
+};
+
 const cat = JSON.parse(read('data/catalogue.json'));
 const credits = JSON.parse(read('docs/mockups/img/credits.json'));
 const items = cat.items.map((it) => {
-  const out = { ...it, sideTrip: Math.round((SIDE_TRIP[it.id] ?? 0) * 100) / 100 };
+  if (!(it.slot in SLOT)) throw new Error(`unmapped slot "${it.slot}" on ${it.id}`);
+  const out = { ...it, when: it.slot, slot: SLOT[it.slot], sideTrip: Math.round((SIDE_TRIP[it.id] ?? 0) * 100) / 100 };
   if (it.id === 'yala') out.hub = 'Tissa';
   if (it.photo && credits[it.photo]) out.credit = `${credits[it.photo].artist}, ${credits[it.photo].license}`;
   return out;

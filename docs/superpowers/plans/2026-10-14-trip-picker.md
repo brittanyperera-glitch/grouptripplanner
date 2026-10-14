@@ -580,3 +580,104 @@ Findings are verified by me, then fixed in T9 (Sonnet).
 - B4: Photos for the zipline and Hiriketiya.
 - B5: Create the private GitHub repo and push. Create the Supabase project and run the schema. Create the Vercel project with the 2 env vars.
 - B6: Send the link to Alex, Antek, Lazza and Saulie.
+
+---
+
+## Amendments after review round 1 (2026-10-14). These override anything above that conflicts.
+
+Round 1 reviewer (fresh Opus) attacked the planner, group logic, schema and interfaces. Verified findings and the rules that now bind:
+
+### A. Data (T0, done by dispatcher)
+- `slot` is now a fixed Slot. The raw catalogue text is kept as `item.when` for display. The mapping lives in `scripts/build-data.mjs` (SLOT); an unmapped value throws.
+- The schema has `flex boolean not null default false`. The Store has no `submit`; submitting is `saveResponse(name, {submitted: true})`.
+- Live suggestion items use the id `s:<uuid>`.
+
+### B. Planner (T2) rule changes
+1. **Weight with hub variants.**
+   - The Wild south hub variant (Tissa or Udawalawe) is fixed per candidate before the knapsack. Evaluate both when the area is eligible.
+   - Item weight = `hours + sideTrip + 2 * shortest(variantHub, item.hub ?? AREA_HUB[item.area])`. The last term is 0 when the item's hub is the variant hub.
+2. **Train.**
+   - Choosing `train` puts both Hill country and Ella in the route, even if they hold no other chosen item.
+   - The Hill country to Ella leg costs 0 and emits no drive entry. The train entry is the transfer.
+3. **Long entries.** An entry with `h > H` takes a whole day on its own: the day holds only it, with `spare = 0`. The scheduler always advances.
+4. **Departure day.**
+   - Day N has activity capacity `H/2 - finalDrive - 3`.
+   - If that is negative, the final drive moves to the end of day N-1 ("drive towards the airport"), and day N holds only "check-in and fly".
+   - Day 1 has capacity `H/2` and starts with the drive from AIR.
+5. **One sunrise per day.** At most one item with slot `sunrise` per day.
+   - A sunrise item never follows another entry on the same day. It starts a new day unless the current day is still empty, or holds only a drive that happened the day before. In practice: start a new day.
+   - Morning items start a new day if more than 3 h of the current day is used.
+6. **The overflow loop ends.**
+   - While days exceed N, remove the chosen item with the lowest score/weight, never forceIn, preferring non-Musts.
+   - If nothing is removable, stop and return the plan with `fits: false`. It also sets `overflow: true` (add `overflow?: boolean` to Plan).
+   - The returned plan never has more than N days unless `overflow`.
+7. **Spare days.**
+   - Padding first gives one free day to Ella, or to Hill country if Ella is absent, as "rain slack", when that area is in the route.
+   - It then gives the rest to the last area before the airport.
+8. **forceIn infeasible.** If no candidate can hold every forceIn item, ignore forceIn, return the best plan, and set `forceFailed: true` (add to Plan).
+9. **mustFitDays.**
+   - Linear scan from `days + 1` (or 5 when called without days) up to 21.
+   - It returns the first length with `fits`. Callers only call it when the plan doesn't fit.
+10. **Performance.**
+    - The knapsack depends only on (area set, hub variant, train, capacity), so memoise it on that key. Direction and Colombo position change only travel; try both and keep the best.
+    - Prune a subset when the sum of its positive item values is not above the best value found so far.
+    - Memoise `plan` on `JSON.stringify` of its inputs, without the items array, keyed by ids.
+11. **Extra tests (add to planner.test.ts):**
+    - **Skipping an area uses the shortest path.** Musts only in the Cultural Triangle and the South coast give `travelHours === shortest(AIR,Sigiriya) + shortest(Sigiriya,Weligama) + shortest(Weligama,AIR)`, computed with the same `shortest`.
+    - **At most one sunrise item per day** in the "everything Keen, 14 days" plan.
+    - **The knuckles item** (11 h weight) is placeable at pace 0 (H=11) and at pace 1: its day holds only it.
+    - **Udawalawe weight.** With the Tissa variant (yala chosen), choosing udawalawe adds `2 * shortest(Tissa, Udawalawe)` to its weight. Test it through a 5-day plan where yala and udawalawe are both Must: either both fit, or `missingMusts` names one, but `days.length === 5` either way.
+
+### C. Group (T3) rule changes
+1. **The contested list** is computed once from the base plan:
+   - items not chosen that are a Must for at least 1 person, or a Keen for at least 2
+   - sorted by group score descending, ids as the tie-break
+   - capped at 5
+2. **Sequential forks.**
+   - Walk the contested list in order with a running `forceIn F` and `forceOut O` (both start empty) and a running plan `P = plan(group, F, O)`.
+   - For each contested item c:
+     - If c is in `P.chosen`, skip it. It got in for free.
+     - If c is in O, skip it. An earlier winner displaced it, and it is listed in `results` as displaced.
+     - Compute `Q = plan(group, F ∪ {c}, O)`. If `Q.forceFailed`, c goes to extras, with no fork.
+     - `b = P.chosen − Q.chosen`, without F. `a = [c, ...(Q.chosen − P.chosen − {c})]`. The fork id is `ko:${c}:${[...b].sort().join(',')}`.
+     - The fork resolves when one side has at least 3 votes. Votes on fork ids not in the current list are ignored.
+     - If it resolves to a: F += c, O += b. If b: O += c. Recompute P and continue.
+     - If it is unresolved, push it to `knockouts` and continue with the next contested item, without applying it. Later forks are computed against P without it.
+3. **`final`** = P once every fork in the walk is resolved or skipped, else null. **`base`** = the plan with no forks applied.
+4. **Types.** Add to `GroupResult`: `results: { forkId: string; a: string[]; b: string[]; winner: 'a' | 'b' | 'displaced' }[]`. Add to `Knockout`: `votes: { a: Person[]; b: Person[] }`.
+5. **The group plan is built without `mustIds`**, so it never claims "doesn't fit". The UI never shows the fit warning on group plans.
+6. **Items freeze** when the group stage opens. Suggestions approved after `open` don't enter the group calculation, and the UI hides approve buttons once open.
+7. **Replace the plan's resolution test with this one:**
+
+```ts
+it('resolves forks sequentially, never deadlocks, and every fork id is stable across calls', () => {
+  const s = base(); let g = groupResult(s, items, L);
+  const ids1 = g.knockouts.map(k => k.forkId);
+  expect(groupResult(s, items, L).knockouts.map(k => k.forkId)).toEqual(ids1);
+  for (let round = 0; round < 6 && !g.final; round++) {
+    for (const k of g.knockouts) for (const name of ['Brittany', 'Alex', 'Lazza'] as const) s.votes.push({ forkId: k.forkId, name, choice: 'a' });
+    g = groupResult(s, items, L);
+  }
+  expect(g.final).not.toBeNull();
+  expect(g.final!.days.length).toBe(9);
+  const winners = g.results.filter(r => r.winner === 'a').map(r => r.a[0]);
+  for (const w of winners) expect(g.final!.chosen).toContain(w);
+  expect(g.knockouts.length).toBe(0);
+});
+it('three votes resolve a fork even if two people never vote', () => {
+  const s = base(); const g = groupResult(s, items, L); const k = g.knockouts[0];
+  for (const name of ['Alex', 'Antek', 'Saulie'] as const) s.votes.push({ forkId: k.forkId, name, choice: 'b' });
+  const g2 = groupResult(s, items, L);
+  expect(g2.results.find(r => r.forkId === k.forkId)?.winner).toBe('b');
+});
+it('group logic is fast enough', () => {
+  const t = performance.now(); groupResult(base(), items, L); expect(performance.now() - t).toBeLessThan(4000);
+});
+```
+
+8. **Mutation for T3:** use a threshold of 2 votes, and the "three votes" test still passes but the first test must fail, because forks resolve early. If both still pass, write a test where 2 a-votes alone must leave the fork open.
+
+### D. UI (T5a/T5b)
+- MyTrip shows "Your Musts fit in N days" only for personal plans. The Plan screen shows "N of 5 voted" per open fork instead of flipping silently.
+- After the group opens, Suggest hides the approve buttons and says new ideas will not change this plan.
+- Copy is imported from `src/content/copy.json` by `state.ts`. T5b imports only the `state.ts` exports listed above, so T5b runs after T5a's `state.ts` lands.

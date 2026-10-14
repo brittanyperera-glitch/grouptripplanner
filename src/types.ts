@@ -12,7 +12,7 @@ export type Hub = 'AIR' | 'Colombo' | 'Sigiriya' | 'Kandy' | 'Kitulgala' | 'Nuwa
 export interface Item {
   id: string; name: string; area: Area; about: string; hours: number; slot: Slot; fee: string;
   sideTrip: number; book?: string; warn?: string; photo?: string; hub?: Hub;
-  google?: { rating: string; reviews: string; url: string }; suggestedBy?: Person; credit?: string;
+  google?: { rating: string; reviews: string; url: string }; suggestedBy?: Person; credit?: string; when?: string;
 }
 export interface Leg { a: Hub; b: Hub; hours: number; src: string }
 export type Pace = 0 | 1 | 2; // pack, balanced, slow
@@ -26,6 +26,7 @@ export interface Day { n: number; area: Area | null; entries: DayEntry[]; spare:
 export interface Plan {
   route: Hub[]; areas: Area[]; days: Day[]; chosen: string[]; dropped: string[];
   travelHours: number; fits: boolean; missingMusts: string[]; score: number;
+  overflow?: boolean; forceFailed?: boolean;
 }
 export type Person = 'Brittany' | 'Alex' | 'Antek' | 'Lazza' | 'Saulie';
 export const PEOPLE: Person[] = ['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie'];
@@ -44,10 +45,11 @@ export interface Store {
   vote(v: Vote): Promise<void>;
   subscribe(cb: (s: AppState) => void): () => void;
 }
-export interface Knockout { forkId: string; a: string[]; b: string[] } // a = contested item, b = items it would displace
+// a = contested item first, then anything else forcing it in adds; b = items it would displace
+export interface Knockout { forkId: string; a: string[]; b: string[]; votes: { a: Person[]; b: Person[] } }
 export interface GroupResult {
   open: boolean; days: number; pace: Pace; base: Plan | null; knockouts: Knockout[];
-  resolved: Record<string, 'a' | 'b'>; final: Plan | null;
+  results: { forkId: string; a: string[]; b: string[]; winner: 'a' | 'b' | 'displaced' }[]; final: Plan | null;
   extras: { id: string; who: { name: Person; tier: Tier }[] }[];
 }
 export const AREA_HUB: Record<Area, Hub> = {

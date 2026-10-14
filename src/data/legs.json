@@ -112,5 +112,23 @@
   "b": "Tissa",
   "hours": 1.17,
   "src": "maps_legs_extra.md: Udawalawe National Park -> Tissamaharama 1 hr 10 min"
+ },
+ {
+  "a": "Colombo",
+  "b": "Kitulgala",
+  "hours": 2.98,
+  "src": "maps_legs_extra.md: Colombo -> Kitulgala 2 hr 59 min"
+ },
+ {
+  "a": "AIR",
+  "b": "Kitulgala",
+  "hours": 2.73,
+  "src": "maps_legs_extra.md: Bandaranaike International Airport -> Kitulgala 2 hr 44 min"
+ },
+ {
+  "a": "Kitulgala",
+  "b": "Weligama",
+  "hours": 4.43,
+  "src": "maps_legs_extra.md: Kitulgala -> Weligama 4 hr 26 min"
  }
 ]
