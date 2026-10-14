@@ -22,10 +22,9 @@ export default function Rate({ item, n, total, copy, onTier }: {
           {item.about && <div className="about">{item.about}</div>}
           <div className="facts">{facts(item)}</div>
           {item.warn && <div className="fact-warn"><b>Heads up:</b> {item.warn}</div>}
+          {extra.approved && <div className="approved">👍 Brittany approved</div>}
           {item.google && (
-            <a className="gr" href={item.google.url} target="_blank" rel="noopener noreferrer">
-              ★ {item.google.rating} ({item.google.reviews})
-            </a>
+            <a className="gr" href={item.google.url} target="_blank" rel="noopener noreferrer">See it on Google Maps</a>
           )}
           {extra.review && (
             <div className="review">

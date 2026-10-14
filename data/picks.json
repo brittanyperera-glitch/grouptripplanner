@@ -1,0 +1,19 @@
+{
+ "_note": "Brittany's shortlist decisions, exported from the shortlist page's db (collection picks) on 2026-10-14. keep false = removed from the app; missing = undecided, stays in. take = her message, review = her pasted review line, shown as written.",
+ "picks": {
+  "anuradhapura": {"keep": true}, "beachday": {"keep": true}, "coconut": {"keep": true},
+  "crab": {"keep": true, "review": "\"Asia's 50 Best Restaurants: The restaurant has been featured on the main list\"  Google AI Overview"},
+  "dambulla": {"keep": true}, "diyaluma": {"keep": true}, "elephants": {"keep": true}, "ellarock": {"keep": true},
+  "galle": {"keep": true},
+  "galleface": {"keep": true, "review": "Yasantha B\n\"I visited Galle Face to watch the FIFA 2026 Final on the big screen.\" \nGoogle Review"},
+  "hiriketiya": {"keep": true}, "horton": {"keep": true}, "knuckles": {"keep": true}, "littleadams": {"keep": true},
+  "ninearch": {"keep": true},
+  "pettah": {"keep": true, "review": "Azhani Azizi \n\"Surprisingly, there are a lot of things you can buy here. Like a literal market\" - Google Review"},
+  "pidurangala": {"keep": true}, "polonnaruwa": {"keep": true}, "rafting": {"keep": true},
+  "rooftop": {"keep": true, "review": "Shai Schwartz\n\"you can see Colombo and BEYOND! I went around Ten times and every time it was fresh \"\nGoogle Review\n"},
+  "sigiriya": {"keep": true}, "tea": {"keep": true}, "tooth": {"keep": true}, "train": {"keep": true},
+  "udawalawe": {"keep": true}, "village": {"keep": true}, "yala": {"keep": true}, "zipline": {"keep": true},
+  "bawa": {"keep": false}, "foodtour": {"keep": false}, "gangaramaya": {"keep": false}, "junglebeach": {"keep": false},
+  "kottu": {"keep": false}, "lavinia": {"keep": false}, "lipton": {"keep": false}, "surf": {"keep": false}, "whales": {"keep": false}
+ }
+}

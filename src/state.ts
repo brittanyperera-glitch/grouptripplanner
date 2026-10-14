@@ -16,7 +16,7 @@ export interface Copy {
   welcome: string;
   welcomeSub?: string;
   quips: { name: Record<string, Quip>; days: Record<string, Quip>; pace: Record<string, Quip>; tier: Record<string, Quip> };
-  items: Record<string, { take?: string; review?: string; reviewUrl?: string }>;
+  items: Record<string, { take?: string; review?: string; reviewUrl?: string; approved?: boolean }>;
 }
 
 interface AppValue {

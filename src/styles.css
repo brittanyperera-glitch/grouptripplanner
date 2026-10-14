@@ -183,3 +183,4 @@ h1.big { margin: 0; }
 .body > h1.big:first-child { margin-top: 18px; }
 .nophoto { flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: 4px; }
 .nopic { font-size: 11px; font-weight: 600; opacity: .85; letter-spacing: .02em; }
+.approved { font-size: 13.5px; font-weight: 800; color: var(--tea, #0B5D3B); }

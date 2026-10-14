@@ -132,13 +132,14 @@ describe('rating card', () => {
     await screen.findByRole('button', { name: 'Must' });
   }
 
-  it('shows credit, facts, and the Google rating as a new tab link', async () => {
+  it('shows credit, facts, and a Google Maps link with no star rating', async () => {
     await onCard(THREE);
     expect(screen.getByText(/Credit a/)).toBeInTheDocument();
     expect(screen.getByText('Cultural Triangle · morning · 3 h · free')).toBeInTheDocument();
-    const link = screen.getByRole('link', { name: /★ 4\.7 \(24,355\)/ });
+    const link = screen.getByRole('link', { name: 'See it on Google Maps' });
     expect(link).toHaveAttribute('href', 'https://maps.example/a');
     expect(link).toHaveAttribute('target', '_blank');
+    expect(screen.queryByText(/★/)).not.toBeInTheDocument();
     expect(screen.getByText('1 of 3')).toBeInTheDocument();
   });
 
