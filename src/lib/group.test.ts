@@ -116,3 +116,62 @@ describe('group performance', () => {
     const t = performance.now(); groupResult(base(), items, L); expect(performance.now() - t).toBeLessThan(4000);
   });
 });
+
+// Two people want the north, three want the south, everyone else is Meh, 9 days, balanced pace.
+const NORTH_AREAS = ['North', 'East coast'];
+const northIds = items.filter(i => NORTH_AREAS.includes(i.area)).map(i => i.id);
+const splitState = (northMust: string[], southMust: string[]): AppState => {
+  const mk = (name: Person, must: string[]): Response => {
+    const r = emptyRanking(); r.must = must.map(m => [m]); r.meh = items.filter(i => !must.includes(i.id)).map(i => [i.id]);
+    return { name, days: 9, flex: false, pace: 1, ranking: r, rated: items.map(i => i.id), submitted: true, updatedAt: '' };
+  };
+  return { responses: {
+    Brittany: mk('Brittany', northMust), Alex: mk('Alex', northMust),
+    Antek: mk('Antek', southMust), Lazza: mk('Lazza', southMust), Saulie: mk('Saulie', southMust),
+  }, suggestions: [], votes: [] };
+};
+const NORTH_MUST = ['jaffna', 'delft', 'trinco'], SOUTH_MUST = ['sigiriya', 'yala', 'galle'];
+
+describe('North or South region knockout', () => {
+  it('2 north vs 3 south yields one region fork first and no item forks for north items while open', () => {
+    const g = groupResult(splitState(NORTH_MUST, SOUTH_MUST), items, L);
+    expect(g.knockouts.filter(k => k.forkId.startsWith('region:')).map(k => k.forkId)).toEqual(['region:north']);
+    expect(g.knockouts[0].forkId).toBe('region:north');
+    for (const id of ['jaffna', 'trinco', 'delft']) expect(g.knockouts.map(k => k.forkId)).not.toContain(`ko:${id}`);
+    const k = g.knockouts[0];
+    expect(k.a.length).toBeGreaterThan(0); expect(k.a.every(id => northIds.includes(id))).toBe(true);
+    expect(k.b.length).toBeGreaterThan(0); expect(k.b.every(id => !northIds.includes(id))).toBe(true);
+    expect(g.final).toBeNull();
+  });
+  it('no region fork when nobody rates a north item Must or Keen', () => {
+    const g = groupResult(splitState([], SOUTH_MUST), items, L);
+    expect(g.knockouts.some(k => k.forkId.startsWith('region:'))).toBe(false);
+    expect(g.results.some(r => r.forkId.startsWith('region:'))).toBe(false);
+  });
+  it('3 votes for South force every north item out; 3 votes for North put the north items in', () => {
+    const vote = (s: AppState, choice: 'a' | 'b') => { for (const name of ['Brittany', 'Alex', 'Lazza'] as const) s.votes.push({ forkId: 'region:north', name, choice }); };
+    const sB = splitState(NORTH_MUST, SOUTH_MUST); vote(sB, 'b');
+    const gB = groupResult(sB, items, L);
+    expect(gB.results[0]).toMatchObject({ forkId: 'region:north', winner: 'b' });
+    expect(gB.knockouts.some(k => k.a.some(id => northIds.includes(id)) || k.forkId.startsWith('region:'))).toBe(false);
+    expect(gB.results.some(r => r.winner === 'displaced' && northIds.includes(r.a[0]))).toBe(false);
+    const planB = gB.final ?? gB.base!;
+    expect(planB.chosen.some(id => northIds.includes(id))).toBe(false);
+    expect(planB.areas.some(a => NORTH_AREAS.includes(a))).toBe(false);
+
+    const fork = groupResult(splitState(NORTH_MUST, SOUTH_MUST), items, L).knockouts[0];
+    const sA = splitState(NORTH_MUST, SOUTH_MUST); vote(sA, 'a');
+    let gA = groupResult(sA, items, L);
+    expect(gA.results[0]).toMatchObject({ forkId: 'region:north', winner: 'a' });
+    expect(gA.knockouts.some(k => k.a.some(id => fork.a.includes(id)))).toBe(false);
+    // Remaining item knockouts (more north items) are settled against, so the plan only reflects the region result.
+    for (let round = 0; round < 6 && !gA.final; round++) {
+      for (const k of gA.knockouts) for (const name of ['Brittany', 'Alex', 'Lazza'] as const) sA.votes.push({ forkId: k.forkId, name, choice: 'b' });
+      gA = groupResult(sA, items, L);
+    }
+    expect(gA.final).not.toBeNull();
+    const planA = gA.final!;
+    for (const id of fork.a) expect(planA.chosen).toContain(id);
+    expect(planA.areas.some(a => NORTH_AREAS.includes(a))).toBe(true);
+  });
+});

@@ -5,6 +5,8 @@ import { score, scoresFor, tierOf } from './ranking';
 const VOTES_TO_RESOLVE = 3; // majority of 5
 const MAX_CONTESTED = 5;
 const EXTRAS_DAYS = 14;
+const NORTH_AREAS = new Set<string>(['North', 'East coast']);
+const REGION_FORK = 'region:north';
 
 const daysOf = (r: Response) => (r.flex ? 14 : r.days ?? 9);
 
@@ -48,7 +50,37 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
   const results: GroupResult['results'] = [];
   let P = baseP;
   const covered = new Set<string>(); // a-sides of open forks: one question per item
+
+  // "North or South?" is settled first, once, instead of one item knockout per northern item.
+  const north = ids.filter(id => NORTH_AREAS.has(items.find(i => i.id === id)!.area));
+  const northSet = new Set(north);
+  const northLiked =north.filter(id => rated(id, 'must') + rated(id, 'keen') >= 1);
+  const byScore = (x: string, y: string) => scores[y] - scores[x] || (x < y ? -1 : 1);
+  let skipNorth = false;
+  if (northLiked.length) {
+    const top = [...northLiked].sort(byScore)[0];
+    const planNorth = run(new Set([...F, top]), O);
+    const planSouth = run(F, new Set([...O, ...north]));
+    const mustBy = (id: string) => rated(id, 'must') >= 1;
+    const a =planNorth.chosen.filter(id => northSet.has(id)).sort(byScore);
+    const b = planSouth.chosen.filter(id => !northSet.has(id) && !planNorth.chosen.includes(id)).sort(byScore);
+    const southMustLost = planNorth.dropped.some(id => !northSet.has(id) && mustBy(id) && planSouth.chosen.includes(id));
+    const northMustLost = north.some(id => mustBy(id) && !planSouth.chosen.includes(id));
+    // b empty: going north costs nobody anything, so there is nothing to vote on.
+    if (!planNorth.forceFailed && a.length && b.length && (southMustLost || northMustLost)) {
+      skipNorth = true;
+      const latest = new Map<Person, 'a' | 'b'>();
+      for (const v of state.votes) if (v.forkId === REGION_FORK) latest.set(v.name, v.choice);
+      const who = (side: 'a' | 'b') => PEOPLE.filter(p => latest.get(p) === side);
+      const votes = { a: who('a'), b: who('b') };
+      if (votes.a.length >= VOTES_TO_RESOLVE) { a.forEach(id => F.add(id)); results.push({ forkId: REGION_FORK, a, b, winner: 'a' }); P = run(F, O); skipNorth = false; }
+      else if (votes.b.length >= VOTES_TO_RESOLVE) { north.forEach(id => O.add(id)); results.push({ forkId: REGION_FORK, a, b, winner: 'b' }); P = run(F, O); }
+      else { knockouts.push({ forkId: REGION_FORK, a, b, votes }); a.forEach(id => covered.add(id)); }
+    }
+  }
+
   for (const c of contested) {
+    if (skipNorth && northSet.has(c)) continue;
     if (P.chosen.includes(c)) continue;
     if (covered.has(c)) continue;
     if (O.has(c)) { results.push({ forkId: `ko:${c}:displaced`, a: [c], b: [], winner: 'displaced' }); continue; }

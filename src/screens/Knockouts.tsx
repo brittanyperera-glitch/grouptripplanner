@@ -5,6 +5,7 @@ import { PEOPLE } from '../types';
 import type { GroupResult, Item, Knockout } from '../types';
 
 const SHOWN_NAMES = 2;
+const REGION_FORK = 'region:north';
 
 export default function Knockouts({ group }: { group: GroupResult }) {
   const { state, me, store, items } = useApp();
@@ -41,11 +42,33 @@ export default function Knockouts({ group }: { group: GroupResult }) {
     );
   };
 
+  // North or South: one card, full lists on both sides (a = north, left; b = south, right).
+  const region = (k: Knockout) => (
+    <div key={k.forkId} role="group" aria-label="Knockout: North or South?" className="ko">
+      <div className="big">North or South?</div>
+      <div className="vs2">
+        {(['a', 'b'] as const).map(s => {
+          const ids = s === 'a' ? k.a : k.b;
+          const first = byId[ids[0]];
+          const mine = me !== null && k.votes[s].includes(me);
+          return (
+            <button key={s} className="pick" aria-pressed={mine} disabled={me === null} onClick={() => { if (me) void store.vote({ forkId: k.forkId, name: me, choice: s }); }}>
+              {first && <Cover item={first} className="ph" named={false} />}
+              <span className="tag">{s === 'a' ? 'North' : 'South'}</span>
+              {ids.map(id => <b key={id} style={{ display: 'block' }}>{nameOf(id)}</b>)}
+            </button>
+          );
+        })}
+      </div>
+      <div className="sub">{k.votes.a.length + k.votes.b.length} of {PEOPLE.length} voted</div>
+    </div>
+  );
+
   return (
     <section className="body" aria-label="Knockouts">
       {group.knockouts.length > 0 && <div className="big">Vote on these</div>}
       {group.knockouts.length > 0 && <div className="sub">Three votes settle each one.</div>}
-      {group.knockouts.map(k => (
+      {group.knockouts.map(k => k.forkId === REGION_FORK ? region(k) : (
         <div key={k.forkId} role="group" aria-label={`Knockout: ${names(k.a)} or ${names(k.b)}`} className="ko">
           <div className="vs2">{side(k, 'a')}{side(k, 'b')}</div>
           <div className="sub">{k.votes.a.length + k.votes.b.length} of {PEOPLE.length} voted</div>
@@ -56,9 +79,10 @@ export default function Knockouts({ group }: { group: GroupResult }) {
           <div className="tierhead">Decided</div>
           {group.results.map(r => (
             <div key={r.forkId} className="decided">
-              {r.winner === 'a' && `${names(r.a)} beat ${names(r.b)}`}
-              {r.winner === 'b' && `${names(r.b)} beat ${names(r.a)}`}
-              {r.winner === 'displaced' && `${names(r.a)} dropped out after an earlier result`}
+              {r.forkId === REGION_FORK && `${r.winner === 'a' ? 'North' : 'South'} beat ${r.winner === 'a' ? 'South' : 'North'}`}
+              {r.forkId !== REGION_FORK && r.winner === 'a' && `${names(r.a)} beat ${names(r.b)}`}
+              {r.forkId !== REGION_FORK && r.winner === 'b' && `${names(r.b)} beat ${names(r.a)}`}
+              {r.forkId !== REGION_FORK && r.winner === 'displaced' && `${names(r.a)} dropped out after an earlier result`}
             </div>
           ))}
         </div>
