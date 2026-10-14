@@ -4,6 +4,7 @@ import { shortest } from './paths';
 
 const SLOT_ORDER: Record<Slot, number> = { sunrise: 0, morning: 1, afternoon: 2, sunset: 3, evening: 4, late: 5, any: 6 };
 const RAIN_AREAS: Area[] = ['Hill country', 'Ella'];
+const NIGHT_SLOTS: Slot[] = ['sunset', 'evening', 'late'];
 const CHECKIN = 3;
 const TRAIN = 'train';
 const EPS = 1e-9;
@@ -16,7 +17,8 @@ interface Cand {
   travel: number; cap: number; ub: number; pool: Item[]; forced: Item[];
 }
 
-interface WorkDay { area: Area | null; entries: DayEntry[]; used: number; cap: number; closed: boolean }
+// dark: a sunset, evening or late activity has happened, so no more driving today.
+interface WorkDay { area: Area | null; entries: DayEntry[]; used: number; cap: number; closed: boolean; dark?: boolean }
 
 interface Ctx {
   input: PlanInput; H: number; budget: number; d: Dist; score: (id: string) => number;
@@ -134,12 +136,14 @@ function schedule(ctx: Ctx, c: Cand, chosen: Item[]): WorkDay[] {
   const put = (e: DayEntry, slot?: Slot) => {
     if (cur.entries.length > 0) {
       if (e.hours > H + EPS || cur.closed) newDay();
+      else if (cur.dark && (e.kind === 'drive' || e.kind === 'train')) newDay(); // no night drives on hill roads
       else if (slot === 'sunrise') newDay(); // one sunrise per day, never after another entry (B.5)
       else if (slot === 'morning' && cur.used > 3 + EPS) newDay();
       else if (e.hours > cur.cap - cur.used + EPS) newDay();
     }
     cur.entries.push(e); cur.used += e.hours;
     if (e.hours > H + EPS) cur.closed = true; // a long entry owns its whole day (B.3)
+    if (e.kind === 'activity' && slot && NIGHT_SLOTS.includes(slot)) cur.dark = true;
   };
   const w = (i: Item) => weightOf(i, c.wsHub, d);
   const train = chosen.find(i => i.id === TRAIN);
@@ -185,12 +189,12 @@ function assemble(ctx: Ctx, c: Cand, content: WorkDay[], f: number, merge: boole
   if (fd <= EPS) {
     days.push(finalDay([checkin]));
   } else if (capN >= -EPS) {
-    if (merge && days.length >= 2 && last.used <= capN + EPS) {
+    if (merge && days.length >= 2 && !last.dark && last.used <= capN + EPS) {
       last.entries.push(driveE, checkin); last.used += fd + CHECKIN; last.cap = H / 2;
     } else days.push(finalDay([driveE, checkin]));
   } else {
     const towards = { ...driveE, label: 'Drive towards the airport' };
-    if (!last.closed && days.length >= 2 && last.cap - last.used >= fd - EPS) { last.entries.push(towards); last.used += fd; }
+    if (!last.closed && !last.dark && days.length >= 2 && last.cap - last.used >= fd - EPS) { last.entries.push(towards); last.used += fd; }
     else days.push({ area: here, entries: [towards], used: fd, cap: H, closed: false });
     days.push(finalDay([checkin]));
   }

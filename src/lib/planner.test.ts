@@ -107,6 +107,22 @@ describe('plan, amendment B rules', () => {
       expect(p.overflow ? p.days.length >= days : p.days.length === days, `pace ${pace} days ${days}`).toBe(true);
     }
   });
+  it('never drives after a sunset, evening or late activity on the same day', () => {
+    const must = ['sigiriya', 'elephants', 'tooth', 'train', 'ellarock', 'yala', 'surf', 'galle'];
+    const keen = Object.fromEntries(items.map(i => [i.id, 4]));
+    const plans = [
+      plan({ items, scores: sc(must), days: 9, pace: 1, legs: L, mustIds: must }),
+      plan({ items, scores: keen, days: 14, pace: 1, legs: L }),
+    ];
+    const night = new Set(['sunset', 'evening', 'late']);
+    for (const p of plans) for (const day of p.days) {
+      let dark = false;
+      for (const e of day.entries) {
+        if (e.kind === 'drive') expect(dark, `day ${day.n}: ${e.label}`).toBe(false);
+        if (e.kind === 'activity' && night.has(byId.get(e.itemId!)!.slot)) dark = true;
+      }
+    }
+  });
   it('ignores an infeasible forceIn and says so', () => {
     const all = items.map(i => i.id);
     const p = plan({ items, scores: sc(['sigiriya']), days: 5, pace: 1, legs: L, forceIn: all });
