@@ -70,6 +70,25 @@ describe('group', () => {
     const s = base(); s.votes.push({ forkId: 'ko:nope:', name: 'Alex', choice: 'a' });
     expect(groupResult(s, items, L).knockouts.map(k => k.forkId)).toEqual(groupResult(base(), items, L).knockouts.map(k => k.forkId));
   });
+  it('fork ids are ko:<contested item> and votes survive an earlier fork resolving (R5)', () => {
+    const s = base(); const g0 = groupResult(s, items, L);
+    expect(g0.knockouts.length).toBeGreaterThan(1);
+    for (const k of g0.knockouts) expect(k.forkId).toBe(`ko:${k.a[0]}`);
+    const first = g0.knockouts[0], second = g0.knockouts[1];
+    for (const name of ['Alex', 'Antek'] as const) s.votes.push({ forkId: second.forkId, name, choice: 'a' });
+    for (const name of ['Brittany', 'Alex', 'Lazza'] as const) s.votes.push({ forkId: first.forkId, name, choice: 'a' });
+    const g1 = groupResult(s, items, L);
+    expect(g1.results.find(r => r.forkId === first.forkId)?.winner).toBe('a');
+    const kept = g1.knockouts.find(k => k.forkId === second.forkId);
+    expect(kept).toBeDefined(); expect(kept!.votes.a).toEqual(['Alex', 'Antek']);
+  });
+  it('R6: no extras when the group already has 14 days; otherwise extras are computed at 14', () => {
+    const s = base(); s.responses.Brittany!.days = 14; s.responses.Saulie!.days = 14; s.responses.Lazza!.days = 14;
+    const g14 = groupResult(s, items, L);
+    expect(g14.days).toBe(14); expect(g14.extras).toEqual([]);
+    const g9 = groupResult(base(), items, L);
+    expect(g9.days).toBe(9); expect(g9.extras.length).toBeGreaterThan(0);
+  });
   it('group plan never claims it does not fit', () => {
     const g = groupResult(base(), items, L);
     expect(g.base!.missingMusts).toEqual([]);

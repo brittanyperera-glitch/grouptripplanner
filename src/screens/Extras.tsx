@@ -3,10 +3,10 @@ import type { GroupResult } from '../types';
 
 export default function Extras({ group }: { group: GroupResult }) {
   const { items } = useApp();
-  if (group.extras.length === 0) return null;
+  if (group.days >= 14 || group.extras.length === 0) return null;
   return (
     <section className="body" aria-label="Extras">
-      <div className="big">With 14 days you'd also get</div>
+      <div className="big">{`With 14 days instead of ${group.days} you'd also get`}</div>
       {group.extras.map(e => (
         <div key={e.id} className="row2">
           <span>{items.find(i => i.id === e.id)?.name ?? e.id}</span>

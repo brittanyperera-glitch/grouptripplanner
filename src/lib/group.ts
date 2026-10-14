@@ -58,7 +58,8 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
     if (!b.length) { F.add(c); P = Q; continue; }
     const a = [c, ...Q.chosen.filter(id => !P.chosen.includes(id) && id !== c)];
     if (a.some(id => covered.has(id))) continue; // overlaps an open fork: it rides on that one
-    const forkId = `ko:${c}:${[...b].sort().join(',')}`;
+    // Keyed on c alone: a vote for 'a' means "add c", which stays true when b shifts after an earlier result.
+    const forkId = `ko:${c}`;
     const latest = new Map<Person, 'a' | 'b'>();
     for (const v of state.votes) if (v.forkId === forkId) latest.set(v.name, v.choice);
     const who = (side: 'a' | 'b') => PEOPLE.filter(p => latest.get(p) === side);
@@ -70,7 +71,7 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
 
   const final = knockouts.length ? null : P;
   const kept = new Set((final ?? baseP).chosen);
-  const extras = run(new Set(), new Set(), EXTRAS_DAYS).chosen
+  const extras = (days >= EXTRAS_DAYS ? [] : run(new Set(), new Set(), EXTRAS_DAYS).chosen)
     .filter(id => !kept.has(id))
     .map(id => ({ id, who: rs.flatMap(r => { const t = tierOf(r.ranking, id); return t === 'must' || t === 'keen' ? [{ name: r.name, tier: t }] : []; }) }))
     .filter(e => e.who.length > 0)
