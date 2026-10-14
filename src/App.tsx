@@ -16,6 +16,7 @@ import Rerank from './screens/Rerank';
 import Suggest from './screens/Suggest';
 import Waiting from './screens/Waiting';
 import { AppProvider, useApp } from './state';
+import { connectionMissingNow } from './store';
 import { AREAS, emptyRanking, PEOPLE } from './types';
 import type { Item, Pace as PaceT, Pending, Person, Ranking, Response, Store, Tier } from './types';
 
@@ -72,11 +73,13 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
   const [step, setStep] = useState<Step>(() => (draft.days === null ? 'days' : draft.pace === null ? 'pace' : draft.submitted ? 'tabs' : 'rate'));
   const [tab, setTab] = useState<Tab>('My trip');
   const [placing, setPlacing] = useState<Placing | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const save = useCallback((patch: Partial<Omit<Response, 'name'>>) => {
     ref.current = { ...ref.current, ...patch };
     setDraft(ref.current);
-    void store.saveResponse(me, patch);
+    const { days, flex, pace, ranking, rated, submitted } = ref.current;
+    void store.saveResponse(me, { days, flex, pace, ranking, rated, submitted });
   }, [store, me]);
 
   const byId = Object.fromEntries(items.map(i => [i.id, i])) as Record<string, Item>;
@@ -85,10 +88,17 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
     .sort((a, b) => AREAS.indexOf(a.area) - AREAS.indexOf(b.area));
   const locked = PEOPLE.every(p => (p === me ? draft.submitted : state.responses[p]?.submitted));
   const shown: Step = locked ? 'tabs' : step;
+  const active = locked ? null : placing;
+
+  useEffect(() => { if (locked) setPlacing(null); }, [locked]);
+
+  const changeDays = () => { setEditing(true); setStep('days'); };
+  const changeLink = <button className="link" onClick={changeDays}>Change days or pace</button>;
 
   const commit = (r: Ranking, id: string) => save({ ranking: r, rated: draft.rated.includes(id) ? draft.rated : [...draft.rated, id] });
 
   const pickTier = (item: Item, tier: Tier) => {
+    if (locked) return;
     const r = structuredClone(draft.ranking);
     removeId(r, item.id);
     const pending = startPlace(r, item.id, tier);
@@ -98,22 +108,23 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
   };
 
   const onAnswer = (a: 'new' | 'old' | 'same') => {
-    if (!placing) return;
-    const r = structuredClone(placing.ranking);
-    const next = answer(r, placing.pending, a);
-    if (next) { setPlacing({ ...placing, ranking: r, pending: next }); return; }
-    commit(r, placing.pending.id);
+    if (!active) return;
+    const r = structuredClone(active.ranking);
+    const next = answer(r, active.pending, a);
+    if (next) { setPlacing({ ...active, ranking: r, pending: next }); return; }
+    commit(r, active.pending.id);
     setPlacing(null);
   };
 
   const onMove = (id: string, dir: -1 | 1) => {
+    if (locked) return;
     const r = structuredClone(draft.ranking);
     move(r, id, dir);
     save({ ranking: r });
   };
 
   const onRetier = (id: string, tier: Tier) => {
-    if (tierOf(draft.ranking, id) === tier) return;
+    if (locked || tierOf(draft.ranking, id) === tier) return;
     const r = structuredClone(draft.ranking);
     const pending = retier(r, id, tier);
     say(copy.quips.tier[tier]);
@@ -127,18 +138,19 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
   };
 
   let content;
-  if (placing) {
-    content = <Compare ranking={placing.ranking} pending={placing.pending} byId={byId} onAnswer={onAnswer} onCancel={placing.source === 'rerank' ? () => setPlacing(null) : undefined} />;
+  if (active) {
+    content = <Compare ranking={active.ranking} pending={active.pending} byId={byId} onAnswer={onAnswer} onCancel={() => setPlacing(null)} />;
   } else if (shown === 'days') {
     content = <Days days={draft.days} flex={draft.flex} onPick={(days, flex) => {
       save({ days, flex });
       say(copy.quips.days[flex ? 'flex' : String(days)]);
-      setStep(draft.pace === null ? 'pace' : draft.submitted ? 'tabs' : 'rate');
+      setStep(editing || draft.pace === null ? 'pace' : draft.submitted ? 'tabs' : 'rate');
     }} />;
   } else if (shown === 'pace') {
     content = <Pace pace={draft.pace} onBack={() => setStep('days')} onPick={(p: PaceT) => {
       save({ pace: p });
       say(copy.quips.pace[String(p)]);
+      setEditing(false);
       setStep(draft.submitted ? 'tabs' : 'rate');
     }} />;
   } else if (shown === 'rate' && unrated.length > 0) {
@@ -158,6 +170,7 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
           {!locked && unrated.length > 0 && (
             <button className="cta" onClick={() => setStep('rate')}>{unrated.length} new to rate</button>
           )}
+          {!locked && changeLink}
         </div>
         <div className="tabs" role="tablist">
           {TABS.map(t => <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>{t}</button>)}
@@ -168,7 +181,7 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
 
   return (
     <>
-      <div className="top"><span><b>{me}</b> <button className="link" onClick={clearMe}>Not you?</button></span><span>{placing ? 'Compare' : { days: 'Days', pace: 'Pace', rate: 'Rating', tabs: '' }[shown]}</span></div>
+      <div className="top"><span><b>{me}</b> <button className="link" onClick={clearMe}>Not you?</button></span><span>{active ? 'Compare' : shown === 'rate' ? changeLink : { days: 'Days', pace: 'Pace', rate: '', tabs: '' }[shown]}</span></div>
       {content}
     </>
   );
@@ -195,5 +208,12 @@ function Shell() {
 
 export default function App({ store }: { store?: Store }) {
   useEffect(() => { document.title = 'Sri Lanka Trip Picker'; }, []);
+  if (!store && connectionMissingNow()) {
+    return (
+      <div className="app">
+        <div className="body" role="alert"><div className="big">Not connected to the shared database. Ask Brittany to add the Supabase keys.</div></div>
+      </div>
+    );
+  }
   return <AppProvider store={store}><Shell /></AppProvider>;
 }

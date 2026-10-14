@@ -1,9 +1,10 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import catalogue from './data/catalogue.json';
 import legsData from './data/legs.json';
 import copyData from './content/copy.json';
 import { getStore } from './store';
+import { WriteQueue } from './store/queue';
 import { PEOPLE } from './types';
 import type { AppState, Item, Leg, Person, Store } from './types';
 
@@ -19,6 +20,7 @@ interface AppValue {
 }
 
 const ME_KEY = 'tp:me';
+const copy: Copy = copyData;
 
 export function liveItems(state: AppState): Item[] {
   const base = (catalogue as unknown as { items: Item[] }).items;
@@ -46,32 +48,24 @@ export function useApp(): AppValue {
   return v;
 }
 
-// Wraps a store so a failed write keeps local state, raises the retry banner and is replayed by retry().
-function guarded(base: Store, queue: { current: Array<() => Promise<void>> }, fail: () => void): Store {
-  const run = async (op: () => Promise<void>) => {
-    try { await op(); } catch { queue.current.push(op); fail(); }
-  };
-  return {
-    load: () => base.load(),
-    saveResponse: (n, p) => run(() => base.saveResponse(n, p)),
-    addSuggestion: s => run(() => base.addSuggestion(s)),
-    setSuggestionStatus: (id, st) => run(() => base.setSuggestionStatus(id, st)),
-    vote: v => run(() => base.vote(v)),
-    subscribe: cb => base.subscribe(cb),
-  };
-}
-
 export function AppProvider({ children, store: injected }: { children: ReactNode; store?: Store }) {
-  const base = useMemo(() => injected ?? getStore(), [injected]);
-  const queue = useRef<Array<() => Promise<void>>>([]);
+  const [attempt, setAttempt] = useState(0);
+  const base = useMemo<Store | null>(() => {
+    if (injected) return injected;
+    try { return getStore(); } catch { return null; }
+  }, [injected, attempt]);
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<AppState | null>(null);
   const [me, setMeState] = useState<Person | null>(readMe);
-  const store = useMemo(() => guarded(base, queue, () => setError("Couldn't save")), [base]);
+  const queue = useMemo(() => base && new WriteQueue(base, {
+    onFail: () => setError("Couldn't save"),
+    onClear: () => setError(e => (e === "Couldn't save" ? null : e)),
+  }), [base]);
   const legs = legsData as unknown as Leg[];
 
   const load = useCallback(async () => {
     try {
+      if (!base) throw new Error('no store');
       setState(await base.load());
       setError(null);
     } catch {
@@ -81,20 +75,13 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
 
   useEffect(() => {
     void load();
-    return base.subscribe(setState);
+    return base?.subscribe(setState);
   }, [base, load]);
 
   const retry = useCallback(() => {
-    void (async () => {
-      const pending = queue.current;
-      queue.current = [];
-      for (const op of pending) {
-        try { await op(); } catch { queue.current.push(op); }
-      }
-      if (queue.current.length > 0) { setError("Couldn't save"); return; }
-      await load();
-    })();
-  }, [load]);
+    if (!queue) { setAttempt(a => a + 1); return; }
+    void queue.flush().then(ok => (ok ? load() : undefined));
+  }, [queue, load]);
 
   const setMe = useCallback((p: Person) => {
     try { localStorage.setItem(ME_KEY, p); } catch { /* storage unavailable: the pick lasts this visit */ }
@@ -113,6 +100,6 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
         : createElement('div', { className: 'body' }, createElement('div', { className: 'sub' }, 'Loading')));
   }
 
-  const value: AppValue = { state, me, setMe, clearMe, store, items: liveItems(state), legs, copy: copyData as unknown as Copy, error, retry };
+  const value: AppValue = { state, me, setMe, clearMe, store: (queue as WriteQueue).store, items: liveItems(state), legs, copy, error, retry };
   return createElement(Ctx.Provider, { value }, children);
 }

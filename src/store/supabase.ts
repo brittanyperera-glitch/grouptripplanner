@@ -19,6 +19,8 @@ const toResponse = (r: RespRow): Response => ({
   updatedAt: r.updated_at ?? new Date(0).toISOString(),
 });
 
+const RELOAD_DEBOUNCE_MS = 200;
+
 export class SupabaseStore implements Store {
   private db: SupabaseClient;
 
@@ -47,26 +49,20 @@ export class SupabaseStore implements Store {
   }
 
   async saveResponse(name: Person, patch: Partial<Omit<Response, 'name'>>): Promise<void> {
-    // Read-merge-write so a partial patch never nulls the person's other columns.
-    const { data, error: readErr } = await this.db.from('responses').select('*').eq('name', name).maybeSingle();
-    if (readErr) throw readErr;
-    const base: Response = data
-      ? toResponse(data as RespRow)
-      : { name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: '' };
-    const m = { ...base, ...patch };
-    const { error } = await this.db.from('responses').upsert(
-      {
-        name, days: m.days, flex: m.flex, pace: m.pace, ranking: m.ranking, rated: m.rated,
-        submitted: m.submitted, updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'name' },
-    );
+    // The queue sends the full current row, so there is no server read to merge against. Only
+    // the columns present in the patch are written, which keeps a partial patch from nulling the rest.
+    const cols: Record<string, unknown> = { name, updated_at: new Date().toISOString() };
+    for (const k of ['days', 'flex', 'pace', 'ranking', 'rated', 'submitted'] as const) {
+      if (patch[k] !== undefined) cols[k] = patch[k];
+    }
+    const { error } = await this.db.from('responses').upsert(cols, { onConflict: 'name' });
     if (error) throw error;
   }
 
+  // 80 and 300 match the CHECK constraints in schema.sql, so an over-long entry is cut rather than rejected forever.
   async addSuggestion(s: { name: Person; title: string; area: Suggestion['area']; note: string }): Promise<void> {
     const { error } = await this.db.from('suggestions').insert({
-      id: crypto.randomUUID(), name: s.name, title: s.title, area: s.area, note: s.note, status: 'pending',
+      id: crypto.randomUUID(), name: s.name, title: s.title.slice(0, 80), area: s.area, note: s.note.slice(0, 300), status: 'pending',
     });
     if (error) throw error;
   }
@@ -85,11 +81,24 @@ export class SupabaseStore implements Store {
   }
 
   subscribe(cb: (s: AppState) => void): () => void {
-    const reload = () => { void this.load().then(cb).catch(() => undefined); };
+    // Debounced, and only the newest reload may apply: an older snapshot resolving late must not win.
+    let seq = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const reload = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const mine = ++seq;
+        void this.load().then(s => { if (mine === seq) cb(s); }).catch(() => undefined);
+      }, RELOAD_DEBOUNCE_MS);
+    };
     const channel = this.db
       .channel('tp')
       .on('postgres_changes', { event: '*', schema: 'public' }, reload)
       .subscribe();
-    return () => { void this.db.removeChannel(channel); };
+    return () => {
+      clearTimeout(timer);
+      seq++;
+      void this.db.removeChannel(channel);
+    };
   }
 }
