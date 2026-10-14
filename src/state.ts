@@ -8,9 +8,14 @@ import { WriteQueue } from './store/queue';
 import { PEOPLE } from './types';
 import type { AppState, Item, Leg, Person, Store } from './types';
 
+// A quip is one line, or a list the app picks from at random so it doesn't repeat.
+export type Quip = string | string[];
+export const pickQuip = (q?: Quip): string | undefined =>
+  Array.isArray(q) ? (q.length ? q[Math.floor(Math.random() * q.length)] : undefined) : q;
 export interface Copy {
   welcome: string;
-  quips: { name: Record<string, string>; days: Record<string, string>; pace: Record<string, string>; tier: Record<string, string> };
+  welcomeSub?: string;
+  quips: { name: Record<string, Quip>; days: Record<string, Quip>; pace: Record<string, Quip>; tier: Record<string, Quip> };
   items: Record<string, { take?: string; review?: string; reviewUrl?: string }>;
 }
 

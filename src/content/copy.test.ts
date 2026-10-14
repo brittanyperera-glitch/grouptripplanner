@@ -2,16 +2,19 @@ import { describe, expect, it } from 'vitest';
 import copyData from './copy.json';
 import type { Copy } from '../state';
 
-const isStringMap = (v: unknown): v is Record<string, string> =>
-  typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every(x => typeof x === 'string');
+// A quip is one string or a non-empty list of strings (picked at random).
+const isQuip = (x: unknown) => typeof x === 'string' || (Array.isArray(x) && x.length > 0 && x.every(y => typeof y === 'string'));
+const isQuipMap = (v: unknown): boolean =>
+  typeof v === 'object' && v !== null && !Array.isArray(v) && Object.values(v).every(isQuip);
 
 function problems(c: unknown): string[] {
   const out: string[] = [];
   const o = c as Record<string, unknown>;
   if (typeof o?.welcome !== 'string') out.push('welcome must be a string');
+  if (o?.welcomeSub !== undefined && typeof o.welcomeSub !== 'string') out.push('welcomeSub must be a string');
   const q = o?.quips as Record<string, unknown> | undefined;
   for (const k of ['name', 'days', 'pace', 'tier']) {
-    if (!isStringMap(q?.[k])) out.push(`quips.${k} must be a map of strings`);
+    if (!isQuipMap(q?.[k])) out.push(`quips.${k} must be a map of strings or string lists`);
   }
   const items = o?.items;
   if (typeof items !== 'object' || items === null || Array.isArray(items)) out.push('items must be a map');
@@ -34,6 +37,11 @@ describe('copy.json', () => {
   });
 
   it('the checker rejects a string where a map belongs', () => {
-    expect(problems({ welcome: '', quips: { name: '', days: {}, pace: {}, tier: {} }, items: {} })).toEqual(['quips.name must be a map of strings']);
+    expect(problems({ welcome: '', quips: { name: '', days: {}, pace: {}, tier: {} }, items: {} })).toEqual(['quips.name must be a map of strings or string lists']);
+  });
+
+  it('the checker rejects an empty list or a non-string in a list', () => {
+    expect(problems({ welcome: '', quips: { name: {}, days: {}, pace: {}, tier: { must: [] } }, items: {} })).toEqual(['quips.tier must be a map of strings or string lists']);
+    expect(problems({ welcome: '', quips: { name: {}, days: {}, pace: {}, tier: { must: ['ok', 3] } }, items: {} })).toEqual(['quips.tier must be a map of strings or string lists']);
   });
 });

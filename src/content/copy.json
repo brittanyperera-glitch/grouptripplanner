@@ -1,5 +1,25 @@
 {
-  "welcome": "",
-  "quips": { "name": {}, "days": {}, "pace": {}, "tier": {} },
+  "welcome": "Trip Planning. Optimized.",
+  "welcomeSub": "Britt's solution to group chat debates",
+  "quips": {
+    "name": {
+      "Alex": "solo wolf joins the team - what's left on your list?",
+      "Antek": "hello there. ready to meet the family?",
+      "Lazza": "post-blounge activities must be chosen",
+      "Saulie": "sadly no 5-star-resorts on the cards for mr money-bags, hope that's okay"
+    },
+    "days": {},
+    "pace": {
+      "0": "great choice... or is it?",
+      "1": "great choice... or is it?",
+      "2": "great choice... or is it?"
+    },
+    "tier": {
+      "must": ["banger choice", "say less", "now we're talking", "locked in", "confident for someone who's never been", "it's decided"],
+      "keen": ["solid", "fair shout", "noted", "respectable", "keen bean"],
+      "meh": ["hmm interesting choice", "the fence is comfy", "nonchalant af", "pH-type answer", "hello, sir neutron"],
+      "skip": ["you sure?", "bold move", "brave", "cold", "SCRAPPED"]
+    }
+  },
   "items": {}
 }

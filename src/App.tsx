@@ -15,7 +15,7 @@ import Rate from './screens/Rate';
 import Rerank from './screens/Rerank';
 import Suggest from './screens/Suggest';
 import Waiting from './screens/Waiting';
-import { AppProvider, useApp } from './state';
+import { AppProvider, pickQuip, useApp } from './state';
 import { connectionMissingNow } from './store';
 import { AREAS, emptyRanking, PEOPLE } from './types';
 import type { Item, Pace as PaceT, Pending, Person, Ranking, Response, Store, Tier } from './types';
@@ -102,7 +102,7 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
     const r = structuredClone(draft.ranking);
     removeId(r, item.id);
     const pending = startPlace(r, item.id, tier);
-    say(copy.quips.tier[tier]);
+    say(pickQuip(copy.quips.tier[tier]));
     if (pending) setPlacing({ ranking: r, pending, source: 'rate' });
     else commit(r, item.id);
   };
@@ -127,7 +127,7 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
     if (locked || tierOf(draft.ranking, id) === tier) return;
     const r = structuredClone(draft.ranking);
     const pending = retier(r, id, tier);
-    say(copy.quips.tier[tier]);
+    say(pickQuip(copy.quips.tier[tier]));
     if (pending) setPlacing({ ranking: r, pending, source: 'rerank' });
     else save({ ranking: r });
   };
@@ -143,13 +143,13 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
   } else if (shown === 'days') {
     content = <Days days={draft.days} flex={draft.flex} onPick={(days, flex) => {
       save({ days, flex });
-      say(copy.quips.days[flex ? 'flex' : String(days)]);
+      say(pickQuip(copy.quips.days[flex ? 'flex' : String(days)]));
       setStep(editing || draft.pace === null ? 'pace' : draft.submitted ? 'tabs' : 'rate');
     }} />;
   } else if (shown === 'pace') {
     content = <Pace pace={draft.pace} onBack={() => setStep('days')} onPick={(p: PaceT) => {
       save({ pace: p });
-      say(copy.quips.pace[String(p)]);
+      say(pickQuip(copy.quips.pace[String(p)]));
       setEditing(false);
       setStep(draft.submitted ? 'tabs' : 'rate');
     }} />;
@@ -200,7 +200,7 @@ function Shell() {
       {error && <button className="errbar" onClick={retry}>{error}. Tap to retry</button>}
       {me
         ? <Flow key={me} me={me} say={say} />
-        : <Name welcome={copy.welcome} onPick={p => { setMe(p); say(copy.quips.name[p]); }} />}
+        : <Name welcome={copy.welcome} welcomeSub={copy.welcomeSub} onPick={p => { setMe(p); say(pickQuip(copy.quips.name[p])); }} />}
       {toast && <Toast key={toast.id} text={toast.text} onDone={clear} />}
     </div>
   );

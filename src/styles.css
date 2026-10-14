@@ -176,3 +176,7 @@ a { color: inherit; }
 .grid td.keen { color: var(--tea); font-weight: 800; }
 .grid td.meh, .grid td.none { color: var(--muted); }
 .grid td.skip { color: var(--skip); }
+
+/* Welcome title above the name picker */
+h1.big { margin: 0; }
+.ask { font-weight: 800; font-size: 18px; margin-top: 10px; }

@@ -183,6 +183,24 @@ describe('quips', () => {
     await user.click(await screen.findByRole('button', { name: 'Alex' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Alex has arrived');
   });
+
+  it('picks one line from a list of quips', async () => {
+    (copy.quips as { name: Record<string, string | string[]> }).name = { Alex: ['line one', 'line two'] };
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Alex' }));
+    expect((await screen.findByRole('status')).textContent).toMatch(/^line (one|two)$/);
+  });
+
+  it('shows the welcome title and subtitle above the names', async () => {
+    (copy as { welcome: string; welcomeSub?: string }).welcome = 'Trip Planning. Optimized.';
+    (copy as { welcomeSub?: string }).welcomeSub = "Britt's solution to group chat debates";
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: 'Trip Planning. Optimized.' })).toBeInTheDocument();
+    expect(screen.getByText("Britt's solution to group chat debates")).toBeInTheDocument();
+    (copy as { welcome: string; welcomeSub?: string }).welcome = '';
+    (copy as { welcomeSub?: string }).welcomeSub = '';
+  });
 });
 
 describe('submit, lock and errors', () => {
