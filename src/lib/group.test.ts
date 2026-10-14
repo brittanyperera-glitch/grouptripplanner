@@ -59,6 +59,13 @@ describe('group', () => {
     expect(open.votes.a).toEqual(['Alex', 'Antek']); expect(open.votes.b).toEqual([]);
     expect(g2.final).toBeNull();
   });
+  it('never asks the same question twice: open forks share no a-side item and have distinct a-sets', () => {
+    const ko = groupResult(base(), items, L).knockouts;
+    const seen = new Set<string>();
+    for (const k of ko) for (const id of k.a) { expect(seen.has(id)).toBe(false); seen.add(id); }
+    const keys = ko.map(k => [...k.a].sort().join(',') + '|' + [...k.b].sort().join(','));
+    expect(new Set(keys).size).toBe(keys.length);
+  });
   it('ignores votes on fork ids that are not in the current list', () => {
     const s = base(); s.votes.push({ forkId: 'ko:nope:', name: 'Alex', choice: 'a' });
     expect(groupResult(s, items, L).knockouts.map(k => k.forkId)).toEqual(groupResult(base(), items, L).knockouts.map(k => k.forkId));

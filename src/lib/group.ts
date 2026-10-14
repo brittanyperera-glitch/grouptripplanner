@@ -47,14 +47,17 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
   const knockouts: Knockout[] = [];
   const results: GroupResult['results'] = [];
   let P = baseP;
+  const covered = new Set<string>(); // a-sides of open forks: one question per item
   for (const c of contested) {
     if (P.chosen.includes(c)) continue;
+    if (covered.has(c)) continue;
     if (O.has(c)) { results.push({ forkId: `ko:${c}:displaced`, a: [c], b: [], winner: 'displaced' }); continue; }
     const Q = run(new Set([...F, c]), O);
     if (Q.forceFailed) continue;
     const b = P.chosen.filter(id => !Q.chosen.includes(id) && !F.has(id));
     if (!b.length) { F.add(c); P = Q; continue; }
     const a = [c, ...Q.chosen.filter(id => !P.chosen.includes(id) && id !== c)];
+    if (a.some(id => covered.has(id))) continue; // overlaps an open fork: it rides on that one
     const forkId = `ko:${c}:${[...b].sort().join(',')}`;
     const latest = new Map<Person, 'a' | 'b'>();
     for (const v of state.votes) if (v.forkId === forkId) latest.set(v.name, v.choice);
@@ -62,7 +65,7 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
     const votes = { a: who('a'), b: who('b') };
     if (votes.a.length >= VOTES_TO_RESOLVE) { F.add(c); b.forEach(id => O.add(id)); results.push({ forkId, a, b, winner: 'a' }); P = run(F, O); }
     else if (votes.b.length >= VOTES_TO_RESOLVE) { O.add(c); results.push({ forkId, a, b, winner: 'b' }); P = run(F, O); }
-    else knockouts.push({ forkId, a, b, votes });
+    else { knockouts.push({ forkId, a, b, votes }); a.forEach(id => covered.add(id)); }
   }
 
   const final = knockouts.length ? null : P;
