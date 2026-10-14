@@ -14,7 +14,7 @@ export interface Copy {
 }
 
 interface AppValue {
-  state: AppState; me: Person | null; setMe(p: Person): void; store: Store;
+  state: AppState; me: Person | null; setMe(p: Person): void; clearMe(): void; store: Store;
   items: Item[]; legs: Leg[]; copy: Copy; error: string | null; retry(): void;
 }
 
@@ -101,6 +101,11 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
     setMeState(p);
   }, []);
 
+  const clearMe = useCallback(() => {
+    try { localStorage.removeItem(ME_KEY); } catch { /* storage unavailable: the switch lasts this visit */ }
+    setMeState(null);
+  }, []);
+
   if (!state) {
     return createElement('div', { className: 'app' },
       error
@@ -108,6 +113,6 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
         : createElement('div', { className: 'body' }, createElement('div', { className: 'sub' }, 'Loading')));
   }
 
-  const value: AppValue = { state, me, setMe, store, items: liveItems(state), legs, copy: copyData as unknown as Copy, error, retry };
+  const value: AppValue = { state, me, setMe, clearMe, store, items: liveItems(state), legs, copy: copyData as unknown as Copy, error, retry };
   return createElement(Ctx.Provider, { value }, children);
 }

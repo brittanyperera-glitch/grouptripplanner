@@ -1,12 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Compare from './components/Compare';
 import Toast from './components/Toast';
+import { groupResult, personPlan } from './lib/group';
 import { answer, move, removeId, retier, startPlace, tierOf } from './lib/ranking';
 import Days from './screens/Days';
+import Everyone from './screens/Everyone';
+import Extras from './screens/Extras';
+import Knockouts from './screens/Knockouts';
+import MyTrip from './screens/MyTrip';
 import Name from './screens/Name';
 import Pace from './screens/Pace';
+import Plan from './screens/Plan';
 import Rate from './screens/Rate';
 import Rerank from './screens/Rerank';
+import Suggest from './screens/Suggest';
+import Waiting from './screens/Waiting';
 import { AppProvider, useApp } from './state';
 import { AREAS, emptyRanking, PEOPLE } from './types';
 import type { Item, Pace as PaceT, Pending, Person, Ranking, Response, Store, Tier } from './types';
@@ -15,15 +23,38 @@ type Step = 'days' | 'pace' | 'rate' | 'tabs';
 type Tab = 'My trip' | 'Group' | 'Everyone' | 'Suggest';
 const TABS: Tab[] = ['My trip', 'Group', 'Everyone', 'Suggest'];
 
-// T5b replaces these four placeholders with the real screens.
-const Placeholder = ({ title }: { title: string }) => (
-  <div className="body"><div className="big">{title}</div><div className="sub">Coming soon.</div></div>
-);
-const MyTrip = () => <Placeholder title="My trip" />;
-const Group = () => <Placeholder title="Group" />;
-const Everyone = () => <Placeholder title="Everyone" />;
-const Suggest = () => <Placeholder title="Suggest" />;
-const PANELS: Record<Tab, () => JSX.Element> = { 'My trip': MyTrip, 'Group': Group, 'Everyone': Everyone, 'Suggest': Suggest };
+function MyTripTab() {
+  const { state, me, items, legs } = useApp();
+  const resp = me ? state.responses[me] : undefined;
+  const plan = useMemo(() => (resp ? personPlan(resp, items, legs) : null), [resp, items, legs]);
+  if (!resp || !plan) return <div className="body"><div className="sub">Loading</div></div>;
+  return <MyTrip plan={plan} days={resp.flex ? 14 : resp.days ?? 9} />;
+}
+
+function GroupTab() {
+  const { state, items, legs } = useApp();
+  const group = useMemo(() => groupResult(state, items, legs), [state, items, legs]);
+  if (!group.open) return <Waiting />;
+  return (
+    <>
+      {(group.knockouts.length > 0 || group.results.length > 0) && <Knockouts group={group} />}
+      <Plan group={group} />
+      <Extras group={group} />
+    </>
+  );
+}
+
+function EveryoneTab() {
+  const { state } = useApp();
+  return <Everyone open={PEOPLE.every(p => state.responses[p]?.submitted)} />;
+}
+
+function SuggestTab() {
+  const { state } = useApp();
+  return <Suggest open={PEOPLE.every(p => state.responses[p]?.submitted)} />;
+}
+
+const PANELS: Record<Tab, () => JSX.Element> = { 'My trip': MyTripTab, 'Group': GroupTab, 'Everyone': EveryoneTab, 'Suggest': SuggestTab };
 
 const blank = (name: Person): Response => ({
   name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: new Date().toISOString(),
@@ -32,7 +63,7 @@ const blank = (name: Person): Response => ({
 interface Placing { ranking: Ranking; pending: Pending; source: 'rate' | 'rerank' }
 
 function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
-  const { state, store, items, copy } = useApp();
+  const { state, store, items, copy, clearMe } = useApp();
   const [draft, setDraft] = useState<Response>(() => {
     const saved = state.responses[me];
     return saved ? structuredClone(saved) : blank(me);
@@ -137,7 +168,7 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
 
   return (
     <>
-      <div className="top"><b>{me}</b><span>{placing ? 'Compare' : { days: 'Days', pace: 'Pace', rate: 'Rating', tabs: '' }[shown]}</span></div>
+      <div className="top"><span><b>{me}</b> <button className="link" onClick={clearMe}>Not you?</button></span><span>{placing ? 'Compare' : { days: 'Days', pace: 'Pace', rate: 'Rating', tabs: '' }[shown]}</span></div>
       {content}
     </>
   );
