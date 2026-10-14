@@ -6,9 +6,9 @@ export const emptyRanking = (): Ranking => ({ must: [], keen: [], meh: [], skip:
 export interface Pending { id: string; tier: Tier; lo: number; hi: number; steps: number }
 
 export type Slot = 'sunrise' | 'morning' | 'afternoon' | 'sunset' | 'evening' | 'late' | 'any';
-export type Area = 'Colombo' | 'Cultural Triangle' | 'Kandy and Knuckles' | 'Kitulgala' | 'Hill country' | 'Ella' | 'Wild south' | 'South coast';
-export const AREAS: Area[] = ['Colombo', 'Cultural Triangle', 'Kandy and Knuckles', 'Kitulgala', 'Hill country', 'Ella', 'Wild south', 'South coast'];
-export type Hub = 'AIR' | 'Colombo' | 'Sigiriya' | 'Kandy' | 'Kitulgala' | 'Nuwara Eliya' | 'Ella' | 'Tissa' | 'Udawalawe' | 'Weligama';
+export type Area = 'Colombo' | 'North' | 'East coast' | 'Cultural Triangle' | 'Kandy and Knuckles' | 'Kitulgala' | 'Hill country' | 'Ella' | 'Wild south' | 'South coast';
+export const AREAS: Area[] = ['Colombo', 'North', 'East coast', 'Cultural Triangle', 'Kandy and Knuckles', 'Kitulgala', 'Hill country', 'Ella', 'Wild south', 'South coast'];
+export type Hub = 'AIR' | 'Colombo' | 'Jaffna' | 'Trincomalee' | 'Sigiriya' | 'Kandy' | 'Kitulgala' | 'Nuwara Eliya' | 'Ella' | 'Tissa' | 'Udawalawe' | 'Weligama';
 export interface Item {
   id: string; name: string; area: Area; about: string; hours: number; slot: Slot; fee: string;
   sideTrip: number; book?: string; warn?: string; photo?: string; hub?: Hub;
@@ -57,6 +57,6 @@ export interface GroupResult {
   extras: { id: string; who: { name: Person; tier: Tier }[] }[];
 }
 export const AREA_HUB: Record<Area, Hub> = {
-  'Colombo': 'Colombo', 'Cultural Triangle': 'Sigiriya', 'Kandy and Knuckles': 'Kandy', 'Kitulgala': 'Kitulgala',
+  'Colombo': 'Colombo', 'North': 'Jaffna', 'East coast': 'Trincomalee', 'Cultural Triangle': 'Sigiriya', 'Kandy and Knuckles': 'Kandy', 'Kitulgala': 'Kitulgala',
   'Hill country': 'Nuwara Eliya', 'Ella': 'Ella', 'Wild south': 'Udawalawe', 'South coast': 'Weligama',
 };

@@ -4,6 +4,8 @@ const COAST: [number, number][] = [[9.83, 80.25], [9.66, 80.02], [9.38, 80.12], 
 
 const HUB: Record<Hub, { lat: number; lon: number; name: string; side: 'l' | 'r' | 't' }> = {
   AIR: { lat: 7.18, lon: 79.88, name: 'Airport', side: 'l' },
+  Jaffna: { lat: 9.66, lon: 80.01, name: 'Jaffna', side: 'r' },
+  Trincomalee: { lat: 8.57, lon: 81.23, name: 'Trincomalee', side: 'r' },
   Colombo: { lat: 6.93, lon: 79.85, name: 'Colombo', side: 'l' },
   Sigiriya: { lat: 7.957, lon: 80.76, name: 'Sigiriya', side: 'r' },
   Kandy: { lat: 7.29, lon: 80.63, name: 'Kandy', side: 'r' },

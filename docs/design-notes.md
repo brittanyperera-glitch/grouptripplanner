@@ -19,7 +19,7 @@ Working notes for the brainstorm. The approved version becomes the spec in `docs
 | Pace | Depends on each activity's real duration; also asked as a vote |
 | Access | One shared link; tap your name; no signup |
 | Feel | Playful voting game first, then a practical plan |
-| Option pool | Classic circuit plus adventure stops. No north or east (monsoon, long drives) |
+| Option pool | Classic circuit plus adventure stops. Updated 2026-10-14: Brittany asked to add northern suggestions ("people can decide as they decide"), so North (Jaffna) and East coast (Trincomalee) options are in, each carrying a December monsoon warning rather than being filtered out. Also added from her original list: the biggest Buddha statues (Wewurukannala, Buduruwagala, Aukana), turtles (Rekawa night watch, Hikkaduwa snorkel with a welfare note), and a better-rated tea estate |
 | Adam's Peak | Dropped. Season opens on Unduvap Poya, Wed 23 Dec 2026, after the trip window |
 | Build | Static web app on Vercel plus a Supabase database |
 | Deadline | Voting open within about a week (~21 Oct). Train seats release 30 days ahead |
@@ -35,6 +35,7 @@ Working notes for the brainstorm. The approved version becomes the spec in `docs
 | Hosting | Private GitHub repo, Vercel, Supabase. Brittany signs up and pastes the keys at the end |
 | Visibility | Once the group stage opens, everyone sees everyone's ratings |
 | Admin | No admin link. Brittany's copy arrives through Claude in chat. The waiting screen shows who is still voting. The group stage opens automatically when all 5 submit. Suggestion-approve buttons appear only when "Brittany" is the selected name (same trust level as pick-your-name) |
+| North vs South (2026-10-14) | Brittany: when north and south genuinely conflict after voting, settle it once in the tie-break stage. One "North or South?" knockout: north on the left with the list of liked northern items, south on the right with the southern items it would replace. It appears only when going north would drop someone's southern Must or vice versa. It resolves at 3 votes, before the item knockouts |
 | Colombo | Added to the activity pool (2026-10-14); it sits at the start or end of the route, next to the airport |
 | Section 1 | Approved by Brittany on 2026-10-14 ("happy with the design") |
 | Mockup look | No side rails or notes panels around the phone; Brittany called those the AI giveaway. Placeholders for her copy are empty slots, not words written in her voice |

@@ -26,7 +26,7 @@ const legRows = [
 
 const HUB_ALIAS = [
   [/^(BIA airport|Bandaranaike International Airport)$/i, 'AIR'],
-  [/^Colombo( Fort)?$/i, 'Colombo'], [/^Sigiriya$/i, 'Sigiriya'], [/^Kandy$/i, 'Kandy'],
+  [/^Colombo( Fort)?$/i, 'Colombo'], [/^Jaffna$/i, 'Jaffna'], [/^Trincomalee$/i, 'Trincomalee'], [/^Sigiriya$/i, 'Sigiriya'], [/^Kandy$/i, 'Kandy'],
   [/^Kitulgala$/i, 'Kitulgala'], [/^Nuwara Eliya$/i, 'Nuwara Eliya'], [/^Ella$/i, 'Ella'],
   [/^Tissamaharama$/i, 'Tissa'], [/^Udawalawe( National Park)?$/i, 'Udawalawe'], [/^Weligama$/i, 'Weligama'],
 ];
@@ -92,7 +92,7 @@ const items = cat.items.map((it) => {
 
 // Sanity: 37 items, all hubs connected.
 if (items.length !== 37) throw new Error(`expected 37 items, got ${items.length}`);
-const hubs = ['AIR', 'Colombo', 'Sigiriya', 'Kandy', 'Kitulgala', 'Nuwara Eliya', 'Ella', 'Tissa', 'Udawalawe', 'Weligama'];
+const hubs = ['AIR', 'Colombo', 'Jaffna', 'Trincomalee', 'Sigiriya', 'Kandy', 'Kitulgala', 'Nuwara Eliya', 'Ella', 'Tissa', 'Udawalawe', 'Weligama'];
 const d = Object.fromEntries(hubs.map((a) => [a, Object.fromEntries(hubs.map((b) => [b, a === b ? 0 : Infinity]))]));
 for (const l of legs) { d[l.a][l.b] = Math.min(d[l.a][l.b], l.hours); d[l.b][l.a] = Math.min(d[l.b][l.a], l.hours); }
 for (const k of hubs) for (const i of hubs) for (const j of hubs) if (d[i][k] + d[k][j] < d[i][j]) d[i][j] = d[i][k] + d[k][j];

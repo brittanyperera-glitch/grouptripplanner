@@ -130,5 +130,41 @@
   "b": "Weligama",
   "hours": 4.43,
   "src": "maps_legs_extra.md: Kitulgala -> Weligama 4 hr 26 min"
+ },
+ {
+  "a": "AIR",
+  "b": "Jaffna",
+  "hours": 7.43,
+  "src": "maps_legs_extra.md: Bandaranaike International Airport -> Jaffna 7 hr 26 min"
+ },
+ {
+  "a": "Sigiriya",
+  "b": "Jaffna",
+  "hours": 5.05,
+  "src": "maps_legs_extra.md: Sigiriya -> Jaffna 5 hr 3 min"
+ },
+ {
+  "a": "Jaffna",
+  "b": "Trincomalee",
+  "hours": 4.62,
+  "src": "maps_legs_extra.md: Jaffna -> Trincomalee 4 hr 37 min"
+ },
+ {
+  "a": "Trincomalee",
+  "b": "Sigiriya",
+  "hours": 2.02,
+  "src": "maps_legs_extra.md: Trincomalee -> Sigiriya 2 hr 1 min"
+ },
+ {
+  "a": "Trincomalee",
+  "b": "Kandy",
+  "hours": 4.25,
+  "src": "maps_legs_extra.md: Trincomalee -> Kandy 4 hr 15 min"
+ },
+ {
+  "a": "Colombo",
+  "b": "Jaffna",
+  "hours": 7.8,
+  "src": "maps_legs_extra.md: Colombo -> Jaffna 7 hr 48 min"
  }
 ]

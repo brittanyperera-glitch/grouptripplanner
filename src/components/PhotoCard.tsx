@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import type { Area, Item } from '../types';
 
 const AREA_COLOR: Record<Area, string> = {
-  'Colombo': '#5E6D82', 'Cultural Triangle': '#8E6522', 'Kandy and Knuckles': '#7A5C8A', 'Kitulgala': '#2F7A6B',
+  'Colombo': '#5E6D82', 'North': '#9A4F2E', 'East coast': '#2B6E8F', 'Cultural Triangle': '#8E6522', 'Kandy and Knuckles': '#7A5C8A', 'Kitulgala': '#2F7A6B',
   'Hill country': '#3E7D4A', 'Ella': '#3F7396', 'Wild south': '#8A6A1F', 'South coast': '#1F7F97',
 };
 
