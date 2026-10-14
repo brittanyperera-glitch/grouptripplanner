@@ -601,7 +601,7 @@
    "name": "Galle Fort and sunset",
    "area": "South coast",
    "hours": 3,
-   "slot": "afternoon",
+   "slot": "sunset",
    "fee": "free",
    "photo": "galle",
    "about": "Walled colonial town with cafes, ramparts and a lighthouse.",
@@ -610,7 +610,7 @@
     "reviews": "22,584",
     "url": "https://www.google.com/maps/search/Galle%20Fort,%20Sri%20Lanka"
    },
-   "when": "late afternoon",
+   "when": "sunset",
    "sideTrip": 1.54,
    "credit": "Jan Kranendonk (https://www.jankranendonk.nl), CC BY-SA 4.0"
   },
