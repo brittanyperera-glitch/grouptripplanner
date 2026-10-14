@@ -1,0 +1,9300 @@
+{
+ "plans": [
+  {
+   "name": "classic musts 9d",
+   "input": {
+    "scores": {
+     "sigiriya": 10,
+     "elephants": 10,
+     "tooth": 10,
+     "train": 10,
+     "ellarock": 10,
+     "yala": 10,
+     "surf": 10,
+     "galle": 10
+    },
+    "days": 9,
+    "pace": 1,
+    "mustIds": [
+     "sigiriya",
+     "elephants",
+     "tooth",
+     "train",
+     "ellarock",
+     "yala",
+     "surf",
+     "galle"
+    ]
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Sigiriya",
+     "Kandy",
+     "Nuwara Eliya",
+     "Ella",
+     "Tissa",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Cultural Triangle",
+     "Kandy and Knuckles",
+     "Hill country",
+     "Ella",
+     "Wild south",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Sigiriya",
+        "hours": 3.65,
+        "from": "AIR",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 0.85,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Elephant safari",
+        "hours": 4.54,
+        "itemId": "elephants",
+        "onSite": 3,
+        "roundTrip": 1.54
+       }
+      ],
+      "spare": 1.46,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Kandy and Knuckles",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Kandy",
+        "hours": 2.97,
+        "from": "Sigiriya",
+        "to": "Kandy"
+       },
+       {
+        "kind": "activity",
+        "label": "Temple of the Tooth, evening puja",
+        "hours": 1.5,
+        "itemId": "tooth",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4.53,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Kandy to Nuwara Eliya",
+        "hours": 2.83,
+        "from": "Kandy",
+        "to": "Nuwara Eliya"
+       },
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 3.47,
+      "rainSlack": true
+     },
+     {
+      "n": 5,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ella Rock hike",
+        "hours": 4.5,
+        "itemId": "ellarock",
+        "onSite": 4.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Tissa",
+        "hours": 2.08,
+        "from": "Ella",
+        "to": "Tissa"
+       }
+      ],
+      "spare": 2.42,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Yala leopard safari",
+        "hours": 5.74,
+        "itemId": "yala",
+        "onSite": 4.5,
+        "roundTrip": 1.2400000000000002
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Tissa to Weligama",
+        "hours": 1.9,
+        "from": "Tissa",
+        "to": "Weligama"
+       }
+      ],
+      "spare": 1.36,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Fort and sunset",
+        "hours": 4.54,
+        "itemId": "galle",
+        "onSite": 3,
+        "roundTrip": 1.54
+       }
+      ],
+      "spare": 2.96,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       }
+      ],
+      "spare": 6.67,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "elephants",
+     "ellarock",
+     "galle",
+     "sigiriya",
+     "surf",
+     "tooth",
+     "train",
+     "yala"
+    ],
+    "dropped": [],
+    "travelHours": 15.76,
+    "fits": true,
+    "missingMusts": [],
+    "score": 80
+   }
+  },
+  {
+   "name": "everything must 9d",
+   "input": {
+    "scores": {
+     "pettah": 10,
+     "foodtour": 10,
+     "galleface": 10,
+     "crab": 10,
+     "gangaramaya": 10,
+     "bawa": 10,
+     "rooftop": 10,
+     "lavinia": 10,
+     "kottu": 10,
+     "sigiriya": 10,
+     "pidurangala": 10,
+     "dambulla": 10,
+     "polonnaruwa": 10,
+     "elephants": 10,
+     "anuradhapura": 10,
+     "village": 10,
+     "tooth": 10,
+     "knuckles": 10,
+     "rafting": 10,
+     "train": 10,
+     "horton": 10,
+     "tea": 10,
+     "ellarock": 10,
+     "littleadams": 10,
+     "ninearch": 10,
+     "zipline": 10,
+     "diyaluma": 10,
+     "lipton": 10,
+     "yala": 10,
+     "udawalawe": 10,
+     "surf": 10,
+     "whales": 10,
+     "galle": 10,
+     "coconut": 10,
+     "hiriketiya": 10,
+     "junglebeach": 10,
+     "beachday": 10,
+     "jaffna": 10,
+     "delft": 10,
+     "nainativu": 10,
+     "trinco": 10,
+     "pigeon": 10,
+     "aukana": 10,
+     "buduruwagala": 10,
+     "wewurukannala": 10,
+     "rekawa": 10
+    },
+    "days": 9,
+    "pace": 1,
+    "mustIds": [
+     "pettah",
+     "foodtour",
+     "galleface",
+     "crab",
+     "gangaramaya",
+     "bawa",
+     "rooftop",
+     "lavinia",
+     "kottu",
+     "sigiriya",
+     "pidurangala",
+     "dambulla",
+     "polonnaruwa",
+     "elephants",
+     "anuradhapura",
+     "village",
+     "tooth",
+     "knuckles",
+     "rafting",
+     "train",
+     "horton",
+     "tea",
+     "ellarock",
+     "littleadams",
+     "ninearch",
+     "zipline",
+     "diyaluma",
+     "lipton",
+     "yala",
+     "udawalawe",
+     "surf",
+     "whales",
+     "galle",
+     "coconut",
+     "hiriketiya",
+     "junglebeach",
+     "beachday",
+     "jaffna",
+     "delft",
+     "nainativu",
+     "trinco",
+     "pigeon",
+     "aukana",
+     "buduruwagala",
+     "wewurukannala",
+     "rekawa"
+    ]
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Kitulgala",
+     "Nuwara Eliya",
+     "Ella",
+     "Tissa",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Kitulgala",
+     "Hill country",
+     "Ella",
+     "Wild south",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Mount Lavinia beach",
+        "hours": 3.3600000000000003,
+        "itemId": "lavinia",
+        "onSite": 2,
+        "roundTrip": 1.3600000000000003
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.14,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Kitulgala",
+        "hours": 2.98,
+        "from": "Colombo",
+        "to": "Kitulgala"
+       },
+       {
+        "kind": "activity",
+        "label": "Kitulgala white water rafting",
+        "hours": 3,
+        "itemId": "rafting",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Kitulgala to Nuwara Eliya",
+        "hours": 2.3,
+        "from": "Kitulgala",
+        "to": "Nuwara Eliya"
+       }
+      ],
+      "spare": 0.72,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Damro Labookellie tea estate",
+        "hours": 2.56,
+        "itemId": "tea",
+        "onSite": 1.5,
+        "roundTrip": 1.06
+       },
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 3.74,
+      "rainSlack": true
+     },
+     {
+      "n": 6,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Little Adam's Peak",
+        "hours": 2,
+        "itemId": "littleadams",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Buduruwagala rock carvings",
+        "hours": 2.74,
+        "itemId": "buduruwagala",
+        "onSite": 1,
+        "roundTrip": 1.7400000000000002
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Tissa",
+        "hours": 2.08,
+        "from": "Ella",
+        "to": "Tissa"
+       }
+      ],
+      "spare": 0.18,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Tissa to Weligama",
+        "hours": 1.9,
+        "from": "Tissa",
+        "to": "Weligama"
+       },
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Wewurukannala giant Buddha",
+        "hours": 3.56,
+        "itemId": "wewurukannala",
+        "onSite": 1.5,
+        "roundTrip": 2.06
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.04,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       }
+      ],
+      "spare": 6.67,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "buduruwagala",
+     "coconut",
+     "crab",
+     "foodtour",
+     "galleface",
+     "gangaramaya",
+     "kottu",
+     "lavinia",
+     "littleadams",
+     "ninearch",
+     "pettah",
+     "rafting",
+     "rooftop",
+     "surf",
+     "tea",
+     "train",
+     "wewurukannala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "dambulla",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "ellarock",
+     "galle",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "junglebeach",
+     "knuckles",
+     "lipton",
+     "nainativu",
+     "pidurangala",
+     "pigeon",
+     "polonnaruwa",
+     "rekawa",
+     "sigiriya",
+     "tooth",
+     "trinco",
+     "udawalawe",
+     "village",
+     "whales",
+     "yala"
+    ],
+    "travelHours": 12.39,
+    "fits": false,
+    "missingMusts": [
+     "sigiriya",
+     "pidurangala",
+     "dambulla",
+     "polonnaruwa",
+     "elephants",
+     "anuradhapura",
+     "village",
+     "tooth",
+     "knuckles",
+     "horton",
+     "ellarock",
+     "diyaluma",
+     "lipton",
+     "yala",
+     "udawalawe",
+     "whales",
+     "galle",
+     "hiriketiya",
+     "junglebeach",
+     "beachday",
+     "jaffna",
+     "delft",
+     "nainativu",
+     "trinco",
+     "pigeon",
+     "aukana",
+     "rekawa"
+    ],
+    "score": 190
+   }
+  },
+  {
+   "name": "all keen 5d pace 0",
+   "input": {
+    "scores": {
+     "pettah": 4,
+     "foodtour": 4,
+     "galleface": 4,
+     "crab": 4,
+     "gangaramaya": 4,
+     "bawa": 4,
+     "rooftop": 4,
+     "lavinia": 4,
+     "kottu": 4,
+     "sigiriya": 4,
+     "pidurangala": 4,
+     "dambulla": 4,
+     "polonnaruwa": 4,
+     "elephants": 4,
+     "anuradhapura": 4,
+     "village": 4,
+     "tooth": 4,
+     "knuckles": 4,
+     "rafting": 4,
+     "train": 4,
+     "horton": 4,
+     "tea": 4,
+     "ellarock": 4,
+     "littleadams": 4,
+     "ninearch": 4,
+     "zipline": 4,
+     "diyaluma": 4,
+     "lipton": 4,
+     "yala": 4,
+     "udawalawe": 4,
+     "surf": 4,
+     "whales": 4,
+     "galle": 4,
+     "coconut": 4,
+     "hiriketiya": 4,
+     "junglebeach": 4,
+     "beachday": 4,
+     "jaffna": 4,
+     "delft": 4,
+     "nainativu": 4,
+     "trinco": 4,
+     "pigeon": 4,
+     "aukana": 4,
+     "buduruwagala": 4,
+     "wewurukannala": 4,
+     "rekawa": 4
+    },
+    "days": 5,
+    "pace": 0
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Kitulgala",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Kitulgala",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.5,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Kitulgala",
+        "hours": 2.98,
+        "from": "Colombo",
+        "to": "Kitulgala"
+       },
+       {
+        "kind": "activity",
+        "label": "Kitulgala white water rafting",
+        "hours": 3,
+        "itemId": "rafting",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Kitulgala to Weligama",
+        "hours": 4.43,
+        "from": "Kitulgala",
+        "to": "Weligama"
+       }
+      ],
+      "spare": 0.59,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 8.5,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Weligama to the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       },
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 0.17,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "coconut",
+     "crab",
+     "foodtour",
+     "galleface",
+     "gangaramaya",
+     "kottu",
+     "pettah",
+     "rafting",
+     "rooftop",
+     "surf"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "buduruwagala",
+     "dambulla",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "ellarock",
+     "galle",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "junglebeach",
+     "knuckles",
+     "lavinia",
+     "lipton",
+     "littleadams",
+     "nainativu",
+     "ninearch",
+     "pidurangala",
+     "pigeon",
+     "polonnaruwa",
+     "rekawa",
+     "sigiriya",
+     "tea",
+     "tooth",
+     "train",
+     "trinco",
+     "udawalawe",
+     "village",
+     "wewurukannala",
+     "whales",
+     "yala",
+     "zipline"
+    ],
+    "travelHours": 10.540000000000001,
+    "fits": true,
+    "missingMusts": [],
+    "score": 44
+   }
+  },
+  {
+   "name": "all keen 9d pace 0",
+   "input": {
+    "scores": {
+     "pettah": 4,
+     "foodtour": 4,
+     "galleface": 4,
+     "crab": 4,
+     "gangaramaya": 4,
+     "bawa": 4,
+     "rooftop": 4,
+     "lavinia": 4,
+     "kottu": 4,
+     "sigiriya": 4,
+     "pidurangala": 4,
+     "dambulla": 4,
+     "polonnaruwa": 4,
+     "elephants": 4,
+     "anuradhapura": 4,
+     "village": 4,
+     "tooth": 4,
+     "knuckles": 4,
+     "rafting": 4,
+     "train": 4,
+     "horton": 4,
+     "tea": 4,
+     "ellarock": 4,
+     "littleadams": 4,
+     "ninearch": 4,
+     "zipline": 4,
+     "diyaluma": 4,
+     "lipton": 4,
+     "yala": 4,
+     "udawalawe": 4,
+     "surf": 4,
+     "whales": 4,
+     "galle": 4,
+     "coconut": 4,
+     "hiriketiya": 4,
+     "junglebeach": 4,
+     "beachday": 4,
+     "jaffna": 4,
+     "delft": 4,
+     "nainativu": 4,
+     "trinco": 4,
+     "pigeon": 4,
+     "aukana": 4,
+     "buduruwagala": 4,
+     "wewurukannala": 4,
+     "rekawa": 4
+    },
+    "days": 9,
+    "pace": 0
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Kitulgala",
+     "Nuwara Eliya",
+     "Ella",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Kitulgala",
+     "Hill country",
+     "Ella",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Mount Lavinia beach",
+        "hours": 3.3600000000000003,
+        "itemId": "lavinia",
+        "onSite": 2,
+        "roundTrip": 1.3600000000000003
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.14,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 8,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Kitulgala",
+        "hours": 2.98,
+        "from": "Colombo",
+        "to": "Kitulgala"
+       },
+       {
+        "kind": "activity",
+        "label": "Kitulgala white water rafting",
+        "hours": 3,
+        "itemId": "rafting",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Kitulgala to Nuwara Eliya",
+        "hours": 2.3,
+        "from": "Kitulgala",
+        "to": "Nuwara Eliya"
+       },
+       {
+        "kind": "activity",
+        "label": "Damro Labookellie tea estate",
+        "hours": 2.56,
+        "itemId": "tea",
+        "onSite": 1.5,
+        "roundTrip": 1.06
+       }
+      ],
+      "spare": 0.16,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 8.3,
+      "rainSlack": true
+     },
+     {
+      "n": 6,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Little Adam's Peak",
+        "hours": 2,
+        "itemId": "littleadams",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Buduruwagala rock carvings",
+        "hours": 2.74,
+        "itemId": "buduruwagala",
+        "onSite": 1,
+        "roundTrip": 1.7400000000000002
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Weligama",
+        "hours": 3.25,
+        "from": "Ella",
+        "to": "Weligama"
+       }
+      ],
+      "spare": 1.01,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Jungle Beach snorkel",
+        "hours": 4.46,
+        "itemId": "junglebeach",
+        "onSite": 3,
+        "roundTrip": 1.46
+       }
+      ],
+      "spare": 6.54,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Wewurukannala giant Buddha",
+        "hours": 3.56,
+        "itemId": "wewurukannala",
+        "onSite": 1.5,
+        "roundTrip": 2.06
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4.94,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Weligama to the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       },
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 0.17,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "buduruwagala",
+     "coconut",
+     "crab",
+     "foodtour",
+     "galleface",
+     "gangaramaya",
+     "junglebeach",
+     "kottu",
+     "lavinia",
+     "littleadams",
+     "ninearch",
+     "pettah",
+     "rafting",
+     "rooftop",
+     "surf",
+     "tea",
+     "train",
+     "wewurukannala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "dambulla",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "ellarock",
+     "galle",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "knuckles",
+     "lipton",
+     "nainativu",
+     "pidurangala",
+     "pigeon",
+     "polonnaruwa",
+     "rekawa",
+     "sigiriya",
+     "tooth",
+     "trinco",
+     "udawalawe",
+     "village",
+     "whales",
+     "yala"
+    ],
+    "travelHours": 11.66,
+    "fits": true,
+    "missingMusts": [],
+    "score": 80
+   }
+  },
+  {
+   "name": "all keen 14d pace 0",
+   "input": {
+    "scores": {
+     "pettah": 4,
+     "foodtour": 4,
+     "galleface": 4,
+     "crab": 4,
+     "gangaramaya": 4,
+     "bawa": 4,
+     "rooftop": 4,
+     "lavinia": 4,
+     "kottu": 4,
+     "sigiriya": 4,
+     "pidurangala": 4,
+     "dambulla": 4,
+     "polonnaruwa": 4,
+     "elephants": 4,
+     "anuradhapura": 4,
+     "village": 4,
+     "tooth": 4,
+     "knuckles": 4,
+     "rafting": 4,
+     "train": 4,
+     "horton": 4,
+     "tea": 4,
+     "ellarock": 4,
+     "littleadams": 4,
+     "ninearch": 4,
+     "zipline": 4,
+     "diyaluma": 4,
+     "lipton": 4,
+     "yala": 4,
+     "udawalawe": 4,
+     "surf": 4,
+     "whales": 4,
+     "galle": 4,
+     "coconut": 4,
+     "hiriketiya": 4,
+     "junglebeach": 4,
+     "beachday": 4,
+     "jaffna": 4,
+     "delft": 4,
+     "nainativu": 4,
+     "trinco": 4,
+     "pigeon": 4,
+     "aukana": 4,
+     "buduruwagala": 4,
+     "wewurukannala": 4,
+     "rekawa": 4
+    },
+    "days": 14,
+    "pace": 0
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Sigiriya",
+     "Nuwara Eliya",
+     "Ella",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Cultural Triangle",
+     "Hill country",
+     "Ella",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Mount Lavinia beach",
+        "hours": 3.3600000000000003,
+        "itemId": "lavinia",
+        "onSite": 2,
+        "roundTrip": 1.3600000000000003
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.14,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 8,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Sigiriya",
+        "hours": 4.33,
+        "from": "Colombo",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 6.67,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Aukana Buddha at dawn",
+        "hours": 3.4,
+        "itemId": "aukana",
+        "onSite": 1,
+        "roundTrip": 2.4
+       }
+      ],
+      "spare": 7.6,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pidurangala sunrise",
+        "hours": 2.3,
+        "itemId": "pidurangala",
+        "onSite": 2,
+        "roundTrip": 0.2999999999999998
+       }
+      ],
+      "spare": 8.7,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Dambulla cave temple",
+        "hours": 2.6399999999999997,
+        "itemId": "dambulla",
+        "onSite": 1.5,
+        "roundTrip": 1.1399999999999997
+       },
+       {
+        "kind": "activity",
+        "label": "Village tour and cooking lunch",
+        "hours": 3,
+        "itemId": "village",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2.36,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Elephant safari",
+        "hours": 4.54,
+        "itemId": "elephants",
+        "onSite": 3,
+        "roundTrip": 1.54
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Nuwara Eliya",
+        "hours": 5.800000000000001,
+        "from": "Sigiriya",
+        "to": "Nuwara Eliya"
+       }
+      ],
+      "spare": 0.66,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Damro Labookellie tea estate",
+        "hours": 2.56,
+        "itemId": "tea",
+        "onSite": 1.5,
+        "roundTrip": 1.06
+       },
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 5.74,
+      "rainSlack": true
+     },
+     {
+      "n": 10,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ella Rock hike",
+        "hours": 4.5,
+        "itemId": "ellarock",
+        "onSite": 4.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 6.5,
+      "rainSlack": true
+     },
+     {
+      "n": 11,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Little Adam's Peak",
+        "hours": 2,
+        "itemId": "littleadams",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Buduruwagala rock carvings",
+        "hours": 2.74,
+        "itemId": "buduruwagala",
+        "onSite": 1,
+        "roundTrip": 1.7400000000000002
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Weligama",
+        "hours": 3.25,
+        "from": "Ella",
+        "to": "Weligama"
+       }
+      ],
+      "spare": 1.01,
+      "rainSlack": false
+     },
+     {
+      "n": 12,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Jungle Beach snorkel",
+        "hours": 4.46,
+        "itemId": "junglebeach",
+        "onSite": 3,
+        "roundTrip": 1.46
+       }
+      ],
+      "spare": 6.54,
+      "rainSlack": false
+     },
+     {
+      "n": 13,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Wewurukannala giant Buddha",
+        "hours": 3.56,
+        "itemId": "wewurukannala",
+        "onSite": 1.5,
+        "roundTrip": 2.06
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Fort and sunset",
+        "hours": 4.54,
+        "itemId": "galle",
+        "onSite": 3,
+        "roundTrip": 1.54
+       }
+      ],
+      "spare": 0.4,
+      "rainSlack": false
+     },
+     {
+      "n": 14,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Weligama to the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       },
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 0.17,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "aukana",
+     "bawa",
+     "buduruwagala",
+     "coconut",
+     "crab",
+     "dambulla",
+     "elephants",
+     "ellarock",
+     "foodtour",
+     "galle",
+     "galleface",
+     "gangaramaya",
+     "junglebeach",
+     "kottu",
+     "lavinia",
+     "littleadams",
+     "ninearch",
+     "pettah",
+     "pidurangala",
+     "rooftop",
+     "sigiriya",
+     "surf",
+     "tea",
+     "train",
+     "village",
+     "wewurukannala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "beachday",
+     "delft",
+     "diyaluma",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "knuckles",
+     "lipton",
+     "nainativu",
+     "pigeon",
+     "polonnaruwa",
+     "rafting",
+     "rekawa",
+     "tooth",
+     "trinco",
+     "udawalawe",
+     "whales",
+     "yala"
+    ],
+    "travelHours": 16.509999999999998,
+    "fits": true,
+    "missingMusts": [],
+    "score": 108
+   }
+  },
+  {
+   "name": "all keen 21d pace 0",
+   "input": {
+    "scores": {
+     "pettah": 4,
+     "foodtour": 4,
+     "galleface": 4,
+     "crab": 4,
+     "gangaramaya": 4,
+     "bawa": 4,
+     "rooftop": 4,
+     "lavinia": 4,
+     "kottu": 4,
+     "sigiriya": 4,
+     "pidurangala": 4,
+     "dambulla": 4,
+     "polonnaruwa": 4,
+     "elephants": 4,
+     "anuradhapura": 4,
+     "village": 4,
+     "tooth": 4,
+     "knuckles": 4,
+     "rafting": 4,
+     "train": 4,
+     "horton": 4,
+     "tea": 4,
+     "ellarock": 4,
+     "littleadams": 4,
+     "ninearch": 4,
+     "zipline": 4,
+     "diyaluma": 4,
+     "lipton": 4,
+     "yala": 4,
+     "udawalawe": 4,
+     "surf": 4,
+     "whales": 4,
+     "galle": 4,
+     "coconut": 4,
+     "hiriketiya": 4,
+     "junglebeach": 4,
+     "beachday": 4,
+     "jaffna": 4,
+     "delft": 4,
+     "nainativu": 4,
+     "trinco": 4,
+     "pigeon": 4,
+     "aukana": 4,
+     "buduruwagala": 4,
+     "wewurukannala": 4,
+     "rekawa": 4
+    },
+    "days": 21,
+    "pace": 0
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Sigiriya",
+     "Kandy",
+     "Kitulgala",
+     "Nuwara Eliya",
+     "Ella",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Cultural Triangle",
+     "Kandy and Knuckles",
+     "Kitulgala",
+     "Hill country",
+     "Ella",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Mount Lavinia beach",
+        "hours": 3.3600000000000003,
+        "itemId": "lavinia",
+        "onSite": 2,
+        "roundTrip": 1.3600000000000003
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.14,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 8,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Sigiriya",
+        "hours": 4.33,
+        "from": "Colombo",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 6.67,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Aukana Buddha at dawn",
+        "hours": 3.4,
+        "itemId": "aukana",
+        "onSite": 1,
+        "roundTrip": 2.4
+       }
+      ],
+      "spare": 7.6,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pidurangala sunrise",
+        "hours": 2.3,
+        "itemId": "pidurangala",
+        "onSite": 2,
+        "roundTrip": 0.2999999999999998
+       }
+      ],
+      "spare": 8.7,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Dambulla cave temple",
+        "hours": 2.6399999999999997,
+        "itemId": "dambulla",
+        "onSite": 1.5,
+        "roundTrip": 1.1399999999999997
+       }
+      ],
+      "spare": 5.36,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Polonnaruwa by bike",
+        "hours": 6.7,
+        "itemId": "polonnaruwa",
+        "onSite": 4,
+        "roundTrip": 2.7
+       },
+       {
+        "kind": "activity",
+        "label": "Village tour and cooking lunch",
+        "hours": 3,
+        "itemId": "village",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.3,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "Kandy and Knuckles",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Elephant safari",
+        "hours": 4.54,
+        "itemId": "elephants",
+        "onSite": 3,
+        "roundTrip": 1.54
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Kandy",
+        "hours": 2.97,
+        "from": "Sigiriya",
+        "to": "Kandy"
+       },
+       {
+        "kind": "activity",
+        "label": "Temple of the Tooth, evening puja",
+        "hours": 1.5,
+        "itemId": "tooth",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.99,
+      "rainSlack": false
+     },
+     {
+      "n": 10,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Kandy to Kitulgala",
+        "hours": 2.33,
+        "from": "Kandy",
+        "to": "Kitulgala"
+       },
+       {
+        "kind": "activity",
+        "label": "Kitulgala white water rafting",
+        "hours": 3,
+        "itemId": "rafting",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Kitulgala to Nuwara Eliya",
+        "hours": 2.3,
+        "from": "Kitulgala",
+        "to": "Nuwara Eliya"
+       }
+      ],
+      "spare": 3.37,
+      "rainSlack": true
+     },
+     {
+      "n": 11,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Horton Plains and World's End",
+        "hours": 6.4,
+        "itemId": "horton",
+        "onSite": 4,
+        "roundTrip": 2.4000000000000004
+       },
+       {
+        "kind": "activity",
+        "label": "Damro Labookellie tea estate",
+        "hours": 2.56,
+        "itemId": "tea",
+        "onSite": 1.5,
+        "roundTrip": 1.06
+       }
+      ],
+      "spare": 2.04,
+      "rainSlack": false
+     },
+     {
+      "n": 12,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 8.3,
+      "rainSlack": true
+     },
+     {
+      "n": 13,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ella Rock hike",
+        "hours": 4.5,
+        "itemId": "ellarock",
+        "onSite": 4.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 6.5,
+      "rainSlack": true
+     },
+     {
+      "n": 14,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Lipton's Seat",
+        "hours": 5.5,
+        "itemId": "lipton",
+        "onSite": 3,
+        "roundTrip": 2.5
+       }
+      ],
+      "spare": 5.5,
+      "rainSlack": true
+     },
+     {
+      "n": 15,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Little Adam's Peak",
+        "hours": 2,
+        "itemId": "littleadams",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Buduruwagala rock carvings",
+        "hours": 2.74,
+        "itemId": "buduruwagala",
+        "onSite": 1,
+        "roundTrip": 1.7400000000000002
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Weligama",
+        "hours": 3.25,
+        "from": "Ella",
+        "to": "Weligama"
+       }
+      ],
+      "spare": 1.01,
+      "rainSlack": false
+     },
+     {
+      "n": 16,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Whale watching, responsible operator",
+        "hours": 5.5600000000000005,
+        "itemId": "whales",
+        "onSite": 5,
+        "roundTrip": 0.5600000000000005
+       }
+      ],
+      "spare": 5.44,
+      "rainSlack": false
+     },
+     {
+      "n": 17,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Jungle Beach snorkel",
+        "hours": 4.46,
+        "itemId": "junglebeach",
+        "onSite": 3,
+        "roundTrip": 1.46
+       }
+      ],
+      "spare": 6.54,
+      "rainSlack": false
+     },
+     {
+      "n": 18,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Proper beach day",
+        "hours": 6,
+        "itemId": "beachday",
+        "onSite": 6,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 3.5,
+      "rainSlack": false
+     },
+     {
+      "n": 19,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Wewurukannala giant Buddha",
+        "hours": 3.56,
+        "itemId": "wewurukannala",
+        "onSite": 1.5,
+        "roundTrip": 2.06
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Fort and sunset",
+        "hours": 4.54,
+        "itemId": "galle",
+        "onSite": 3,
+        "roundTrip": 1.54
+       }
+      ],
+      "spare": 1.9,
+      "rainSlack": false
+     },
+     {
+      "n": 20,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Rekawa night turtle watch",
+        "hours": 4.96,
+        "itemId": "rekawa",
+        "onSite": 2.5,
+        "roundTrip": 2.46
+       }
+      ],
+      "spare": 6.04,
+      "rainSlack": false
+     },
+     {
+      "n": 21,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Weligama to the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       },
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 0.17,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "aukana",
+     "bawa",
+     "beachday",
+     "buduruwagala",
+     "coconut",
+     "crab",
+     "dambulla",
+     "elephants",
+     "ellarock",
+     "foodtour",
+     "galle",
+     "galleface",
+     "gangaramaya",
+     "horton",
+     "junglebeach",
+     "kottu",
+     "lavinia",
+     "lipton",
+     "littleadams",
+     "ninearch",
+     "pettah",
+     "pidurangala",
+     "polonnaruwa",
+     "rafting",
+     "rekawa",
+     "rooftop",
+     "sigiriya",
+     "surf",
+     "tea",
+     "tooth",
+     "train",
+     "village",
+     "wewurukannala",
+     "whales",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "delft",
+     "diyaluma",
+     "hiriketiya",
+     "jaffna",
+     "knuckles",
+     "nainativu",
+     "pigeon",
+     "trinco",
+     "udawalawe",
+     "yala"
+    ],
+    "travelHours": 18.310000000000002,
+    "fits": true,
+    "missingMusts": [],
+    "score": 140
+   }
+  },
+  {
+   "name": "all keen 5d pace 1",
+   "input": {
+    "scores": {
+     "pettah": 4,
+     "foodtour": 4,
+     "galleface": 4,
+     "crab": 4,
+     "gangaramaya": 4,
+     "bawa": 4,
+     "rooftop": 4,
+     "lavinia": 4,
+     "kottu": 4,
+     "sigiriya": 4,
+     "pidurangala": 4,
+     "dambulla": 4,
+     "polonnaruwa": 4,
+     "elephants": 4,
+     "anuradhapura": 4,
+     "village": 4,
+     "tooth": 4,
+     "knuckles": 4,
+     "rafting": 4,
+     "train": 4,
+     "horton": 4,
+     "tea": 4,
+     "ellarock": 4,
+     "littleadams": 4,
+     "ninearch": 4,
+     "zipline": 4,
+     "diyaluma": 4,
+     "lipton": 4,
+     "yala": 4,
+     "udawalawe": 4,
+     "surf": 4,
+     "whales": 4,
+     "galle": 4,
+     "coconut": 4,
+     "hiriketiya": 4,
+     "junglebeach": 4,
+     "beachday": 4,
+     "jaffna": 4,
+     "delft": 4,
+     "nainativu": 4,
+     "trinco": 4,
+     "pigeon": 4,
+     "aukana": 4,
+     "buduruwagala": 4,
+     "wewurukannala": 4,
+     "rekawa": 4
+    },
+    "days": 5,
+    "pace": 1
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Kitulgala",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Kitulgala"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Mount Lavinia beach",
+        "hours": 3.3600000000000003,
+        "itemId": "lavinia",
+        "onSite": 2,
+        "roundTrip": 1.3600000000000003
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.14,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Kitulgala",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Kitulgala",
+        "hours": 2.98,
+        "from": "Colombo",
+        "to": "Kitulgala"
+       },
+       {
+        "kind": "activity",
+        "label": "Kitulgala white water rafting",
+        "hours": 3,
+        "itemId": "rafting",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.73,
+        "from": "Kitulgala",
+        "to": "AIR"
+       }
+      ],
+      "spare": 0.29,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Kitulgala",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "crab",
+     "foodtour",
+     "galleface",
+     "gangaramaya",
+     "kottu",
+     "lavinia",
+     "pettah",
+     "rafting",
+     "rooftop"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "buduruwagala",
+     "coconut",
+     "dambulla",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "ellarock",
+     "galle",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "junglebeach",
+     "knuckles",
+     "lipton",
+     "littleadams",
+     "nainativu",
+     "ninearch",
+     "pidurangala",
+     "pigeon",
+     "polonnaruwa",
+     "rekawa",
+     "sigiriya",
+     "surf",
+     "tea",
+     "tooth",
+     "train",
+     "trinco",
+     "udawalawe",
+     "village",
+     "wewurukannala",
+     "whales",
+     "yala",
+     "zipline"
+    ],
+    "travelHours": 6.51,
+    "fits": true,
+    "missingMusts": [],
+    "score": 40
+   }
+  },
+  {
+   "name": "all keen 9d pace 1",
+   "input": {
+    "scores": {
+     "pettah": 4,
+     "foodtour": 4,
+     "galleface": 4,
+     "crab": 4,
+     "gangaramaya": 4,
+     "bawa": 4,
+     "rooftop": 4,
+     "lavinia": 4,
+     "kottu": 4,
+     "sigiriya": 4,
+     "pidurangala": 4,
+     "dambulla": 4,
+     "polonnaruwa": 4,
+     "elephants": 4,
+     "anuradhapura": 4,
+     "village": 4,
+     "tooth": 4,
+     "knuckles": 4,
+     "rafting": 4,
+     "train": 4,
+     "horton": 4,
+     "tea": 4,
+     "ellarock": 4,
+     "littleadams": 4,
+     "ninearch": 4,
+     "zipline": 4,
+     "diyaluma": 4,
+     "lipton": 4,
+     "yala": 4,
+     "udawalawe": 4,
+     "surf": 4,
+     "whales": 4,
+     "galle": 4,
+     "coconut": 4,
+     "hiriketiya": 4,
+     "junglebeach": 4,
+     "beachday": 4,
+     "jaffna": 4,
+     "delft": 4,
+     "nainativu": 4,
+     "trinco": 4,
+     "pigeon": 4,
+     "aukana": 4,
+     "buduruwagala": 4,
+     "wewurukannala": 4,
+     "rekawa": 4
+    },
+    "days": 9,
+    "pace": 1
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Kitulgala",
+     "Nuwara Eliya",
+     "Ella",
+     "Tissa",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Kitulgala",
+     "Hill country",
+     "Ella",
+     "Wild south",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Mount Lavinia beach",
+        "hours": 3.3600000000000003,
+        "itemId": "lavinia",
+        "onSite": 2,
+        "roundTrip": 1.3600000000000003
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.14,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Kitulgala",
+        "hours": 2.98,
+        "from": "Colombo",
+        "to": "Kitulgala"
+       },
+       {
+        "kind": "activity",
+        "label": "Kitulgala white water rafting",
+        "hours": 3,
+        "itemId": "rafting",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Kitulgala to Nuwara Eliya",
+        "hours": 2.3,
+        "from": "Kitulgala",
+        "to": "Nuwara Eliya"
+       }
+      ],
+      "spare": 0.72,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Damro Labookellie tea estate",
+        "hours": 2.56,
+        "itemId": "tea",
+        "onSite": 1.5,
+        "roundTrip": 1.06
+       },
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 3.74,
+      "rainSlack": true
+     },
+     {
+      "n": 6,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Little Adam's Peak",
+        "hours": 2,
+        "itemId": "littleadams",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Buduruwagala rock carvings",
+        "hours": 2.74,
+        "itemId": "buduruwagala",
+        "onSite": 1,
+        "roundTrip": 1.7400000000000002
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Tissa",
+        "hours": 2.08,
+        "from": "Ella",
+        "to": "Tissa"
+       }
+      ],
+      "spare": 0.18,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Tissa to Weligama",
+        "hours": 1.9,
+        "from": "Tissa",
+        "to": "Weligama"
+       },
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Wewurukannala giant Buddha",
+        "hours": 3.56,
+        "itemId": "wewurukannala",
+        "onSite": 1.5,
+        "roundTrip": 2.06
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.04,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       }
+      ],
+      "spare": 6.67,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "buduruwagala",
+     "coconut",
+     "crab",
+     "foodtour",
+     "galleface",
+     "gangaramaya",
+     "kottu",
+     "lavinia",
+     "littleadams",
+     "ninearch",
+     "pettah",
+     "rafting",
+     "rooftop",
+     "surf",
+     "tea",
+     "train",
+     "wewurukannala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "dambulla",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "ellarock",
+     "galle",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "junglebeach",
+     "knuckles",
+     "lipton",
+     "nainativu",
+     "pidurangala",
+     "pigeon",
+     "polonnaruwa",
+     "rekawa",
+     "sigiriya",
+     "tooth",
+     "trinco",
+     "udawalawe",
+     "village",
+     "whales",
+     "yala"
+    ],
+    "travelHours": 12.39,
+    "fits": true,
+    "missingMusts": [],
+    "score": 76
+   }
+  },
+  {
+   "name": "all keen 14d pace 1",
+   "input": {
+    "scores": {
+     "pettah": 4,
+     "foodtour": 4,
+     "galleface": 4,
+     "crab": 4,
+     "gangaramaya": 4,
+     "bawa": 4,
+     "rooftop": 4,
+     "lavinia": 4,
+     "kottu": 4,
+     "sigiriya": 4,
+     "pidurangala": 4,
+     "dambulla": 4,
+     "polonnaruwa": 4,
+     "elephants": 4,
+     "anuradhapura": 4,
+     "village": 4,
+     "tooth": 4,
+     "knuckles": 4,
+     "rafting": 4,
+     "train": 4,
+     "horton": 4,
+     "tea": 4,
+     "ellarock": 4,
+     "littleadams": 4,
+     "ninearch": 4,
+     "zipline": 4,
+     "diyaluma": 4,
+     "lipton": 4,
+     "yala": 4,
+     "udawalawe": 4,
+     "surf": 4,
+     "whales": 4,
+     "galle": 4,
+     "coconut": 4,
+     "hiriketiya": 4,
+     "junglebeach": 4,
+     "beachday": 4,
+     "jaffna": 4,
+     "delft": 4,
+     "nainativu": 4,
+     "trinco": 4,
+     "pigeon": 4,
+     "aukana": 4,
+     "buduruwagala": 4,
+     "wewurukannala": 4,
+     "rekawa": 4
+    },
+    "days": 14,
+    "pace": 1
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Sigiriya",
+     "Kandy",
+     "Kitulgala",
+     "Nuwara Eliya",
+     "Ella",
+     "Tissa",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Cultural Triangle",
+     "Kandy and Knuckles",
+     "Kitulgala",
+     "Hill country",
+     "Ella",
+     "Wild south",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Mount Lavinia beach",
+        "hours": 3.3600000000000003,
+        "itemId": "lavinia",
+        "onSite": 2,
+        "roundTrip": 1.3600000000000003
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.14,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Sigiriya",
+        "hours": 4.33,
+        "from": "Colombo",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 4.67,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Aukana Buddha at dawn",
+        "hours": 3.4,
+        "itemId": "aukana",
+        "onSite": 1,
+        "roundTrip": 2.4
+       }
+      ],
+      "spare": 5.6,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pidurangala sunrise",
+        "hours": 2.3,
+        "itemId": "pidurangala",
+        "onSite": 2,
+        "roundTrip": 0.2999999999999998
+       }
+      ],
+      "spare": 6.7,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Dambulla cave temple",
+        "hours": 2.6399999999999997,
+        "itemId": "dambulla",
+        "onSite": 1.5,
+        "roundTrip": 1.1399999999999997
+       },
+       {
+        "kind": "activity",
+        "label": "Village tour and cooking lunch",
+        "hours": 3,
+        "itemId": "village",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.36,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "Kandy and Knuckles",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Kandy",
+        "hours": 2.97,
+        "from": "Sigiriya",
+        "to": "Kandy"
+       },
+       {
+        "kind": "activity",
+        "label": "Temple of the Tooth, evening puja",
+        "hours": 1.5,
+        "itemId": "tooth",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4.53,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Kandy to Kitulgala",
+        "hours": 2.33,
+        "from": "Kandy",
+        "to": "Kitulgala"
+       },
+       {
+        "kind": "activity",
+        "label": "Kitulgala white water rafting",
+        "hours": 3,
+        "itemId": "rafting",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Kitulgala to Nuwara Eliya",
+        "hours": 2.3,
+        "from": "Kitulgala",
+        "to": "Nuwara Eliya"
+       }
+      ],
+      "spare": 1.37,
+      "rainSlack": false
+     },
+     {
+      "n": 10,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Damro Labookellie tea estate",
+        "hours": 2.56,
+        "itemId": "tea",
+        "onSite": 1.5,
+        "roundTrip": 1.06
+       },
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 3.74,
+      "rainSlack": true
+     },
+     {
+      "n": 11,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Little Adam's Peak",
+        "hours": 2,
+        "itemId": "littleadams",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Buduruwagala rock carvings",
+        "hours": 2.74,
+        "itemId": "buduruwagala",
+        "onSite": 1,
+        "roundTrip": 1.7400000000000002
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Tissa",
+        "hours": 2.08,
+        "from": "Ella",
+        "to": "Tissa"
+       }
+      ],
+      "spare": 0.18,
+      "rainSlack": false
+     },
+     {
+      "n": 12,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Tissa to Weligama",
+        "hours": 1.9,
+        "from": "Tissa",
+        "to": "Weligama"
+       },
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Wewurukannala giant Buddha",
+        "hours": 3.56,
+        "itemId": "wewurukannala",
+        "onSite": 1.5,
+        "roundTrip": 2.06
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.04,
+      "rainSlack": false
+     },
+     {
+      "n": 13,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       }
+      ],
+      "spare": 6.67,
+      "rainSlack": false
+     },
+     {
+      "n": 14,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "aukana",
+     "bawa",
+     "buduruwagala",
+     "coconut",
+     "crab",
+     "dambulla",
+     "foodtour",
+     "galleface",
+     "gangaramaya",
+     "kottu",
+     "lavinia",
+     "littleadams",
+     "ninearch",
+     "pettah",
+     "pidurangala",
+     "rafting",
+     "rooftop",
+     "sigiriya",
+     "surf",
+     "tea",
+     "tooth",
+     "train",
+     "village",
+     "wewurukannala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "beachday",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "ellarock",
+     "galle",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "junglebeach",
+     "knuckles",
+     "lipton",
+     "nainativu",
+     "pigeon",
+     "polonnaruwa",
+     "rekawa",
+     "trinco",
+     "udawalawe",
+     "whales",
+     "yala"
+    ],
+    "travelHours": 19.04,
+    "fits": true,
+    "missingMusts": [],
+    "score": 100
+   }
+  },
+  {
+   "name": "all keen 21d pace 1",
+   "input": {
+    "scores": {
+     "pettah": 4,
+     "foodtour": 4,
+     "galleface": 4,
+     "crab": 4,
+     "gangaramaya": 4,
+     "bawa": 4,
+     "rooftop": 4,
+     "lavinia": 4,
+     "kottu": 4,
+     "sigiriya": 4,
+     "pidurangala": 4,
+     "dambulla": 4,
+     "polonnaruwa": 4,
+     "elephants": 4,
+     "anuradhapura": 4,
+     "village": 4,
+     "tooth": 4,
+     "knuckles": 4,
+     "rafting": 4,
+     "train": 4,
+     "horton": 4,
+     "tea": 4,
+     "ellarock": 4,
+     "littleadams": 4,
+     "ninearch": 4,
+     "zipline": 4,
+     "diyaluma": 4,
+     "lipton": 4,
+     "yala": 4,
+     "udawalawe": 4,
+     "surf": 4,
+     "whales": 4,
+     "galle": 4,
+     "coconut": 4,
+     "hiriketiya": 4,
+     "junglebeach": 4,
+     "beachday": 4,
+     "jaffna": 4,
+     "delft": 4,
+     "nainativu": 4,
+     "trinco": 4,
+     "pigeon": 4,
+     "aukana": 4,
+     "buduruwagala": 4,
+     "wewurukannala": 4,
+     "rekawa": 4
+    },
+    "days": 21,
+    "pace": 1
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Sigiriya",
+     "Kandy",
+     "Kitulgala",
+     "Nuwara Eliya",
+     "Ella",
+     "Udawalawe",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Cultural Triangle",
+     "Kandy and Knuckles",
+     "Kitulgala",
+     "Hill country",
+     "Ella",
+     "Wild south",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Mount Lavinia beach",
+        "hours": 3.3600000000000003,
+        "itemId": "lavinia",
+        "onSite": 2,
+        "roundTrip": 1.3600000000000003
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.14,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Sigiriya",
+        "hours": 4.33,
+        "from": "Colombo",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 4.67,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Aukana Buddha at dawn",
+        "hours": 3.4,
+        "itemId": "aukana",
+        "onSite": 1,
+        "roundTrip": 2.4
+       }
+      ],
+      "spare": 5.6,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pidurangala sunrise",
+        "hours": 2.3,
+        "itemId": "pidurangala",
+        "onSite": 2,
+        "roundTrip": 0.2999999999999998
+       }
+      ],
+      "spare": 6.7,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Dambulla cave temple",
+        "hours": 2.6399999999999997,
+        "itemId": "dambulla",
+        "onSite": 1.5,
+        "roundTrip": 1.1399999999999997
+       },
+       {
+        "kind": "activity",
+        "label": "Village tour and cooking lunch",
+        "hours": 3,
+        "itemId": "village",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.36,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "Kandy and Knuckles",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Elephant safari",
+        "hours": 4.54,
+        "itemId": "elephants",
+        "onSite": 3,
+        "roundTrip": 1.54
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Kandy",
+        "hours": 2.97,
+        "from": "Sigiriya",
+        "to": "Kandy"
+       }
+      ],
+      "spare": 1.49,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "Kandy and Knuckles",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Temple of the Tooth, evening puja",
+        "hours": 1.5,
+        "itemId": "tooth",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 7.5,
+      "rainSlack": false
+     },
+     {
+      "n": 10,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Kandy to Kitulgala",
+        "hours": 2.33,
+        "from": "Kandy",
+        "to": "Kitulgala"
+       },
+       {
+        "kind": "activity",
+        "label": "Kitulgala white water rafting",
+        "hours": 3,
+        "itemId": "rafting",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Kitulgala to Nuwara Eliya",
+        "hours": 2.3,
+        "from": "Kitulgala",
+        "to": "Nuwara Eliya"
+       }
+      ],
+      "spare": 1.37,
+      "rainSlack": false
+     },
+     {
+      "n": 11,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Damro Labookellie tea estate",
+        "hours": 2.56,
+        "itemId": "tea",
+        "onSite": 1.5,
+        "roundTrip": 1.06
+       },
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 3.74,
+      "rainSlack": true
+     },
+     {
+      "n": 12,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ella Rock hike",
+        "hours": 4.5,
+        "itemId": "ellarock",
+        "onSite": 4.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4.5,
+      "rainSlack": true
+     },
+     {
+      "n": 13,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Lipton's Seat",
+        "hours": 5.5,
+        "itemId": "lipton",
+        "onSite": 3,
+        "roundTrip": 2.5
+       }
+      ],
+      "spare": 3.5,
+      "rainSlack": true
+     },
+     {
+      "n": 14,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Little Adam's Peak",
+        "hours": 2,
+        "itemId": "littleadams",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Buduruwagala rock carvings",
+        "hours": 2.74,
+        "itemId": "buduruwagala",
+        "onSite": 1,
+        "roundTrip": 1.7400000000000002
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2.26,
+      "rainSlack": false
+     },
+     {
+      "n": 15,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Udawalawe",
+        "hours": 2.32,
+        "from": "Ella",
+        "to": "Udawalawe"
+       },
+       {
+        "kind": "activity",
+        "label": "Udawalawe elephants and Transit Home",
+        "hours": 4,
+        "itemId": "udawalawe",
+        "onSite": 4,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Udawalawe to Weligama",
+        "hours": 1.83,
+        "from": "Udawalawe",
+        "to": "Weligama"
+       }
+      ],
+      "spare": 0.85,
+      "rainSlack": false
+     },
+     {
+      "n": 16,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Jungle Beach snorkel",
+        "hours": 4.46,
+        "itemId": "junglebeach",
+        "onSite": 3,
+        "roundTrip": 1.46
+       }
+      ],
+      "spare": 4.54,
+      "rainSlack": false
+     },
+     {
+      "n": 17,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Wewurukannala giant Buddha",
+        "hours": 3.56,
+        "itemId": "wewurukannala",
+        "onSite": 1.5,
+        "roundTrip": 2.06
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2.94,
+      "rainSlack": false
+     },
+     {
+      "n": 18,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Galle Fort and sunset",
+        "hours": 4.54,
+        "itemId": "galle",
+        "onSite": 3,
+        "roundTrip": 1.54
+       }
+      ],
+      "spare": 4.46,
+      "rainSlack": false
+     },
+     {
+      "n": 19,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Rekawa night turtle watch",
+        "hours": 4.96,
+        "itemId": "rekawa",
+        "onSite": 2.5,
+        "roundTrip": 2.46
+       }
+      ],
+      "spare": 4.04,
+      "rainSlack": false
+     },
+     {
+      "n": 20,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       }
+      ],
+      "spare": 6.67,
+      "rainSlack": false
+     },
+     {
+      "n": 21,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "aukana",
+     "bawa",
+     "buduruwagala",
+     "coconut",
+     "crab",
+     "dambulla",
+     "elephants",
+     "ellarock",
+     "foodtour",
+     "galle",
+     "galleface",
+     "gangaramaya",
+     "junglebeach",
+     "kottu",
+     "lavinia",
+     "lipton",
+     "littleadams",
+     "ninearch",
+     "pettah",
+     "pidurangala",
+     "rafting",
+     "rekawa",
+     "rooftop",
+     "sigiriya",
+     "surf",
+     "tea",
+     "tooth",
+     "train",
+     "udawalawe",
+     "village",
+     "wewurukannala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "beachday",
+     "delft",
+     "diyaluma",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "knuckles",
+     "nainativu",
+     "pigeon",
+     "polonnaruwa",
+     "trinco",
+     "whales",
+     "yala"
+    ],
+    "travelHours": 19.21,
+    "fits": true,
+    "missingMusts": [],
+    "score": 128
+   }
+  },
+  {
+   "name": "all keen 5d pace 2",
+   "input": {
+    "scores": {
+     "pettah": 4,
+     "foodtour": 4,
+     "galleface": 4,
+     "crab": 4,
+     "gangaramaya": 4,
+     "bawa": 4,
+     "rooftop": 4,
+     "lavinia": 4,
+     "kottu": 4,
+     "sigiriya": 4,
+     "pidurangala": 4,
+     "dambulla": 4,
+     "polonnaruwa": 4,
+     "elephants": 4,
+     "anuradhapura": 4,
+     "village": 4,
+     "tooth": 4,
+     "knuckles": 4,
+     "rafting": 4,
+     "train": 4,
+     "horton": 4,
+     "tea": 4,
+     "ellarock": 4,
+     "littleadams": 4,
+     "ninearch": 4,
+     "zipline": 4,
+     "diyaluma": 4,
+     "lipton": 4,
+     "yala": 4,
+     "udawalawe": 4,
+     "surf": 4,
+     "whales": 4,
+     "galle": 4,
+     "coconut": 4,
+     "hiriketiya": 4,
+     "junglebeach": 4,
+     "beachday": 4,
+     "jaffna": 4,
+     "delft": 4,
+     "nainativu": 4,
+     "trinco": 4,
+     "pigeon": 4,
+     "aukana": 4,
+     "buduruwagala": 4,
+     "wewurukannala": 4,
+     "rekawa": 4
+    },
+    "days": 5,
+    "pace": 2
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 0.8,
+        "from": "Colombo",
+        "to": "AIR"
+       }
+      ],
+      "spare": 6.2,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 0.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "crab",
+     "galleface",
+     "gangaramaya",
+     "kottu",
+     "pettah",
+     "rooftop"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "buduruwagala",
+     "coconut",
+     "dambulla",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "ellarock",
+     "foodtour",
+     "galle",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "junglebeach",
+     "knuckles",
+     "lavinia",
+     "lipton",
+     "littleadams",
+     "nainativu",
+     "ninearch",
+     "pidurangala",
+     "pigeon",
+     "polonnaruwa",
+     "rafting",
+     "rekawa",
+     "sigiriya",
+     "surf",
+     "tea",
+     "tooth",
+     "train",
+     "trinco",
+     "udawalawe",
+     "village",
+     "wewurukannala",
+     "whales",
+     "yala",
+     "zipline"
+    ],
+    "travelHours": 1.6,
+    "fits": true,
+    "missingMusts": [],
+    "score": 28
+   }
+  },
+  {
+   "name": "all keen 9d pace 2",
+   "input": {
+    "scores": {
+     "pettah": 4,
+     "foodtour": 4,
+     "galleface": 4,
+     "crab": 4,
+     "gangaramaya": 4,
+     "bawa": 4,
+     "rooftop": 4,
+     "lavinia": 4,
+     "kottu": 4,
+     "sigiriya": 4,
+     "pidurangala": 4,
+     "dambulla": 4,
+     "polonnaruwa": 4,
+     "elephants": 4,
+     "anuradhapura": 4,
+     "village": 4,
+     "tooth": 4,
+     "knuckles": 4,
+     "rafting": 4,
+     "train": 4,
+     "horton": 4,
+     "tea": 4,
+     "ellarock": 4,
+     "littleadams": 4,
+     "ninearch": 4,
+     "zipline": 4,
+     "diyaluma": 4,
+     "lipton": 4,
+     "yala": 4,
+     "udawalawe": 4,
+     "surf": 4,
+     "whales": 4,
+     "galle": 4,
+     "coconut": 4,
+     "hiriketiya": 4,
+     "junglebeach": 4,
+     "beachday": 4,
+     "jaffna": 4,
+     "delft": 4,
+     "nainativu": 4,
+     "trinco": 4,
+     "pigeon": 4,
+     "aukana": 4,
+     "buduruwagala": 4,
+     "wewurukannala": 4,
+     "rekawa": 4
+    },
+    "days": 9,
+    "pace": 2
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Nuwara Eliya",
+     "Ella",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Hill country",
+     "Ella"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 3,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Mount Lavinia beach",
+        "hours": 3.3600000000000003,
+        "itemId": "lavinia",
+        "onSite": 2,
+        "roundTrip": 1.3600000000000003
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.14,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Nuwara Eliya",
+        "hours": 5.279999999999999,
+        "from": "Colombo",
+        "to": "Nuwara Eliya"
+       }
+      ],
+      "spare": 1.72,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Damro Labookellie tea estate",
+        "hours": 2.56,
+        "itemId": "tea",
+        "onSite": 1.5,
+        "roundTrip": 1.06
+       },
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 1.74,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Little Adam's Peak",
+        "hours": 2,
+        "itemId": "littleadams",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Buduruwagala rock carvings",
+        "hours": 2.74,
+        "itemId": "buduruwagala",
+        "onSite": 1,
+        "roundTrip": 1.7400000000000002
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.26,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 5.58,
+        "from": "Ella",
+        "to": "AIR"
+       }
+      ],
+      "spare": 1.42,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 0.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "buduruwagala",
+     "crab",
+     "foodtour",
+     "galleface",
+     "gangaramaya",
+     "kottu",
+     "lavinia",
+     "littleadams",
+     "ninearch",
+     "pettah",
+     "rooftop",
+     "tea",
+     "train",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "coconut",
+     "dambulla",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "ellarock",
+     "galle",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "junglebeach",
+     "knuckles",
+     "lipton",
+     "nainativu",
+     "pidurangala",
+     "pigeon",
+     "polonnaruwa",
+     "rafting",
+     "rekawa",
+     "sigiriya",
+     "surf",
+     "tooth",
+     "trinco",
+     "udawalawe",
+     "village",
+     "wewurukannala",
+     "whales",
+     "yala"
+    ],
+    "travelHours": 11.66,
+    "fits": true,
+    "missingMusts": [],
+    "score": 60
+   }
+  },
+  {
+   "name": "all keen 14d pace 2",
+   "input": {
+    "scores": {
+     "pettah": 4,
+     "foodtour": 4,
+     "galleface": 4,
+     "crab": 4,
+     "gangaramaya": 4,
+     "bawa": 4,
+     "rooftop": 4,
+     "lavinia": 4,
+     "kottu": 4,
+     "sigiriya": 4,
+     "pidurangala": 4,
+     "dambulla": 4,
+     "polonnaruwa": 4,
+     "elephants": 4,
+     "anuradhapura": 4,
+     "village": 4,
+     "tooth": 4,
+     "knuckles": 4,
+     "rafting": 4,
+     "train": 4,
+     "horton": 4,
+     "tea": 4,
+     "ellarock": 4,
+     "littleadams": 4,
+     "ninearch": 4,
+     "zipline": 4,
+     "diyaluma": 4,
+     "lipton": 4,
+     "yala": 4,
+     "udawalawe": 4,
+     "surf": 4,
+     "whales": 4,
+     "galle": 4,
+     "coconut": 4,
+     "hiriketiya": 4,
+     "junglebeach": 4,
+     "beachday": 4,
+     "jaffna": 4,
+     "delft": 4,
+     "nainativu": 4,
+     "trinco": 4,
+     "pigeon": 4,
+     "aukana": 4,
+     "buduruwagala": 4,
+     "wewurukannala": 4,
+     "rekawa": 4
+    },
+    "days": 14,
+    "pace": 2
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Kitulgala",
+     "Nuwara Eliya",
+     "Ella",
+     "Udawalawe",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Kitulgala",
+     "Hill country",
+     "Ella",
+     "Wild south",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 3,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Mount Lavinia beach",
+        "hours": 3.3600000000000003,
+        "itemId": "lavinia",
+        "onSite": 2,
+        "roundTrip": 1.3600000000000003
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.14,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Kitulgala",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Kitulgala",
+        "hours": 2.98,
+        "from": "Colombo",
+        "to": "Kitulgala"
+       },
+       {
+        "kind": "activity",
+        "label": "Kitulgala white water rafting",
+        "hours": 3,
+        "itemId": "rafting",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.02,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Kitulgala to Nuwara Eliya",
+        "hours": 2.3,
+        "from": "Kitulgala",
+        "to": "Nuwara Eliya"
+       },
+       {
+        "kind": "activity",
+        "label": "Damro Labookellie tea estate",
+        "hours": 2.56,
+        "itemId": "tea",
+        "onSite": 1.5,
+        "roundTrip": 1.06
+       }
+      ],
+      "spare": 2.14,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 4.3,
+      "rainSlack": true
+     },
+     {
+      "n": 8,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ella Rock hike",
+        "hours": 4.5,
+        "itemId": "ellarock",
+        "onSite": 4.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2.5,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Little Adam's Peak",
+        "hours": 2,
+        "itemId": "littleadams",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Buduruwagala rock carvings",
+        "hours": 2.74,
+        "itemId": "buduruwagala",
+        "onSite": 1,
+        "roundTrip": 1.7400000000000002
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.26,
+      "rainSlack": false
+     },
+     {
+      "n": 10,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Udawalawe",
+        "hours": 2.32,
+        "from": "Ella",
+        "to": "Udawalawe"
+       },
+       {
+        "kind": "activity",
+        "label": "Udawalawe elephants and Transit Home",
+        "hours": 4,
+        "itemId": "udawalawe",
+        "onSite": 4,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.68,
+      "rainSlack": false
+     },
+     {
+      "n": 11,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Udawalawe to Weligama",
+        "hours": 1.83,
+        "from": "Udawalawe",
+        "to": "Weligama"
+       },
+       {
+        "kind": "activity",
+        "label": "Jungle Beach snorkel",
+        "hours": 4.46,
+        "itemId": "junglebeach",
+        "onSite": 3,
+        "roundTrip": 1.46
+       }
+      ],
+      "spare": 0.71,
+      "rainSlack": false
+     },
+     {
+      "n": 12,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Wewurukannala giant Buddha",
+        "hours": 3.56,
+        "itemId": "wewurukannala",
+        "onSite": 1.5,
+        "roundTrip": 2.06
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.94,
+      "rainSlack": false
+     },
+     {
+      "n": 13,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       }
+      ],
+      "spare": 4.67,
+      "rainSlack": false
+     },
+     {
+      "n": 14,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 0.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "buduruwagala",
+     "coconut",
+     "crab",
+     "ellarock",
+     "foodtour",
+     "galleface",
+     "gangaramaya",
+     "junglebeach",
+     "kottu",
+     "lavinia",
+     "littleadams",
+     "ninearch",
+     "pettah",
+     "rafting",
+     "rooftop",
+     "surf",
+     "tea",
+     "train",
+     "udawalawe",
+     "wewurukannala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "dambulla",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "galle",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "knuckles",
+     "lipton",
+     "nainativu",
+     "pidurangala",
+     "pigeon",
+     "polonnaruwa",
+     "rekawa",
+     "sigiriya",
+     "tooth",
+     "trinco",
+     "village",
+     "whales",
+     "yala"
+    ],
+    "travelHours": 12.56,
+    "fits": true,
+    "missingMusts": [],
+    "score": 88
+   }
+  },
+  {
+   "name": "all keen 21d pace 2",
+   "input": {
+    "scores": {
+     "pettah": 4,
+     "foodtour": 4,
+     "galleface": 4,
+     "crab": 4,
+     "gangaramaya": 4,
+     "bawa": 4,
+     "rooftop": 4,
+     "lavinia": 4,
+     "kottu": 4,
+     "sigiriya": 4,
+     "pidurangala": 4,
+     "dambulla": 4,
+     "polonnaruwa": 4,
+     "elephants": 4,
+     "anuradhapura": 4,
+     "village": 4,
+     "tooth": 4,
+     "knuckles": 4,
+     "rafting": 4,
+     "train": 4,
+     "horton": 4,
+     "tea": 4,
+     "ellarock": 4,
+     "littleadams": 4,
+     "ninearch": 4,
+     "zipline": 4,
+     "diyaluma": 4,
+     "lipton": 4,
+     "yala": 4,
+     "udawalawe": 4,
+     "surf": 4,
+     "whales": 4,
+     "galle": 4,
+     "coconut": 4,
+     "hiriketiya": 4,
+     "junglebeach": 4,
+     "beachday": 4,
+     "jaffna": 4,
+     "delft": 4,
+     "nainativu": 4,
+     "trinco": 4,
+     "pigeon": 4,
+     "aukana": 4,
+     "buduruwagala": 4,
+     "wewurukannala": 4,
+     "rekawa": 4
+    },
+    "days": 21,
+    "pace": 2
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Sigiriya",
+     "Kandy",
+     "Nuwara Eliya",
+     "Ella",
+     "Udawalawe",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Cultural Triangle",
+     "Kandy and Knuckles",
+     "Hill country",
+     "Ella",
+     "Wild south",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 3,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Mount Lavinia beach",
+        "hours": 3.3600000000000003,
+        "itemId": "lavinia",
+        "onSite": 2,
+        "roundTrip": 1.3600000000000003
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.14,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Sigiriya",
+        "hours": 4.33,
+        "from": "Colombo",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 2.67,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Aukana Buddha at dawn",
+        "hours": 3.4,
+        "itemId": "aukana",
+        "onSite": 1,
+        "roundTrip": 2.4
+       }
+      ],
+      "spare": 3.6,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pidurangala sunrise",
+        "hours": 2.3,
+        "itemId": "pidurangala",
+        "onSite": 2,
+        "roundTrip": 0.2999999999999998
+       }
+      ],
+      "spare": 4.7,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Dambulla cave temple",
+        "hours": 2.6399999999999997,
+        "itemId": "dambulla",
+        "onSite": 1.5,
+        "roundTrip": 1.1399999999999997
+       }
+      ],
+      "spare": 1.36,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Village tour and cooking lunch",
+        "hours": 3,
+        "itemId": "village",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4,
+      "rainSlack": false
+     },
+     {
+      "n": 10,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Elephant safari",
+        "hours": 4.54,
+        "itemId": "elephants",
+        "onSite": 3,
+        "roundTrip": 1.54
+       }
+      ],
+      "spare": 2.46,
+      "rainSlack": false
+     },
+     {
+      "n": 11,
+      "area": "Kandy and Knuckles",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Kandy",
+        "hours": 2.97,
+        "from": "Sigiriya",
+        "to": "Kandy"
+       },
+       {
+        "kind": "activity",
+        "label": "Temple of the Tooth, evening puja",
+        "hours": 1.5,
+        "itemId": "tooth",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2.53,
+      "rainSlack": false
+     },
+     {
+      "n": 12,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Kandy to Nuwara Eliya",
+        "hours": 2.83,
+        "from": "Kandy",
+        "to": "Nuwara Eliya"
+       },
+       {
+        "kind": "activity",
+        "label": "Damro Labookellie tea estate",
+        "hours": 2.56,
+        "itemId": "tea",
+        "onSite": 1.5,
+        "roundTrip": 1.06
+       }
+      ],
+      "spare": 1.61,
+      "rainSlack": false
+     },
+     {
+      "n": 13,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 4.3,
+      "rainSlack": true
+     },
+     {
+      "n": 14,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ella Rock hike",
+        "hours": 4.5,
+        "itemId": "ellarock",
+        "onSite": 4.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2.5,
+      "rainSlack": false
+     },
+     {
+      "n": 15,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Little Adam's Peak",
+        "hours": 2,
+        "itemId": "littleadams",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Buduruwagala rock carvings",
+        "hours": 2.74,
+        "itemId": "buduruwagala",
+        "onSite": 1,
+        "roundTrip": 1.7400000000000002
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.26,
+      "rainSlack": false
+     },
+     {
+      "n": 16,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Udawalawe",
+        "hours": 2.32,
+        "from": "Ella",
+        "to": "Udawalawe"
+       },
+       {
+        "kind": "activity",
+        "label": "Udawalawe elephants and Transit Home",
+        "hours": 4,
+        "itemId": "udawalawe",
+        "onSite": 4,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.68,
+      "rainSlack": false
+     },
+     {
+      "n": 17,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Udawalawe to Weligama",
+        "hours": 1.83,
+        "from": "Udawalawe",
+        "to": "Weligama"
+       },
+       {
+        "kind": "activity",
+        "label": "Jungle Beach snorkel",
+        "hours": 4.46,
+        "itemId": "junglebeach",
+        "onSite": 3,
+        "roundTrip": 1.46
+       }
+      ],
+      "spare": 0.71,
+      "rainSlack": false
+     },
+     {
+      "n": 18,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Wewurukannala giant Buddha",
+        "hours": 3.56,
+        "itemId": "wewurukannala",
+        "onSite": 1.5,
+        "roundTrip": 2.06
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.94,
+      "rainSlack": false
+     },
+     {
+      "n": 19,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Galle Fort and sunset",
+        "hours": 4.54,
+        "itemId": "galle",
+        "onSite": 3,
+        "roundTrip": 1.54
+       }
+      ],
+      "spare": 2.46,
+      "rainSlack": false
+     },
+     {
+      "n": 20,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       }
+      ],
+      "spare": 4.67,
+      "rainSlack": false
+     },
+     {
+      "n": 21,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 0.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "aukana",
+     "bawa",
+     "buduruwagala",
+     "coconut",
+     "crab",
+     "dambulla",
+     "elephants",
+     "ellarock",
+     "foodtour",
+     "galle",
+     "galleface",
+     "gangaramaya",
+     "junglebeach",
+     "kottu",
+     "lavinia",
+     "littleadams",
+     "ninearch",
+     "pettah",
+     "pidurangala",
+     "rooftop",
+     "sigiriya",
+     "surf",
+     "tea",
+     "tooth",
+     "train",
+     "udawalawe",
+     "village",
+     "wewurukannala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "beachday",
+     "delft",
+     "diyaluma",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "knuckles",
+     "lipton",
+     "nainativu",
+     "pigeon",
+     "polonnaruwa",
+     "rafting",
+     "rekawa",
+     "trinco",
+     "whales",
+     "yala"
+    ],
+    "travelHours": 17.41,
+    "fits": true,
+    "missingMusts": [],
+    "score": 116
+   }
+  },
+  {
+   "name": "mixed scores 14d pace 0",
+   "input": {
+    "scores": {
+     "pettah": 1,
+     "foodtour": 2,
+     "galleface": 3,
+     "crab": 4,
+     "gangaramaya": 5,
+     "bawa": 6,
+     "rooftop": 7,
+     "lavinia": 1,
+     "kottu": 2,
+     "sigiriya": 3,
+     "pidurangala": 4,
+     "dambulla": 5,
+     "polonnaruwa": 6,
+     "elephants": 7,
+     "anuradhapura": 1,
+     "village": 2,
+     "tooth": 3,
+     "knuckles": 4,
+     "rafting": 5,
+     "train": 6,
+     "horton": 7,
+     "tea": 1,
+     "ellarock": 2,
+     "littleadams": 3,
+     "ninearch": 4,
+     "zipline": 5,
+     "diyaluma": 6,
+     "lipton": 7,
+     "yala": 1,
+     "udawalawe": 2,
+     "surf": 3,
+     "whales": 4,
+     "galle": 5,
+     "coconut": 6,
+     "hiriketiya": 7,
+     "junglebeach": 1,
+     "beachday": 2,
+     "jaffna": 3,
+     "delft": 4,
+     "nainativu": 5,
+     "trinco": 6,
+     "pigeon": 7,
+     "aukana": 1,
+     "buduruwagala": 2,
+     "wewurukannala": 3,
+     "rekawa": 4
+    },
+    "days": 14,
+    "pace": 0
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Sigiriya",
+     "Kandy",
+     "Kitulgala",
+     "Nuwara Eliya",
+     "Ella",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Cultural Triangle",
+     "Kandy and Knuckles",
+     "Kitulgala",
+     "Hill country",
+     "Ella",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.2,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 6,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Sigiriya",
+        "hours": 4.33,
+        "from": "Colombo",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 6.67,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pidurangala sunrise",
+        "hours": 2.3,
+        "itemId": "pidurangala",
+        "onSite": 2,
+        "roundTrip": 0.2999999999999998
+       }
+      ],
+      "spare": 8.7,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Dambulla cave temple",
+        "hours": 2.6399999999999997,
+        "itemId": "dambulla",
+        "onSite": 1.5,
+        "roundTrip": 1.1399999999999997
+       }
+      ],
+      "spare": 5.36,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Polonnaruwa by bike",
+        "hours": 6.7,
+        "itemId": "polonnaruwa",
+        "onSite": 4,
+        "roundTrip": 2.7
+       }
+      ],
+      "spare": 4.3,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "Kandy and Knuckles",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Elephant safari",
+        "hours": 4.54,
+        "itemId": "elephants",
+        "onSite": 3,
+        "roundTrip": 1.54
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Kandy",
+        "hours": 2.97,
+        "from": "Sigiriya",
+        "to": "Kandy"
+       },
+       {
+        "kind": "activity",
+        "label": "Temple of the Tooth, evening puja",
+        "hours": 1.5,
+        "itemId": "tooth",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.99,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Kandy to Kitulgala",
+        "hours": 2.33,
+        "from": "Kandy",
+        "to": "Kitulgala"
+       },
+       {
+        "kind": "activity",
+        "label": "Kitulgala white water rafting",
+        "hours": 3,
+        "itemId": "rafting",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Kitulgala to Nuwara Eliya",
+        "hours": 2.3,
+        "from": "Kitulgala",
+        "to": "Nuwara Eliya"
+       }
+      ],
+      "spare": 3.37,
+      "rainSlack": true
+     },
+     {
+      "n": 9,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Horton Plains and World's End",
+        "hours": 6.4,
+        "itemId": "horton",
+        "onSite": 4,
+        "roundTrip": 2.4000000000000004
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Nuwara Eliya to Ella",
+        "hours": 1.92,
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 2.68,
+      "rainSlack": false
+     },
+     {
+      "n": 10,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Lipton's Seat",
+        "hours": 5.5,
+        "itemId": "lipton",
+        "onSite": 3,
+        "roundTrip": 2.5
+       }
+      ],
+      "spare": 5.5,
+      "rainSlack": true
+     },
+     {
+      "n": 11,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Little Adam's Peak",
+        "hours": 2,
+        "itemId": "littleadams",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Weligama",
+        "hours": 3.25,
+        "from": "Ella",
+        "to": "Weligama"
+       }
+      ],
+      "spare": 3.75,
+      "rainSlack": false
+     },
+     {
+      "n": 12,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Hiriketiya beach and surf",
+        "hours": 8.14,
+        "itemId": "hiriketiya",
+        "onSite": 6,
+        "roundTrip": 2.1400000000000006
+       }
+      ],
+      "spare": 1.36,
+      "rainSlack": false
+     },
+     {
+      "n": 13,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Wewurukannala giant Buddha",
+        "hours": 3.56,
+        "itemId": "wewurukannala",
+        "onSite": 1.5,
+        "roundTrip": 2.06
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Fort and sunset",
+        "hours": 4.54,
+        "itemId": "galle",
+        "onSite": 3,
+        "roundTrip": 1.54
+       }
+      ],
+      "spare": 1.9,
+      "rainSlack": false
+     },
+     {
+      "n": 14,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Weligama to the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       },
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 0.17,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "coconut",
+     "crab",
+     "dambulla",
+     "elephants",
+     "galle",
+     "galleface",
+     "gangaramaya",
+     "hiriketiya",
+     "horton",
+     "kottu",
+     "lipton",
+     "littleadams",
+     "ninearch",
+     "pidurangala",
+     "polonnaruwa",
+     "rafting",
+     "rooftop",
+     "sigiriya",
+     "surf",
+     "tooth",
+     "wewurukannala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "buduruwagala",
+     "delft",
+     "diyaluma",
+     "ellarock",
+     "foodtour",
+     "jaffna",
+     "junglebeach",
+     "knuckles",
+     "lavinia",
+     "nainativu",
+     "pettah",
+     "pigeon",
+     "rekawa",
+     "tea",
+     "train",
+     "trinco",
+     "udawalawe",
+     "village",
+     "whales",
+     "yala"
+    ],
+    "travelHours": 20.229999999999997,
+    "fits": true,
+    "missingMusts": [],
+    "score": 110
+   }
+  },
+  {
+   "name": "group 2 north 3 south 9d",
+   "input": {
+    "scores": {
+     "pettah": 9.5,
+     "foodtour": 9.392857142857142,
+     "galleface": 9.285714285714286,
+     "crab": 9.178571428571429,
+     "gangaramaya": 9.071428571428571,
+     "bawa": 8.964285714285714,
+     "rooftop": 8.857142857142858,
+     "lavinia": 8.75,
+     "kottu": 8.642857142857142,
+     "sigiriya": 36.114285714285714,
+     "pidurangala": 8.492857142857144,
+     "dambulla": 8.385714285714286,
+     "polonnaruwa": 8.278571428571428,
+     "elephants": 8.17142857142857,
+     "anuradhapura": 8.064285714285715,
+     "village": 7.957142857142857,
+     "tooth": 7.85,
+     "knuckles": 7.742857142857142,
+     "rafting": 7.635714285714285,
+     "train": 7.5285714285714285,
+     "horton": 7.421428571428572,
+     "tea": 7.314285714285715,
+     "ellarock": 7.207142857142857,
+     "littleadams": 7.1000000000000005,
+     "ninearch": 6.992857142857142,
+     "zipline": 6.885714285714286,
+     "diyaluma": 6.7785714285714285,
+     "lipton": 6.671428571428573,
+     "yala": 33.95,
+     "udawalawe": 6.5214285714285705,
+     "surf": 6.414285714285714,
+     "whales": 6.307142857142857,
+     "galle": 32.42857142857143,
+     "coconut": 6.1571428571428575,
+     "hiriketiya": 6.050000000000001,
+     "junglebeach": 5.942857142857143,
+     "beachday": 5.835714285714286,
+     "jaffna": 25.314285714285713,
+     "delft": 24.349999999999994,
+     "nainativu": 5.6,
+     "trinco": 23.321428571428573,
+     "pigeon": 5.428571428571428,
+     "aukana": 5.321428571428571,
+     "buduruwagala": 5.214285714285714,
+     "wewurukannala": 5.107142857142857,
+     "rekawa": 5
+    },
+    "days": 9,
+    "pace": 1
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Sigiriya",
+     "Kandy",
+     "Ella",
+     "Tissa",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Cultural Triangle",
+     "Kandy and Knuckles",
+     "Ella",
+     "Wild south",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.2,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Sigiriya",
+        "hours": 4.33,
+        "from": "Colombo",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 4.67,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Kandy and Knuckles",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Kandy",
+        "hours": 2.97,
+        "from": "Sigiriya",
+        "to": "Kandy"
+       },
+       {
+        "kind": "activity",
+        "label": "Temple of the Tooth, evening puja",
+        "hours": 1.5,
+        "itemId": "tooth",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.53,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Kandy to Ella",
+        "hours": 4.03,
+        "from": "Kandy",
+        "to": "Ella"
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Tissa",
+        "hours": 2.08,
+        "from": "Ella",
+        "to": "Tissa"
+       }
+      ],
+      "spare": 0.89,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Yala leopard safari",
+        "hours": 5.74,
+        "itemId": "yala",
+        "onSite": 4.5,
+        "roundTrip": 1.2400000000000002
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Tissa to Weligama",
+        "hours": 1.9,
+        "from": "Tissa",
+        "to": "Weligama"
+       }
+      ],
+      "spare": 1.36,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Fort and sunset",
+        "hours": 4.54,
+        "itemId": "galle",
+        "onSite": 3,
+        "roundTrip": 1.54
+       }
+      ],
+      "spare": 1.96,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       }
+      ],
+      "spare": 6.67,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "coconut",
+     "crab",
+     "galle",
+     "galleface",
+     "gangaramaya",
+     "kottu",
+     "ninearch",
+     "rooftop",
+     "sigiriya",
+     "surf",
+     "tooth",
+     "yala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "buduruwagala",
+     "dambulla",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "ellarock",
+     "foodtour",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "junglebeach",
+     "knuckles",
+     "lavinia",
+     "lipton",
+     "littleadams",
+     "nainativu",
+     "pettah",
+     "pidurangala",
+     "pigeon",
+     "polonnaruwa",
+     "rafting",
+     "rekawa",
+     "tea",
+     "train",
+     "trinco",
+     "udawalawe",
+     "village",
+     "wewurukannala",
+     "whales"
+    ],
+    "travelHours": 18.439999999999998,
+    "fits": true,
+    "missingMusts": [],
+    "score": 190.79285714285714
+   }
+  },
+  {
+   "name": "group 2 north 3 south 14d",
+   "input": {
+    "scores": {
+     "pettah": 9.5,
+     "foodtour": 9.392857142857142,
+     "galleface": 9.285714285714286,
+     "crab": 9.178571428571429,
+     "gangaramaya": 9.071428571428571,
+     "bawa": 8.964285714285714,
+     "rooftop": 8.857142857142858,
+     "lavinia": 8.75,
+     "kottu": 8.642857142857142,
+     "sigiriya": 36.114285714285714,
+     "pidurangala": 8.492857142857144,
+     "dambulla": 8.385714285714286,
+     "polonnaruwa": 8.278571428571428,
+     "elephants": 8.17142857142857,
+     "anuradhapura": 8.064285714285715,
+     "village": 7.957142857142857,
+     "tooth": 7.85,
+     "knuckles": 7.742857142857142,
+     "rafting": 7.635714285714285,
+     "train": 7.5285714285714285,
+     "horton": 7.421428571428572,
+     "tea": 7.314285714285715,
+     "ellarock": 7.207142857142857,
+     "littleadams": 7.1000000000000005,
+     "ninearch": 6.992857142857142,
+     "zipline": 6.885714285714286,
+     "diyaluma": 6.7785714285714285,
+     "lipton": 6.671428571428573,
+     "yala": 33.95,
+     "udawalawe": 6.5214285714285705,
+     "surf": 6.414285714285714,
+     "whales": 6.307142857142857,
+     "galle": 32.42857142857143,
+     "coconut": 6.1571428571428575,
+     "hiriketiya": 6.050000000000001,
+     "junglebeach": 5.942857142857143,
+     "beachday": 5.835714285714286,
+     "jaffna": 25.314285714285713,
+     "delft": 24.349999999999994,
+     "nainativu": 5.6,
+     "trinco": 23.321428571428573,
+     "pigeon": 5.428571428571428,
+     "aukana": 5.321428571428571,
+     "buduruwagala": 5.214285714285714,
+     "wewurukannala": 5.107142857142857,
+     "rekawa": 5
+    },
+    "days": 14,
+    "pace": 1
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Trincomalee",
+     "Sigiriya",
+     "Ella",
+     "Tissa",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "East coast",
+     "Cultural Triangle",
+     "Ella",
+     "Wild south",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 2.7,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pettah market and Red Mosque",
+        "hours": 3,
+        "itemId": "pettah",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Mount Lavinia beach",
+        "hours": 3.3600000000000003,
+        "itemId": "lavinia",
+        "onSite": 2,
+        "roundTrip": 1.3600000000000003
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.14,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Tuk-tuk street food tour",
+        "hours": 3,
+        "itemId": "foodtour",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "East coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Trincomalee",
+        "hours": 6.35,
+        "from": "Colombo",
+        "to": "Trincomalee"
+       }
+      ],
+      "spare": 2.65,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Trincomalee: Koneswaram temple and Fort Frederick",
+        "hours": 2.5,
+        "itemId": "trinco",
+        "onSite": 2.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Trincomalee to Sigiriya",
+        "hours": 2.02,
+        "from": "Trincomalee",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 4.48,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pidurangala sunrise",
+        "hours": 2.3,
+        "itemId": "pidurangala",
+        "onSite": 2,
+        "roundTrip": 0.2999999999999998
+       }
+      ],
+      "spare": 6.7,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Dambulla cave temple",
+        "hours": 2.6399999999999997,
+        "itemId": "dambulla",
+        "onSite": 1.5,
+        "roundTrip": 1.1399999999999997
+       },
+       {
+        "kind": "activity",
+        "label": "Village tour and cooking lunch",
+        "hours": 3,
+        "itemId": "village",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.36,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Elephant safari",
+        "hours": 4.54,
+        "itemId": "elephants",
+        "onSite": 3,
+        "roundTrip": 1.54
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Ella",
+        "hours": 4.43,
+        "from": "Sigiriya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 0.03,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ella Rock hike",
+        "hours": 4.5,
+        "itemId": "ellarock",
+        "onSite": 4.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4.5,
+      "rainSlack": true
+     },
+     {
+      "n": 10,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Little Adam's Peak",
+        "hours": 2,
+        "itemId": "littleadams",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Buduruwagala rock carvings",
+        "hours": 2.74,
+        "itemId": "buduruwagala",
+        "onSite": 1,
+        "roundTrip": 1.7400000000000002
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Tissa",
+        "hours": 2.08,
+        "from": "Ella",
+        "to": "Tissa"
+       }
+      ],
+      "spare": 0.18,
+      "rainSlack": false
+     },
+     {
+      "n": 11,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Yala leopard safari",
+        "hours": 5.74,
+        "itemId": "yala",
+        "onSite": 4.5,
+        "roundTrip": 1.2400000000000002
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Tissa to Weligama",
+        "hours": 1.9,
+        "from": "Tissa",
+        "to": "Weligama"
+       }
+      ],
+      "spare": 1.36,
+      "rainSlack": false
+     },
+     {
+      "n": 12,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Fort and sunset",
+        "hours": 4.54,
+        "itemId": "galle",
+        "onSite": 3,
+        "roundTrip": 1.54
+       }
+      ],
+      "spare": 1.96,
+      "rainSlack": false
+     },
+     {
+      "n": 13,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       }
+      ],
+      "spare": 6.67,
+      "rainSlack": false
+     },
+     {
+      "n": 14,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "buduruwagala",
+     "coconut",
+     "crab",
+     "dambulla",
+     "elephants",
+     "ellarock",
+     "foodtour",
+     "galle",
+     "galleface",
+     "gangaramaya",
+     "kottu",
+     "lavinia",
+     "littleadams",
+     "ninearch",
+     "pettah",
+     "pidurangala",
+     "rooftop",
+     "sigiriya",
+     "surf",
+     "trinco",
+     "village",
+     "yala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "delft",
+     "diyaluma",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "junglebeach",
+     "knuckles",
+     "lipton",
+     "nainativu",
+     "pigeon",
+     "polonnaruwa",
+     "rafting",
+     "rekawa",
+     "tea",
+     "tooth",
+     "train",
+     "udawalawe",
+     "wewurukannala",
+     "whales"
+    ],
+    "travelHours": 19.909999999999997,
+    "fits": true,
+    "missingMusts": [],
+    "score": 286.4357142857143
+   }
+  },
+  {
+   "name": "group forceIn jaffna 9d",
+   "input": {
+    "scores": {
+     "pettah": 9.5,
+     "foodtour": 9.392857142857142,
+     "galleface": 9.285714285714286,
+     "crab": 9.178571428571429,
+     "gangaramaya": 9.071428571428571,
+     "bawa": 8.964285714285714,
+     "rooftop": 8.857142857142858,
+     "lavinia": 8.75,
+     "kottu": 8.642857142857142,
+     "sigiriya": 36.114285714285714,
+     "pidurangala": 8.492857142857144,
+     "dambulla": 8.385714285714286,
+     "polonnaruwa": 8.278571428571428,
+     "elephants": 8.17142857142857,
+     "anuradhapura": 8.064285714285715,
+     "village": 7.957142857142857,
+     "tooth": 7.85,
+     "knuckles": 7.742857142857142,
+     "rafting": 7.635714285714285,
+     "train": 7.5285714285714285,
+     "horton": 7.421428571428572,
+     "tea": 7.314285714285715,
+     "ellarock": 7.207142857142857,
+     "littleadams": 7.1000000000000005,
+     "ninearch": 6.992857142857142,
+     "zipline": 6.885714285714286,
+     "diyaluma": 6.7785714285714285,
+     "lipton": 6.671428571428573,
+     "yala": 33.95,
+     "udawalawe": 6.5214285714285705,
+     "surf": 6.414285714285714,
+     "whales": 6.307142857142857,
+     "galle": 32.42857142857143,
+     "coconut": 6.1571428571428575,
+     "hiriketiya": 6.050000000000001,
+     "junglebeach": 5.942857142857143,
+     "beachday": 5.835714285714286,
+     "jaffna": 25.314285714285713,
+     "delft": 24.349999999999994,
+     "nainativu": 5.6,
+     "trinco": 23.321428571428573,
+     "pigeon": 5.428571428571428,
+     "aukana": 5.321428571428571,
+     "buduruwagala": 5.214285714285714,
+     "wewurukannala": 5.107142857142857,
+     "rekawa": 5
+    },
+    "days": 9,
+    "pace": 1,
+    "forceIn": [
+     "jaffna"
+    ]
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Jaffna",
+     "Sigiriya",
+     "Kandy",
+     "Ella",
+     "Tissa",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "North",
+     "Cultural Triangle",
+     "Kandy and Knuckles",
+     "Ella",
+     "Wild south",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "North",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Jaffna",
+        "hours": 7.43,
+        "from": "AIR",
+        "to": "Jaffna"
+       }
+      ],
+      "spare": 0,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "North",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Jaffna town: Nallur temple, fort and crab curry",
+        "hours": 5,
+        "itemId": "jaffna",
+        "onSite": 5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Jaffna to Sigiriya",
+        "hours": 5.05,
+        "from": "Jaffna",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 3.95,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Kandy and Knuckles",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Kandy",
+        "hours": 2.97,
+        "from": "Sigiriya",
+        "to": "Kandy"
+       },
+       {
+        "kind": "activity",
+        "label": "Temple of the Tooth, evening puja",
+        "hours": 1.5,
+        "itemId": "tooth",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.53,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Kandy to Ella",
+        "hours": 4.03,
+        "from": "Kandy",
+        "to": "Ella"
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Tissa",
+        "hours": 2.08,
+        "from": "Ella",
+        "to": "Tissa"
+       }
+      ],
+      "spare": 0.89,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Yala leopard safari",
+        "hours": 5.74,
+        "itemId": "yala",
+        "onSite": 4.5,
+        "roundTrip": 1.2400000000000002
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Tissa to Weligama",
+        "hours": 1.9,
+        "from": "Tissa",
+        "to": "Weligama"
+       }
+      ],
+      "spare": 1.36,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Fort and sunset",
+        "hours": 4.54,
+        "itemId": "galle",
+        "onSite": 3,
+        "roundTrip": 1.54
+       }
+      ],
+      "spare": 1.96,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       }
+      ],
+      "spare": 6.67,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "coconut",
+     "galle",
+     "jaffna",
+     "ninearch",
+     "sigiriya",
+     "surf",
+     "tooth",
+     "yala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "bawa",
+     "beachday",
+     "buduruwagala",
+     "crab",
+     "dambulla",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "ellarock",
+     "foodtour",
+     "galleface",
+     "gangaramaya",
+     "hiriketiya",
+     "horton",
+     "junglebeach",
+     "knuckles",
+     "kottu",
+     "lavinia",
+     "lipton",
+     "littleadams",
+     "nainativu",
+     "pettah",
+     "pidurangala",
+     "pigeon",
+     "polonnaruwa",
+     "rafting",
+     "rekawa",
+     "rooftop",
+     "tea",
+     "train",
+     "trinco",
+     "udawalawe",
+     "village",
+     "wewurukannala",
+     "whales"
+    ],
+    "travelHours": 25.79,
+    "fits": true,
+    "missingMusts": [],
+    "score": 162.1071428571429
+   }
+  },
+  {
+   "name": "group forceIn jaffna forceOut galle 9d",
+   "input": {
+    "scores": {
+     "pettah": 9.5,
+     "foodtour": 9.392857142857142,
+     "galleface": 9.285714285714286,
+     "crab": 9.178571428571429,
+     "gangaramaya": 9.071428571428571,
+     "bawa": 8.964285714285714,
+     "rooftop": 8.857142857142858,
+     "lavinia": 8.75,
+     "kottu": 8.642857142857142,
+     "sigiriya": 36.114285714285714,
+     "pidurangala": 8.492857142857144,
+     "dambulla": 8.385714285714286,
+     "polonnaruwa": 8.278571428571428,
+     "elephants": 8.17142857142857,
+     "anuradhapura": 8.064285714285715,
+     "village": 7.957142857142857,
+     "tooth": 7.85,
+     "knuckles": 7.742857142857142,
+     "rafting": 7.635714285714285,
+     "train": 7.5285714285714285,
+     "horton": 7.421428571428572,
+     "tea": 7.314285714285715,
+     "ellarock": 7.207142857142857,
+     "littleadams": 7.1000000000000005,
+     "ninearch": 6.992857142857142,
+     "zipline": 6.885714285714286,
+     "diyaluma": 6.7785714285714285,
+     "lipton": 6.671428571428573,
+     "yala": 33.95,
+     "udawalawe": 6.5214285714285705,
+     "surf": 6.414285714285714,
+     "whales": 6.307142857142857,
+     "galle": 32.42857142857143,
+     "coconut": 6.1571428571428575,
+     "hiriketiya": 6.050000000000001,
+     "junglebeach": 5.942857142857143,
+     "beachday": 5.835714285714286,
+     "jaffna": 25.314285714285713,
+     "delft": 24.349999999999994,
+     "nainativu": 5.6,
+     "trinco": 23.321428571428573,
+     "pigeon": 5.428571428571428,
+     "aukana": 5.321428571428571,
+     "buduruwagala": 5.214285714285714,
+     "wewurukannala": 5.107142857142857,
+     "rekawa": 5
+    },
+    "days": 9,
+    "pace": 1,
+    "forceIn": [
+     "jaffna"
+    ],
+    "forceOut": [
+     "galle"
+    ]
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Kitulgala",
+     "Sigiriya",
+     "Trincomalee",
+     "Jaffna",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "Kitulgala",
+     "Cultural Triangle",
+     "East coast",
+     "North"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.2,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Kitulgala",
+        "hours": 2.98,
+        "from": "Colombo",
+        "to": "Kitulgala"
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Kitulgala to Sigiriya",
+        "hours": 5.300000000000001,
+        "from": "Kitulgala",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 0.72,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Pidurangala sunrise",
+        "hours": 2.3,
+        "itemId": "pidurangala",
+        "onSite": 2,
+        "roundTrip": 0.2999999999999998
+       }
+      ],
+      "spare": 6.7,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "East coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Dambulla cave temple",
+        "hours": 2.6399999999999997,
+        "itemId": "dambulla",
+        "onSite": 1.5,
+        "roundTrip": 1.1399999999999997
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Trincomalee",
+        "hours": 2.02,
+        "from": "Sigiriya",
+        "to": "Trincomalee"
+       }
+      ],
+      "spare": 1.34,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "North",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Trincomalee: Koneswaram temple and Fort Frederick",
+        "hours": 2.5,
+        "itemId": "trinco",
+        "onSite": 2.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Trincomalee to Jaffna",
+        "hours": 4.62,
+        "from": "Trincomalee",
+        "to": "Jaffna"
+       }
+      ],
+      "spare": 1.88,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "North",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Jaffna town: Nallur temple, fort and crab curry",
+        "hours": 5,
+        "itemId": "jaffna",
+        "onSite": 5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "North",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 7.43,
+        "from": "Jaffna",
+        "to": "AIR"
+       }
+      ],
+      "spare": 1.57,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "North",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "crab",
+     "dambulla",
+     "galleface",
+     "gangaramaya",
+     "jaffna",
+     "kottu",
+     "pidurangala",
+     "rooftop",
+     "sigiriya",
+     "trinco"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "buduruwagala",
+     "coconut",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "ellarock",
+     "foodtour",
+     "galle",
+     "hiriketiya",
+     "horton",
+     "junglebeach",
+     "knuckles",
+     "lavinia",
+     "lipton",
+     "littleadams",
+     "nainativu",
+     "ninearch",
+     "pettah",
+     "pigeon",
+     "polonnaruwa",
+     "rafting",
+     "rekawa",
+     "surf",
+     "tea",
+     "tooth",
+     "train",
+     "udawalawe",
+     "village",
+     "wewurukannala",
+     "whales",
+     "yala",
+     "zipline"
+    ],
+    "travelHours": 23.150000000000002,
+    "fits": true,
+    "missingMusts": [],
+    "score": 155.62857142857146
+   }
+  },
+  {
+   "name": "group forceOut galle 9d",
+   "input": {
+    "scores": {
+     "pettah": 9.5,
+     "foodtour": 9.392857142857142,
+     "galleface": 9.285714285714286,
+     "crab": 9.178571428571429,
+     "gangaramaya": 9.071428571428571,
+     "bawa": 8.964285714285714,
+     "rooftop": 8.857142857142858,
+     "lavinia": 8.75,
+     "kottu": 8.642857142857142,
+     "sigiriya": 36.114285714285714,
+     "pidurangala": 8.492857142857144,
+     "dambulla": 8.385714285714286,
+     "polonnaruwa": 8.278571428571428,
+     "elephants": 8.17142857142857,
+     "anuradhapura": 8.064285714285715,
+     "village": 7.957142857142857,
+     "tooth": 7.85,
+     "knuckles": 7.742857142857142,
+     "rafting": 7.635714285714285,
+     "train": 7.5285714285714285,
+     "horton": 7.421428571428572,
+     "tea": 7.314285714285715,
+     "ellarock": 7.207142857142857,
+     "littleadams": 7.1000000000000005,
+     "ninearch": 6.992857142857142,
+     "zipline": 6.885714285714286,
+     "diyaluma": 6.7785714285714285,
+     "lipton": 6.671428571428573,
+     "yala": 33.95,
+     "udawalawe": 6.5214285714285705,
+     "surf": 6.414285714285714,
+     "whales": 6.307142857142857,
+     "galle": 32.42857142857143,
+     "coconut": 6.1571428571428575,
+     "hiriketiya": 6.050000000000001,
+     "junglebeach": 5.942857142857143,
+     "beachday": 5.835714285714286,
+     "jaffna": 25.314285714285713,
+     "delft": 24.349999999999994,
+     "nainativu": 5.6,
+     "trinco": 23.321428571428573,
+     "pigeon": 5.428571428571428,
+     "aukana": 5.321428571428571,
+     "buduruwagala": 5.214285714285714,
+     "wewurukannala": 5.107142857142857,
+     "rekawa": 5
+    },
+    "days": 9,
+    "pace": 1,
+    "forceOut": [
+     "galle"
+    ]
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Colombo",
+     "Trincomalee",
+     "Sigiriya",
+     "Kandy",
+     "Ella",
+     "Tissa",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Colombo",
+     "East coast",
+     "Cultural Triangle",
+     "Kandy and Knuckles",
+     "Ella",
+     "Wild south",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Colombo",
+        "hours": 0.8,
+        "from": "AIR",
+        "to": "Colombo"
+       },
+       {
+        "kind": "activity",
+        "label": "Geoffrey Bawa's Number 11",
+        "hours": 1,
+        "itemId": "bawa",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Gangaramaya Temple",
+        "hours": 1,
+        "itemId": "gangaramaya",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Galle Face Green at sunset",
+        "hours": 1.5,
+        "itemId": "galleface",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.2,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Colombo",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ministry of Crab dinner",
+        "hours": 2,
+        "itemId": "crab",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Rooftop drinks or Lotus Tower",
+        "hours": 2,
+        "itemId": "rooftop",
+        "onSite": 2,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Late-night kottu at Pilawoos",
+        "hours": 1,
+        "itemId": "kottu",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "East coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Colombo to Trincomalee",
+        "hours": 6.35,
+        "from": "Colombo",
+        "to": "Trincomalee"
+       }
+      ],
+      "spare": 2.65,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Trincomalee: Koneswaram temple and Fort Frederick",
+        "hours": 2.5,
+        "itemId": "trinco",
+        "onSite": 2.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Trincomalee to Sigiriya",
+        "hours": 2.02,
+        "from": "Trincomalee",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 4.48,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Kandy and Knuckles",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Kandy",
+        "hours": 2.97,
+        "from": "Sigiriya",
+        "to": "Kandy"
+       },
+       {
+        "kind": "activity",
+        "label": "Temple of the Tooth, evening puja",
+        "hours": 1.5,
+        "itemId": "tooth",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 1.53,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Kandy to Ella",
+        "hours": 4.03,
+        "from": "Kandy",
+        "to": "Ella"
+       },
+       {
+        "kind": "activity",
+        "label": "Nine Arch Bridge",
+        "hours": 1,
+        "itemId": "ninearch",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Flying Ravana zipline",
+        "hours": 1,
+        "itemId": "zipline",
+        "onSite": 1,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Tissa",
+        "hours": 2.08,
+        "from": "Ella",
+        "to": "Tissa"
+       }
+      ],
+      "spare": 0.89,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Yala leopard safari",
+        "hours": 5.74,
+        "itemId": "yala",
+        "onSite": 4.5,
+        "roundTrip": 1.2400000000000002
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Tissa to Weligama",
+        "hours": 1.9,
+        "from": "Tissa",
+        "to": "Weligama"
+       },
+       {
+        "kind": "activity",
+        "label": "Coconut Tree Hill",
+        "hours": 1,
+        "itemId": "coconut",
+        "onSite": 1,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 0.36,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       }
+      ],
+      "spare": 6.67,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "bawa",
+     "coconut",
+     "crab",
+     "galleface",
+     "gangaramaya",
+     "kottu",
+     "ninearch",
+     "rooftop",
+     "sigiriya",
+     "tooth",
+     "trinco",
+     "yala",
+     "zipline"
+    ],
+    "dropped": [
+     "anuradhapura",
+     "aukana",
+     "beachday",
+     "buduruwagala",
+     "dambulla",
+     "delft",
+     "diyaluma",
+     "elephants",
+     "ellarock",
+     "foodtour",
+     "galle",
+     "hiriketiya",
+     "horton",
+     "jaffna",
+     "junglebeach",
+     "knuckles",
+     "lavinia",
+     "lipton",
+     "littleadams",
+     "nainativu",
+     "pettah",
+     "pidurangala",
+     "pigeon",
+     "polonnaruwa",
+     "rafting",
+     "rekawa",
+     "surf",
+     "tea",
+     "train",
+     "udawalawe",
+     "village",
+     "wewurukannala",
+     "whales"
+    ],
+    "travelHours": 22.479999999999997,
+    "fits": true,
+    "missingMusts": [],
+    "score": 175.2714285714286
+   }
+  },
+  {
+   "name": "classic forceOut galle 9d",
+   "input": {
+    "scores": {
+     "sigiriya": 10,
+     "elephants": 10,
+     "tooth": 10,
+     "train": 10,
+     "ellarock": 10,
+     "yala": 10,
+     "surf": 10,
+     "galle": 10
+    },
+    "days": 9,
+    "pace": 1,
+    "mustIds": [
+     "sigiriya",
+     "elephants",
+     "tooth",
+     "train",
+     "ellarock",
+     "yala",
+     "surf",
+     "galle"
+    ],
+    "forceOut": [
+     "galle"
+    ]
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Sigiriya",
+     "Kandy",
+     "Nuwara Eliya",
+     "Ella",
+     "Tissa",
+     "Weligama",
+     "AIR"
+    ],
+    "areas": [
+     "Cultural Triangle",
+     "Kandy and Knuckles",
+     "Hill country",
+     "Ella",
+     "Wild south",
+     "South coast"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Sigiriya",
+        "hours": 3.65,
+        "from": "AIR",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 0.85,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "activity",
+        "label": "Elephant safari",
+        "hours": 4.54,
+        "itemId": "elephants",
+        "onSite": 3,
+        "roundTrip": 1.54
+       }
+      ],
+      "spare": 1.46,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Kandy and Knuckles",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Sigiriya to Kandy",
+        "hours": 2.97,
+        "from": "Sigiriya",
+        "to": "Kandy"
+       },
+       {
+        "kind": "activity",
+        "label": "Temple of the Tooth, evening puja",
+        "hours": 1.5,
+        "itemId": "tooth",
+        "onSite": 1.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4.53,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from Kandy to Nuwara Eliya",
+        "hours": 2.83,
+        "from": "Kandy",
+        "to": "Nuwara Eliya"
+       },
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Nuwara Eliya",
+        "to": "Ella"
+       }
+      ],
+      "spare": 3.47,
+      "rainSlack": true
+     },
+     {
+      "n": 5,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       }
+      ],
+      "spare": 9,
+      "rainSlack": true
+     },
+     {
+      "n": 6,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ella Rock hike",
+        "hours": 4.5,
+        "itemId": "ellarock",
+        "onSite": 4.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Ella to Tissa",
+        "hours": 2.08,
+        "from": "Ella",
+        "to": "Tissa"
+       }
+      ],
+      "spare": 2.42,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Yala leopard safari",
+        "hours": 5.74,
+        "itemId": "yala",
+        "onSite": 4.5,
+        "roundTrip": 1.2400000000000002
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Tissa to Weligama",
+        "hours": 1.9,
+        "from": "Tissa",
+        "to": "Weligama"
+       }
+      ],
+      "spare": 1.36,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Weligama surf lesson",
+        "hours": 1.5,
+        "itemId": "surf",
+        "onSite": 1.5,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 2.33,
+        "from": "Weligama",
+        "to": "AIR"
+       }
+      ],
+      "spare": 5.17,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "South coast",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "elephants",
+     "ellarock",
+     "sigiriya",
+     "surf",
+     "tooth",
+     "train",
+     "yala"
+    ],
+    "dropped": [
+     "galle"
+    ],
+    "travelHours": 15.76,
+    "fits": false,
+    "missingMusts": [
+     "galle"
+    ],
+    "score": 70
+   }
+  },
+  {
+   "name": "forceIn rafting forceOut galle",
+   "input": {
+    "scores": {
+     "sigiriya": 10,
+     "galle": 10
+    },
+    "days": 9,
+    "pace": 1,
+    "forceIn": [
+     "rafting"
+    ],
+    "forceOut": [
+     "galle"
+    ]
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Kitulgala",
+     "Sigiriya",
+     "AIR"
+    ],
+    "areas": [
+     "Kitulgala",
+     "Cultural Triangle"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Kitulgala",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Kitulgala",
+        "hours": 2.73,
+        "from": "AIR",
+        "to": "Kitulgala"
+       }
+      ],
+      "spare": 1.77,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Kitulgala white water rafting",
+        "hours": 3,
+        "itemId": "rafting",
+        "onSite": 3,
+        "roundTrip": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive from Kitulgala to Sigiriya",
+        "hours": 5.300000000000001,
+        "from": "Kitulgala",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 0.7,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 6,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       }
+      ],
+      "spare": 9,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       }
+      ],
+      "spare": 9,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       }
+      ],
+      "spare": 9,
+      "rainSlack": false
+     },
+     {
+      "n": 7,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       }
+      ],
+      "spare": 9,
+      "rainSlack": false
+     },
+     {
+      "n": 8,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 3.65,
+        "from": "Sigiriya",
+        "to": "AIR"
+       }
+      ],
+      "spare": 5.35,
+      "rainSlack": false
+     },
+     {
+      "n": 9,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "rafting",
+     "sigiriya"
+    ],
+    "dropped": [
+     "galle"
+    ],
+    "travelHours": 11.680000000000001,
+    "fits": true,
+    "missingMusts": [],
+    "score": 10
+   }
+  },
+  {
+   "name": "infeasible forceIn all 5d",
+   "input": {
+    "scores": {
+     "sigiriya": 10
+    },
+    "days": 5,
+    "pace": 1,
+    "forceIn": [
+     "pettah",
+     "foodtour",
+     "galleface",
+     "crab",
+     "gangaramaya",
+     "bawa",
+     "rooftop",
+     "lavinia",
+     "kottu",
+     "sigiriya",
+     "pidurangala",
+     "dambulla",
+     "polonnaruwa",
+     "elephants",
+     "anuradhapura",
+     "village",
+     "tooth",
+     "knuckles",
+     "rafting",
+     "train",
+     "horton",
+     "tea",
+     "ellarock",
+     "littleadams",
+     "ninearch",
+     "zipline",
+     "diyaluma",
+     "lipton",
+     "yala",
+     "udawalawe",
+     "surf",
+     "whales",
+     "galle",
+     "coconut",
+     "hiriketiya",
+     "junglebeach",
+     "beachday",
+     "jaffna",
+     "delft",
+     "nainativu",
+     "trinco",
+     "pigeon",
+     "aukana",
+     "buduruwagala",
+     "wewurukannala",
+     "rekawa"
+    ]
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Sigiriya",
+     "AIR"
+    ],
+    "areas": [
+     "Cultural Triangle"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Sigiriya",
+        "hours": 3.65,
+        "from": "AIR",
+        "to": "Sigiriya"
+       }
+      ],
+      "spare": 0.85,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Sigiriya Rock",
+        "hours": 3,
+        "itemId": "sigiriya",
+        "onSite": 3,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 6,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       }
+      ],
+      "spare": 9,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 3.65,
+        "from": "Sigiriya",
+        "to": "AIR"
+       }
+      ],
+      "spare": 5.35,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Cultural Triangle",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "sigiriya"
+    ],
+    "dropped": [],
+    "travelHours": 7.3,
+    "fits": true,
+    "missingMusts": [],
+    "score": 10,
+    "forceFailed": true
+   }
+  },
+  {
+   "name": "train horton ellarock 9d",
+   "input": {
+    "scores": {
+     "train": 10,
+     "horton": 10,
+     "ellarock": 10
+    },
+    "days": 9,
+    "pace": 1
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Ella",
+     "Nuwara Eliya",
+     "AIR"
+    ],
+    "areas": [
+     "Ella",
+     "Hill country"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Ella",
+        "hours": 5.58,
+        "from": "AIR",
+        "to": "Ella"
+       }
+      ],
+      "spare": 0,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Ella Rock hike",
+        "hours": 4.5,
+        "itemId": "ellarock",
+        "onSite": 4.5,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 4.5,
+      "rainSlack": true
+     },
+     {
+      "n": 3,
+      "area": "Ella",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       }
+      ],
+      "spare": 9,
+      "rainSlack": true
+     },
+     {
+      "n": 4,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "train",
+        "label": "Nanu Oya to Ella train",
+        "hours": 2.7,
+        "itemId": "train",
+        "from": "Ella",
+        "to": "Nuwara Eliya"
+       }
+      ],
+      "spare": 6.3,
+      "rainSlack": true
+     },
+     {
+      "n": 5,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Horton Plains and World's End",
+        "hours": 6.4,
+        "itemId": "horton",
+        "onSite": 4,
+        "roundTrip": 2.4000000000000004
+       }
+      ],
+      "spare": 2.6,
+      "rainSlack": false
+     },
+     {
+      "n": 6,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       }
+      ],
+      "spare": 9,
+      "rainSlack": true
+     },
+     {
+      "n": 7,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       }
+      ],
+      "spare": 9,
+      "rainSlack": true
+     },
+     {
+      "n": 8,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 5.029999999999999,
+        "from": "Nuwara Eliya",
+        "to": "AIR"
+       }
+      ],
+      "spare": 3.97,
+      "rainSlack": true
+     },
+     {
+      "n": 9,
+      "area": "Hill country",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "ellarock",
+     "horton",
+     "train"
+    ],
+    "dropped": [],
+    "travelHours": 10.61,
+    "fits": true,
+    "missingMusts": [],
+    "score": 30
+   }
+  },
+  {
+   "name": "yala udawalawe 5d",
+   "input": {
+    "scores": {
+     "yala": 10,
+     "udawalawe": 10
+    },
+    "days": 5,
+    "pace": 1,
+    "mustIds": [
+     "yala",
+     "udawalawe"
+    ]
+   },
+   "plan": {
+    "route": [
+     "AIR",
+     "Udawalawe",
+     "AIR"
+    ],
+    "areas": [
+     "Wild south"
+    ],
+    "days": [
+     {
+      "n": 1,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "drive",
+        "label": "Drive from the airport to Udawalawe",
+        "hours": 4.16,
+        "from": "AIR",
+        "to": "Udawalawe"
+       }
+      ],
+      "spare": 0.34,
+      "rainSlack": false
+     },
+     {
+      "n": 2,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Yala leopard safari",
+        "hours": 8.08,
+        "itemId": "yala",
+        "onSite": 4.5,
+        "roundTrip": 3.58
+       }
+      ],
+      "spare": 0.92,
+      "rainSlack": false
+     },
+     {
+      "n": 3,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "activity",
+        "label": "Udawalawe elephants and Transit Home",
+        "hours": 4,
+        "itemId": "udawalawe",
+        "onSite": 4,
+        "roundTrip": 0
+       }
+      ],
+      "spare": 5,
+      "rainSlack": false
+     },
+     {
+      "n": 4,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Free day",
+        "hours": 0
+       },
+       {
+        "kind": "drive",
+        "label": "Drive towards the airport",
+        "hours": 4.16,
+        "from": "Udawalawe",
+        "to": "AIR"
+       }
+      ],
+      "spare": 4.84,
+      "rainSlack": false
+     },
+     {
+      "n": 5,
+      "area": "Wild south",
+      "entries": [
+       {
+        "kind": "free",
+        "label": "Check in and fly",
+        "hours": 3
+       }
+      ],
+      "spare": 1.5,
+      "rainSlack": false
+     }
+    ],
+    "chosen": [
+     "udawalawe",
+     "yala"
+    ],
+    "dropped": [],
+    "travelHours": 8.32,
+    "fits": true,
+    "missingMusts": [],
+    "score": 20
+   }
+  }
+ ],
+ "mustFitDays": [
+  {
+   "name": "8 musts",
+   "input": {
+    "scores": {
+     "sigiriya": 10,
+     "train": 10,
+     "yala": 10,
+     "galle": 10,
+     "knuckles": 10,
+     "rafting": 10,
+     "polonnaruwa": 10,
+     "hiriketiya": 10
+    },
+    "pace": 1,
+    "mustIds": [
+     "sigiriya",
+     "train",
+     "yala",
+     "galle",
+     "knuckles",
+     "rafting",
+     "polonnaruwa",
+     "hiriketiya"
+    ]
+   },
+   "days": 12
+  },
+  {
+   "name": "north and south musts",
+   "input": {
+    "scores": {
+     "jaffna": 10,
+     "delft": 10,
+     "trinco": 10,
+     "sigiriya": 10,
+     "yala": 10,
+     "galle": 10
+    },
+    "pace": 1,
+    "mustIds": [
+     "jaffna",
+     "delft",
+     "trinco",
+     "sigiriya",
+     "yala",
+     "galle"
+    ]
+   },
+   "days": 11
+  }
+ ]
+}

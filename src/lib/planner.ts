@@ -50,25 +50,52 @@ function routeFor(order: Area[], wsHub: Hub, train: boolean, d: Dist) {
   return { route, travel, routeKey: route.join('>') };
 }
 
-/** 0/1 knapsack in quarter hours; ties prefer fewer items. Returns chosen optional ids. */
-function knapsack(opts: { id: string; w: number; v: number }[], cap: number): string[] {
-  const n = opts.length;
-  if (n === 0 || cap <= 0) return [];
-  const val = new Float64Array(cap + 1), cnt = new Int32Array(cap + 1);
-  const take = new Uint8Array(n * (cap + 1));
-  for (let i = 0; i < n; i++) {
-    const { w, v } = opts[i];
-    for (let c = cap; c >= w; c--) {
-      const nv = val[c - w] + v, nc = cnt[c - w] + 1;
-      if (nv > val[c] + EPS || (Math.abs(nv - val[c]) <= EPS && nc < cnt[c])) {
-        val[c] = nv; cnt[c] = nc; take[i * (cap + 1) + c] = 1;
+// Row buffers shared by every Knapsack: thousands of rounds run per plan. Only one instance is live at a time.
+let kVal = new Float64Array(0), kCnt = new Int32Array(0), kTake = new Uint8Array(0);
+
+/**
+ * 0/1 knapsack in quarter hours; ties prefer fewer items. Returns chosen optional ids.
+ * Keeps one DP row per item so a later call that only adds exclusions re-runs the rows from the
+ * first newly excluded item onward. Each row equals the in-place single-row DP at that step, so the
+ * choice is the same as solving from scratch over the non-excluded items in order.
+ */
+class Knapsack {
+  private valid = 0;
+  private seen = new Set<string>();
+  constructor(private opts: { id: string; w: number; v: number }[], private cap: number) {
+    const size = (opts.length + 1) * (cap + 1);
+    if (cap > 0 && kVal.length < size) { kVal = new Float64Array(size); kCnt = new Int32Array(size); kTake = new Uint8Array(size); }
+    if (cap > 0) { kVal.fill(0, 0, cap + 1); kCnt.fill(0, 0, cap + 1); }
+  }
+  solve(excluded: Set<string>): string[] {
+    const { opts, cap } = this;
+    const n = opts.length;
+    if (cap <= 0) return [];
+    let from = this.valid;
+    for (const id of excluded) if (!this.seen.has(id)) {
+      this.seen.add(id);
+      const j = opts.findIndex(o => o.id === id);
+      if (j >= 0 && j < from) from = j;
+    }
+    const W = cap + 1;
+    for (let j = from; j < n; j++) {
+      const prev = j * W, next = prev + W;
+      kVal.copyWithin(next, prev, next); kCnt.copyWithin(next, prev, next); kTake.fill(0, prev, next);
+      if (excluded.has(opts[j].id)) continue;
+      const { w, v } = opts[j];
+      for (let c = cap; c >= w; c--) {
+        const pv = kVal[prev + c], nv = kVal[prev + c - w] + v, nc = kCnt[prev + c - w] + 1;
+        if (nv > pv + EPS || (Math.abs(nv - pv) <= EPS && nc < kCnt[prev + c])) {
+          kVal[next + c] = nv; kCnt[next + c] = nc; kTake[prev + c] = 1;
+        }
       }
     }
+    this.valid = n;
+    const out: string[] = [];
+    let c = cap;
+    for (let j = n - 1; j >= 0; j--) if (kTake[j * W + c]) { out.push(opts[j].id); c -= opts[j].w; }
+    return out;
   }
-  const out: string[] = [];
-  let c = cap;
-  for (let i = n - 1; i >= 0; i--) if (take[i * (cap + 1) + c]) { out.push(opts[i].id); c -= opts[i].w; }
-  return out;
 }
 
 const q = (h: number) => Math.ceil(h * 4 - EPS);
@@ -117,14 +144,50 @@ function candidates(ctx: Ctx, forceIn: Set<string>): Cand[] {
   return out.sort((a, b) => b.ub - a.ub || a.travel - b.travel || (a.routeKey < b.routeKey ? -1 : a.routeKey > b.routeKey ? 1 : 0));
 }
 
-function choose(ctx: Ctx, c: Cand, excluded: Set<string>): Item[] {
+/** Per-candidate data, built once rather than on every overflow round. */
+interface Step { hours: number; move: boolean; slot: Slot | undefined; night: boolean; at: number }
+interface Prep {
+  reserved: number; opts: { id: string; w: number; v: number }[]; forcedScore: number; knap: Knapsack;
+  byRatio: { id: string; w: number; v: number }[];
+  at: Map<string, number>; forced: Uint8Array; must: Uint8Array; rank: Float64Array; steps: Step[];
+}
+
+function prep(ctx: Ctx, c: Cand): Prep {
+  const { d } = ctx;
   const forcedIds = new Set(c.forced.map(i => i.id));
-  const reserved = c.forced.reduce((s, i) => s + q(weightOf(i, c.wsHub, ctx.d)), 0);
+  const reserved = c.forced.reduce((s, i) => s + q(weightOf(i, c.wsHub, d)), 0);
   const opts = c.pool
-    .filter(i => !forcedIds.has(i.id) && !excluded.has(i.id) && ctx.score(i.id) > 0)
-    .map(i => ({ id: i.id, w: q(weightOf(i, c.wsHub, ctx.d)), v: ctx.score(i.id) }));
-  const picked = new Set(knapsack(opts, c.cap - reserved));
-  return c.pool.filter(i => forcedIds.has(i.id) || picked.has(i.id));
+    .filter(i => !forcedIds.has(i.id) && ctx.score(i.id) > 0)
+    .map(i => ({ id: i.id, w: q(weightOf(i, c.wsHub, d)), v: ctx.score(i.id) }));
+  const forcedScore = c.pool.reduce((s, i) => s + (forcedIds.has(i.id) ? ctx.score(i.id) : 0), 0);
+  const byRatio = opts.filter(o => o.w > 0).sort((a, b) => b.v / b.w - a.v / a.w);
+  const at = new Map(c.pool.map((i, k) => [i.id, k]));
+  const forced = Uint8Array.from(c.pool, i => Number(forcedIds.has(i.id)));
+  const must = Uint8Array.from(c.pool, i => Number(ctx.musts.has(i.id)));
+  const rank = Float64Array.from(c.pool, i => ctx.score(i.id) / Math.max(EPS, weightOf(i, c.wsHub, d)));
+  // The entries schedule() would put for the whole pool, in its order; `at` < 0 marks an arrival.
+  const steps: Step[] = [];
+  const train = c.pool.find(i => i.id === TRAIN);
+  let prevHub: Hub = 'AIR', prevArea: Area | null = null;
+  for (const area of c.order) {
+    const hub = hubOf(area, c.wsHub);
+    // A train candidate always carries the train item (it is forced), so this matches schedule().
+    if (c.train && train && isTrainPair(prevArea, area)) steps.push({ hours: weightOf(train, c.wsHub, d), move: true, slot: train.slot, night: false, at: -1 });
+    else steps.push({ hours: d(prevHub, hub), move: true, slot: undefined, night: false, at: -1 });
+    c.pool
+      .filter(i => i.area === area && !(c.train && i.id === TRAIN))
+      .sort((a, b) => SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] || (a.id < b.id ? -1 : 1))
+      .forEach(i => steps.push({ hours: weightOf(i, c.wsHub, d), move: false, slot: i.slot, night: NIGHT_SLOTS.includes(i.slot), at: at.get(i.id)! }));
+    prevHub = hub; prevArea = area;
+  }
+  return { reserved, opts, forcedScore, knap: new Knapsack(opts, c.cap - reserved), byRatio, at, forced, must, rank, steps };
+}
+
+/** Marks the chosen pool items: every forced one plus the knapsack's picks. */
+function choose(p: Prep, excluded: Set<string>): Uint8Array {
+  const on = Uint8Array.from(p.forced);
+  for (const id of p.knap.solve(excluded)) on[p.at.get(id)!] = 1;
+  return on;
 }
 
 /** Packs the content days (everything before the departure tail). */
@@ -218,22 +281,87 @@ function fitTo(ctx: Ctx, c: Cand, content: WorkDay[], N: number): WorkDay[] | nu
 
 interface Eval { c: Cand; chosen: Item[]; days: WorkDay[]; score: number; overflow: boolean }
 
-function evaluate(ctx: Ctx, c: Cand): Eval {
+// Margin over float noise in the bounds below, so pruning can only skip a candidate that strictly loses.
+const SLACK = 1e-6;
+
+/** True when no plan for c scoring at most `bound` can beat `bar` under `better`. */
+function beaten(c: Cand, bound: number, bar: Eval): boolean {
+  if (bound + SLACK < bar.score - EPS) return true;
+  if (bound + SLACK > bar.score + EPS) return false;
+  return c.travel > bar.c.travel + EPS || (Math.abs(c.travel - bar.c.travel) <= EPS && c.routeKey >= bar.c.routeKey);
+}
+
+/** Fractional-knapsack upper bound on choose()'s score for these exclusions. */
+function fractionalBound(c: Cand, p: Prep, excluded: Set<string>): number {
+  let total = p.forcedScore, room = c.cap - p.reserved;
+  for (const o of p.opts) if (o.w <= 0 && !excluded.has(o.id)) total += o.v;
+  if (room <= 0) return total;
+  for (const o of p.byRatio) {
+    if (excluded.has(o.id)) continue;
+    if (o.w <= room) { total += o.v; room -= o.w; } else { total += (o.v * room) / o.w; break; }
+  }
+  return total;
+}
+
+/**
+ * Day count of assemble(ctx, c, schedule(ctx, c, chosen), 0, true) without building the days.
+ * Mirrors put() and the departure tail step for step; the snapshot test pins the two together.
+ */
+function minDays(ctx: Ctx, c: Cand, p: Prep, on: Uint8Array): number {
+  const { H, d } = ctx;
+  let n = 1, count = 0, used = 0, cap = H / 2, closed = false, dark = false;
+  for (const { hours, move, slot, night, at } of p.steps) {
+    if (at >= 0 && !on[at]) continue;
+    if (count > 0) {
+      const fresh = hours > H + EPS || closed || (dark && move) || slot === 'sunrise' || (slot === 'morning' && used > 3 + EPS) || hours > cap - used + EPS;
+      if (fresh) { n++; count = 0; used = 0; cap = H; closed = false; dark = false; }
+    }
+    count++; used += hours;
+    if (hours > H + EPS) closed = true;
+    if (night) dark = true;
+  }
+  const fd = d(c.route[c.route.length - 2], 'AIR');
+  const capN = H / 2 - fd - CHECKIN;
+  if (fd <= EPS) return n + 1;
+  if (capN >= -EPS) return n >= 2 && !dark && used <= capN + EPS ? n : n + 1;
+  return !closed && !dark && n >= 2 && cap - used >= fd - EPS ? n + 1 : n + 2;
+}
+
+/**
+ * Each overflow round only adds an exclusion, so the score never rises; once it cannot beat `bar`
+ * the candidate is abandoned (returns null). With no bar this is the full evaluation.
+ */
+function evaluate(ctx: Ctx, c: Cand, bar: Eval | null = null): Eval | null {
   const N = ctx.input.days;
   const excluded = new Set<string>();
-  const forcedIds = new Set(c.forced.map(i => i.id));
+  const p = prep(ctx, c);
+  const { pool } = c;
+  // Drop order (B.6): non-Musts first, then lowest score per hour, then id.
+  const before = (k: number, j: number) => {
+    const m = p.must[k] - p.must[j];
+    if (m) return m < 0;
+    const r = p.rank[k] - p.rank[j];
+    return r ? r < 0 : pool[k].id < pool[j].id;
+  };
   for (;;) {
-    const chosen = choose(ctx, c, excluded);
-    const content = schedule(ctx, c, chosen);
-    const days = fitTo(ctx, c, content, N);
-    const score = chosen.reduce((s, i) => s + ctx.score(i.id), 0);
-    if (days) return { c, chosen, days, score, overflow: false };
-    // Overflow: drop the lowest score per hour, never forced, non-Musts first (B.6).
-    const removable = chosen.filter(i => !forcedIds.has(i.id));
-    if (!removable.length) return { c, chosen, days: assemble(ctx, c, content, 0, true), score, overflow: true };
-    const rank = (i: Item) => ctx.score(i.id) / Math.max(EPS, weightOf(i, c.wsHub, ctx.d));
-    removable.sort((a, b) => Number(ctx.musts.has(a.id)) - Number(ctx.musts.has(b.id)) || rank(a) - rank(b) || (a.id < b.id ? -1 : 1));
-    excluded.add(removable[0].id);
+    if (bar && beaten(c, fractionalBound(c, p, excluded), bar)) return null;
+    const on = choose(p, excluded);
+    let score = 0;
+    for (let k = 0; k < pool.length; k++) if (on[k]) score += ctx.score(pool[k].id);
+    if (bar && beaten(c, score, bar)) return null;
+    // minDays is the cheap fit test; the real days are only built for the round that fits.
+    if (minDays(ctx, c, p, on) <= N) {
+      const chosen = pool.filter((_, k) => on[k]);
+      return { c, chosen, days: fitTo(ctx, c, schedule(ctx, c, chosen), N)!, score, overflow: false };
+    }
+    // Overflow: drop one removable (non-forced) item and re-solve.
+    let drop = -1;
+    for (let k = 0; k < pool.length; k++) if (on[k] && !p.forced[k] && (drop < 0 || before(k, drop))) drop = k;
+    if (drop < 0) {
+      const chosen = pool.filter((_, k) => on[k]);
+      return { c, chosen, days: assemble(ctx, c, schedule(ctx, c, chosen), 0, true), score, overflow: true };
+    }
+    excluded.add(pool[drop].id);
   }
 }
 
@@ -252,8 +380,8 @@ function search(ctx: Ctx, forceIn: Set<string>): Eval | null {
       if (c.ub < best.score - EPS) break;
       if (Math.abs(c.ub - best.score) <= EPS && (c.travel > best.c.travel + EPS || (Math.abs(c.travel - best.c.travel) <= EPS && c.routeKey >= best.c.routeKey))) continue;
     }
-    const e = evaluate(ctx, c);
-    if (!best || better(e, best)) best = e;
+    const e = evaluate(ctx, c, best && !best.overflow ? best : null);
+    if (e && (!best || better(e, best))) best = e;
   }
   return best;
 }
