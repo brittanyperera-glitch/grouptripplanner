@@ -161,16 +161,14 @@ describe('North or South region knockout', () => {
 
     const fork = groupResult(splitState(NORTH_MUST, SOUTH_MUST), items, L).knockouts[0];
     const sA = splitState(NORTH_MUST, SOUTH_MUST); vote(sA, 'a');
-    let gA = groupResult(sA, items, L);
+    const gA = groupResult(sA, items, L);
     expect(gA.results[0]).toMatchObject({ forkId: 'region:north', winner: 'a' });
-    expect(gA.knockouts.some(k => k.a.some(id => fork.a.includes(id)))).toBe(false);
-    // Remaining item knockouts (more north items) are settled against, so the plan only reflects the region result.
-    for (let round = 0; round < 6 && !gA.final; round++) {
-      for (const k of gA.knockouts) for (const name of ['Brittany', 'Alex', 'Lazza'] as const) sA.votes.push({ forkId: k.forkId, name, choice: 'b' });
-      gA = groupResult(sA, items, L);
-    }
+    for (const id of NORTH_MUST) expect(fork.a).toContain(id);
+    expect(gA.knockouts.filter(k => k.forkId.startsWith('ko:') && (northIds.includes(k.forkId.slice(3)) || k.a.some(id => northIds.includes(id))))).toEqual([]);
+    expect(gA.results.some(r => r.forkId !== 'region:north' && (r.a.concat(r.b)).some(id => northIds.includes(id)))).toBe(false);
+    const planA = gA.final ?? gA.base!;
     expect(gA.final).not.toBeNull();
-    const planA = gA.final!;
+    expect(planA.chosen.filter(id => northIds.includes(id)).sort()).toEqual([...fork.a].sort());
     for (const id of fork.a) expect(planA.chosen).toContain(id);
     expect(planA.areas.some(a => NORTH_AREAS.includes(a))).toBe(true);
   });
