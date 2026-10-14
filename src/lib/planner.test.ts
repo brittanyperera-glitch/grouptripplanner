@@ -157,3 +157,19 @@ describe('plan, day order (T7 U4)', () => {
     }
   });
 });
+
+describe('activity entries split on-site from round-trip time', () => {
+  it('carries onSite = item.hours and roundTrip = hours - item.hours, leaving hours as the total', () => {
+    const must = ['sigiriya', 'elephants', 'tooth', 'train', 'ellarock', 'yala', 'surf', 'galle'];
+    const p = plan({ items, scores: sc(must), days: 9, pace: 1, legs: L, mustIds: must });
+    const acts = p.days.flatMap(d => d.entries).filter(e => e.kind === 'activity');
+    expect(acts.length).toBeGreaterThan(0);
+    for (const e of acts) {
+      const it = byId.get(e.itemId!)!;
+      expect(e.onSite).toBe(it.hours);
+      expect(e.roundTrip).toBeCloseTo(e.hours - it.hours, 9);
+      expect(e.roundTrip!).toBeGreaterThanOrEqual(-1e-9);
+    }
+    expect(acts.some(e => e.roundTrip! > 0)).toBe(true);
+  });
+});

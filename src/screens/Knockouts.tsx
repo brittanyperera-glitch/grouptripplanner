@@ -1,13 +1,23 @@
 import { Cover } from '../components/PhotoCard';
-import { tierOf } from '../lib/ranking';
+import { score, tierOf } from '../lib/ranking';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
 import type { GroupResult, Item, Knockout } from '../types';
 
+const SHOWN_NAMES = 2;
+
 export default function Knockouts({ group }: { group: GroupResult }) {
   const { state, me, store, items } = useApp();
   const byId = Object.fromEntries(items.map(i => [i.id, i])) as Record<string, Item | undefined>;
-  const names = (ids: string[]) => ids.map(id => byId[id]?.name ?? id).join(', ');
+  const nameOf = (id: string) => byId[id]?.name ?? id;
+  const liked = (id: string) => PEOPLE.some(p => { const r = state.responses[p]; const t = r ? tierOf(r.ranking, id) : null; return t === 'must' || t === 'keen'; });
+  const groupScore = (id: string) => PEOPLE.reduce((n, p) => { const r = state.responses[p]; return n + (r ? score(r.ranking, id) : 0); }, 0);
+  // At most 2 names: items someone rated Must or Keen first (group score, then id), then "and N more".
+  const names = (ids: string[]) => {
+    const ordered = [...ids].sort((x, y) => Number(liked(y)) - Number(liked(x)) || groupScore(y) - groupScore(x) || (x < y ? -1 : 1));
+    const shown = ordered.slice(0, SHOWN_NAMES).map(nameOf).join(', ');
+    return ordered.length > SHOWN_NAMES ? `${shown} and ${ordered.length - SHOWN_NAMES} more` : shown;
+  };
 
   const chips = (ids: string[]) => PEOPLE.flatMap(p => ids.map(id => {
     const r = state.responses[p];
@@ -33,7 +43,7 @@ export default function Knockouts({ group }: { group: GroupResult }) {
 
   return (
     <section className="body" aria-label="Knockouts">
-      <div className="big">{group.knockouts.length > 0 ? 'Vote on these' : 'Decided'}</div>
+      {group.knockouts.length > 0 && <div className="big">Vote on these</div>}
       {group.knockouts.length > 0 && <div className="sub">Three votes settle each one.</div>}
       {group.knockouts.map(k => (
         <div key={k.forkId} role="group" aria-label={`Knockout: ${names(k.a)} or ${names(k.b)}`} className="ko">
@@ -43,13 +53,12 @@ export default function Knockouts({ group }: { group: GroupResult }) {
       ))}
       {group.results.length > 0 && (
         <div>
+          <div className="tierhead">Decided</div>
           {group.results.map(r => (
-            <div key={r.forkId} className="row2">
-              <span>
-                {r.winner === 'a' && `Decided: ${names(r.a)} over ${names(r.b)}`}
-                {r.winner === 'b' && `Decided: ${names(r.b)} over ${names(r.a)}`}
-                {r.winner === 'displaced' && `${names(r.a)} was displaced by an earlier result`}
-              </span>
+            <div key={r.forkId} className="decided">
+              {r.winner === 'a' && `${names(r.a)} beat ${names(r.b)}`}
+              {r.winner === 'b' && `${names(r.b)} beat ${names(r.a)}`}
+              {r.winner === 'displaced' && `${names(r.a)} dropped out after an earlier result`}
             </div>
           ))}
         </div>

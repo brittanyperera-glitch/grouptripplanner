@@ -160,7 +160,10 @@ function schedule(ctx: Ctx, c: Cand, chosen: Item[]): WorkDay[] {
     const acts = chosen
       .filter(i => i.area === area && !(c.train && i.id === TRAIN))
       .sort((a, b) => SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] || (a.id < b.id ? -1 : 1));
-    for (const i of acts) put({ kind: 'activity', label: i.name, hours: w(i), itemId: i.id }, i.slot);
+    for (const i of acts) {
+      const hours = w(i);
+      put({ kind: 'activity', label: i.name, hours, itemId: i.id, onSite: i.hours, roundTrip: hours - i.hours }, i.slot);
+    }
     prevHub = hub; prevArea = area;
   }
   return days;
