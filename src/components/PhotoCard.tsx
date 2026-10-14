@@ -14,6 +14,7 @@ export function Cover({ item, className, named = true, children }: { item: Item;
     return (
       <div className={`${className} nophoto`} style={{ background: AREA_COLOR[item.area] }}>
         {named && <span>{item.name}</span>}
+        <small className="nopic">No picture yet</small>
         {children}
       </div>
     );

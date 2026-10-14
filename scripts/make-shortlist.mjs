@@ -83,7 +83,7 @@ let picks={};let db=null;
 try{picks=JSON.parse(localStorage.getItem('shortlist-picks')||'{}')}catch(e){}
 const msg=t=>{document.getElementById('msg').textContent=t};
 function card(i){const p=picks[i.id]||{};const k=p.keep===true,r=p.keep===false;
-  const ph=i.photo?'<div class="ph" style="background-image:url(img/'+i.photo+'.jpg)" role="img" aria-label="'+esc(i.name)+'"></div>':'<div class="ph noph">Photo needed</div>';
+  const ph=i.photo?'<div class="ph" style="background-image:url(img/'+i.photo+'.jpg)" role="img" aria-label="'+esc(i.name)+'"></div>':'<div class="ph noph">No picture yet</div>';
   return '<div class="card" data-removed="'+r+'" id="c-'+i.id+'">'+ph+'<div class="info">'
     +'<span class="nm">'+esc(i.name)+'</span>'
     +'<span class="loc">'+esc(i.loc)+(i.g?' · <a href="'+esc(i.g.url)+'" target="_blank" rel="noopener">map</a>':'')+'</span>'
@@ -93,7 +93,8 @@ function card(i){const p=picks[i.id]||{};const k=p.keep===true,r=p.keep===false;
     +(i.g?'<div class="g">★ '+esc(i.g.rating)+' on Google ('+esc(i.g.reviews)+')</div>':'')
     +(i.credit?'<div class="cred">Photo: '+esc(i.credit)+'</div>':'')
     +'<div class="choice"><button class="k" data-id="'+i.id+'" data-keep="1" aria-pressed="'+k+'">Keep</button><button class="r" data-id="'+i.id+'" data-keep="0" aria-pressed="'+r+'">Remove</button></div>'
-    +(k?'<label class="tl" for="t-'+i.id+'">Your message on this card</label><textarea id="t-'+i.id+'" data-take="'+i.id+'" placeholder="What should the others know about this one?">'+esc(p.take||'')+'</textarea>':'')
+    +(k?'<label class="tl" for="t-'+i.id+'">Your message on this card</label><textarea id="t-'+i.id+'" data-take="'+i.id+'" placeholder="What should the others know about this one?">'+esc(p.take||'')+'</textarea>'
+      +'<label class="tl" for="r-'+i.id+'">Review line (paste one from the Google listing'+(i.g?', <a href="'+esc(i.g.url)+'" target="_blank" rel="noopener">open it</a>':'')+')</label><textarea id="r-'+i.id+'" data-review="'+i.id+'" style="min-height:44px" placeholder="One line from a review you like">'+esc(p.review||'')+'</textarea>':'')
     +'</div></div>'}
 function render(){
   document.getElementById('list').innerHTML=AREAS.map(a=>{const its=ITEMS.filter(i=>i.area===a);return its.length?'<h2>'+esc(a)+'</h2>'+its.map(card).join(''):''}).join('');
@@ -102,26 +103,26 @@ function render(){
 function tally(){const v=Object.values(picks);document.getElementById('done').textContent=v.filter(p=>p.keep===true||p.keep===false).length;document.getElementById('kept').textContent=v.filter(p=>p.keep===true).length}
 function local(){try{localStorage.setItem('shortlist-picks',JSON.stringify(picks))}catch(e){}}
 async function save(id){local();if(!db){msg('Saved on this device');return}
-  try{await db.doc('picks/'+id).set({keep:picks[id].keep,take:picks[id].take||'',at:new Date().toISOString()});msg('Saved')}
+  try{await db.doc('picks/'+id).set({keep:picks[id].keep,take:picks[id].take||'',review:picks[id].review||'',at:new Date().toISOString()});msg('Saved')}
   catch(e){msg('Not saved to the page, kept on this device')}}
 document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.id){const id=b.dataset.id,keep=b.dataset.keep==='1';const cur=picks[id]||{};
     picks[id]={...cur,keep:cur.keep===keep?null:keep};render();await save(id);
     if(picks[id].keep===true){const t=document.getElementById('t-'+id);if(t)t.focus()}return}
-  if(b.id==='copy'){const lines=ITEMS.map(i=>{const p=picks[i.id]||{};return p.keep===true?'KEEP '+i.name+(p.take?': '+p.take:''):p.keep===false?'REMOVE '+i.name:'UNDECIDED '+i.name});
+  if(b.id==='copy'){const lines=ITEMS.map(i=>{const p=picks[i.id]||{};return p.keep===true?'KEEP '+i.name+(p.take?': '+p.take:'')+(p.review?' | review: '+p.review:''):p.keep===false?'REMOVE '+i.name:'UNDECIDED '+i.name});
     const text=lines.join('\\n');try{await navigator.clipboard.writeText(text);msg('Copied')}catch(err){const f=document.getElementById('fallback');f.hidden=false;f.value=text;f.select();msg('Select and copy the text below')}}
 });
 const timers={};
-document.addEventListener('input',e=>{const id=e.target.dataset&&e.target.dataset.take;if(!id)return;
-  picks[id]={...(picks[id]||{}),take:e.target.value};msg('Saving');clearTimeout(timers[id]);timers[id]=setTimeout(()=>save(id),700)});
+document.addEventListener('input',e=>{const ds=e.target.dataset||{};const id=ds.take||ds.review;if(!id)return;
+  picks[id]={...(picks[id]||{}),[ds.take?'take':'review']:e.target.value};msg('Saving');clearTimeout(timers[id]);timers[id]=setTimeout(()=>save(id),700)});
 render();
 (async()=>{try{db=await window.claude?.use('db')}catch(e){db=null}
   if(!db){msg('Saving on this device');return}
   db.collection('picks').onSnapshot(s=>{let changed=false;for(const d of s.docs){const v=d.data();if(!v)continue;const cur=picks[d.id]||{};
-      if(cur.keep!==v.keep||(cur.take||'')!==(v.take||'')){
-        const focused=document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.take===d.id;
-        picks[d.id]=focused?{...cur,keep:v.keep}:{keep:v.keep,take:v.take||''};changed=true}}
-    if(changed){local();const a=document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.take;render();if(a){const t=document.getElementById('t-'+a);if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length)}}}},
+      if(cur.keep!==v.keep||(cur.take||'')!==(v.take||'')||(cur.review||'')!==(v.review||'')){
+        const fd=(document.activeElement&&document.activeElement.dataset)||{};const focused=fd.take===d.id||fd.review===d.id;
+        picks[d.id]=focused?{...cur,keep:v.keep}:{keep:v.keep,take:v.take||'',review:v.review||''};changed=true}}
+    if(changed){local();const fa=(document.activeElement&&document.activeElement.dataset)||{};const a=fa.take||fa.review;const pre=fa.take?'t-':'r-';render();if(a){const t=document.getElementById(pre+a);if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length)}}}},
     ()=>msg('Saving on this device'));
 })();
 </script>`;

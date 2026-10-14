@@ -181,3 +181,5 @@ a { color: inherit; }
 h1.big { margin: 0; }
 .ask { font-weight: 800; font-size: 18px; margin-top: 10px; }
 .body > h1.big:first-child { margin-top: 18px; }
+.nophoto { flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: 4px; }
+.nopic { font-size: 11px; font-weight: 600; opacity: .85; letter-spacing: .02em; }
