@@ -1,0 +1,97 @@
+// Builds src/data/{catalogue,legs}.json from the research files, and copies photos.
+// Every drive hour comes from a Google Maps reading in research/; a missing leg throws.
+import fs from 'node:fs';
+import path from 'node:path';
+
+const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+
+function hoursOf(s) {
+  const h = /(\d+)\s*(?:h|hr)\b/.exec(s);
+  const m = /(\d+)\s*min/.exec(s) || (h ? /(?:h|hr)\s+(\d+)\s*$/.exec(s.trim()) : null);
+  if (!h && !m) throw new Error(`cannot parse duration "${s}"`);
+  return (h ? +h[1] : 0) + (m ? +m[1] / 60 : 0);
+}
+
+function tableRows(md, startMarker) {
+  const part = startMarker ? md.split(startMarker)[1].split('\n## ')[0] : md;
+  return part.split('\n').filter((l) => l.startsWith('|') && !/^\|\s*-/.test(l) && !/^\|\s*(leg|Leg)\s*\|/.test(l))
+    .map((l) => l.split('|').slice(1, -1).map((c) => c.trim()));
+}
+
+const legRows = [
+  ...tableRows(read('research/google_listings.md'), '## A.').map((c) => ({ label: c[0], dur: c[1], src: 'google_listings.md A' })),
+  ...tableRows(read('research/maps_legs_extra.md')).map((c) => ({ label: c[0].replace(/^\d+\s+/, ''), dur: c[1], src: 'maps_legs_extra.md' })),
+].map((r) => ({ ...r, hours: Math.round(hoursOf(r.dur) * 100) / 100 }));
+
+const HUB_ALIAS = [
+  [/^(BIA airport|Bandaranaike International Airport)$/i, 'AIR'],
+  [/^Colombo( Fort)?$/i, 'Colombo'], [/^Sigiriya$/i, 'Sigiriya'], [/^Kandy$/i, 'Kandy'],
+  [/^Kitulgala$/i, 'Kitulgala'], [/^Nuwara Eliya$/i, 'Nuwara Eliya'], [/^Ella$/i, 'Ella'],
+  [/^Tissamaharama$/i, 'Tissa'], [/^Udawalawe( National Park)?$/i, 'Udawalawe'], [/^Weligama$/i, 'Weligama'],
+];
+const hubOf = (name) => HUB_ALIAS.find(([re]) => re.test(name.trim()))?.[1] ?? null;
+
+const legs = [];
+for (const r of legRows) {
+  const [a, b] = r.label.split('->').map((s) => s.trim());
+  const ha = hubOf(a), hb = hubOf(b);
+  if (ha && hb && ha !== hb) legs.push({ a: ha, b: hb, hours: r.hours, src: `${r.src}: ${r.label} ${r.dur}` });
+}
+
+const legHours = (from, toPattern) => {
+  const row = legRows.find((r) => {
+    const [a, b] = r.label.split('->').map((s) => s.trim());
+    return new RegExp(`^${from}$`, 'i').test(a) && toPattern.test(b);
+  });
+  if (!row) throw new Error(`missing leg ${from} -> ${toPattern}`);
+  return row.hours;
+};
+
+// Round trip = 2x one-way unless noted. pidurangala 0.3 is an estimate: same village road as Sigiriya.
+const SIDE_TRIP = {
+  dambulla: 2 * legHours('Sigiriya', /Dambulla/),
+  elephants: 2 * legHours('Sigiriya', /Kaudulla/),
+  anuradhapura: 2 * legHours('Sigiriya', /Anuradhapura/),
+  polonnaruwa: 2 * legHours('Sigiriya', /Polonnaruwa/),
+  knuckles: 2 * legHours('Kandy', /Riverston/),
+  horton: 2 * legHours('Nuwara Eliya', /Horton/),
+  train: legHours('Nuwara Eliya', /Nanu Oya/),
+  diyaluma: 2 * legHours('Ella', /Diyaluma/),
+  lipton: 2 * legHours('Ella', /Lipton/),
+  yala: 2 * legHours('Tissamaharama', /Yala/),
+  whales: 2 * legHours('Weligama', /Mirissa/),
+  hiriketiya: 2 * legHours('Weligama', /Hiriketiya/),
+  junglebeach: 2 * legHours('Weligama', /Jungle Beach/),
+  galle: 2 * legHours('Weligama', /Galle Fort/),
+  lavinia: 2 * legHours('Colombo', /Mount Lavinia/),
+  pidurangala: 0.3,
+};
+
+const cat = JSON.parse(read('data/catalogue.json'));
+const credits = JSON.parse(read('docs/mockups/img/credits.json'));
+const items = cat.items.map((it) => {
+  const out = { ...it, sideTrip: Math.round((SIDE_TRIP[it.id] ?? 0) * 100) / 100 };
+  if (it.id === 'yala') out.hub = 'Tissa';
+  if (it.photo && credits[it.photo]) out.credit = `${credits[it.photo].artist}, ${credits[it.photo].license}`;
+  return out;
+});
+
+// Sanity: 37 items, all hubs connected.
+if (items.length !== 37) throw new Error(`expected 37 items, got ${items.length}`);
+const hubs = ['AIR', 'Colombo', 'Sigiriya', 'Kandy', 'Kitulgala', 'Nuwara Eliya', 'Ella', 'Tissa', 'Udawalawe', 'Weligama'];
+const d = Object.fromEntries(hubs.map((a) => [a, Object.fromEntries(hubs.map((b) => [b, a === b ? 0 : Infinity]))]));
+for (const l of legs) { d[l.a][l.b] = Math.min(d[l.a][l.b], l.hours); d[l.b][l.a] = Math.min(d[l.b][l.a], l.hours); }
+for (const k of hubs) for (const i of hubs) for (const j of hubs) if (d[i][k] + d[k][j] < d[i][j]) d[i][j] = d[i][k] + d[k][j];
+for (const a of hubs) for (const b of hubs) if (!Number.isFinite(d[a][b])) throw new Error(`hubs not connected: ${a} -> ${b}`);
+
+fs.mkdirSync(path.join(root, 'src/data'), { recursive: true });
+fs.writeFileSync(path.join(root, 'src/data/catalogue.json'), JSON.stringify({ areas: cat.areas, items }, null, 1));
+fs.writeFileSync(path.join(root, 'src/data/legs.json'), JSON.stringify(legs, null, 1));
+
+const imgSrc = path.join(root, 'docs/mockups/img'), imgDst = path.join(root, 'public/img');
+fs.mkdirSync(imgDst, { recursive: true });
+for (const f of fs.readdirSync(imgSrc)) if (f.endsWith('.jpg')) fs.copyFileSync(path.join(imgSrc, f), path.join(imgDst, f));
+
+console.log(`items ${items.length}, legs ${legs.length}, photos ${fs.readdirSync(imgDst).length}`);
+console.log('AIR->Sigiriya', d.AIR.Sigiriya.toFixed(2), '| Kandy->Ella', d.Kandy.Ella.toFixed(2), '| Weligama->AIR', d.Weligama.AIR.toFixed(2));

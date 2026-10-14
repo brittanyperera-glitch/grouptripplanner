@@ -1,0 +1,116 @@
+[
+ {
+  "a": "AIR",
+  "b": "Sigiriya",
+  "hours": 3.65,
+  "src": "google_listings.md A: BIA airport -> Sigiriya 3 h 39"
+ },
+ {
+  "a": "AIR",
+  "b": "Colombo",
+  "hours": 0.8,
+  "src": "google_listings.md A: BIA airport -> Colombo Fort 48 min"
+ },
+ {
+  "a": "Colombo",
+  "b": "Sigiriya",
+  "hours": 4.33,
+  "src": "google_listings.md A: Colombo -> Sigiriya 4 h 20"
+ },
+ {
+  "a": "Sigiriya",
+  "b": "Kandy",
+  "hours": 2.97,
+  "src": "google_listings.md A: Sigiriya -> Kandy 2 h 58"
+ },
+ {
+  "a": "Kandy",
+  "b": "Kitulgala",
+  "hours": 2.33,
+  "src": "google_listings.md A: Kandy -> Kitulgala 2 h 20"
+ },
+ {
+  "a": "Kitulgala",
+  "b": "Nuwara Eliya",
+  "hours": 2.3,
+  "src": "google_listings.md A: Kitulgala -> Nuwara Eliya 2 h 18"
+ },
+ {
+  "a": "Nuwara Eliya",
+  "b": "Ella",
+  "hours": 1.92,
+  "src": "google_listings.md A: Nuwara Eliya -> Ella 1 h 55"
+ },
+ {
+  "a": "Ella",
+  "b": "Tissa",
+  "hours": 2.08,
+  "src": "google_listings.md A: Ella -> Tissamaharama 2 h 05"
+ },
+ {
+  "a": "Ella",
+  "b": "Udawalawe",
+  "hours": 2.32,
+  "src": "google_listings.md A: Ella -> Udawalawe 2 h 19"
+ },
+ {
+  "a": "Udawalawe",
+  "b": "Weligama",
+  "hours": 1.83,
+  "src": "google_listings.md A: Udawalawe -> Weligama 1 h 50"
+ },
+ {
+  "a": "Tissa",
+  "b": "Weligama",
+  "hours": 1.9,
+  "src": "google_listings.md A: Tissamaharama -> Weligama 1 h 54"
+ },
+ {
+  "a": "Weligama",
+  "b": "AIR",
+  "hours": 2.33,
+  "src": "google_listings.md A: Weligama -> BIA airport 2 h 20"
+ },
+ {
+  "a": "Sigiriya",
+  "b": "Ella",
+  "hours": 4.43,
+  "src": "google_listings.md A: Sigiriya -> Ella 4 h 26"
+ },
+ {
+  "a": "Colombo",
+  "b": "Kandy",
+  "hours": 3.78,
+  "src": "maps_legs_extra.md: Colombo -> Kandy 3 hr 47 min"
+ },
+ {
+  "a": "AIR",
+  "b": "Kandy",
+  "hours": 3.23,
+  "src": "maps_legs_extra.md: Bandaranaike International Airport -> Kandy 3 hr 14 min"
+ },
+ {
+  "a": "Kandy",
+  "b": "Ella",
+  "hours": 4.03,
+  "src": "maps_legs_extra.md: Kandy -> Ella 4 hr 2 min"
+ },
+ {
+  "a": "Ella",
+  "b": "Weligama",
+  "hours": 3.25,
+  "src": "maps_legs_extra.md: Ella -> Weligama 3 hr 15 min"
+ },
+ {
+  "a": "Kandy",
+  "b": "Nuwara Eliya",
+  "hours": 2.83,
+  "src": "maps_legs_extra.md: Kandy -> Nuwara Eliya 2 hr 50 min"
+ },
+ {
+  "a": "Udawalawe",
+  "b": "Tissa",
+  "hours": 1.17,
+  "src": "maps_legs_extra.md: Udawalawe National Park -> Tissamaharama 1 hr 10 min"
+ }
+]
