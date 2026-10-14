@@ -1,0 +1,574 @@
+{
+ "_note": "Candidate activities for Brittany to curate. hours = time on site incl. queues, not travel. slot = when it has to happen. Facts from research/*.md; google fields filled from research/google_listings.md.",
+ "areas": [
+  "Colombo",
+  "Cultural Triangle",
+  "Kandy and Knuckles",
+  "Kitulgala",
+  "Hill country",
+  "Ella",
+  "Wild south",
+  "South coast"
+ ],
+ "items": [
+  {
+   "id": "pettah",
+   "name": "Pettah market and Red Mosque",
+   "area": "Colombo",
+   "hours": 3,
+   "slot": "morning",
+   "fee": "free, spend what you like",
+   "warn": "Closed Sundays and full moon days",
+   "photo": "pettah",
+   "about": "Colombo's packed old bazaar district, plus the red and white striped Jami Ul-Alfar mosque.",
+   "google": {
+    "rating": "4.0",
+    "reviews": "4,647",
+    "url": "https://www.google.com/maps/search/Pettah%20Market,%20Colombo,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "foodtour",
+   "name": "Tuk-tuk street food tour",
+   "area": "Colombo",
+   "hours": 3,
+   "slot": "evening",
+   "fee": "about USD 31-41 pp",
+   "book": "a day ahead",
+   "photo": "foodtour",
+   "about": "Evening tuk-tuk loop through Colombo's street stalls: kottu, hoppers, isso wade and short eats."
+  },
+  {
+   "id": "galleface",
+   "name": "Galle Face Green at sunset",
+   "area": "Colombo",
+   "hours": 1.5,
+   "slot": "sunset",
+   "fee": "free, isso wade from the stalls",
+   "photo": "galleface",
+   "about": "Colombo's seafront promenade for sunsets, kites and street-food carts.",
+   "google": {
+    "rating": "4.5",
+    "reviews": "17,370",
+    "url": "https://www.google.com/maps/search/Galle%20Face%20Green,%20Colombo,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "crab",
+   "name": "Ministry of Crab dinner",
+   "area": "Colombo",
+   "hours": 2,
+   "slot": "evening",
+   "fee": "about LKR 7,500+ pp",
+   "book": "2-3 weeks ahead in December",
+   "photo": "crab",
+   "about": "Crab restaurant in the old Dutch Hospital, famous for pepper and chilli crab.",
+   "google": {
+    "rating": "4.4",
+    "reviews": "5,702",
+    "url": "https://www.google.com/maps/search/Ministry%20of%20Crab,%20Colombo,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "gangaramaya",
+   "name": "Gangaramaya Temple",
+   "area": "Colombo",
+   "hours": 1,
+   "slot": "any",
+   "fee": "unverified",
+   "photo": "gangaramaya",
+   "about": "Lakeside temple complex crammed with statues, relics and odd curios.",
+   "google": {
+    "rating": "4.6",
+    "reviews": "14,055",
+    "url": "https://www.google.com/maps/search/Gangaramaya%20Temple,%20Colombo,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "bawa",
+   "name": "Geoffrey Bawa's Number 11",
+   "area": "Colombo",
+   "hours": 1,
+   "slot": "fixed tour times",
+   "fee": "LKR 5,000",
+   "book": "guided tours only, weekdays 10:00, 14:00, 15:30",
+   "photo": "bawa",
+   "about": "Architect Geoffrey Bawa's own townhouse, seen on a guided tour.",
+   "google": {
+    "rating": "4.6",
+    "reviews": "585",
+    "url": "https://www.google.com/maps/search/Number%2011%20Geoffrey%20Bawa,%20Colombo,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "rooftop",
+   "name": "Rooftop drinks or Lotus Tower",
+   "area": "Colombo",
+   "hours": 2,
+   "slot": "evening",
+   "fee": "Lotus Tower USD 20",
+   "photo": "rooftop",
+   "about": "Landmark tower with a city and ocean viewing deck, or a rooftop bar instead.",
+   "google": {
+    "rating": "4.5",
+    "reviews": "12,589",
+    "url": "https://www.google.com/maps/search/Lotus%20Tower%20Colombo,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "lavinia",
+   "name": "Mount Lavinia beach",
+   "area": "Colombo",
+   "hours": 2,
+   "slot": "afternoon",
+   "fee": "free",
+   "warn": "Rips and undertow, not one for swimming",
+   "photo": "lavinia",
+   "about": "Beach just south of Colombo with seafront restaurants, best at sunset.",
+   "google": {
+    "rating": "4.5",
+    "reviews": "4,514",
+    "url": "https://www.google.com/maps/search/Mount%20Lavinia%20Beach,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "kottu",
+   "name": "Late-night kottu at Pilawoos",
+   "area": "Colombo",
+   "hours": 1,
+   "slot": "late night",
+   "fee": "cheap",
+   "photo": "kottu",
+   "about": "Late-night kottu roti from a Colombo institution open round the clock.",
+   "google": {
+    "rating": "3.4",
+    "reviews": "1,170",
+    "url": "https://www.google.com/maps/search/Pilawoos%20Hotel%20restaurant%20Colombo"
+   },
+   "warn": "Rated 3.4 on Google; it's about the 3am kottu, not the service"
+  },
+  {
+   "id": "sigiriya",
+   "name": "Sigiriya Rock",
+   "area": "Cultural Triangle",
+   "hours": 3,
+   "slot": "gate opening",
+   "fee": "USD 35",
+   "book": "online, recommended",
+   "photo": "sigiriya",
+   "about": "5th-century rock fortress with palace ruins on top and frescoes on the way up.",
+   "google": {
+    "rating": "4.7",
+    "reviews": "24,355",
+    "url": "https://www.google.com/maps/search/Sigiriya%20Rock%20Fortress,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "pidurangala",
+   "name": "Pidurangala sunrise",
+   "area": "Cultural Triangle",
+   "hours": 2,
+   "slot": "sunrise",
+   "fee": "LKR 1,000",
+   "warn": "Last bit is a scramble, bring a head torch",
+   "photo": "pidurangala",
+   "about": "Rock next door to Sigiriya, short scramble to the best view of it.",
+   "google": {
+    "rating": "4.8",
+    "reviews": "11,464",
+    "url": "https://www.google.com/maps/search/Pidurangala%20Rock%20Temple,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "dambulla",
+   "name": "Dambulla cave temple",
+   "area": "Cultural Triangle",
+   "hours": 1.5,
+   "slot": "morning",
+   "fee": "LKR 3,000",
+   "warn": "Cover shoulders and knees",
+   "photo": "dambulla",
+   "about": "UNESCO cave temples packed with painted ceilings and Buddha statues.",
+   "google": {
+    "rating": "4.5",
+    "reviews": "17,020",
+    "url": "https://www.google.com/maps/search/Dambulla%20Cave%20Temple,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "polonnaruwa",
+   "name": "Polonnaruwa by bike",
+   "area": "Cultural Triangle",
+   "hours": 4,
+   "slot": "morning",
+   "fee": "USD 30",
+   "photo": "polonnaruwa",
+   "about": "Medieval royal capital, ruins spread out enough to do by bike.",
+   "google": {
+    "rating": "4.5",
+    "reviews": "1,424",
+    "url": "https://www.google.com/maps/search/Polonnaruwa%20Ancient%20City,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "elephants",
+   "name": "Elephant safari",
+   "area": "Cultural Triangle",
+   "hours": 3,
+   "slot": "afternoon",
+   "fee": "about USD 35 pp plus jeep",
+   "warn": "December herds are at Kaudulla or Hurulu, not Minneriya; the driver picks on the day",
+   "photo": "elephants",
+   "about": "Jeep safari to watch wild herds gather around the reservoirs.",
+   "google": {
+    "rating": "4.6",
+    "reviews": "227",
+    "url": "https://www.google.com/maps/search/Kaudulla%20National%20Park,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "anuradhapura",
+   "name": "Anuradhapura sacred city",
+   "area": "Cultural Triangle",
+   "hours": 6,
+   "slot": "morning",
+   "fee": "USD 30",
+   "warn": "Full day plus 1.5 h each way from Sigiriya",
+   "photo": "anuradhapura",
+   "about": "The first ancient capital: giant stupas and the sacred bo tree.",
+   "google": {
+    "rating": "4.9",
+    "reviews": "15,071",
+    "url": "https://www.google.com/maps/search/Anuradhapura%20sacred%20city,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "village",
+   "name": "Village tour and cooking lunch",
+   "area": "Cultural Triangle",
+   "hours": 3,
+   "slot": "any",
+   "fee": "about USD 15-30",
+   "photo": "village",
+   "about": "Village visit by cart and canoe, then a home-cooked rice and curry lunch."
+  },
+  {
+   "id": "tooth",
+   "name": "Temple of the Tooth, evening puja",
+   "area": "Kandy and Knuckles",
+   "hours": 1.5,
+   "slot": "18:30",
+   "fee": "LKR 3,000",
+   "warn": "No shorts or bare shoulders",
+   "photo": "tooth",
+   "about": "Kandy's royal temple housing the Buddha's Tooth Relic; the evening ceremony has drums.",
+   "google": {
+    "rating": "4.7",
+    "reviews": "33,680",
+    "url": "https://www.google.com/maps/search/Temple%20of%20the%20Sacred%20Tooth%20Relic,%20Kandy,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "knuckles",
+   "name": "Knuckles day hike",
+   "area": "Kandy and Knuckles",
+   "hours": 6,
+   "slot": "morning",
+   "fee": "about LKR 650 permit plus guide",
+   "warn": "Some trails damaged by the 2025 cyclone, check which are open",
+   "photo": "knuckles",
+   "about": "Guided hike in the misty Knuckles range to the Mini World's End drop.",
+   "google": {
+    "rating": "4.8",
+    "reviews": "826",
+    "url": "https://www.google.com/maps/search/Mini%20World%27s%20End,%20Riverston,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "rafting",
+   "name": "Kitulgala white water rafting",
+   "area": "Kitulgala",
+   "hours": 3,
+   "slot": "morning",
+   "fee": "about USD 25-40",
+   "book": "through an operator",
+   "photo": "rafting",
+   "about": "Grade 2-3 rapids on the Kelani river, with jungle on both banks.",
+   "google": {
+    "rating": "4.9",
+    "reviews": "293",
+    "url": "https://www.google.com/maps/search/Kitulgala%20white%20water%20rafting,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "train",
+   "name": "Nanu Oya to Ella train",
+   "area": "Hill country",
+   "hours": 2.5,
+   "slot": "09:00 or 14:30",
+   "fee": "about LKR 4,000 reserved",
+   "book": "seats open 30 days ahead",
+   "warn": "The Kandy section is shut until at least early 2027, so we drive to Nanu Oya",
+   "photo": "train",
+   "about": "The best-scenery stretch of the hill country railway, tea fields all the way."
+  },
+  {
+   "id": "horton",
+   "name": "Horton Plains and World's End",
+   "area": "Hill country",
+   "hours": 4,
+   "slot": "sunrise",
+   "fee": "about USD 40 all-in",
+   "warn": "Mist rolls in by mid-morning, cold at dawn",
+   "photo": "horton",
+   "about": "Cloud-forest plateau walk to the World's End cliff edge.",
+   "google": {
+    "rating": "4.6",
+    "reviews": "10,690",
+    "url": "https://www.google.com/maps/search/Horton%20Plains%20National%20Park,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "tea",
+   "name": "Tea factory tour",
+   "area": "Hill country",
+   "hours": 1.5,
+   "slot": "daytime",
+   "fee": "small",
+   "photo": "tea",
+   "about": "Tour of a working tea factory, ending with a tasting.",
+   "google": {
+    "rating": "3.6",
+    "reviews": "584",
+    "url": "https://www.google.com/maps/search/Pedro%20Tea%20Estate,%20Nuwara%20Eliya,%20Sri%20Lanka"
+   },
+   "warn": "The Pedro factory rates only 3.6 on Google and its old estate listing is closed; we'd pick a better-rated estate"
+  },
+  {
+   "id": "ellarock",
+   "name": "Ella Rock hike",
+   "area": "Ella",
+   "hours": 4.5,
+   "slot": "06:00 start",
+   "fee": "free",
+   "warn": "Slippery when wet, leeches in December",
+   "photo": "ellarock",
+   "about": "Longer hike to a big valley view, partly along the railway line.",
+   "google": {
+    "rating": "4.5",
+    "reviews": "2,078",
+    "url": "https://www.google.com/maps/search/Ella%20Rock,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "littleadams",
+   "name": "Little Adam's Peak",
+   "area": "Ella",
+   "hours": 2,
+   "slot": "sunrise",
+   "fee": "free",
+   "photo": "littleadams",
+   "about": "Easy summit walk above Ella's tea fields, great at sunrise.",
+   "google": {
+    "rating": "4.7",
+    "reviews": "1,282",
+    "url": "https://www.google.com/maps/search/Little%20Adam%27s%20Peak,%20Ella,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "ninearch",
+   "name": "Nine Arch Bridge",
+   "area": "Ella",
+   "hours": 1,
+   "slot": "train times",
+   "fee": "free",
+   "warn": "Never on the track when a train is due",
+   "photo": "ninearch",
+   "about": "Colonial stone railway viaduct in the jungle; time it for a train.",
+   "google": {
+    "rating": "4.6",
+    "reviews": "461",
+    "url": "https://www.google.com/maps/search/Nine%20Arch%20Bridge,%20Ella,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "zipline",
+   "name": "Flying Ravana zipline",
+   "area": "Ella",
+   "hours": 1,
+   "slot": "daytime",
+   "fee": "about USD 32-40",
+   "book": "a day ahead",
+   "about": "Ella's zipline park, half a kilometre over the jungle valley.",
+   "google": {
+    "rating": "4.7",
+    "reviews": "4,438",
+    "url": "https://www.google.com/maps/search/Flying%20Ravana%20zipline,%20Ella,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "diyaluma",
+   "name": "Diyaluma Falls upper pools",
+   "area": "Ella",
+   "hours": 5,
+   "slot": "late morning",
+   "fee": "guide about LKR 625",
+   "warn": "High December flow, slippery rock; there has been a fatal fall",
+   "photo": "diyaluma",
+   "about": "Sri Lanka's second-highest waterfall, with natural pools at the top.",
+   "google": {
+    "rating": "4.8",
+    "reviews": "4,942",
+    "url": "https://www.google.com/maps/search/Diyaluma%20Falls,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "lipton",
+   "name": "Lipton's Seat",
+   "area": "Ella",
+   "hours": 3,
+   "slot": "sunrise",
+   "fee": "small",
+   "photo": "lipton",
+   "about": "Hilltop lookout where Thomas Lipton surveyed his tea estates.",
+   "google": {
+    "rating": "4.6",
+    "reviews": "5,674",
+    "url": "https://www.google.com/maps/search/Lipton%27s%20Seat,%20Haputale,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "yala",
+   "name": "Yala leopard safari",
+   "area": "Wild south",
+   "hours": 4.5,
+   "slot": "gate opening",
+   "fee": "about USD 45 pp plus jeep",
+   "warn": "Very busy with jeeps; sightings not guaranteed",
+   "photo": "leopard",
+   "about": "Leopard and elephant safari in Sri Lanka's most famous park.",
+   "google": {
+    "rating": "4.2",
+    "reviews": "6,308",
+    "url": "https://www.google.com/maps/search/Yala%20National%20Park,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "udawalawe",
+   "name": "Udawalawe elephants and Transit Home",
+   "area": "Wild south",
+   "hours": 4,
+   "slot": "morning",
+   "fee": "about USD 27 pp plus jeep",
+   "photo": "udawalawe",
+   "about": "Reliable wild elephant sightings, plus the orphan calves' feeding at the Transit Home.",
+   "google": {
+    "rating": "4.5",
+    "reviews": "7,120",
+    "url": "https://www.google.com/maps/search/Udawalawe%20National%20Park,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "surf",
+   "name": "Weligama surf lesson",
+   "area": "South coast",
+   "hours": 1.5,
+   "slot": "morning",
+   "fee": "about USD 20-35",
+   "warn": "Stay mid-bay, rips near the headlands",
+   "photo": "surf",
+   "about": "Gentle beginner surf bay with lots of schools.",
+   "google": {
+    "rating": "4.4",
+    "reviews": "1,068",
+    "url": "https://www.google.com/maps/search/Weligama%20Beach,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "whales",
+   "name": "Whale watching, responsible operator",
+   "area": "South coast",
+   "hours": 5,
+   "slot": "06:30",
+   "fee": "about USD 40-60",
+   "book": "1-2 days ahead",
+   "warn": "Most Mirissa boats run illegal swims; we use one with a good record. Seasickness common",
+   "photo": "whales",
+   "about": "Morning boat trip to see blue whales offshore.",
+   "google": {
+    "rating": "4.6",
+    "reviews": "953",
+    "url": "https://www.google.com/maps/search/Raja%20and%20the%20Whales,%20Mirissa,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "galle",
+   "name": "Galle Fort and sunset",
+   "area": "South coast",
+   "hours": 3,
+   "slot": "late afternoon",
+   "fee": "free",
+   "photo": "galle",
+   "about": "Walled colonial town with cafes, ramparts and a lighthouse.",
+   "google": {
+    "rating": "4.7",
+    "reviews": "22,584",
+    "url": "https://www.google.com/maps/search/Galle%20Fort,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "coconut",
+   "name": "Coconut Tree Hill",
+   "area": "South coast",
+   "hours": 1,
+   "slot": "sunset",
+   "fee": "free",
+   "photo": "coconut",
+   "about": "Palm-topped headland in Mirissa, a classic sunset spot.",
+   "google": {
+    "rating": "4.4",
+    "reviews": "10,473",
+    "url": "https://www.google.com/maps/search/Coconut%20Tree%20Hill,%20Mirissa,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "hiriketiya",
+   "name": "Hiriketiya beach and surf",
+   "area": "South coast",
+   "hours": 6,
+   "slot": "any",
+   "fee": "free",
+   "about": "Horseshoe surf bay near Dickwella with beach bars.",
+   "google": {
+    "rating": "4.6",
+    "reviews": "2,848",
+    "url": "https://www.google.com/maps/search/Hiriketiya%20Beach,%20Dickwella,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "junglebeach",
+   "name": "Jungle Beach snorkel",
+   "area": "South coast",
+   "hours": 3,
+   "slot": "morning",
+   "fee": "snorkel hire",
+   "photo": "junglebeach",
+   "about": "Small cove reached by a short walk over Rumassala hill.",
+   "google": {
+    "rating": "4.2",
+    "reviews": "2,971",
+    "url": "https://www.google.com/maps/search/Jungle%20Beach,%20Unawatuna,%20Sri%20Lanka"
+   }
+  },
+  {
+   "id": "beachday",
+   "name": "Proper beach day",
+   "area": "South coast",
+   "hours": 6,
+   "slot": "any",
+   "fee": "free",
+   "photo": "beachday",
+   "about": "A whole day off: beach, swim, nap, repeat."
+  }
+ ]
+}
