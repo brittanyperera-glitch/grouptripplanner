@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Compare from './components/Compare';
 import Toast from './components/Toast';
-import { groupResult, personPlan } from './lib/group';
 import { answer, move, removeId, retier, startPlace, tierOf } from './lib/ranking';
 import Days from './screens/Days';
 import Everyone from './screens/Everyone';
@@ -17,6 +16,7 @@ import Suggest from './screens/Suggest';
 import Waiting from './screens/Waiting';
 import { AppProvider, pickQuip, useApp } from './state';
 import { connectionMissingNow } from './store';
+import { useGroupResult, usePersonPlan } from './workers/usePlan';
 import { AREAS, emptyRanking, PEOPLE } from './types';
 import type { Item, Pace as PaceT, Pending, Person, Ranking, Response, Store, Tier } from './types';
 
@@ -27,14 +27,16 @@ const TABS: Tab[] = ['My trip', 'Group', 'Everyone', 'Suggest'];
 function MyTripTab() {
   const { state, me, items, legs } = useApp();
   const resp = me ? state.responses[me] : undefined;
-  const plan = useMemo(() => (resp ? personPlan(resp, items, legs) : null), [resp, items, legs]);
-  if (!resp || !plan) return <div className="body"><div className="sub">Loading</div></div>;
+  const { data: plan } = usePersonPlan(resp, items, legs);
+  if (!resp) return <div className="body"><div className="sub">Loading</div></div>;
+  if (!plan) return <div className="body"><div className="sub">Working out the plan...</div></div>;
   return <MyTrip plan={plan} days={resp.flex ? 14 : resp.days ?? 9} />;
 }
 
 function GroupTab() {
   const { state, items, legs } = useApp();
-  const group = useMemo(() => groupResult(state, items, legs), [state, items, legs]);
+  const { data: group } = useGroupResult(state, items, legs);
+  if (!group) return <div className="body"><div className="sub">Working out the plan...</div></div>;
   if (!group.open) return <Waiting />;
   return (
     <>
