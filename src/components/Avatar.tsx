@@ -35,6 +35,9 @@ const BODY_WIDEN = 1.2;
 const FULL_BOX = '10 -10 84 228';
 // A little wider for the PNGs: Antek's laptop and Lazza's flag push their figures past 84 units at true height.
 const IMAGE_FULL_BOX = '6 -10 92 228';
+// Carousel tile: same width and feet line, top trimmed to just above the tallest head (Alex, y = 15.6) so the figure fills the tile.
+const STAGE_IMAGE_BOX = '6 12 92 206';
+const STAGE_BOX = '10 12 84 206';
 
 const EDGE = { stroke: 'rgba(11, 13, 16, .35)', strokeWidth: 1, strokeLinejoin: 'round' as const };
 
@@ -136,7 +139,7 @@ function head(l: Look): ReactNode {
  * A friend as a flat character. `crop="bust"` frames head and shoulders for small uses such as the header.
  * Decorative: the control beside it carries the name.
  */
-export default function Avatar({ name, size = 80, crop = 'bust', bob = false, image = IMAGE_AVATARS.has(name) }: { name: Person; size?: number; crop?: 'bust' | 'full'; bob?: boolean; image?: boolean }) {
+export default function Avatar({ name, size = 80, crop = 'bust', bob = false, image = IMAGE_AVATARS.has(name) }: { name: Person; size?: number; crop?: 'bust' | 'full' | 'stage'; bob?: boolean; image?: boolean }) {
   const l = LOOKS[name] ?? LOOKS.Saulie;
   const cm = image ? IMAGE_CM[name] : l.height;
   const s = cm / 200;
@@ -147,7 +150,8 @@ export default function Avatar({ name, size = 80, crop = 'bust', bob = false, im
   const bust = crop === 'bust';
   const headY = image ? 214 - FIGURE_H * s : 214 - (214 - 30.5) * s;
   const top = headY - (image ? 6 : 30);
-  const box = bust ? `16 ${top.toFixed(1)} 72 72` : image ? IMAGE_FULL_BOX : FULL_BOX;
+  const stage = crop === 'stage';
+  const box = bust ? `16 ${top.toFixed(1)} 72 72` : stage ? (image ? STAGE_IMAGE_BOX : STAGE_BOX) : image ? IMAGE_FULL_BOX : FULL_BOX;
   const [, , bw, bh] = box.split(' ').map(Number);
   return (
     <svg viewBox={box} width={(size * bw) / bh} height={size} aria-hidden="true" focusable="false"

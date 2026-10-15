@@ -146,7 +146,7 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
               {PEOPLE.map((n, i) => (
                 <button key={n} className={`char${i === idx ? ' on' : ''}`} aria-current={i === idx} onClick={() => tap(n, i)}
                   style={{ '--bop-delay': `${(i * 0.31).toFixed(2)}s` } as CSSProperties}>
-                  <Avatar name={n} crop="full" size={220} bob={bobOk} />
+                  <Avatar name={n} crop="stage" size={220} bob={bobOk} />
                   <span className="char-name">{n}</span>
                 </button>
               ))}
