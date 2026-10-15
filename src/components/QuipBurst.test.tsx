@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import QuipBurst from './QuipBurst';
+import QuipBurst, { QUIP_MS } from './QuipBurst';
 
 const css = readFileSync('src/styles.css', 'utf8');
 const setMotion = (reduce: boolean) => {
@@ -22,7 +22,8 @@ describe('QuipBurst', () => {
     render(<QuipBurst text="banger choice" kind="must" onDone={() => {}} />);
     expect(screen.getByRole('status').textContent).toBe('banger choice');
     expect(document.querySelector('.quip.quip-must.quip-full')).not.toBeNull();
-    expect(document.querySelectorAll('.quip-p').length).toBe(24);
+    expect(document.querySelectorAll('.quip-p').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('.quip-p').length).toBeLessThanOrEqual(10);
   });
 
   it('never takes the pointer: a tap underneath still lands and skips the burst', () => {
@@ -39,15 +40,34 @@ describe('QuipBurst', () => {
     expect(onDone).toHaveBeenCalled();
   });
 
-  it('dismisses itself after about 1.2 s', () => {
+  it.each([false, true])('eases in, holds readable for at least 1.6 s, then eases out (reduced motion: %s)', reduce => {
     vi.useFakeTimers();
-    setMotion(false);
+    setMotion(reduce);
     const onDone = vi.fn();
     render(<QuipBurst text="cold" kind="skip" onDone={onDone} />);
-    act(() => { vi.advanceTimersByTime(1100); });
+    const { in: enter, hold, out } = QUIP_MS;
+    expect(enter).toBeGreaterThanOrEqual(300);
+    expect(hold).toBeGreaterThanOrEqual(1600);
+    expect(out).toBeGreaterThanOrEqual(300);
+    const el = document.querySelector('.quip') as HTMLElement;
+    expect(el.style.getPropertyValue('--in')).toBe(`${enter}ms`);
+    expect(el.style.getPropertyValue('--hold')).toBe(`${hold}ms`);
+    expect(el.style.getPropertyValue('--out')).toBe(`${out}ms`);
+    act(() => { vi.advanceTimersByTime(enter + hold + out - 50); });
     expect(onDone).not.toHaveBeenCalled();
-    act(() => { vi.advanceTimersByTime(300); });
+    act(() => { vi.advanceTimersByTime(100); });
     expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('the overlay CSS fades in over --in and only starts leaving after --in + --hold', () => {
+    const rule = css.split('\n').find(l => l.startsWith('.quip {')) ?? '';
+    expect(rule).toMatch(/q-in var\(--in\)/);
+    expect(rule).toMatch(/q-out var\(--out\)[^,;]*calc\(var\(--in\) \+ var\(--hold\)\)/);
+  });
+
+  it('nothing slams, shakes, wobbles or strobes', () => {
+    const motionLines = css.split('\n').filter(l => /^\s*\.(quip|flash|welcome|shake)/.test(l));
+    for (const l of motionLines) expect(l).not.toMatch(/q-slam|shake|q-wobble|q-sag|q-ring|q-burst|q-drop/);
   });
 
   it('with reduced motion shows the line with a plain fade and no particles', () => {

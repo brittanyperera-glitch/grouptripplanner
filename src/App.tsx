@@ -212,8 +212,8 @@ function Shell() {
   const say = useCallback<Say>((text, kind = 'hi') => {
     if (text) setToast({ text, kind, id: ++seq.current });
   }, []);
-  // Intro slideshow: Brittany-approved places first, then the rest, six at most.
-  const covers = [...items.filter(i => i.photo && copy.items[i.id]?.approved), ...items.filter(i => i.photo && !copy.items[i.id]?.approved)].slice(0, 6);
+  // Intro slideshow: Brittany-approved places first; Name puts the most scenic first and keeps six.
+  const covers = [...items.filter(i => i.photo && copy.items[i.id]?.approved), ...items.filter(i => i.photo && !copy.items[i.id]?.approved)];
   const clear = useCallback(() => setToast(null), []);
   return (
     <div className="app">
@@ -227,7 +227,7 @@ function Shell() {
 }
 
 export default function App({ store }: { store?: Store }) {
-  useEffect(() => { document.title = 'Sri Lanka Trip Picker'; }, []);
+  useEffect(() => { document.title = 'The Homecoming'; }, []);
   if (wantsRaw(window.location.hash)) return <Raw store={store} />;
   if (!store && connectionMissingNow()) {
     return (

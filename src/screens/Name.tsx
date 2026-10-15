@@ -8,8 +8,12 @@ import type { Copy } from '../state';
 import { PEOPLE } from '../types';
 import type { Item, Person } from '../types';
 
-const SLIDE_MS = 4500;
-const FLASH_MS = 1800;
+const SLIDE_MS = 6000;
+// Lock-in: ease in, stay readable, ease out, then continue.
+export const FLASH = { in: 400, hold: 1700, out: 400 };
+// Cover order on the opening: the most scenic first, the rest after.
+const SCENIC = ['ninearch', 'sigiriya', 'coconut', 'galle', 'hiriketiya', 'train'];
+const scenicRank = (id: string) => { const i = SCENIC.indexOf(id); return i < 0 ? SCENIC.length : i; };
 
 type Players = NonNullable<Copy["players"]>;
 
@@ -57,7 +61,7 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
   const still = mode === 'still';
   const bobOk = mode === 'full';
   const [page, setPage] = useState<'intro' | 'select'>('intro');
-  const [slide, setSlide] = useState(() => (mode !== 'full' ? 0 : Math.floor(Math.random() * 6)));
+  const [slide, setSlide] = useState(0);
   const [broken, setBroken] = useState<Set<string>>(new Set());
   const [idx, setIdx] = useState(0);
   const [flash, setFlash] = useState<Person | null>(null);
@@ -65,7 +69,9 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
   useEffect(() => () => { if (lockTimer.current) clearTimeout(lockTimer.current); }, []);
   const [selfie, setSelfie] = useState(false);
   const lane = useRef<HTMLDivElement>(null);
-  const shots = covers.filter(c => c.photo && !broken.has(c.id));
+  const shots = covers.filter(c => c.photo && !broken.has(c.id))
+    .map((c, i) => ({ c, i })).sort((a, b) => scenicRank(a.c.id) - scenicRank(b.c.id) || a.i - b.i)
+    .slice(0, 6).map(x => x.c);
   const chosen = PEOPLE[idx];
 
   useEffect(() => {
@@ -116,7 +122,7 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
     if (flash) return;
     if (still) { onPick(p); return; }
     setFlash(p);
-    lockTimer.current = setTimeout(() => finish(p), FLASH_MS);
+    lockTimer.current = setTimeout(() => finish(p), FLASH.in + FLASH.hold + FLASH.out);
   };
   // The selfie lock-in continues on its own, or straight away on a tap; onPick fires once either way.
   const finish = (p: Person) => {
@@ -134,33 +140,31 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
     .filter(st => st.label && Number.isFinite(st.value))
     .map(st => ({ label: st.label, value: Math.max(0, st.value) }));
   const current = shots.length ? shots[slide % shots.length] : undefined;
-  const words = welcome.split(/\s+/).filter(Boolean);
 
   return (
-    <div className={`welcome${flash ? ' shake' : ''}`}>
+    <div className="welcome">
       {page === 'intro' ? (
         <div className="intro scene">
           <div className="slides" aria-hidden="true">
             {shots.map((c, i) => (
               <img key={c.id} src={`/img/${c.photo}.jpg`} alt="" className={c === current ? 'on' : ''}
-                style={{ animationDelay: `${-i * 3}s` }}
+                style={{ animationDelay: `${-i * 4}s` }}
                 onError={() => setBroken(b => new Set(b).add(c.id))} />
             ))}
           </div>
-          <div className="warm" />
           <div className="scrim" />
-          <div className="intro-copy">
-            {welcome && (
-              <h1 className="big display">
-                {words.flatMap((w, i) => {
-                  const word = <span key={i} className="w" style={{ '--i': i } as CSSProperties}>{w}</span>;
-                  return i === 0 ? [word] : [' ', word];
-                })}
-              </h1>
-            )}
-            {welcome && welcomeSub && <div className="sub" style={{ '--i': words.length } as CSSProperties}>{welcomeSub}</div>}
-            <button className="cta intro-cta" onClick={() => navigate('fwd', () => setPage('select'))}>Choose your character</button>
+          <div className="intro-kicker">
+            <span>Sri Lanka</span>
+            <span>Dec 2026</span>
           </div>
+          <div className="intro-copy">
+            {welcome && <h1 className="intro-title">{welcome}</h1>}
+            {welcome && welcomeSub && <div className="intro-sub">{welcomeSub}</div>}
+          </div>
+          <button className="intro-pill" onClick={() => navigate('fwd', () => setPage('select'))}>
+            <span>Choose your character</span>
+            <svg aria-hidden="true" width="22" height="12" viewBox="0 0 22 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M1 6h19M15 1l5 5-5 5" /></svg>
+          </button>
           {current?.credit && <CreditButton credit={current.credit} />}
         </div>
       ) : (
@@ -201,7 +205,8 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
         </div>
       )}
       {flash && (
-        <div className="flash" role="dialog" aria-label={`${flash} selected`} onClick={() => finish(flash)}>
+        <div className="flash" role="dialog" aria-label={`${flash} selected`} onClick={() => finish(flash)}
+          style={{ '--in': `${FLASH.in}ms`, '--hold': `${FLASH.hold}ms`, '--out': `${FLASH.out}ms` } as CSSProperties}>
           <img className="flash-selfie" src={`/img/players/${flash.toLowerCase()}-selfie.png`} alt={`${flash} selfie`} />
           <span className="flash-kicker">Character selected</span>
           <FlashName name={flash} />

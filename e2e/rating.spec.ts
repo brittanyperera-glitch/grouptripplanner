@@ -8,7 +8,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: scheme });
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Trip Planning. Optimized.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'The Homecoming.' })).toBeVisible();
     await shot(page, `${scheme}-1-name`);
     await page.getByRole('button', { name: 'Choose your character' }).click();
     await page.getByRole('button', { name: 'Alex', exact: true }).click();

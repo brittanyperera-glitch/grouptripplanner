@@ -202,10 +202,10 @@ describe('quips', () => {
   });
 
   it('shows the welcome title and subtitle above the names', async () => {
-    (copy as { welcome: string; welcomeSub?: string }).welcome = 'Trip Planning. Optimized.';
+    (copy as { welcome: string; welcomeSub?: string }).welcome = 'The Homecoming.';
     (copy as { welcomeSub?: string }).welcomeSub = "Britt's solution to group chat debates";
     render(<App />);
-    expect(await screen.findByRole('heading', { name: 'Trip Planning. Optimized.' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'The Homecoming.' })).toBeInTheDocument();
     expect(screen.getByText("Britt's solution to group chat debates")).toBeInTheDocument();
     (copy as { welcome: string; welcomeSub?: string }).welcome = '';
     (copy as { welcomeSub?: string }).welcomeSub = '';

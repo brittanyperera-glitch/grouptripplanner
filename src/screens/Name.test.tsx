@@ -1,8 +1,8 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PEOPLE } from '../types';
-import Name from './Name';
+import Name, { FLASH } from './Name';
 
 const original = window.matchMedia;
 const setMotion = (full: boolean) => {
@@ -13,7 +13,7 @@ afterEach(() => { window.matchMedia = original; });
 const players = { Brittany: { title: 'Trip Boss', stats: [{ label: 'Planning', value: 10 }] }, Alex: { title: 'Solo Wolf', stats: [{ label: 'Ego', value: 11 }] } };
 const open = async (onPick = vi.fn()) => {
   const user = userEvent.setup();
-  render(<Name welcome="Trip Planning. Optimized." welcomeSub="Sub line" players={players} onPick={onPick} />);
+  render(<Name welcome="The Homecoming." welcomeSub="Sub line" players={players} onPick={onPick} />);
   await user.click(screen.getByRole('button', { name: 'Choose your character' }));
   return { user, onPick };
 };
@@ -21,13 +21,39 @@ const open = async (onPick = vi.fn()) => {
 describe('opening page', () => {
   it('has the title, the sub line and one button, no countdown and no characters', () => {
     setMotion(false);
-    render(<Name welcome="Trip Planning. Optimized." welcomeSub="Sub line" players={players} onPick={() => {}} />);
-    expect(screen.getByRole('heading', { name: 'Trip Planning. Optimized.' })).toBeInTheDocument();
+    render(<Name welcome="The Homecoming." welcomeSub="Sub line" players={players} onPick={() => {}} />);
+    expect(screen.getByRole('heading', { name: 'The Homecoming.' })).toBeInTheDocument();
     expect(screen.getByText('Sub line')).toBeInTheDocument();
     expect(screen.getAllByRole('button')).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Choose your character' })).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/Departing/);
     expect(screen.queryByRole('button', { name: 'Alex' })).toBeNull();
+  });
+});
+
+describe('The Homecoming opening', () => {
+  it('reads like the reference: a SRI LANKA / DEC 2026 kicker, a plain title, a pill button with an arrow', () => {
+    setMotion(false);
+    render(<Name welcome="The Homecoming." welcomeSub="Sub line" players={players} onPick={() => {}} />);
+    const kicker = document.querySelector('.intro-kicker');
+    expect(kicker?.textContent).toMatch(/Sri Lanka/i);
+    expect(kicker?.textContent).toMatch(/Dec 2026/i);
+    const h1 = screen.getByRole('heading', { level: 1, name: 'The Homecoming.' });
+    expect(h1).toHaveClass('intro-title');
+    expect(h1).not.toHaveClass('display');
+    const btn = screen.getByRole('button', { name: /choose your character/i });
+    expect(btn).toHaveClass('intro-pill');
+    expect(btn.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+  });
+
+  it('puts the most scenic covers first: Nine Arch Bridge leads, then Sigiriya', () => {
+    setMotion(false);
+    const covers = ['pettah', 'kottu', 'sigiriya', 'crab', 'ninearch', 'tea', 'galle', 'rooftop'].map(id => ({ id, photo: id })) as never[];
+    render(<Name welcome="The Homecoming." covers={covers} players={players} onPick={() => {}} />);
+    const srcs = Array.from(document.querySelectorAll('.slides img')).map(i => i.getAttribute('src'));
+    expect(srcs.slice(0, 2)).toEqual(['/img/ninearch.jpg', '/img/sigiriya.jpg']);
+    expect(srcs.length).toBeLessThanOrEqual(6);
+    expect(document.querySelector('.slides img.on')?.getAttribute('src')).toBe('/img/ninearch.jpg');
   });
 });
 
@@ -50,7 +76,7 @@ describe('character select page', () => {
     expect(screen.getByRole('heading', { name: 'Brittany' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Next character' }));
     await user.click(screen.getByRole('button', { name: 'Select' }));
-    await vi.waitFor(() => expect(onPick).toHaveBeenCalledWith('Alex'), { timeout: 2000 });
+    await vi.waitFor(() => expect(onPick).toHaveBeenCalledWith('Alex'), { timeout: 3500 });
   });
 
   it('tapping another character centres it without picking', async () => {
@@ -87,6 +113,24 @@ describe('select', () => {
     expect(onPick).not.toHaveBeenCalled();
     await user.click(lock);
     expect(onPick).toHaveBeenCalledWith('Brittany');
+  });
+
+  it('the lock-in eases in and stays readable for at least 1.6 s before it moves on, with no shake', async () => {
+    setMotion(true);
+    const { user, onPick } = await open();
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'Select' }));
+      expect(document.querySelector('.welcome.shake')).toBeNull();
+      const lock = screen.getByRole('dialog', { name: 'Brittany selected' });
+      expect(lock.style.getPropertyValue('--in')).toBe(`${FLASH.in}ms`);
+      expect(FLASH.hold).toBeGreaterThanOrEqual(1600);
+      act(() => { vi.advanceTimersByTime(FLASH.in + FLASH.hold - 50); });
+      expect(onPick).not.toHaveBeenCalled();
+      act(() => { vi.advanceTimersByTime(FLASH.out + 100); });
+      expect(onPick).toHaveBeenCalledWith('Brittany');
+    } finally { vi.useRealTimers(); }
+    void user;
   });
 });
 
