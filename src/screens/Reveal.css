@@ -116,9 +116,10 @@
   .rv[data-stage="intro"] .rv-hud-line.gold { animation-delay: .25s; }
   .rv[data-stage="intro"] .rv-title { animation: rv-rise var(--dur-slow) var(--ease) .3s both; }
   .rv[data-stage="intro"] .rv-tagline { animation: rv-fade var(--dur-slow) var(--ease) .7s both; }
-  .rv[data-stage="intro"] .rv-intro { animation: rv-out var(--dur-slow) var(--ease-in-out) 2.45s forwards; }
-  .rv[data-stage="intro"] .rv-paper { animation: rv-map-in var(--dur-slow) var(--ease) 1.9s both; }
-  .rv[data-stage="intro"] .rv-status { animation: rv-fade var(--dur-slow) var(--ease) 2.2s both; }
+  /* Title leaves before the map arrives, so the two never overlap. */
+  .rv[data-stage="intro"] .rv-intro { animation: rv-out var(--dur-slow) var(--ease-in-out) 1.75s forwards; }
+  .rv[data-stage="intro"] .rv-paper { animation: rv-map-in var(--dur-slow) var(--ease) 2.3s both; }
+  .rv[data-stage="intro"] .rv-status { animation: rv-fade var(--dur-slow) var(--ease) 2.5s both; }
   .rv[data-motion="full"] .rv-slot .rv-card { animation: rv-card-in var(--dur-slow) var(--ease) both; }
   .rv[data-motion="full"] .rv-bubble { animation: rv-pop var(--dur) var(--ease) .12s both; }
   .rv[data-motion="full"] .rv-ring { animation: rv-pulse 2s var(--ease-in-out) infinite; }
