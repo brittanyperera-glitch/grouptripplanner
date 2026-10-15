@@ -12,6 +12,12 @@ function problems(c: unknown): string[] {
   const o = c as Record<string, unknown>;
   if (typeof o?.welcome !== 'string') out.push('welcome must be a string');
   if (o?.welcomeSub !== undefined && typeof o.welcomeSub !== 'string') out.push('welcomeSub must be a string');
+  const pl = o?.players as Record<string, { title?: unknown; stats?: unknown }> | undefined;
+  if (pl !== undefined) for (const [n, v] of Object.entries(pl)) {
+    if (v.title !== undefined && typeof v.title !== 'string') out.push(`players.${n}.title must be a string`);
+    if (v.stats !== undefined && !(Array.isArray(v.stats) && v.stats.every((s: { label?: unknown; value?: unknown }) => typeof s.label === 'string' && typeof s.value === 'number' && s.value >= 0 && s.value <= 10)))
+      out.push(`players.${n}.stats must be {label, value 0-10}[]`);
+  }
   const q = o?.quips as Record<string, unknown> | undefined;
   for (const k of ['name', 'days', 'pace', 'tier']) {
     if (!isQuipMap(q?.[k])) out.push(`quips.${k} must be a map of strings or string lists`);

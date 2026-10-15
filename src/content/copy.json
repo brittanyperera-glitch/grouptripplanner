@@ -144,5 +144,92 @@
     "kottu": {
       "approved": true
     }
+  },
+  "players": {
+    "Brittany": {
+      "title": "The Organiser",
+      "stats": [
+        {
+          "label": "Group chat diplomacy",
+          "value": 10
+        },
+        {
+          "label": "Spreadsheet energy",
+          "value": 9
+        },
+        {
+          "label": "Patience for maybes",
+          "value": 3
+        }
+      ]
+    },
+    "Alex": {
+      "title": "Solo Wolf",
+      "stats": [
+        {
+          "label": "Navigation",
+          "value": 9
+        },
+        {
+          "label": "Waiting for others",
+          "value": 2
+        },
+        {
+          "label": "Hike stamina",
+          "value": 8
+        }
+      ]
+    },
+    "Antek": {
+      "title": "Better brush up on your Sinhala",
+      "stats": [
+        {
+          "label": "Sinhala",
+          "value": 1
+        },
+        {
+          "label": "Rice and curry spice",
+          "value": 6
+        },
+        {
+          "label": "Charm with the aunties",
+          "value": 9
+        }
+      ]
+    },
+    "Lazza": {
+      "title": "Post-Blounge Legend",
+      "stats": [
+        {
+          "label": "Beach bar radar",
+          "value": 10
+        },
+        {
+          "label": "Early starts",
+          "value": 2
+        },
+        {
+          "label": "Vibes",
+          "value": 10
+        }
+      ]
+    },
+    "Saulie": {
+      "title": "Mr Money-Bags",
+      "stats": [
+        {
+          "label": "Luxury expectations",
+          "value": 10
+        },
+        {
+          "label": "Budget awareness",
+          "value": 1
+        },
+        {
+          "label": "Hostel tolerance",
+          "value": 2
+        }
+      ]
+    }
   }
 }

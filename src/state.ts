@@ -15,6 +15,8 @@ export const pickQuip = (q?: Quip): string | undefined =>
 export interface Copy {
   welcome: string;
   welcomeSub?: string;
+  // Character-select cards: a title and a few joke stat bars (0-10) per friend.
+  players?: Record<string, { title?: string; stats?: { label: string; value: number }[] }>;
   quips: { name: Record<string, Quip>; days: Record<string, Quip>; pace: Record<string, Quip>; tier: Record<string, Quip> };
   items: Record<string, { take?: string; review?: string; reviewUrl?: string; approved?: boolean }>;
 }
