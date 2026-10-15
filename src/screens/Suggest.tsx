@@ -21,7 +21,8 @@ export default function Suggest({ open }: { open: boolean }) {
 
   return (
     <section className="body" aria-label="Ideas">
-      <div className="big">Something missing?</div>
+      <div className="kicker">Suggest</div>
+      <div className="big display">Something missing?</div>
       {open && <div className="sub">New ideas won't change this plan</div>}
       <input className="field" aria-label="Title" placeholder="Tea factory tour near Nuwara Eliya" maxLength={80} value={title} onChange={e => setTitle(e.target.value)} />
       <select className="field" aria-label="Area" value={area} onChange={e => setArea(e.target.value as Area)}>

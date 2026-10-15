@@ -1,4 +1,5 @@
 import { labels, tierOf } from '../lib/ranking';
+import Avatar from '../components/Avatar';
 import { useApp } from '../state';
 import { AREAS, PEOPLE } from '../types';
 import type { Tier } from '../types';
@@ -10,11 +11,11 @@ export default function Everyone({ open }: { open: boolean }) {
   if (!open) {
     return (
       <section className="body" aria-label="Everyone">
-        <div className="big">Everyone</div>
+        <div className="big display">Everyone</div>
         <div className="sub">Picks show once all five have submitted.</div>
         {PEOPLE.map(p => {
           const ok = state.responses[p]?.submitted;
-          return <div key={p} className="row2"><span>{p}</span><span className={ok ? 'done' : 'wait'}>{ok ? 'Submitted' : 'Not yet'}</span></div>;
+          return <div key={p} className="row2 person"><span><Avatar name={p} size={30} />{p}</span><span className={`status-pill ${ok ? 'done' : 'wait'}`}>{ok ? 'Submitted' : 'Not yet'}</span></div>;
         })}
       </section>
     );
@@ -23,7 +24,7 @@ export default function Everyone({ open }: { open: boolean }) {
   const rows = [...items].sort((a, b) => AREAS.indexOf(a.area) - AREAS.indexOf(b.area));
   return (
     <section className="body" aria-label="Everyone">
-      <div className="big">Everyone</div>
+      <div className="big display">Everyone</div>
       <div className="sub">M Must, K Keen, m Meh, S Skip. The number is each person's own rank.</div>
       <div className="scrollx">
         <table className="grid">
@@ -37,7 +38,7 @@ export default function Everyone({ open }: { open: boolean }) {
                 {PEOPLE.map(p => {
                   const r = state.responses[p];
                   const t = r ? tierOf(r.ranking, i.id) : null;
-                  return <td key={p} className={t ?? 'none'}>{t ? `${LETTER[t]} ${lab[p][i.id]}` : '-'}</td>;
+                  return <td key={p} className={t ?? 'none'}><span className="cell">{t ? `${LETTER[t]} ${lab[p][i.id]}` : '-'}</span></td>;
                 })}
               </tr>
             ))}
