@@ -24,7 +24,16 @@ interface Cand extends Tmpl { cap: number; tmpl: Tmpl }
 interface WorkDay {
   area: Area | null; entries: DayEntry[]; used: number; cap: number; closed: boolean; dark?: boolean;
   slots?: SlotUse; // activities so far per slot, for the fixed-time rule
+  eve?: number; // hours of evening and late activities, which sit outside the daytime cap
 }
+
+// Evening and late activities happen after the day's sightseeing (Brittany, 2026-10-15): they get
+// their own budget each night instead of using the daytime hours. Sunset stays a daytime slot.
+const EVE_SLOTS: Slot[] = ['evening', 'late'];
+const EVE_HOURS = 3;
+const isEve = (i: Item) => EVE_SLOTS.includes(i.slot);
+/** Knapsack weight in quarter hours: evening items cost no daytime hours. */
+const dayW = (i: Item, wsHub: Hub, d: Dist) => (isEve(i) ? 0 : q(weightOf(i, wsHub, d)));
 
 // Fixed-time slots hold one activity per day. Morning and afternoon hold a second short one only
 // if both fit that part of the day, in on-site hours (Brittany, 2026-10-15). 'any' is unconstrained.
@@ -149,7 +158,7 @@ function templates(ctx: Ctx, forceIn: Set<string>): Tmpl[] {
     const { has, wsHub, train } = g;
     const inSet = pool.filter(i => has.has(i.area) && (train || i.id !== TRAIN));
     const forced = inSet.filter(i => forceIn.has(i.id) || (train && i.id === TRAIN));
-    const forcedW = forced.reduce((s, i) => s + q(weightOf(i, wsHub, d)), 0);
+    const forcedW = forced.reduce((s, i) => s + dayW(i, wsHub, d), 0);
     const ub = inSet.reduce((s, i) => s + Math.max(0, score(i.id)), 0);
     out.push({ set: g.set, order: g.order, route: g.route, routeKey: g.routeKey, wsHub, train, travel: g.travel, ub, pool: inSet, forced, forcedW, geo: g });
   }
@@ -199,14 +208,14 @@ function geometry(d: Dist, eligible: Area[], trainOpts: boolean[], wsHubs: Hub[]
   return out;
 }
 
-type Opt = { id: string; w: number; v: number; k: number }
+type Opt = { id: string; w: number; v: number; k: number; eve?: boolean }
 /** Per-candidate data, in two parts so a candidate pruned by its bound skips the costly half. */
 // core: the options the knapsack sees. A second fixed-time item for the same slot in the same area
 // needs a day of its own, which hours cannot express, so only the best one per (area, slot) is in
 // core; the others can still come back in evaluate()'s add-back pass when a day is free.
 interface Prep { reserved: number; opts: Opt[]; core: Opt[]; forcedScore: number; byRatio: Opt[]; forced: Uint8Array }
 // Schedule entries packed for the fit test, which runs many times per candidate.
-const MOVE = 1, SUNRISE = 2, MORNING = 4, NIGHT = 8;
+const MOVE = 1, SUNRISE = 2, MORNING = 4, NIGHT = 8, EVE = 16;
 interface Steps { hours: Float64Array; site: Float64Array; slot: Int8Array; at: Int32Array; flags: Uint8Array; fd: number }
 const SLOTS = Object.keys(SLOT_ORDER) as Slot[];
 // slotFull() by slot index, for the packed fit test; slots with no window (any) are never full.
@@ -227,7 +236,7 @@ function buildPrep(ctx: Ctx, c: Cand): Prep {
   const opts: Opt[] = [];
   for (const i of c.pool) {
     const v = ctx.score(i.id), k = idx.get(i.id)!;
-    if (forced[k]) { reserved += q(weightOf(i, c.wsHub, d)); forcedScore += v; } else if (v > 0) opts.push({ id: i.id, w: q(weightOf(i, c.wsHub, d)), v, k });
+    if (forced[k]) { reserved += dayW(i, c.wsHub, d); forcedScore += v; } else if (v > 0) opts.push({ id: i.id, w: dayW(i, c.wsHub, d), v, k, eve: isEve(i) });
   }
   const byRatio = opts.filter(o => o.w > 0).sort((a, b) => b.v / b.w - a.v / a.w);
   const taken = new Set(c.forced.filter(i => ONE_PER_DAY.includes(i.slot)).map(i => `${i.area}|${i.slot}`));
@@ -238,7 +247,7 @@ function buildPrep(ctx: Ctx, c: Cand): Prep {
     if (key === null) continue;
     if (taken.has(key)) extra.add(o.id); else taken.add(key);
   }
-  return { reserved, opts, core: opts.filter(o => !extra.has(o.id)), forcedScore, byRatio, forced };
+  return { reserved, opts, core: opts.filter(o => !extra.has(o.id) && !o.eve), forcedScore, byRatio, forced };
 }
 
 /**
@@ -262,7 +271,7 @@ function layout(ctx: Ctx, c: Cand): Steps {
     items
       .filter(i => i.area === area && !(c.train && i.id === TRAIN))
       .sort((a, b) => SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] || (a.id < b.id ? -1 : 1))
-      .forEach(i => push(weightOf(i, c.wsHub, d), idx.get(i.id)!, slotFlags(i.slot) | (NIGHT_SLOTS.includes(i.slot) ? NIGHT : 0), i));
+      .forEach(i => push(weightOf(i, c.wsHub, d), idx.get(i.id)!, slotFlags(i.slot) | (NIGHT_SLOTS.includes(i.slot) ? NIGHT : 0) | (isEve(i) ? EVE : 0), i));
     prevHub = hub; prevArea = area;
   }
   const steps: Steps = { hours: Float64Array.from(hours), site: Float64Array.from(site), slot: Int8Array.from(slot), at: Int32Array.from(at), flags: Uint8Array.from(flags), fd: d(c.route[c.route.length - 2], 'AIR') };
@@ -285,17 +294,20 @@ function schedule(ctx: Ctx, c: Cand, chosen: Item[]): WorkDay[] {
   const days: WorkDay[] = [cur];
   const newDay = () => { cur = { area: here, entries: [], used: 0, cap: H, closed: false }; days.push(cur); };
   const put = (e: DayEntry, slot?: Slot) => {
+    const eve = e.kind === 'activity' && !!slot && EVE_SLOTS.includes(slot);
     if (cur.entries.length > 0) {
-      if (e.hours > H + EPS || cur.closed) newDay();
+      if (eve) { if (slotFull(cur.slots ?? {}, slot!, e.onSite!) || ((cur.eve ?? 0) > 0 && (cur.eve ?? 0) + e.hours > EVE_HOURS + EPS)) newDay(); }
+      else if (e.hours > H + EPS || cur.closed) newDay();
       else if (cur.dark && (e.kind === 'drive' || e.kind === 'train')) newDay(); // no night drives on hill roads
       else if (slot === 'sunrise') newDay(); // one sunrise per day, never after another entry (B.5)
       else if (slot === 'morning' && cur.used > 3 + EPS) newDay();
       else if (e.kind === 'activity' && slot && slotFull(cur.slots ?? {}, slot, e.onSite!)) newDay(); // one per fixed-time slot
       else if (e.hours > cur.cap - cur.used + EPS) newDay();
     }
-    cur.entries.push(e); cur.used += e.hours;
+    cur.entries.push(e);
+    if (eve) cur.eve = (cur.eve ?? 0) + e.hours; else cur.used += e.hours;
     if (e.kind === 'activity' && slot) useSlot((cur.slots ??= {}), slot, e.onSite!);
-    if (e.hours > H + EPS) cur.closed = true; // a long entry owns its whole day (B.3)
+    if (!eve && e.hours > H + EPS) cur.closed = true; // a long entry owns its whole day (B.3)
     if (e.kind === 'activity' && slot && NIGHT_SLOTS.includes(slot)) cur.dark = true;
   };
   const w = (i: Item) => weightOf(i, c.wsHub, d);
@@ -368,8 +380,8 @@ function fitTo(ctx: Ctx, c: Cand, content: WorkDay[], N: number): WorkDay[] | nu
   return min;
 }
 
-// days is a thunk: only the winning candidate's days are ever built.
-interface Eval { c: Cand; chosen: Item[]; days: () => WorkDay[]; score: number; overflow: boolean }
+// days is a thunk: only the winning candidate's days are ever built. on: the chosen-item flags.
+interface Eval { c: Cand; chosen: Item[]; days: () => WorkDay[]; score: number; overflow: boolean; on?: Uint8Array }
 
 // Margin over float noise in the bounds below, so pruning can only skip a candidate that strictly loses.
 const SLACK = 1e-6;
@@ -400,19 +412,21 @@ function fractionalBound(c: Cand, p: Prep): number {
 function minDays(ctx: Ctx, steps: Steps, on: Uint8Array, stop = Infinity): number {
   const { H } = ctx;
   const { hours: hs, at, flags, fd, slot: sl, site } = steps;
-  let n = 1, count = 0, used = 0, cap = H / 2, closed = false, dark = false;
+  let n = 1, count = 0, used = 0, eve = 0, cap = H / 2, closed = false, dark = false;
   const nUse = slotN, siteUse = slotSite;
   nUse.fill(0); siteUse.fill(0);
   for (let s = 0; s < hs.length; s++) {
     if (at[s] >= 0 && !on[at[s]]) continue;
-    const hours = hs[s], f = flags[s], k = sl[s];
+    const hours = hs[s], f = flags[s], k = sl[s], night = (f & EVE) !== 0;
+    const slotTaken = k >= 0 && nUse[k] > 0 && (SLOT_ONE[k] || (SLOT_WIN[k] < Infinity && (nUse[k] >= 2 || siteUse[k] + site[s] > SLOT_WIN[k] + EPS)));
     if (count > 0) {
-      const fresh = hours > H + EPS || closed || (dark && (f & MOVE) !== 0) || (f & SUNRISE) !== 0 || ((f & MORNING) !== 0 && used > 3 + EPS) || (k >= 0 && nUse[k] > 0 && (SLOT_ONE[k] || (SLOT_WIN[k] < Infinity && (nUse[k] >= 2 || siteUse[k] + site[s] > SLOT_WIN[k] + EPS)))) || hours > cap - used + EPS;
-      if (fresh) { if (++n > stop) return n; count = 0; used = 0; cap = H; closed = false; dark = false; nUse.fill(0); siteUse.fill(0); }
+      const fresh = night ? slotTaken || (eve > 0 && eve + hours > EVE_HOURS + EPS) : hours > H + EPS || closed || (dark && (f & MOVE) !== 0) || (f & SUNRISE) !== 0 || ((f & MORNING) !== 0 && used > 3 + EPS) || slotTaken || hours > cap - used + EPS;
+      if (fresh) { if (++n > stop) return n; count = 0; used = 0; eve = 0; cap = H; closed = false; dark = false; nUse.fill(0); siteUse.fill(0); }
     }
-    count++; used += hours;
+    count++;
+    if (night) eve += hours; else used += hours;
     if (k >= 0) { nUse[k]++; siteUse[k] += site[s]; }
-    if (hours > H + EPS) closed = true;
+    if (!night && hours > H + EPS) closed = true;
     if (f & NIGHT) dark = true;
   }
   const capN = H / 2 - fd - CHECKIN;
@@ -459,13 +473,16 @@ function evaluate(ctx: Ctx, c: Cand, p: Prep, bar: Eval | null): Eval | null {
   if (bar) {
     // Adding back can at most fill the spare hours at the best remaining value per hour.
     let bound = p.forcedScore + knap.value(x), left = room;
+    for (const o of p.opts) if (o.eve && !on[o.k]) bound += o.v; // evenings cost no daytime hours
     for (const o of p.byRatio) {
       if (on[o.k]) continue;
       if (o.w <= left) { bound += o.v; left -= o.w; } else { bound += (o.v * left) / o.w; break; }
     }
     if (beaten(c, bound, bar)) return null;
   }
-  const order = [...p.byRatio].sort((a, b) => Number(ctx.musts.has(b.id)) - Number(ctx.musts.has(a.id)));
+  // Evenings go after the daytime items, best value first, to fill the nights the days leave.
+  const evenings = p.opts.filter(o => o.eve).sort((a, b) => b.v - a.v || (a.id < b.id ? -1 : 1));
+  const order = [...p.byRatio, ...evenings].sort((a, b) => Number(ctx.musts.has(b.id)) - Number(ctx.musts.has(a.id)));
   for (let added = true; added; ) {
     added = false;
     for (const o of order) {
@@ -475,9 +492,43 @@ function evaluate(ctx: Ctx, c: Cand, p: Prep, bar: Eval | null): Eval | null {
       if (minDays(ctx, steps, on, N) <= N) { room -= o.w; added = true; } else on[k] = 0;
     }
   }
-  const chosen = pool.filter(i => on[ctx.idx.get(i.id)!]);
+  return result(ctx, c, on);
+}
+
+function result(ctx: Ctx, c: Cand, on: Uint8Array): Eval {
+  const chosen = c.pool.filter(i => on[ctx.idx.get(i.id)!]);
   const score = chosen.reduce((s, i) => s + ctx.score(i.id), 0);
-  return { c, chosen, days: () => fitTo(ctx, c, schedule(ctx, c, chosen), N)!, score, overflow: false };
+  return { c, chosen, days: () => fitTo(ctx, c, schedule(ctx, c, chosen), ctx.input.days)!, score, overflow: false, on };
+}
+
+/**
+ * Swap pass for the leading plans: take one chosen item out, refill (Musts first, daytime by value
+ * per hour, then evenings), and keep the change when the total rises. Reaches sets the capacity
+ * cut never does, often an evening for a daytime item. Too slow to run on every candidate.
+ */
+function polish(ctx: Ctx, e: Eval): Eval {
+  const { c } = e, p = prep(ctx, c), N = ctx.input.days, steps = layout(ctx, c);
+  const on = Uint8Array.from(e.on!);
+  let room = Math.max(0, c.cap - p.reserved);
+  for (const o of p.opts) if (on[o.k]) room -= o.w;
+  const evenings = p.opts.filter(o => o.eve).sort((a, b) => b.v - a.v || (a.id < b.id ? -1 : 1));
+  const order = [...p.byRatio, ...evenings].sort((a, b) => Number(ctx.musts.has(b.id)) - Number(ctx.musts.has(a.id)));
+  const val = (a: Uint8Array) => p.opts.reduce((s, o) => s + (a[o.k] ? o.v : 0), 0);
+  for (let improved = true; improved; ) {
+    improved = false;
+    for (const r of p.opts) {
+      if (!on[r.k]) continue;
+      const trial = Uint8Array.from(on); trial[r.k] = 0;
+      let rm = room + r.w;
+      for (const o of order) {
+        if (trial[o.k] || o.k === r.k || o.w > rm) continue;
+        trial[o.k] = 1;
+        if (minDays(ctx, steps, trial, N) <= N) rm -= o.w; else trial[o.k] = 0;
+      }
+      if (val(trial) > val(on) + EPS) { on.set(trial); room = rm; improved = true; }
+    }
+  }
+  return result(ctx, c, on);
 }
 
 const better = (a: Eval, b: Eval) => {
@@ -487,8 +538,11 @@ const better = (a: Eval, b: Eval) => {
   return a.c.routeKey < b.c.routeKey;
 };
 
+const POLISH = 3;
+
 function search(ctx: Ctx, forceIn: Set<string>): Eval | null {
   let best: Eval | null = null;
+  const leaders: Eval[] = [];
   for (const c of candidates(ctx, forceIn)) {
     const bar = best && !best.overflow ? best : null;
     if (bar) {
@@ -499,8 +553,12 @@ function search(ctx: Ctx, forceIn: Set<string>): Eval | null {
     const p = prep(ctx, c);
     if (bar && beaten(c, fractionalBound(c, p), bar)) continue;
     const e = evaluate(ctx, c, p, bar);
+    if (e && !e.overflow) leaders.push(e);
     if (e && (!best || better(e, best))) best = e;
   }
+  // Polish the highest-scoring few and keep the best; polishing never lowers a score.
+  leaders.sort((a, b) => b.score - a.score);
+  for (const e of leaders.slice(0, POLISH)) if (e.on) { const q2 = polish(ctx, e); if (best && better(q2, best)) best = q2; }
   return best;
 }
 

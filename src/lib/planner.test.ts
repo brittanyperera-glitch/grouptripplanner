@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import catalogue from './__fixtures__/catalogue-46.json';
 import legs from '../data/legs.json';
+import liveCatalogue from '../data/catalogue.json';
 import { plan, mustFitDays } from './planner';
 import { groupResult } from './group';
 import { shortest } from './paths';
@@ -184,6 +185,33 @@ describe('plan output matches the reference snapshot', () => {
   });
   it.each(snapshot.mustFitDays.map(c => [c.name, c] as const))('mustFitDays %s', (_, c) => {
     expect(mustFitDays({ items, legs: L, ...(c.input as unknown as Omit<PlanInput, 'items' | 'legs' | 'days'>) })).toBe(c.days);
+  });
+});
+
+// Evening and late activities have their own budget after the day's sightseeing, so a market in
+// the morning and a crab dinner fall on the same day. Checked on the frozen and the live catalogue.
+describe.each([['frozen', items], ['live', liveCatalogue.items as Item[]]] as const)('evening budget (%s catalogue)', (_, its) => {
+  const slotOf = new Map(its.map(i => [i.id, i.slot]));
+  const dayOf = (p: ReturnType<typeof plan>, id: string) => p.days.find(d => d.entries.some(e => e.itemId === id));
+  it('puts pettah and the crab dinner on one day of a 5-day trip', () => {
+    const must = ['pettah', 'crab'];
+    const p = plan({ items: its, scores: sc(must), days: 5, pace: 1, legs: L, mustIds: must });
+    expect(p.fits).toBe(true);
+    expect(dayOf(p, 'pettah')).toBe(dayOf(p, 'crab'));
+  });
+  it('lets a sunset and an evening activity share a day', () => {
+    const must = ['galleface', 'crab'];
+    const p = plan({ items: its, scores: sc(must), days: 5, pace: 1, legs: L, mustIds: must });
+    expect(dayOf(p, 'galleface')).toBe(dayOf(p, 'crab'));
+  });
+  it('combines daytime and evening activities on at least two days of the all-Keen 9-day plan', () => {
+    const p = plan({ items: its, scores: sc(its.map(i => i.id), 4), days: 9, pace: 1, legs: L });
+    const night = new Set(['evening', 'late']);
+    const both = p.days.filter(d => {
+      const slots = d.entries.filter(e => e.kind === 'activity').map(e => slotOf.get(e.itemId!)!);
+      return slots.some(sl => night.has(sl)) && slots.some(sl => !night.has(sl));
+    });
+    expect(both.length).toBeGreaterThanOrEqual(2);
   });
 });
 
