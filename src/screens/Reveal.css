@@ -62,56 +62,102 @@
 .rv-btn { all: unset; box-sizing: border-box; cursor: pointer; min-width: 210px; padding: 12px 24px; text-align: center; border: 3px solid #000; border-radius: 6px; background: var(--gold); color: var(--night); box-shadow: 4px 4px 0 #000; font: italic 900 22px/1 var(--title); letter-spacing: .04em; text-transform: uppercase; }
 .rv-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
 
-/* Mission complete, and the motion-off page */
+/* Mission complete, and the motion-off page: the Postcard theme on paper (docs/mockups/theme-postcard/C-itinerary.dc.html). */
 .rv-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0 -16px; padding: 0 16px 24px; position: relative; z-index: 2; }
 .rv-still-map { height: min(64vh, 540px); display: flex; }
-.rv-list { list-style: none; margin: 18px auto 8px; padding: 0; max-width: 520px; display: flex; flex-direction: column; gap: 16px; }
-.rv-done { max-width: 520px; margin: 0 auto; padding: 8px 0 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
-.rv-done-title { margin: 8px 0 0; font: italic 900 clamp(46px, 14vw, 76px)/.88 var(--title); color: var(--gold); -webkit-text-stroke: 2px #000; text-shadow: 4px 4px 0 #000; }
-.rv-done-respect { font: 700 13px/1 var(--hud); letter-spacing: .24em; }
-.rv-crew { width: 100%; display: flex; justify-content: center; gap: 2px; margin: 6px 0 0; padding: 0; }
-.rv-crew figure { flex: 1 1 0; min-width: 0; margin: 0; display: flex; flex-direction: column; align-items: center; }
-.rv-crew img { display: block; width: 100%; height: 96px; object-fit: contain; object-position: 50% 100%; filter: drop-shadow(3px 3px 0 #000); }
-.rv-crew figcaption { margin-top: 4px; font: 700 10px/1 var(--hud); letter-spacing: .06em; text-transform: uppercase; color: var(--gold); }
-.rv-done-tag { max-width: 330px; font: 700 11px/1.55 var(--hud); color: var(--muted); }
-.rv-done-h { align-self: stretch; margin: 12px 0 0; padding-bottom: 4px; border-bottom: 2px solid var(--gold); text-align: left; font: italic 900 22px/1 var(--title); text-transform: uppercase; }
-.rv-itin { align-self: stretch; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 30px fit-content(40%) minmax(0, 1fr); gap: 8px 8px; align-items: baseline; text-align: left; font: 400 11.5px/1.35 var(--hud); }
-.rv-itin li { display: contents; }
-.rv-itin b { color: var(--gold); }
-.rv-itin-place { font: 800 16px/1.1 var(--title); text-transform: uppercase; overflow-wrap: anywhere; }
-.rv-itin-what { color: var(--muted); overflow-wrap: anywhere; }
-.rv-chips { align-self: stretch; list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.rv-chips li { padding: 5px 9px; border: 2px solid var(--cream); border-radius: 4px; font: 700 11px/1.25 var(--hud); text-align: left; overflow-wrap: anywhere; }
-.rv-done .rv-btn { margin-top: 18px; }
-.rv-foot { margin-top: 10px; font: 700 10px/1.7 var(--hud); letter-spacing: .1em; color: var(--muted); }
+.rv-list { list-style: none; margin: 18px auto 8px; padding: 0; max-width: 560px; display: flex; flex-direction: column; gap: 16px; }
+/* .rv redefines --ink, --muted and --red for the night map; the paper page takes the app tokens back. */
+.rv[data-stage="complete"] { --ink: #1e2a26; --muted: #56615c; --red: #d6452c; background: var(--paper); color: var(--ink); font-family: var(--font-body); }
+.rv[data-stage="complete"]::after { display: none; }
+.rv[data-stage="complete"] button:focus-visible { outline-color: var(--red); }
+.rv[data-stage="complete"] .rv-hud-line { font: 700 10.5px/1.5 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.rv[data-stage="complete"] .rv-hud-line.gold { color: var(--teal); }
+.rv[data-stage="complete"] .rv-chip { border: 1.5px solid var(--line-strong); border-radius: var(--r-stamp); background: var(--white); color: var(--ink); font: 700 11px/1 var(--font-body); letter-spacing: .12em; }
+.rv[data-stage="complete"] .rv-title.still { font: 800 clamp(40px, 12vw, 60px)/.9 var(--font-head); font-style: normal; text-transform: uppercase; color: var(--ink); -webkit-text-stroke: 0; text-shadow: none; }
+.rv[data-stage="complete"] .rv-paper { border: 0; border-radius: var(--r-card); box-shadow: var(--shadow-card); }
+.rv[data-stage="complete"] .rv-mapbox { padding: 0; }
+.rv[data-stage="complete"] .rv-card { border: 0; border-radius: var(--r-card); background: var(--white); box-shadow: var(--shadow-card); padding: 12px 14px 14px; transform: none; }
+.rv[data-stage="complete"] .rv-card-tag { display: inline-block; margin: 0 0 8px; padding: 3px 8px; border: var(--stamp-border) var(--teal); border-radius: var(--r-stamp); background: none; color: var(--teal); font: 700 10.5px/1.3 var(--font-body); letter-spacing: .12em; }
+.rv[data-stage="complete"] .rv-card h2 { font: 800 30px/.95 var(--font-head); font-style: normal; color: var(--ink); text-shadow: none; }
+.rv[data-stage="complete"] .rv-card-meta { font: 700 10.5px/1.3 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.rv[data-stage="complete"] .rv-card-items { font: 600 13.5px/1.4 var(--font-body); }
+.rv[data-stage="complete"] .rv-card-items li::before { width: 7px; height: 7px; border: 0; border-radius: 50%; background: var(--red); }
+.rv[data-stage="complete"] .rv-card-empty { color: var(--muted); }
+.rv[data-stage="complete"] .rv-card-notes { border-top: var(--stamp-border) var(--red); font: 600 12.5px/1.4 var(--font-body); color: var(--red-ink); }
+.rv[data-stage="complete"] .rv-btn { min-width: 220px; padding: 14px 24px; border: 0; border-radius: var(--r-btn); background: var(--red-deep); color: var(--on-red); box-shadow: var(--shadow-btn); font: 800 22px/1 var(--font-head); font-style: normal; }
+.rv[data-stage="complete"] .rv-btn:active { transform: scale(.97); box-shadow: var(--shadow-btn); }
+
+.rv-done { max-width: 560px; margin: 0 auto; padding: 12px 0 28px; display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+.rv-done-head { display: flex; flex-direction: column; gap: 14px; }
+.rv-done[data-solo="true"] .rv-done-head { flex-direction: row; align-items: center; }
+.rv-done-titles { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.rv-done-stamps { display: flex; flex-wrap: wrap; gap: 6px; }
+.rv-done-title { margin: 0; font: 800 clamp(46px, 14vw, 60px)/.86 var(--font-head); text-transform: uppercase; color: var(--ink); }
+/* Each selfie sits in a white polaroid with a red dashed inner edge. Five share the row; on her own she sits beside the title. */
+.rv-crew { display: flex; gap: 8px; margin: 0; padding: 0; }
+.rv-crew figure { flex: 1 1 0; min-width: 0; max-width: 96px; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rv-done[data-solo="true"] .rv-crew figure { flex: none; width: 88px; }
+.rv-polaroid { display: flex; align-items: flex-end; justify-content: center; width: 100%; aspect-ratio: 88 / 100; box-sizing: border-box; padding: 6px; overflow: hidden; border-radius: 6px; background: var(--white); box-shadow: var(--shadow-card); outline: var(--stamp-border) var(--red); outline-offset: -4px; }
+.rv-crew img { display: block; height: 100%; width: auto; max-width: 100%; object-fit: contain; object-position: 50% 100%; }
+.rv-crew figcaption { font: 700 10px/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.rv-done[data-solo="true"] .rv-crew figcaption { display: none; }
+.rv-done-tag { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--muted); }
+.rv-done-h { margin: 10px 0 0; font: 800 24px/1 var(--font-head); text-transform: uppercase; color: var(--ink); }
+
+/* The route: one card per day on the red dashed line. */
+.rv-day-card { position: relative; display: flex; align-items: center; gap: 12px; min-height: 74px; box-sizing: border-box; padding: 10px 14px; overflow: hidden; border-radius: var(--r-card); background: var(--white); box-shadow: var(--shadow-card); }
+.rv-day-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.rv-itin-place { font-size: 23px; line-height: 1; color: var(--ink); overflow-wrap: anywhere; }
+.rv-itin-what { font-size: 12px; line-height: 1.35; color: var(--muted); overflow-wrap: anywhere; }
+.rv-day-photo { order: 3; flex: none; width: 52px; height: 52px; object-fit: cover; border-radius: var(--r-photo); }
+.rv-day.banner .rv-day-card { min-height: 112px; align-items: flex-end; padding: 10px 14px 11px; background: #141a16; }
+.rv-day.banner .rv-day-card::after { content: ""; position: absolute; inset: auto 0 0 0; height: 78%; background: linear-gradient(to top, rgba(20, 26, 22, .9), rgba(20, 26, 22, 0)); }
+.rv-day.banner .rv-day-photo { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 0; }
+.rv-day.banner .stamp-label { position: absolute; z-index: 1; top: 9px; left: 10px; background: var(--white); }
+.rv-day.banner .rv-day-txt { position: relative; z-index: 1; }
+.rv-day.banner .rv-itin-place { font-size: 26px; color: #fff; }
+.rv-day.banner .rv-itin-what { color: rgba(255, 255, 255, .92); font-size: 12px; }
+
+/* What everyone picked: a two-column list of small photo rows, not chips. */
+.rv-picks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.rv-picks li { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 6px 10px 6px 6px; border-radius: var(--r-photo); background: var(--white); box-shadow: 0 2px 8px rgba(60, 40, 20, .08); font-size: 13px; font-weight: 600; line-height: 1.25; }
+.rv-picks img, .rv-pick-blank { flex: none; width: 36px; height: 36px; border-radius: 8px; object-fit: cover; background: var(--paper-deep); }
+.rv-picks span { min-width: 0; overflow-wrap: anywhere; }
+.rv-done .rv-btn { align-self: center; margin-top: 16px; }
+.rv-foot { align-self: center; margin-top: 8px; }
+.rv-foot-line { align-self: center; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-align: center; }
 .rv[data-stage="poster"] { align-items: center; justify-content: center; }
 
-/* Motion. Everything below runs only on the animated reveal. */
+/* Motion. Everything below runs only on the animated reveal. Durations come from the app scale (--dur-fast, --dur, --dur-slow);
+   the delays are the reveal's own pacing, timed against INTRO_MS in Reveal.tsx. */
 @media (prefers-reduced-motion: no-preference) {
-  .rv[data-stage="intro"] .rv-hud-line { animation: rv-type .4s steps(24, end) both; }
+  .rv[data-stage="intro"] .rv-hud-line { animation: rv-type var(--dur-slow) steps(24, end) both; }
   .rv[data-stage="intro"] .rv-hud-line.gold { animation-delay: .25s; }
-  .rv[data-stage="intro"] .rv-title { animation: rv-slam .5s cubic-bezier(.2, 1.6, .4, 1) .3s both; }
-  .rv[data-stage="intro"] .rv-tagline { animation: rv-fade .4s ease .7s both; }
-  .rv[data-stage="intro"] .rv-intro { animation: rv-out .45s ease 2.45s forwards; }
-  .rv[data-stage="intro"] .rv-paper { animation: rv-map-in .8s ease 1.9s both; }
-  .rv[data-stage="intro"] .rv-status { animation: rv-fade .4s ease 2.2s both; }
-  .rv[data-motion="full"] .rv-slot .rv-card { animation: rv-card-in .45s cubic-bezier(.2, 1.4, .4, 1) both; }
-  .rv[data-motion="full"] .rv-bubble { animation: rv-pop .38s cubic-bezier(.2, 1.7, .4, 1) .12s both; }
-  .rv[data-motion="full"] .rv-ring { animation: rv-pulse 1s ease-in-out infinite; }
-  .rv[data-motion="full"] .rv-halt > * { transform-box: fill-box; transform-origin: 50% 100%; animation: rv-halt .55s ease-out both; }
-  .rv-done[data-animate="true"] .rv-done-title { animation: rv-slam .55s cubic-bezier(.2, 1.6, .4, 1) .1s both; }
-  .rv-done[data-animate="true"] .rv-done-respect { animation: rv-fade .4s ease .5s both; }
-  .rv-done[data-animate="true"] .rv-crew figure { animation: rv-crew .5s cubic-bezier(.2, 1.7, .4, 1) calc(.25s + var(--i) * 110ms) both; }
-  .rv-done[data-animate="true"] .rv-crew img { animation: rv-cheer 1.6s ease-in-out calc(.9s + var(--i) * 110ms) 2; }
+  .rv[data-stage="intro"] .rv-title { animation: rv-rise var(--dur-slow) var(--ease) .3s both; }
+  .rv[data-stage="intro"] .rv-tagline { animation: rv-fade var(--dur-slow) var(--ease) .7s both; }
+  .rv[data-stage="intro"] .rv-intro { animation: rv-out var(--dur-slow) var(--ease-in-out) 2.45s forwards; }
+  .rv[data-stage="intro"] .rv-paper { animation: rv-map-in var(--dur-slow) var(--ease) 1.9s both; }
+  .rv[data-stage="intro"] .rv-status { animation: rv-fade var(--dur-slow) var(--ease) 2.2s both; }
+  .rv[data-motion="full"] .rv-slot .rv-card { animation: rv-card-in var(--dur-slow) var(--ease) both; }
+  .rv[data-motion="full"] .rv-bubble { animation: rv-pop var(--dur) var(--ease) .12s both; }
+  .rv[data-motion="full"] .rv-ring { animation: rv-pulse 2s var(--ease-in-out) infinite; }
+  .rv[data-motion="full"] .rv-halt > * { transform-box: fill-box; transform-origin: 50% 100%; animation: rv-halt var(--dur-slow) var(--ease) both; }
+  /* Night map to paper: the ground eases over instead of cutting from dark to light. */
+  .rv[data-stage="complete"][data-motion="full"] { animation: rv-paper-in var(--dur-slow) var(--ease-in-out) both; }
+  .rv-done[data-animate="true"] .rv-done-title { animation: rv-rise var(--dur-slow) var(--ease) .1s both; }
+  .rv-done[data-animate="true"] .rv-done-stamps { animation: rv-fade var(--dur-slow) var(--ease) .5s both; }
+  .rv-done[data-animate="true"] .rv-crew figure { animation: rv-crew var(--dur-slow) var(--ease) calc(.25s + var(--i) * 110ms) both; }
+  .rv-done[data-animate="true"] .rv-crew img { animation: rv-cheer 1.6s var(--ease-in-out) calc(.9s + var(--i) * 110ms) 2; }
 }
 @keyframes rv-type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
-@keyframes rv-slam { from { opacity: 0; transform: scale(2.2) rotate(-6deg); } 70% { opacity: 1; transform: scale(.94) rotate(1deg); } to { opacity: 1; transform: none; } }
+@keyframes rv-rise { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes rv-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes rv-out { to { opacity: 0; transform: scale(1.06); } }
-@keyframes rv-map-in { from { opacity: 0; transform: scale(.94) rotate(-1.5deg); } to { opacity: 1; transform: none; } }
-@keyframes rv-card-in { from { opacity: 0; transform: translateY(40px) rotate(4deg); } 65% { opacity: 1; transform: translateY(-4px) rotate(-1.6deg); } to { opacity: 1; transform: rotate(-.8deg); } }
-@keyframes rv-pop { from { opacity: 0; transform: scale(.2); } to { opacity: 1; transform: none; } }
-@keyframes rv-pulse { 50% { transform: scale(1.25); opacity: .5; } }
-@keyframes rv-halt { 0% { transform: translateY(-7px); } 35% { transform: translateY(0) scale(1.1, .84); } 65% { transform: translateY(-2px) scale(.95, 1.06); } 100% { transform: none; } }
-@keyframes rv-crew { from { opacity: 0; transform: translateY(30px) scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes rv-out { to { opacity: 0; transform: scale(1.03); } }
+@keyframes rv-map-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes rv-card-in { from { opacity: 0; transform: translateY(16px) rotate(-.8deg); } to { opacity: 1; transform: rotate(-.8deg); } }
+@keyframes rv-pop { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+@keyframes rv-pulse { 50% { transform: scale(1.2); opacity: .55; } }
+@keyframes rv-halt { 0% { transform: translateY(-5px); } 45% { transform: translateY(0) scale(1.04, .95); } 100% { transform: none; } }
+@keyframes rv-paper-in { from { background-color: #141a16; } }
+@keyframes rv-crew { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes rv-cheer { 0%, 100% { transform: none; } 20% { transform: translateY(-6px) rotate(-3deg); } 40% { transform: none; } 60% { transform: translateY(-3px) rotate(2deg); } }

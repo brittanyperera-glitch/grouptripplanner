@@ -1,6 +1,9 @@
 import { flushSync } from 'react-dom';
 
 export type Motion = 'full' | 'reduced' | 'still';
+
+/** The motion scale in ms: --dur-fast, --dur, --dur-slow in styles.css (src/motion-scale.test.ts keeps them equal). */
+export const MOTION = { fast: 160, base: 280, slow: 480 } as const;
 export type Nav = 'fwd' | 'back' | 'tab';
 
 // Tests and e2e run under webdriver (or jsdom, which has no matchMedia): motion is off there so nothing

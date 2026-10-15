@@ -17,13 +17,29 @@ afterEach(() => {
 });
 
 describe('QuipBurst', () => {
-  it('fills the screen with her line, exposed as a status, plus a burst of particles', () => {
+  it('fills the screen with her line, exposed as a status', () => {
     setMotion(false);
     render(<QuipBurst text="banger choice" kind="must" onDone={() => {}} />);
     expect(screen.getByRole('status').textContent).toBe('banger choice');
     expect(document.querySelector('.quip.quip-must.quip-full')).not.toBeNull();
-    expect(document.querySelectorAll('.quip-p').length).toBeGreaterThan(0);
-    expect(document.querySelectorAll('.quip-p').length).toBeLessThanOrEqual(10);
+  });
+
+  // Brittany 2026-10-15: "the it's decided quip is really nice - make them all like this but make them all big, no emojis".
+  it.each(['must', 'skip', 'hi'] as const)('%s: short and long lines get the one big type style, with no emoji or glyph particles', kind => {
+    setMotion(false);
+    for (const text of ["it's decided", 'okay this one is a long line that has to wrap over a few lines and still be big']) {
+      const { container, unmount } = render(<QuipBurst text={text} kind={kind} onDone={() => {}} />);
+      const line = screen.getByRole('status');
+      expect(line.className).toBe('quip-text');
+      expect(container.querySelectorAll('.quip-p, .quip-parts, .quip-emoji')).toHaveLength(0);
+      expect(container.textContent).not.toMatch(/[\p{Extended_Pictographic}←-⇿■-➿]/u);
+      unmount();
+    }
+  });
+
+  it('every quip line in the copy is free of emoji', () => {
+    const copyText = readFileSync('src/content/copy.json', 'utf8');
+    expect(copyText.match(/\p{Extended_Pictographic}/gu) ?? []).toEqual([]);
   });
 
   it('never takes the pointer: a tap underneath still lands and skips the burst', () => {

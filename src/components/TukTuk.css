@@ -1,10 +1,10 @@
 .tuk { display: block; overflow: visible; }
 .tuk .tuk-body { transform-box: fill-box; transform-origin: 50% 100%; }
 .tuk .tuk-puffs { opacity: 0; }
-.tuk[data-driving="true"] .tuk-body { animation: tuk-wobble .34s ease-in-out infinite; }
+.tuk[data-driving="true"] .tuk-body { animation: tuk-wobble .34s var(--ease-in-out) infinite; }
 .tuk[data-driving="true"] .tuk-wheel { animation: tuk-spin .4s linear infinite; }
-.tuk[data-driving="true"] .tuk-puffs { animation: tuk-puff .6s ease-out infinite; }
-.tuk[data-idle="true"] .tuk-body { animation: tuk-idle 1.3s ease-in-out infinite; }
+.tuk[data-driving="true"] .tuk-puffs { animation: tuk-puff .6s var(--ease) infinite; }
+.tuk[data-idle="true"] .tuk-body { animation: tuk-idle 1.3s var(--ease-in-out) infinite; }
 @keyframes tuk-wobble {
   0%, 100% { transform: rotate(-2.5deg) translateY(0); }
   50% { transform: rotate(2.2deg) translateY(-1.8px); }

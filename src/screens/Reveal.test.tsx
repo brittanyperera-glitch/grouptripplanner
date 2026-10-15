@@ -188,6 +188,30 @@ describe('itinerary', () => {
     const list = await screen.findByRole('list', { name: 'Itinerary' });
     expect([...list.querySelectorAll('.rv-itin-place')].map(e => e.textContent)).toEqual(['Colombo', 'Kandy', 'Kandy to Ella', 'Fly home']);
   });
+  it('shows each day its real catalogue photo, on a dashed route, with a stamp day label and no monospace chips', async () => {
+    const photo = (id: string) => `/img/${ITEMS.find(i => i.id === id)!.photo}.jpg`;
+    const p: Plan = {
+      ...rplan,
+      days: [
+        // A travel-only day shows where it ends up: the first thing planned there.
+        { n: 1, area: 'Colombo', spare: 0, rainSlack: false, entries: [{ kind: 'drive', label: 'a', hours: 1, from: 'AIR', to: 'Colombo' }] },
+        { n: 2, area: 'Colombo', spare: 0, rainSlack: false, entries: [act1('galleface')] },
+        { n: 3, area: 'Kandy and Knuckles', spare: 0, rainSlack: false, entries: [{ kind: 'drive', label: 'b', hours: 3, from: 'Colombo', to: 'Kandy' }, act1('tooth'), act1('knuckles')] },
+        { n: 4, area: 'Ella', spare: 0, rainSlack: false, entries: [{ kind: 'drive', label: 'c', hours: 4, from: 'Kandy', to: 'Ella' }, act1('ninearch')] },
+        { n: 5, area: null, spare: 0, rainSlack: false, entries: [{ kind: 'drive', label: 'd', hours: 5, from: 'Ella', to: 'AIR' }] },
+      ],
+    };
+    render(<AppProvider><Reveal plan={p} onClose={() => {}} /></AppProvider>);
+    const list = await screen.findByRole('list', { name: 'Itinerary' });
+    const days = [...list.children] as HTMLElement[];
+    expect(days.map(d => d.querySelector('img')?.getAttribute('src') ?? null))
+      .toEqual([photo('galleface'), photo('galleface'), photo('tooth'), photo('ninearch'), null]);
+    expect(days.map(d => d.querySelector('.stamp-label')?.textContent)).toEqual(['D01', 'D02', 'D03', 'D04', 'D05']);
+    expect(list.classList.contains('route')).toBe(true);
+    expect(days[2].querySelector('img')).toHaveAttribute('alt', nm('tooth'));
+    const done = screen.getByRole('region', { name: 'Mission complete' });
+    expect(done.querySelector('.rv-chips, .rv-itin b')).toBeNull();
+  });
 });
 
 describe('route reveal, just me', () => {

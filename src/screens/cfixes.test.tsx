@@ -25,29 +25,34 @@ describe('R6 extras headline', () => {
   });
 });
 
-describe('R8 light-mode orange text token', () => {
+describe('R8 red text token (Postcard theme, light only)', () => {
   const lum = (hex: string) => {
     const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
   };
   const ratio = (fg: string, bg: string) => { const [a, b] = [lum(fg), lum(bg)].sort((x, y) => y - x); return (a + 0.05) / (b + 0.05); };
-  // Dark is the default theme now, so the light tokens live in the [data-theme="light"] block.
-  const block = (start: string) => css.slice(css.indexOf(start), css.indexOf('}', css.indexOf(start)));
-  const token = (b: string, name: string) => b.match(new RegExp(`--${name}:\\s*(#[0-9A-Fa-f]{6})`))?.[1];
-  it('--coconut-text reaches 4.5:1 on white and on the light surface', () => {
-    const light = block(':root[data-theme="light"] {');
-    const fg = token(light, 'coconut-text');
-    expect(fg).toBeDefined();
-    expect(ratio(fg!, '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
-    expect(ratio(fg!, token(light, 'surface')!)).toBeGreaterThanOrEqual(4.5);
+  // Postcard is one daylight palette (docs/theme-postcard.md); the old dark default and light override blocks are gone.
+  const root = css.slice(css.indexOf(':root {'), css.indexOf('}', css.indexOf(':root {')));
+  const token = (name: string) => root.match(new RegExp(`--${name}:\\s*(#[0-9A-Fa-f]{6})`))?.[1];
+  it('page and card text (ink, muted, red, teal) reach 4.5:1 on the white card and the paper ground', () => {
+    for (const set of ['ground', 'card']) {
+      for (const name of ['ink', 'muted', 'red', 'teal']) {
+        const fg = token(`${set}-${name}`);
+        expect(fg, `${set}-${name}`).toBeDefined();
+        expect(ratio(fg!, '#FFFFFF'), `${set}-${name}`).toBeGreaterThanOrEqual(4.5);
+        expect(ratio(fg!, token('paper')!), `${set}-${name}`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+    expect(root).toMatch(/--coconut-text:\s*var\(--ground-red\)/);
   });
-  it('--coconut-text reaches 4.5:1 on the dark surface and card', () => {
-    const dark = block(':root {');
-    const fg = token(dark, 'coconut-text')!;
-    expect(ratio(fg, token(dark, 'surface')!)).toBeGreaterThanOrEqual(4.5);
-    expect(ratio(fg, token(dark, 'card')!)).toBeGreaterThanOrEqual(4.5);
+  it('white button text on the red and teal fills reaches 4.5:1', () => {
+    expect(ratio('#FFFFFF', token('red-deep')!)).toBeGreaterThanOrEqual(4.5);
+    expect(ratio('#FFFFFF', token('teal-deep')!)).toBeGreaterThanOrEqual(4.5);
   });
-  it('text uses of orange use the token, not the fill', () => {
+  it('no dark or light override is left to drift from the one palette', () => {
+    expect(css).not.toMatch(/data-theme|prefers-color-scheme/);
+  });
+  it('text uses of red use the text token, not the fill', () => {
     for (const sel of ['.pick .tag', '.day .d', '.grid td.must']) {
       const line = css.split('\n').find(l => l.includes(sel + ' {'))!;
       expect(line).toContain('color: var(--coconut-text)');

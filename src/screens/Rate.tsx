@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as RPointerEvent, ReactNode } from 'react';
-import { IconClock, IconDown, IconExternal, IconLeft, IconPin, IconRight, IconSun, IconTicket, IconUp, IconWarn } from '../components/Icons';
-import { buzz, motion } from '../components/motion';
+import { IconClock, IconDown, IconExternal, IconLeft, IconPin, IconRight, IconSun, IconThumb, IconTicket, IconUp, IconWarn } from '../components/Icons';
+import { buzz, motion, MOTION } from '../components/motion';
 import { Cover } from '../components/PhotoCard';
 import TukTuk from '../components/TukTuk';
 import type { Copy } from '../state';
@@ -94,7 +94,7 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
 
   useEffect(() => {
     if (!ghost) return;
-    const t = setTimeout(() => setGhost(null), 420);
+    const t = setTimeout(() => setGhost(null), MOTION.slow);
     return () => clearTimeout(t);
   }, [ghost]);
 
@@ -206,7 +206,7 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
           {extra.take && <div className="take"><b>Brittany:</b> {extra.take}</div>}
           {extra.approved && (
             <div className="approved">
-              <span className="approved-stamp">👍 Brittany approved</span>
+              <span className="approved-stamp"><IconThumb size={15} className="icon-thumb" />Brittany approved</span>
               <div className="approved-note">Only because I've been and can vouch for it. The others aren't necessarily bad.</div>
             </div>
           )}

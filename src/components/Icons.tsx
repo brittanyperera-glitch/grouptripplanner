@@ -28,6 +28,7 @@ export const IconCar = (p: P) => <Svg {...p}><path d="M5 16.5V12l2-5h10l2 5v4.5"
 export const IconTrain = (p: P) => <Svg {...p}><rect x="6" y="3.5" width="12" height="13" rx="3" /><path d="M6 10.5h12M9 20l-2 1.5M15 20l2 1.5M9.5 13.5h.01M14.5 13.5h.01" /></Svg>;
 export const IconWarn = (p: P) => <Svg {...p}><path d="M12 4l9 16H3z" /><path d="M12 10v4M12 17h.01" /></Svg>;
 export const IconExternal = (p: P) => <Svg {...p}><path d="M14 4.5h5.5V10M19.5 4.5L11 13M18 14v4.5a1 1 0 0 1-1 1H5.5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1H10" /></Svg>;
+export const IconThumb = (p: P) => <Svg {...p}><path d="M7 10.5v9.5H4.5a1 1 0 0 1-1-1v-7.5a1 1 0 0 1 1-1z" /><path d="M7 10.5l3.6-6.3a1.9 1.9 0 0 1 3.5 1.3l-.8 3.9h5.2a2 2 0 0 1 2 2.3l-1.2 6.7a2 2 0 0 1-2 1.6H7" /></Svg>;
 export const IconCheck = (p: P) => <Svg {...p}><path d="M5 12.5l4.5 4.5L19 7.5" /></Svg>;
 export const IconMinus = (p: P) => <Svg {...p}><path d="M6 12h12" /></Svg>;
 export const IconPlus = (p: P) => <Svg {...p}><path d="M12 6v12M6 12h12" /></Svg>;

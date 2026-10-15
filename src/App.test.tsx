@@ -145,7 +145,11 @@ describe('rating card', () => {
   it('explains what Brittany approved means', async () => {
     (copy.items as Record<string, { approved?: boolean }>).a = { approved: true };
     await onCard(THREE);
-    expect(screen.getByText(/Brittany approved/)).toBeInTheDocument();
+    const stamp = screen.getByText(/Brittany approved/);
+    expect(stamp).toBeInTheDocument();
+    // A drawn thumbs up, not the emoji (Brittany 2026-10-15: no emoji anywhere, but keep the thumbs up).
+    expect(stamp.querySelector('svg.icon-thumb[aria-hidden="true"]')).not.toBeNull();
+    expect(stamp.textContent).not.toMatch(/\p{Extended_Pictographic}/u);
     expect(screen.getByText(/can vouch for it\. The others aren't necessarily bad/)).toBeInTheDocument();
     delete (copy.items as Record<string, unknown>).a;
   });

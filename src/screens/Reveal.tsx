@@ -211,8 +211,19 @@ function DayCard({ stop, n, of, meta }: { stop: RevealStop; n: number; of: numbe
   );
 }
 
-function dayLine(plan: Plan, names: Map<string, string>) {
+interface DayLine { n: number; place: string; what: string; count: number; photo?: Item }
+
+function dayLine(plan: Plan, byId: Map<string, Item>): DayLine[] {
+  const pictured = (id: string | undefined) => (id && byId.get(id)?.photo ? id : undefined);
+  // The first pictured thing planned at each stop, so a day that only travels there still shows where it lands.
+  const firstAt = new Map<Hub, string>();
   let at: Hub = 'AIR';
+  for (const d of plan.days) for (const e of d.entries) {
+    if ((e.kind === 'drive' || e.kind === 'train') && e.to) at = e.to;
+    const id = (e.kind === 'activity' || e.kind === 'train') ? pictured(e.itemId) : undefined;
+    if (id && !firstAt.has(at)) firstAt.set(at, id);
+  }
+  at = 'AIR';
   return plan.days.map(d => {
     // Every place something happens that day, in order, then where it ends: "Sigiriya to Kandy".
     const seq: Hub[] = [];
@@ -223,40 +234,74 @@ function dayLine(plan: Plan, names: Map<string, string>) {
     }
     if (at !== 'AIR' || seq.length) visit(at);
     const place = seq.length ? seq.map(hubName).join(' to ') : 'Fly home';
-    const acts = d.entries.filter(e => e.kind === 'activity' || e.kind === 'train').map(e => (e.itemId && names.get(e.itemId)) || e.label);
-    const what = acts.length ? acts.join(' + ') : d.entries.some(e => e.kind === 'drive') ? 'On the road' : 'Free day';
-    return { n: d.n, place, what };
+    const things = d.entries.filter(e => e.kind === 'activity' || e.kind === 'train');
+    const acts = things.map(e => (e.itemId && byId.get(e.itemId)?.name) || e.label);
+    const what = acts.length ? acts.join(', ') : d.entries.some(e => e.kind === 'drive') ? 'On the road' : 'Free day';
+    const pic = things.map(e => pictured(e.itemId)).find(Boolean) ?? firstAt.get(at);
+    return { n: d.n, place, what, count: acts.length, photo: pic ? byId.get(pic) : undefined };
   });
 }
 
-function MissionComplete({ plan, items, animate, voice, crew, onDone }: { plan: Plan; items: Item[]; animate: boolean; voice: Voice; crew: Person[]; onDone: () => void }) {
-  const names = useMemo(() => new Map(items.map(i => [i.id, i.name])), [items]);
-  const days = useMemo(() => dayLine(plan, names), [plan, names]);
+/** One day on the route: a photo banner when the day is full, a slim row with a thumbnail when it is mostly travel. */
+function DayRow({ d }: { d: DayLine }) {
+  const banner = !!d.photo && d.count > 1;
   return (
-    <section className="rv-done" aria-label={voice.doneLabel} data-animate={animate}>
-      <h1 className="rv-done-title">{voice.done}</h1>
-      <div className="rv-done-respect">{voice.respect}</div>
-      <div className="rv-crew" role="list" aria-label="The crew">
-        {crew.map((p, i) => (
-          <figure key={p} role="listitem" style={{ '--i': i } as CSSProperties}>
-            <img src={`/img/players/${p.toLowerCase()}-selfie.png`} alt={`${p} selfie`} />
-            <figcaption>{p}</figcaption>
-          </figure>
-        ))}
+    <li className={`rv-day${banner ? ' banner' : ''}`}>
+      <span className="route-pin" aria-hidden="true" />
+      <div className="rv-day-card">
+        {d.photo && <img className="rv-day-photo" src={`/img/${d.photo.photo}.jpg`} alt={d.photo.name} loading="lazy" decoding="async" />}
+        <span className="stamp-label">D{two(d.n)}</span>
+        <div className="rv-day-txt">
+          <span className="rv-itin-place">{d.place}</span>
+          <span className="rv-itin-what">{d.what}</span>
+        </div>
       </div>
-      <div className="rv-done-tag">{voice.doneTag}</div>
+    </li>
+  );
+}
+
+function MissionComplete({ plan, items, animate, voice, crew, onDone }: { plan: Plan; items: Item[]; animate: boolean; voice: Voice; crew: Person[]; onDone: () => void }) {
+  const byId = useMemo(() => new Map(items.map(i => [i.id, i])), [items]);
+  const days = useMemo(() => dayLine(plan, byId), [plan, byId]);
+  return (
+    <section className="rv-done" aria-label={voice.doneLabel} data-animate={animate} data-solo={crew.length === 1}>
+      <header className="rv-done-head">
+        <div className="rv-crew" role="list" aria-label="The crew">
+          {crew.map((p, i) => (
+            <figure key={p} role="listitem" style={{ '--i': i } as CSSProperties}>
+              <span className="rv-polaroid"><img src={`/img/players/${p.toLowerCase()}-selfie.png`} alt={`${p} selfie`} /></span>
+              <figcaption>{p}</figcaption>
+            </figure>
+          ))}
+        </div>
+        <div className="rv-done-titles">
+          <div className="rv-done-stamps">
+            <span className="stamp-label">{plan.days.length} days · Sri Lanka</span>
+            <span className="stamp-label red rv-done-respect">{voice.respect}</span>
+          </div>
+          <h1 className="rv-done-title">{voice.done}</h1>
+        </div>
+      </header>
+      <p className="rv-done-tag">{voice.doneTag}</p>
       <h3 className="rv-done-h">The route</h3>
-      <ol className="rv-itin" aria-label="Itinerary">
-        {days.map(d => (
-          <li key={d.n}><b>D{two(d.n)}</b><span className="rv-itin-place">{d.place}</span><span className="rv-itin-what">{d.what}</span></li>
-        ))}
+      <ol className="rv-itin route" aria-label="Itinerary">
+        {days.map(d => <DayRow key={d.n} d={d} />)}
       </ol>
       <h3 className="rv-done-h">{voice.picked}</h3>
-      <ul className="rv-chips" aria-label="Chosen experiences">
-        {plan.chosen.map(id => <li key={id}>{names.get(id) ?? id}</li>)}
+      <ul className="rv-picks" aria-label="Chosen experiences">
+        {plan.chosen.map(id => {
+          const it = byId.get(id);
+          return (
+            <li key={id}>
+              {it?.photo ? <img src={`/img/${it.photo}.jpg`} alt="" loading="lazy" decoding="async" /> : <span className="rv-pick-blank" aria-hidden="true" />}
+              <span>{it?.name ?? id}</span>
+            </li>
+          );
+        })}
       </ul>
       <button type="button" className="rv-btn" onClick={onDone}>{voice.button}</button>
-      <div className="rv-foot">NO REFUNDS. ONLY MEMORIES.<br />{voice.foot}</div>
+      <div className="rv-foot stamp-label red">No refunds. Only memories.</div>
+      <div className="rv-foot-line">{voice.foot}</div>
     </section>
   );
 }

@@ -44,7 +44,7 @@ export default function Waiting() {
       <div className="big display">{done.length} of {PEOPLE.length} done</div>
       {/* The tuk-tuk idles at the group's progress, waiting on the rest. */}
       <div aria-hidden="true" style={{ position: 'relative', height: 38, marginTop: 4 }}>
-        <span style={{ position: 'absolute', bottom: -2, left: `calc(${done.length / PEOPLE.length} * (100% - 46px))`, transition: 'left .3s' }}>
+        <span style={{ position: 'absolute', bottom: -2, left: `calc(${done.length / PEOPLE.length} * (100% - 46px))`, transition: 'left var(--dur-slow) var(--ease)' }}>
           <TukTuk width={46} idle />
         </span>
       </div>
