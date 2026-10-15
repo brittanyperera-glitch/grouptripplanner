@@ -147,6 +147,15 @@ describe('personPlan', () => {
     const r = base().responses.Lazza!; r.days = null; r.pace = null;
     expect(personPlan(r, items, L).days.length).toBe(9);
   });
+  // The Days screen offers 5 to 21; a stored value outside that (an old row, a hand edit) must not
+  // crash the plan worker.
+  it('treats a stored trip length outside 5 to 21 as the nearest end of that range', () => {
+    const r = base().responses.Lazza!;
+    r.days = 1; expect(personPlan(r, items, L).days.length).toBe(5);
+    r.days = 40; expect(personPlan(r, items, L).days.length).toBe(21);
+    const s = base(); s.responses.Alex!.days = 0;
+    expect(groupResult(s, items, L).days).toBe(5);
+  });
 });
 
 describe('group performance', () => {

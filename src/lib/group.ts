@@ -8,7 +8,8 @@ const EXTRAS_DAYS = 14;
 const NORTH_AREAS = new Set<string>(['North', 'East coast']);
 const REGION_FORK = 'region:north';
 
-const daysOf = (r: Response) => (r.flex ? 14 : r.days ?? 9);
+// The Days screen offers 5 to 21 (src/screens/Days.tsx); anything stored outside that is clamped.
+const daysOf = (r: Response) => (r.flex ? 14 : Math.min(21, Math.max(5, r.days ?? 9)));
 
 export function personPlan(resp: Response, items: Item[], legs: Leg[]): Plan & { mustFit: number | null } {
   const ids = items.map(i => i.id);
