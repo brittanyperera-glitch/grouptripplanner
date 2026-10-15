@@ -1,0 +1,355 @@
+{
+  "sections": [
+    {
+      "id": "Food",
+      "label": "Food to try",
+      "entries": [
+        {
+          "title": "Kottu roti",
+          "body": "The GOAT of Sri Lankan food. On my Last Supper menu. It's street food so you can watch them make it, it's cool. Even though street food is a bit less reliable hygiene-wise, it tastes way better than the restaurant stuff, so it's up to you if you want to take the risk. If you're veggie, get the egg kottu or the cheese one. Still banging."
+        },
+        {
+          "title": "Hoppers (with or without egg)",
+          "body": "Similar to a pancake batter, it's quite crispy and you have it with a chilli sambal. So nice."
+        },
+        {
+          "title": "String hoppers",
+          "body": "Little nests of rice noodles, usually breakfast with dhal and coconut sambal. Comfort food."
+        },
+        {
+          "title": "Pol roti",
+          "body": "Coconut flatbread with lunu miris (spicy onion chilli sambal). Simple but slaps."
+        },
+        {
+          "title": "Rice and curry",
+          "body": "Not one curry, like five, plus rice, dhal and sambal. Mix it all up with your hands if you're brave."
+        },
+        {
+          "title": "Short eats",
+          "body": "Short eats is the name for any snack you see on the way to somewhere. They're sweet or savoury and they're stunning. Loads of veggie options too. The best veggie ones are:",
+          "list": [
+            "Elawolu roti (roti parcels of flavoured potato and veggies)",
+            "Bithara roti (same but with egg for the prote)",
+            "Elawolu paan (veggie stuffed homemade bread)",
+            "Rolls (veg and potato mix, wrapped in a thin pancake, dipped in golden breadcrumbs and fried. Unreal.)",
+            "Cutlets (same, minus the pancake, and small balls)",
+            "Ulundu wade (donut shaped, savoury tings)"
+          ],
+          "after": "Honestly so many of these I can't list them all, but you'll see them."
+        },
+        {
+          "title": "Anything devilled",
+          "body": "It just means fried and tossed in what is basically a sweet and sour sauce, but with more flavour and much nicer."
+        },
+        {
+          "title": "Sri Lankan fried rice",
+          "body": "It's different to the Chinese ones and one of the nice basic dishes."
+        },
+        {
+          "title": "Seafood",
+          "body": "It's literally fresh out the water if you go to a beach restaurant... and if the prawns come with shell, try eating them with the shell cause that's the SL way and the shell has loads of flavour."
+        },
+        {
+          "title": "Jaffna crab curry",
+          "body": "Spicy, rich and messy. If you like crab this is the one."
+        },
+        {
+          "title": "Curry, must-try veggie dishes",
+          "list": [
+            "Wattaka (pumpkin)",
+            "Batu moju (fried aubergine)",
+            "Pol sambal (chilli coconut)",
+            "Bandaka (okra)",
+            "Ule thel thala (fried potato)",
+            "Beetroot curry",
+            "Bonchi (bean curry)"
+          ],
+          "after": "Again, loads and loads."
+        }
+      ]
+    },
+    {
+      "id": "Fruit",
+      "label": "Fruit",
+      "entries": [
+        {
+          "title": "Jackfruit",
+          "body": "Try it before you knock it. Ik there's cooked jackfruit here in burgers and stuff but it's unbelievably better when it's ripe."
+        },
+        {
+          "title": "Rambutan (South Asian version of lychee)",
+          "body": "Lush."
+        },
+        {
+          "title": "Mangosteen",
+          "body": "My fave Sri Lankan fruit. Kinda messy to eat but please have one, they're the GOAT."
+        },
+        {
+          "title": "Mango",
+          "body": ">>>> Tesco mangos. You can also get raw mango mixed with chilli and salt at the roadside stalls. V common snack."
+        },
+        {
+          "title": "Guava",
+          "body": "There's white or pink guava, try both. The pink ones are much sweeter than the white ones."
+        },
+        {
+          "title": "King coconut (orange coconut)",
+          "body": "The coconut water is a popular drink and these ones are deffo safe from the roadside (cause the shell, obvs). One hack: when you finish it, ask them to crack it open. There's loads of really soft, sweet coconut flesh inside which you can eat and it is lush. They even make you a little spoon out of coconut shell to eat it with."
+        },
+        {
+          "title": "Durian",
+          "body": "Some people love it, some people hate it. It's the one that's famously smelly and banned in a lot of airports, but that's from the peel. Once you open it up, the fruit doesn't really have a smell. Tastes quite custardy and creamy."
+        },
+        {
+          "title": "Bananas",
+          "body": "There's like 29 types here apparently, so a banana is not just a banana. Kolikuttu is the fancy sweet one, seeni kesel are the tiny sweet ones, rath kesel are red. Try whatever the stall has."
+        },
+        {
+          "title": "Wood apple (divul)",
+          "body": "Looks like a rock, tastes sweet and sour and kinda funky. Get it as a juice, honestly so good."
+        },
+        {
+          "title": "Soursop (anoda)",
+          "body": "Creamy, sweet and a bit tangy. Lush fresh or in a juice."
+        },
+        {
+          "title": "Rose apple (jambu)",
+          "body": "Crunchy and watery, v refreshing on a hot day."
+        },
+        {
+          "title": "Pineapple",
+          "body": "Proper pineapple, not the sad supermarket ones. Get it from a stall with chilli and salt."
+        },
+        {
+          "title": "Papaya",
+          "body": "Everywhere at breakfast. Squeeze some lime on it, trust me."
+        }
+      ],
+      "intro": "Best place to get fruit, in my opinion, is the roadside stalls. They're literally everywhere and, depending on who you talk to, they may or may not be clean? But also, when in Rome. It's delish, but eat at your own risk."
+    },
+    {
+      "id": "Desserts",
+      "label": "Desserts",
+      "entries": [
+        {
+          "title": "Buffalo curd with kitul pani",
+          "body": "Not really a dessert, but they always sell buffalo curd on the side of the road, which I personally love, and it slaps with kitul pani, which is like maple syrup but made from palm trees."
+        },
+        {
+          "title": "Wattalapan",
+          "body": "Basically a crème brûlée but made with coconut milk."
+        },
+        {
+          "title": "Dodol",
+          "body": "I don't love it but a lot of people do. Like a gelatinous fudge?"
+        },
+        {
+          "title": "Helapa",
+          "body": "I like this but a lot of people don't, ahah. Sweet dough wrapped in banana leaf (the leaf is for steaming, don't eat it)."
+        },
+        {
+          "title": "Bibikkan",
+          "body": "Coconut cake."
+        },
+        {
+          "title": "Kiri toffee",
+          "body": "Fudge but with coconut milk."
+        },
+        {
+          "title": "The palm sugar pancake one",
+          "body": "Don't know what they're called but palm sugar n coconut all wrapped up in a pancake. You'll know if you see it ;)"
+        },
+        {
+          "title": "Kokis",
+          "body": "I'm not the biggest fan, kinda just deep fried batter. Vessel for oil."
+        },
+        {
+          "title": "Pani walalu",
+          "body": "Sticky syrupy spirals. Sweet tooth only."
+        }
+      ]
+    },
+    {
+      "id": "Beaches",
+      "label": "Beach spots",
+      "entries": [
+        {
+          "title": "Hikkaduwa beach",
+          "body": "Very nice area, good seafood places, good for snorkelling (can hire the gear on the beach) and sometimes have turtles hatching in local sanctuaries."
+        },
+        {
+          "title": "Arugam Bay beach",
+          "body": "Famous for the waves and surfing. Stunning beach, quite touristy, loads of cool, edgy Sri Lankan surf dudes that will surf with you. Very hot."
+        },
+        {
+          "title": "Trincomalee beaches",
+          "body": "These beaches are nice but the area can also be very humid sometimes. Some beaches have small jellyfish so be careful and ask a lifeguard or someone about swimming."
+        },
+        {
+          "title": "Pigeon Island",
+          "body": "This is THEE spot for snorkelling, nice coral reefs and sometimes have blacktip reef sharks you can swim with. Haven't got bitten so far so I think it's safe. Gotta hire a boat to get there but that's cheaps and often."
+        }
+      ]
+    },
+    {
+      "id": "Packing",
+      "label": "Packing list",
+      "entries": [
+        {
+          "body": "Light, breathable clothes: it is hot and humid on the coast and in the Cultural Triangle."
+        },
+        {
+          "body": "One warm layer: hill country nights (Nuwara Eliya, Ella) get cold."
+        },
+        {
+          "body": "Rain jacket or small umbrella: December is wet season in the north and east."
+        },
+        {
+          "body": "Temple outfit: something that covers shoulders and knees, plus shoes you can slip off (you go barefoot inside)."
+        },
+        {
+          "body": "Swimwear, and a quick-dry towel."
+        },
+        {
+          "body": "Sunscreen, hat and sunglasses."
+        },
+        {
+          "body": "Insect repellent (mosquitoes at dusk)."
+        },
+        {
+          "body": "Plug adapter: Sri Lanka uses type D and type G sockets, 230 V."
+        },
+        {
+          "body": "Power bank for long drives and train days."
+        },
+        {
+          "body": "Basic meds: rehydration salts, anti-diarrhoea tablets, antihistamines, plasters."
+        },
+        {
+          "body": "Hand sanitiser and tissues (not every toilet has paper)."
+        },
+        {
+          "body": "Comfy shoes with grip for Pidurangala and Ella Rock."
+        },
+        {
+          "body": "Small dry bag for boat trips and rafting."
+        },
+        {
+          "body": "Day pack."
+        },
+        {
+          "body": "Some cash in rupees (LKR) for roadside stalls and tuk-tuks; cards work in most hotels and bigger restaurants."
+        },
+        {
+          "body": "Copies of your passport and travel authorisation, saved on your phone."
+        }
+      ]
+    },
+    {
+      "id": "Phrases",
+      "label": "Phrases",
+      "phrases": [
+        {
+          "english": "Hello / welcome (formal greeting)",
+          "sinhala": "Ayubowan",
+          "say": "AH-yu-bo-wan"
+        },
+        {
+          "english": "Thank you",
+          "sinhala": "Istuti",
+          "say": "ISS-too-tee"
+        },
+        {
+          "english": "Thank you very much",
+          "sinhala": "Bohoma istuti",
+          "say": "BO-ho-ma ISS-too-tee"
+        },
+        {
+          "english": "How are you?",
+          "sinhala": "Kohomada?",
+          "say": "KO-ho-ma-da"
+        },
+        {
+          "english": "I'm good",
+          "sinhala": "Hondai",
+          "say": "HON-dye"
+        },
+        {
+          "english": "Yes",
+          "sinhala": "Ow",
+          "say": "oh"
+        },
+        {
+          "english": "No",
+          "sinhala": "Naha",
+          "say": "NAA-ha"
+        },
+        {
+          "english": "Uncle (what you call any older man, the tuk-tuk driver included)",
+          "sinhala": "Uncle / Mama",
+          "say": "AN-kul / MAA-maa"
+        },
+        {
+          "english": "Aunty (any older woman)",
+          "sinhala": "Aunty / Nenda",
+          "say": "AAN-tee / NEN-da"
+        },
+        {
+          "english": "Big brother / big sister (friendly, for someone a bit older)",
+          "sinhala": "Aiya / Akka",
+          "say": "AI-ya / AK-ka"
+        },
+        {
+          "english": "One beer",
+          "sinhala": "Beer ekak",
+          "say": "BEER eh-kak"
+        },
+        {
+          "english": "Let's go",
+          "sinhala": "Yamu",
+          "say": "YA-moo"
+        },
+        {
+          "english": "Let's eat",
+          "sinhala": "Kamu",
+          "say": "KA-moo"
+        },
+        {
+          "english": "Let's drink",
+          "sinhala": "Bomu",
+          "say": "BO-moo"
+        },
+        {
+          "english": "How much?",
+          "sinhala": "Kiyada?",
+          "say": "KEE-ya-da"
+        },
+        {
+          "english": "Too expensive!",
+          "sinhala": "Ganan wadi!",
+          "say": "GA-nan WA-dee"
+        },
+        {
+          "english": "Delicious",
+          "sinhala": "Rasai",
+          "say": "RA-sigh"
+        },
+        {
+          "english": "Very spicy",
+          "sinhala": "Hari sarai",
+          "say": "HA-ree SA-rye"
+        },
+        {
+          "english": "No problem / it's fine",
+          "sinhala": "Kamak naha",
+          "say": "KA-mak NAA-ha"
+        },
+        {
+          "english": "Wow / cool",
+          "sinhala": "Maru",
+          "say": "MA-roo"
+        }
+      ]
+    }
+  ]
+}

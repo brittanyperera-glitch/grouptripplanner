@@ -1,4 +1,5 @@
 import Avatar from '../components/Avatar';
+import { useOpenGuide } from '../components/GuideNav';
 import { IconCheck } from '../components/Icons';
 import { useApp } from '../state';
 import { isLocal } from '../store';
@@ -22,6 +23,7 @@ function sampleRanking(ids: string[], slot: number): Ranking {
 
 export default function Waiting() {
   const { state, me, store, items } = useApp();
+  const openGuide = useOpenGuide();
   const done = PEOPLE.filter(p => state.responses[p]?.submitted);
 
   const fill = () => {
@@ -55,6 +57,7 @@ export default function Waiting() {
           );
         })}
       </div>
+      {openGuide && <button className="cta guide-open" onClick={openGuide}>Open the guide</button>}
       {isLocal && <button className="demo" onClick={fill}>Fill the other four with sample votes</button>}
     </section>
   );

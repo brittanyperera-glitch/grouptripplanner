@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Avatar from './components/Avatar';
 import CrewStrip from './components/CrewStrip';
-import { IconGrid, IconGroup, IconRoute, IconSpark } from './components/Icons';
+import { GuideNav } from './components/GuideNav';
+import { IconBook, IconGrid, IconGroup, IconRoute, IconSpark } from './components/Icons';
 import { cssEnter, lastNav, navigate } from './components/motion';
 import QuipBurst from './components/QuipBurst';
 import type { QuipKind } from './components/QuipBurst';
@@ -11,12 +12,13 @@ import Everyone from './screens/Everyone';
 import Extras from './screens/Extras';
 import Finalize, { EditListRow } from './screens/Finalize';
 import Friends from './screens/Friends';
+import Guide from './screens/Guide';
 import Knockouts from './screens/Knockouts';
 import MyTrip from './screens/MyTrip';
 import Name from './screens/Name';
 import Pace from './screens/Pace';
 import Plan from './screens/Plan';
-import Premiere from './screens/Trailer';
+import Premiere from './screens/Reveal';
 import Raw, { wantsRaw } from './screens/Raw';
 import Rate from './screens/Rate';
 import Rerank from './screens/Rerank';
@@ -29,9 +31,10 @@ import { AREAS, emptyRanking, PEOPLE } from './types';
 import type { Item, Pace as PaceT, Person, Ranking, Response, Store, Tier } from './types';
 
 type Step = 'days' | 'pace' | 'rate' | 'tabs';
-type Tab = 'My trip' | 'Group' | 'Everyone' | 'Suggest';
-const TABS: Tab[] = ['My trip', 'Group', 'Everyone', 'Suggest'];
-const TAB_ICON: Record<Tab, (p: { size?: number }) => JSX.Element> = { 'My trip': IconRoute, 'Group': IconGroup, 'Everyone': IconGrid, 'Suggest': IconSpark };
+type Tab = 'My trip' | 'Group' | 'Everyone' | 'Suggest' | 'Guide';
+// The tab bar only renders once I have submitted, so Guide is never offered before that.
+const TABS: Tab[] = ['My trip', 'Group', 'Everyone', 'Suggest', 'Guide'];
+const TAB_ICON: Record<Tab, (p: { size?: number }) => JSX.Element> = { 'My trip': IconRoute, 'Group': IconGroup, 'Everyone': IconGrid, 'Suggest': IconSpark, 'Guide': IconBook };
 type Say = (t?: string, kind?: QuipKind) => void;
 
 function MyTripTab() {
@@ -76,7 +79,7 @@ function SuggestTab() {
   return <Suggest open={PEOPLE.every(p => state.responses[p]?.submitted)} />;
 }
 
-const PANELS: Record<Tab, () => JSX.Element> = { 'My trip': MyTripTab, 'Group': GroupTab, 'Everyone': EveryoneTab, 'Suggest': SuggestTab };
+const PANELS: Record<Tab, () => JSX.Element> = { 'My trip': MyTripTab, 'Group': GroupTab, 'Everyone': EveryoneTab, 'Suggest': SuggestTab, 'Guide': Guide };
 
 const blank = (name: Person): Response => ({
   name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: new Date().toISOString(),
@@ -158,7 +161,7 @@ function Flow({ me, say }: { me: Person; say: Say }) {
     const Panel = PANELS[tab];
     content = (
       <>
-        <div role="tabpanel" aria-label={tab} className="panel"><Panel /></div>
+        <div role="tabpanel" aria-label={tab} className="panel"><GuideNav.Provider value={() => navigate('tab', () => setTab('Guide'))}><Panel /></GuideNav.Provider></div>
         <div className="foot stack">
           {locked
             ? <div className="sub locked">Ratings are locked, the group stage is open.</div>
