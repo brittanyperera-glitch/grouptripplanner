@@ -24,7 +24,12 @@ export function connectionMissingNow(): boolean {
   return connectionMissing({ prod: import.meta.env.PROD, ...keys(), host: window.location.hostname });
 }
 
-export function getStore(): Store {
+/** True when the shared Supabase database is in use, which is the case that sits behind the trip password. */
+export function supabaseConfigured(): boolean {
+  return Boolean(keys().url && keys().key);
+}
+
+export function getStore(password?: string): Store {
   const { url, key } = keys();
-  return url && key ? new SupabaseStore(url, key) : new LocalStore();
+  return url && key ? new SupabaseStore(url, key, password) : new LocalStore();
 }

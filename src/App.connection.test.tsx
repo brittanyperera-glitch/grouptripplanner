@@ -47,6 +47,8 @@ describe('R9 bad Supabase URL', () => {
     vi.stubEnv('PROD', true);
     vi.stubEnv('VITE_SUPABASE_URL', 'not a url');
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'k');
+    // A friend past the trip password gate, so the unreachable server is what they meet.
+    localStorage.setItem('tp-trip-key', 'made-up');
     render(<App />);
     expect(await screen.findByRole('button', { name: /Couldn't load\. Tap to retry/ })).toBeInTheDocument();
   });

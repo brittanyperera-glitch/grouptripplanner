@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { liveItems } from '../state';
-import { getStore } from '../store';
+import PasswordGate from '../components/PasswordGate';
+import { getStore, supabaseConfigured } from '../store';
+import { useTripAccess } from '../store/useTripAccess';
 import { choicesToCsv, describeChoice, itemNamer } from '../store/choices';
 import { PEOPLE } from '../types';
 import type { ChoiceEntry, Item, Store } from '../types';
@@ -17,12 +19,11 @@ const stamp = (iso: string) => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'medium' });
 };
 
-function RawTables({ store }: { store?: Store }) {
+function RawTables({ store }: { store: Store }) {
   const [data, setData] = useState<{ log: ChoiceEntry[]; items: Item[] } | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
-    const s = store ?? getStore();
-    Promise.all([s.loadLog(), s.load()])
+    Promise.all([store.loadLog(), store.load()])
       .then(([log, state]) => setData({ log, items: liveItems(state) }))
       .catch(() => setFailed(true));
   }, [store]);
@@ -67,8 +68,17 @@ function RawTables({ store }: { store?: Store }) {
   );
 }
 
+/** Behind the same trip password as the app, since the log is locked by the same database policies. */
+function RawAccess({ store }: { store?: Store }) {
+  const access = useTripAccess(!store && supabaseConfigured());
+  const live = useMemo(() => store ?? (access.status === 'open' ? getStore(access.password ?? undefined) : null), [store, access.status, access.password]);
+  if (access.status === 'gate') return <PasswordGate onAccept={access.accept} />;
+  if (!live) return <main className="raw"><p>Loading</p></main>;
+  return <RawTables store={live} />;
+}
+
 /** The hidden page: renders nothing unless the hash carries the secret. */
 export default function Raw({ store }: { store?: Store }) {
   if (!isRawHash(window.location.hash)) return null;
-  return <RawTables store={store} />;
+  return <RawAccess store={store} />;
 }

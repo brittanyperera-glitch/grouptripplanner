@@ -3,7 +3,9 @@ import type { ReactNode } from 'react';
 import catalogue from './data/catalogue.json';
 import legsData from './data/legs.json';
 import copyData from './content/copy.json';
-import { getStore } from './store';
+import PasswordGate from './components/PasswordGate';
+import { getStore, supabaseConfigured } from './store';
+import { useTripAccess } from './store/useTripAccess';
 import { WriteQueue } from './store/queue';
 import { emptyRanking, PEOPLE } from './types';
 import type { AppState, Item, Leg, Person, Response, Store } from './types';
@@ -95,10 +97,14 @@ export function useApp(): AppValue {
 
 export function AppProvider({ children, store: injected }: { children: ReactNode; store?: Store }) {
   const [attempt, setAttempt] = useState(0);
+  // The password gate stands in front of the shared database only; an injected or local store skips it.
+  const access = useTripAccess(!injected && supabaseConfigured());
+  const open = access.status === 'open';
   const base = useMemo<Store | null>(() => {
     if (injected) return injected;
-    try { return getStore(); } catch { return null; }
-  }, [injected, attempt]);
+    if (!open) return null;
+    try { return getStore(access.password ?? undefined); } catch { return null; }
+  }, [injected, attempt, open, access.password]);
   const [error, setError] = useState<string | null>(null);
   const [server, setServer] = useState<AppState | null>(null);
   const [local, setLocal] = useState<Rows>(readUnsaved);
@@ -176,6 +182,9 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
     try { localStorage.removeItem(ME_KEY); } catch { /* storage unavailable: the switch lasts this visit */ }
     setMeState(null);
   }, []);
+
+  if (access.status === 'gate') return createElement(PasswordGate, { onAccept: access.accept });
+  if (access.status === 'checking') return createElement('div', { className: 'app' }, createElement('div', { className: 'body' }, createElement('div', { className: 'sub' }, 'Loading')));
 
   if (!state) {
     return createElement('div', { className: 'app' },

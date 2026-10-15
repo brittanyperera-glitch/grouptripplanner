@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { tripClient } from './tripKey';
 import { emptyRanking } from '../types';
 import type { AppState, ChoiceEntry, ChoiceInput, Person, Response, Store, Suggestion, Vote } from '../types';
 
@@ -26,12 +26,29 @@ const toResponse = (r: RespRow): Response => {
 };
 
 const RELOAD_DEBOUNCE_MS = 200;
+const POLL_MS = 20_000;
 
 export class SupabaseStore implements Store {
   private db: SupabaseClient;
+  // Realtime row events are filtered by RLS, which cannot see the x-trip-key header, so once the lock is
+  // on they deliver nothing. A broadcast ping on 'tp' carries no data: peers just reload.
+  private chan: ReturnType<SupabaseClient['channel']> | null = null;
+  private onPing: () => void = () => undefined;
 
-  constructor(url: string, key: string) {
-    this.db = createClient(url, key);
+  constructor(url: string, key: string, tripKey?: string) {
+    this.db = tripClient(url, key, tripKey);
+  }
+
+  private channel() {
+    if (!this.chan) this.chan = this.db.channel('tp').on('broadcast', { event: 'changed' }, () => this.onPing()).subscribe();
+    return this.chan;
+  }
+
+  /** Best effort: the write already succeeded, and every client also reloads every 20 s. Only while subscribed, so no channel outlives the app. */
+  private ping(): void {
+    try {
+      void Promise.resolve(this.chan?.send({ type: 'broadcast', event: 'changed', payload: {} })).catch(() => undefined);
+    } catch { /* peers catch up on the next poll */ }
   }
 
   async load(): Promise<AppState> {
@@ -64,6 +81,7 @@ export class SupabaseStore implements Store {
     if (patch.final !== undefined && patch.ranking) cols.ranking = { ...patch.ranking, final: patch.final };
     const { error } = await this.db.from('responses').upsert(cols, { onConflict: 'name' });
     if (error) throw error;
+    this.ping();
   }
 
   // 80 and 300 match the CHECK constraints in schema.sql, so an over-long entry is cut rather than rejected forever.
@@ -72,11 +90,13 @@ export class SupabaseStore implements Store {
       id: crypto.randomUUID(), name: s.name, title: s.title.slice(0, 80), area: s.area, note: s.note.slice(0, 300), status: 'pending',
     });
     if (error) throw error;
+    this.ping();
   }
 
   async setSuggestionStatus(id: string, status: Suggestion['status']): Promise<void> {
     const { error } = await this.db.from('suggestions').update({ status }).eq('id', id);
     if (error) throw error;
+    this.ping();
   }
 
   async vote(v: Vote): Promise<void> {
@@ -85,12 +105,14 @@ export class SupabaseStore implements Store {
       { onConflict: 'fork_id,name' },
     );
     if (error) throw error;
+    this.ping();
   }
 
   // Append-only: choice_log has insert and select policies only, and is kept out of the realtime publication.
   async logChoice(c: ChoiceInput): Promise<void> {
     const { error } = await this.db.from('choice_log').insert({ id: crypto.randomUUID(), name: c.name, kind: c.kind, ref: c.ref, value: c.value });
     if (error) throw error;
+    this.ping();
   }
 
   async loadLog(): Promise<ChoiceEntry[]> {
@@ -110,14 +132,20 @@ export class SupabaseStore implements Store {
         void this.load().then(s => { if (mine === seq) cb(s); }).catch(() => undefined);
       }, RELOAD_DEBOUNCE_MS);
     };
-    const channel = this.db
-      .channel('tp')
-      .on('postgres_changes', { event: '*', schema: 'public' }, reload)
-      .subscribe();
+    const onVisible = () => { if (document.visibilityState === 'visible') reload(); };
+    this.onPing = reload;
+    this.channel();
+    const poll = setInterval(reload, POLL_MS);
+    document.addEventListener('visibilitychange', onVisible);
     return () => {
       clearTimeout(timer);
+      clearInterval(poll);
+      document.removeEventListener('visibilitychange', onVisible);
+      this.onPing = () => undefined;
       seq++;
-      void this.db.removeChannel(channel);
+      const chan = this.chan;
+      this.chan = null;
+      if (chan) void this.db.removeChannel(chan);
     };
   }
 }
