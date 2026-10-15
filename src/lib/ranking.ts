@@ -96,12 +96,19 @@ export function labels(r: Ranking): Record<string, string> {
   return out;
 }
 
+// Centred on the tier's points (Brittany 2026-10-15): summed over five people an uncentred bonus
+// added about 2 points to every place, enough to pull in places someone Skipped.
+export const ORDER_BONUS = 0.9;
+// A Must that lost a head to head scores as the lowest a Keen can (D5: never ahead of a plain Keen).
+export const KNOCKED_MUST = BASE.keen - ORDER_BONUS / 2;
+
 export function score(r: Ranking, id: string): number {
   const t = tierOf(r, id);
   if (!t) return 0;
   const levels = r[t];
+  if (levels.length < 2) return BASE[t];
   const i = levels.findIndex(l => l.includes(id));
-  return BASE[t] + 0.9 * (1 - i / Math.max(1, levels.length - 1));
+  return BASE[t] + ORDER_BONUS * (0.5 - i / (levels.length - 1));
 }
 
 export function scoresFor(r: Ranking, ids: string[]): Record<string, number> {

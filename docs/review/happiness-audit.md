@@ -211,3 +211,42 @@ The 3 hater groups with someone at zero are all the hater: each of their 2 or 3 
 ## Self-check
 
 The plan-before-votes numbers for lopsided (both lengths, 20 groups) and polarised (9 days, 40 groups) were recounted a second way: the real `groupResult` on the same 60 generated groups, Musts counted by separate hand-written code that shares nothing with the simulation's measuring helpers. Per-person Must counts match in 60 of 60 groups: lopsided 634 Musts in, 0 people at zero, lowest person 63.4% on both paths; polarised 915 Musts in, 6 people at zero, lowest person 35.8% on both paths.
+
+## Implemented (Brittany 2026-10-15: both recommendations)
+
+Two changes, both in `src/lib/ranking.ts` and `src/lib/group.ts`. Throwaway sweep files were deleted before commit.
+
+### 1. Centred order bonus
+
+- `score()` now gives `BASE + 0.9 * (0.5 - i / (n - 1))`: +0.45 for a tier's top spot, -0.45 for its bottom, and a lone item scores its tier's points exactly. Ordering still breaks ties inside a tier; a tier adds no net pull.
+- To keep D5's "never ahead of a plain Keen", a knocked-down Must now counts as `KNOCKED_MUST` = 3.55, the lowest a Keen can score (was 4, the bottom Keen under the old bonus). Constants `ORDER_BONUS` and `KNOCKED_MUST` live in `ranking.ts`; `group.ts` uses `KNOCKED_MUST`.
+- Red before: `AssertionError: expected 10.9 to be close to 10.45, received difference is 0.45000000000000107` (new centred-bonus test), and `AssertionError: seed 9: expected 187.27653846153845 to be close to 186.37653846153844` (knocked value in the D5 test, after it was pointed at `KNOCKED_MUST`).
+- Tests that encoded the replaced rule, updated with the new values: three in `ranking.test.ts` (10.9 / 10.45 / 10 became 10.45 / 10 / 9.55, 4.9 became 4.45, a lone Skip -2.1 became -3). The seed 38 "later Keep votes do not reshuffle" threshold (270, between 268.1 and 270.9) was re-measured both ways with `settle` removed and restored: 232.60 without Sigiriya, 232.69 with it; the threshold is now 232.65 and the Sigiriya assertion still goes red without `settle` (`AssertionError: expected [ Array(15) ] to include 'sigiriya'`).
+
+### 2. Must floor
+
+- In `groupResult`, after the Finalize rebuild and only when no question is open: anyone with at least one Must (from their saved Finalize list, else as submitted) and none in the plan gets the one whose plan scores highest, never one that lost a head to head or is in the region voted against. Two passes. No new field on `GroupResult`, so its 8 readers are unchanged.
+- Red before (floor absent): `AssertionError: expected 0 to be greater than 0` (someone left with none) and `AssertionError: expected [ Array(17) ] to include 'knuckles'` (Musts read from a saved Finalize list).
+- Each rule guarded and seen red by mutation: losing-region exclusion removed gives `AssertionError: expected [ 'jaffna' ] to deeply equal []`; knocked exclusion removed gives `AssertionError: expected [ 'sigiriya' ] to deeply equal []`; first eligible Must instead of the cheapest gives `AssertionError: elephants: expected 537.9159999999999 to be greater than or equal to 576.489999999`.
+- Not done: a reveal card naming the floored place ("Saulie's pick: Dambulla"). It needs a `floored` field in `src/types.ts` and a card in `src/lib/compromises.ts`, which were outside the files this change was cleared to touch.
+
+### Sweep, same 400 groups, before and after
+
+| Kind of group | People with no Musts before votes / after (groups), before | after | Skipped places in plan before votes / after, before | after |
+|---|---|---|---|---|
+| Typical | 0 / 0 (0) | 0 / 0 (0) | 5.38 / 5.38 | 4.81 / 4.72 |
+| Lopsided | 0 / 0 (0) | 0 / 1 (1) | 6.04 / 6.67 | 5.64 / 5.91 |
+| Niche | 13 / 13 (13) | 14 / 3 (3) | 8.99 / 8.81 | 8.24 / 8.63 |
+| Polarised | 6 / 8 (6) | 5 / 0 (0) | 9.86 / 10.16 | 9.49 / 9.79 |
+| One hater | 0 / 3 (3) | 1 / 3 (3) | 9.97 / 10.15 | 8.66 / 9.36 |
+| All 400 | 19 / 24 (22) | 20 / 7 (7) | 8.05 / 8.23 | 7.37 / 7.68 |
+
+- The 7 people still at zero after the votes: every one of their Musts either lost a head to head or is in the North, which their final plan does not visit (lopsided 9 days group 38, niche 9/31, 14/7, 14/11, hater 9/15, 9/20, 9/27). The floor rightly leaves them.
+- Plan totals drop (all 400: 423.1 to 382.3) because centring takes about 0.45 off every rating on average; that is the unit changing, not places lost.
+- Speed: first `groupResult` call 23 ms mean (95th percentile 42) before, 24 ms (45) after.
+
+### Blast radius
+
+- `score()`: `group.ts` (`personPlan` via `scoresFor`, `groupResult`), `src/screens/Knockouts.tsx` (orders at most two names on a card by group score, relative only), `src/App.test.tsx` line 355 (relative, passes). Personal plans keep the same eligible places: a Meh still scores above 0 (0.55 to 1.45) and a Skip below it.
+- Planner snapshot: unchanged. Its cases feed fixed scores straight to `plan()`, not rankings, and the planner is untouched; all snapshot tests pass.
+- Gates: full vitest 557 of 557 (exit 0), `tsc -b` exit 0, `npm run build` exit 0, Playwright 38 of 38 (exit 0).

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { emptyRanking } from '../types';
-import { canDraw, isDrawn, labels, MAX_TIE, placeId, score, setTier, tierOf, toggleDraw, withoutDraws } from './ranking';
+import { canDraw, isDrawn, KNOCKED_MUST, labels, MAX_TIE, placeId, score, setTier, tierOf, toggleDraw, withoutDraws } from './ranking';
 
 describe('ranking', () => {
   // Brittany 2026-10-15: before submit the order inside a tier counts (dragged), but there are no draws.
@@ -8,7 +8,7 @@ describe('ranking', () => {
     const r = emptyRanking();
     for (const id of ['a', 'b', 'c']) setTier(r, id, 'must');
     expect(r.must).toEqual([['a'], ['b'], ['c']]);
-    expect(score(r, 'a')).toBeCloseTo(10.9); expect(score(r, 'b')).toBeCloseTo(10.45); expect(score(r, 'c')).toBeCloseTo(10);
+    expect(score(r, 'a')).toBeCloseTo(10.45); expect(score(r, 'b')).toBeCloseTo(10); expect(score(r, 'c')).toBeCloseTo(9.55);
   });
   it('setTier moves an item between tiers and splits an old shared spot', () => {
     const r = emptyRanking(); r.must = [['a', 'b'], ['x']]; r.keen = [['c'], ['d']];
@@ -18,7 +18,7 @@ describe('ranking', () => {
   it('placeId puts an item at a position inside a tier, or in another tier, and the score follows', () => {
     const r = emptyRanking(); r.must = [['a'], ['b'], ['c']]; r.keen = [['k']];
     placeId(r, 'c', 'must', 0); expect(r.must).toEqual([['c'], ['a'], ['b']]);
-    expect(score(r, 'c')).toBeCloseTo(10.9); expect(score(r, 'b')).toBeCloseTo(10);
+    expect(score(r, 'c')).toBeCloseTo(10.45); expect(score(r, 'b')).toBeCloseTo(9.55);
     placeId(r, 'a', 'keen', 1); expect(r.must).toEqual([['c'], ['b']]); expect(r.keen).toEqual([['k'], ['a']]);
     placeId(r, 'k', 'skip', 5); expect(r.skip).toEqual([['k']]); expect(r.keen).toEqual([['a']]);
   });
@@ -48,9 +48,19 @@ describe('ranking', () => {
   });
   it('scores keep tiers apart', () => {
     const r = emptyRanking(); r.must = [['a'], ['b']]; r.keen = [['c'], ['d']]; r.skip = [['s']];
-    expect(score(r, 'a')).toBeCloseTo(10.9); expect(score(r, 'b')).toBeCloseTo(10);
-    expect(score(r, 'c')).toBeCloseTo(4.9); expect(score(r, 's')).toBeCloseTo(-2.1);
+    expect(score(r, 'a')).toBeCloseTo(10.45); expect(score(r, 'b')).toBeCloseTo(9.55);
+    expect(score(r, 'c')).toBeCloseTo(4.45); expect(score(r, 's')).toBeCloseTo(-3);
     expect(score(r, 'zzz')).toBe(0);
+  });
+  // Brittany 2026-10-15 (docs/review/happiness-audit.md): the order bonus is centred on the tier's
+  // points, so ordering breaks ties inside a tier but a tier adds no net pull and cannot lift a Skip.
+  it('the order bonus is centred: top +0.45, bottom -0.45, a lone item and the tier average at the tier points', () => {
+    const r = emptyRanking(); r.must = [['a'], ['b'], ['c']]; r.keen = [['k']]; r.skip = [['s1'], ['s2']];
+    expect(score(r, 'a')).toBeCloseTo(10.45); expect(score(r, 'b')).toBeCloseTo(10); expect(score(r, 'c')).toBeCloseTo(9.55);
+    expect(score(r, 'k')).toBeCloseTo(4);
+    expect(score(r, 's1')).toBeCloseTo(-2.55); expect(score(r, 's2')).toBeCloseTo(-3.45);
+    expect((score(r, 'a') + score(r, 'b') + score(r, 'c')) / 3).toBeCloseTo(10);
+    expect(KNOCKED_MUST).toBeCloseTo(3.55);
   });
   it('fuzz: 500 random operations keep invariants', () => {
     const r = emptyRanking(); const ids = Array.from({ length: 20 }, (_, i) => 'i' + i);

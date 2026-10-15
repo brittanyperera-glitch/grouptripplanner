@@ -3,7 +3,7 @@ import catalogue from './__fixtures__/catalogue-46.json'; import legs from '../d
 import { groupResult, personPlan } from './group';
 import liveCatalogue from '../data/catalogue.json';
 import { plan } from './planner';
-import { BASE, finalListFrom, score, setTier, tierOf } from './ranking';
+import { finalListFrom, KNOCKED_MUST, score, setTier, tierOf } from './ranking';
 import { PEOPLE, emptyRanking, type AppState, type Item, type Leg, type Person, type Response, type Tier } from '../types';
 const items = catalogue.items as Item[]; const L = legs as Leg[];
 // Five seeded people rating every item: about 15% Must, 30% Keen, 30% Meh, 25% Skip.
@@ -211,13 +211,14 @@ describe('knocked down, not out (D5)', () => {
     for (let seed = 1; seed <= 20; seed++) {
       const s = seeded(LIVE, seed); const g = voteThrough(s, LIVE); const lost = lostIn(g);
       const rs = Object.values(s.responses);
-      const value = (id: string) => rs.reduce((n, r) => n + (lost.has(id) && tierOf(r!.ranking, id) === 'must' ? BASE.keen : score(r!.ranking, id)), 0);
+      const value = (id: string) => rs.reduce((n, r) => n + (lost.has(id) && tierOf(r!.ranking, id) === 'must' ? KNOCKED_MUST : score(r!.ranking, id)), 0);
       expect(g.final!.score, `seed ${seed}`).toBeCloseTo(g.final!.chosen.reduce((n, id) => n + value(id), 0), 6);
     }
   });
   // Seed 38, 9 days: the first place question (Yala, with Sigiriya riding on it) goes Add, every later
   // one Keep. Re-running the planner after each knock-down used to reshuffle into a lower-scoring plan
   // without Sigiriya (268.1); keeping the voted plan unless a re-run beats it gives 270.9 with it.
+  // Centred order bonus (2026-10-15): 232.60 without Sigiriya, 232.69 with it, measured both ways.
   it('later Keep votes do not reshuffle the plan into a worse one', () => {
     let first: string | undefined;
     const g = voteThrough(seeded(LIVE, 38), LIVE, f => (!f.startsWith('ko:') ? undefined : (first ??= f) === f ? 'a' : 'b'));
@@ -225,7 +226,7 @@ describe('knocked down, not out (D5)', () => {
     expect(add).toMatchObject({ forkId: 'ko:yala', winner: 'a' });
     expect(add.a).toContain('sigiriya');
     expect(g.final!.chosen).toContain('sigiriya');
-    expect(g.final!.score).toBeGreaterThan(270);
+    expect(g.final!.score).toBeGreaterThan(232.65);
   });
   it('never asks about an item twice, finishes, and gives the same result every time', () => {
     for (const [its, days] of [[liveCatalogue.items as Item[], 9], [items, 9], [liveCatalogue.items as Item[], 14]] as const) {
@@ -331,5 +332,66 @@ describe('North or South region knockout', () => {
     expect(planA.chosen.filter(id => northIds.includes(id)).sort()).toEqual([...fork.a].sort());
     for (const id of fork.a) expect(planA.chosen).toContain(id);
     expect(planA.areas.some(a => NORTH_AREAS.includes(a))).toBe(true);
+  });
+});
+
+// Must floor (Brittany 2026-10-15, docs/review/happiness-audit.md): once every question is settled,
+// anyone with none of their Musts in gets back the one that costs the group least, never one that
+// lost a head to head or sits in the region the group voted against.
+describe('Must floor', () => {
+  const OTHERS_MUST = ['galle', 'coconut', 'surf', 'beachday', 'hiriketiya', 'junglebeach', 'yala', 'udawalawe', 'ellarock', 'ninearch', 'train', 'tea', 'horton', 'pettah', 'galleface', 'crab', 'rooftop', 'kottu', 'tooth'];
+  const floorState = (loneMusts: string[], othersSkip: string[], othersMust = OTHERS_MUST): AppState => {
+    const responses: AppState['responses'] = {};
+    const all = LIVE.map(i => i.id);
+    for (const name of PEOPLE) {
+      const r = emptyRanking();
+      if (name === 'Saulie') { r.must = loneMusts.map(id => [id]); r.meh = all.filter(id => !loneMusts.includes(id)).map(id => [id]); }
+      else { r.must = othersMust.map(id => [id]); r.skip = othersSkip.map(id => [id]); r.meh = all.filter(id => !othersMust.includes(id) && !othersSkip.includes(id)).map(id => [id]); }
+      responses[name] = { name, days: 9, flex: false, pace: 1, ranking: r, rated: all, submitted: true, updatedAt: '' };
+    }
+    return { responses, suggestions: [], votes: [] };
+  };
+  const mustsIn = (s: AppState, chosen: string[]) => s.responses.Saulie!.ranking.must.flat().filter(id => chosen.includes(id));
+  it('gives a Must back to someone the head to heads left with none, and never one that lost a vote', () => {
+    // Ranked so dearer places (Polonnaruwa, Anuradhapura) come before the cheapest one.
+    const triangle = ['sigiriya', 'polonnaruwa', 'anuradhapura', 'elephants', 'dambulla', 'aukana', 'pidurangala'];
+    const s = floorState(triangle, triangle);
+    const g = voteThrough(s, LIVE, () => 'b');
+    expect(g.final).not.toBeNull();
+    const back = mustsIn(s, g.final!.chosen);
+    expect(back.length).toBeGreaterThan(0);
+    for (const id of back) expect(g.knocked).not.toContain(id);
+    // The one that costs the group least: no other eligible Must gives a higher-scoring plan.
+    const rs = Object.values(s.responses);
+    const scores = Object.fromEntries(LIVE.map(i => [i.id, rs.reduce((n, r) => n + (g.knocked.includes(i.id) && tierOf(r!.ranking, i.id) === 'must' ? KNOCKED_MUST : score(r!.ranking, i.id)), 0)]));
+    for (const m of triangle.filter(id => !g.knocked.includes(id))) {
+      const q = plan({ items: LIVE, scores, days: 9, pace: 1, legs: L, forceIn: [m], forceOut: [] });
+      if (!q.forceFailed && q.chosen.includes(m)) expect(g.final!.score, m).toBeGreaterThanOrEqual(q.score - 1e-9);
+    }
+  });
+  it('does not bring back a Must that lost a head to head', () => {
+    const two = ['sigiriya', 'dambulla'];
+    // Few enough Musts for the others that their own places all fit, so Saulie's two get the questions.
+    const s = floorState(two, two, ['galle', 'coconut', 'surf', 'beachday', 'pettah', 'galleface', 'crab', 'kottu']);
+    const g = voteThrough(s, LIVE, () => 'b');
+    for (const id of two) expect(g.knocked).toContain(id);
+    expect(mustsIn(s, g.final!.chosen)).toEqual([]);
+  });
+  it('reads Musts from a saved Finalize list', () => {
+    const triangle = ['sigiriya', 'pidurangala', 'dambulla', 'polonnaruwa', 'elephants', 'anuradhapura', 'aukana'];
+    const s = floorState(triangle, [...triangle, 'knuckles']);
+    const g = voteThrough(s, LIVE, () => 'b');
+    const fin = finalListFrom(s.responses.Saulie!.ranking, g.knocked);
+    for (const id of triangle) setTier(fin, id, 'meh');
+    setTier(fin, 'knuckles', 'must');
+    s.responses.Saulie!.final = fin;
+    expect(groupResult(s, LIVE, L).final!.chosen).toContain('knuckles');
+  });
+  it('does not bring back a Must from the region the group voted against', () => {
+    const north = ['jaffna', 'delft', 'nainativu'];
+    const s = floorState(north, []);
+    const g = voteThrough(s, LIVE, f => (f === 'region:north' ? 'b' : undefined));
+    expect(g.results.find(r => r.forkId === 'region:north')?.winner).toBe('b');
+    expect(mustsIn(s, g.final!.chosen)).toEqual([]);
   });
 });

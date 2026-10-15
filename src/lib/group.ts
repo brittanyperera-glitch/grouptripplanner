@@ -1,6 +1,6 @@
 import { PEOPLE, type AppState, type GroupResult, type Item, type Knockout, type Leg, type Pace, type Person, type Plan, type Response } from '../types';
 import { mustFitDays, plan } from './planner';
-import { BASE, score, scoresFor, tierOf } from './ranking';
+import { KNOCKED_MUST, score, scoresFor, tierOf } from './ranking';
 
 const VOTES_TO_RESOLVE = 3; // majority of 5
 const MAX_CONTESTED = 5;
@@ -42,10 +42,10 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
 
   const F = new Set<string>(), O = new Set<string>();
   // D5 (Brittany 2026-10-15): the losing side of an item head to head is knocked down, not out. Each
-  // Must rating of it counts as a bare Keen, so it comes back only if room opens, and never ahead of a
-  // plain Keen on that rating. O is left to the region question, which stays decisive.
+  // Must rating of it counts as the lowest Keen, so it comes back only if room opens, and never ahead
+  // of a plain Keen on that rating. O is left to the region question, which stays decisive.
   const knocked = new Set<string>();
-  const rating = (r: Response, id: string) => (knocked.has(id) && tierOf(r.ranking, id) === 'must' ? BASE.keen : score(r.ranking, id));
+  const rating = (r: Response, id: string) => (knocked.has(id) && tierOf(r.ranking, id) === 'must' ? KNOCKED_MUST : score(r.ranking, id));
   const knockDown = (id: string) => {
     if (knocked.has(id)) return;
     knocked.add(id);
@@ -130,6 +130,24 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
     else { knockouts.push({ forkId, a, b, votes }); a.forEach(id => covered.add(id)); }
   }
 
+  // Must floor (Brittany 2026-10-15): once nothing is open, anyone with none of their Musts in (from
+  // their saved Finalize list, else as submitted) gets the one that costs the group least, never one
+  // that lost a head to head or sits in the losing region. Two passes, so a place forced in for one
+  // person cannot leave an earlier one at zero.
+  const floor = () => {
+    for (let pass = 0; pass < 2; pass++) for (const r of rs) {
+      const musts = (r.final ?? r.ranking).must.flat();
+      if (!musts.length || musts.some(id => P.chosen.includes(id))) continue;
+      let best: Plan | null = null, pick = '';
+      for (const m of musts) {
+        if (knocked.has(m) || O.has(m)) continue;
+        const q = run(new Set([...F, m]), O);
+        if (!q.forceFailed && q.chosen.includes(m) && (!best || q.score > best.score + EPS)) { best = q; pick = m; }
+      }
+      if (best) { F.add(pick); P = best; }
+    }
+  };
+
   // After the head to heads, the plan is rebuilt from each saved Finalize list (Brittany 2026-10-15).
   // Winners stay forced in and the losing region stays out; anyone without a list counts as submitted,
   // knock-downs included. Their submitted ratings keep driving the head to heads above, so a saved
@@ -140,6 +158,7 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
     for (const id of ids) scores[id] = rs.reduce((n, r) => n + val(r, id), 0);
     P = run(F, O);
   }
+  if (!knockouts.length) floor();
   const final = knockouts.length ? null : P;
   const kept = new Set((final ?? baseP).chosen);
   // The plan's own items stay in, so "you'd also get" holds for the whole list at once.
