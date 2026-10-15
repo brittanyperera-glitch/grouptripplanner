@@ -334,7 +334,7 @@
    "slot": "gate opening",
    "fee": "about USD 45 pp plus jeep",
    "warn": "Very busy with jeeps; sightings not guaranteed",
-   "photo": "leopard",
+   "photo": "yala",
    "about": "Leopard and elephant safari in Sri Lanka's most famous park.",
    "google": {
     "rating": "4.2",
@@ -415,7 +415,8 @@
     "rating": "4.6",
     "reviews": "2,848",
     "url": "https://www.google.com/maps/search/Hiriketiya%20Beach,%20Dickwella,%20Sri%20Lanka"
-   }
+   },
+   "photo": "hiriketiya"
   },
   {
    "id": "junglebeach",
@@ -519,7 +520,8 @@
     "rating": "3.3",
     "reviews": "980",
     "url": "https://www.google.com/maps/search/Rekawa+Turtle+Conservation+Project,+Sri+Lanka"
-   }
+   },
+   "photo": "rekawa"
   }
  ]
 }

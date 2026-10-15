@@ -29,7 +29,7 @@
    },
    "when": "morning",
    "sideTrip": 0,
-   "credit": "Adam Jones from Kelowna, BC, Canada, CC BY-SA 2.0"
+   "credit": "Pierre Andre Leclercq, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "galleface",
@@ -47,7 +47,7 @@
    },
    "when": "sunset",
    "sideTrip": 0,
-   "credit": "Mayooresan, CC BY-SA 3.0"
+   "credit": "Tharindu Madusanka Perera, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "crab",
@@ -66,7 +66,7 @@
    },
    "when": "evening",
    "sideTrip": 0,
-   "credit": "Masha999, CC BY-SA 4.0"
+   "credit": "Vikram Aditya, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "rooftop",
@@ -84,7 +84,7 @@
    },
    "when": "evening",
    "sideTrip": 0,
-   "credit": "Mohamed Rilwan1210, CC BY-SA 4.0"
+   "credit": "Thilina Alagiyawanna, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "kottu",
@@ -103,7 +103,7 @@
    "warn": "Rated 3.4 on Google; it's about the 3am kottu, not the service",
    "when": "late night",
    "sideTrip": 0,
-   "credit": "Dankesie, CC BY-SA 4.0"
+   "credit": "Vis M, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "sigiriya",
@@ -122,7 +122,7 @@
    },
    "when": "gate opening",
    "sideTrip": 0,
-   "credit": "Dronepicr, CC BY 3.0"
+   "credit": "Dylan Shaw, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "pidurangala",
@@ -141,7 +141,7 @@
    },
    "when": "sunrise",
    "sideTrip": 0.3,
-   "credit": "Nipuna Gamage, CC BY-SA 4.0"
+   "credit": "Lou Lou B Photo, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "dambulla",
@@ -160,7 +160,7 @@
    },
    "when": "morning",
    "sideTrip": 1.14,
-   "credit": "Philip Nalangan, CC BY 4.0"
+   "credit": "Vedanth Ravi, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "polonnaruwa",
@@ -178,7 +178,7 @@
    },
    "when": "morning",
    "sideTrip": 2.7,
-   "credit": "Philip Nalangan, CC BY 4.0"
+   "credit": "Secret Travel Guide, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "elephants",
@@ -197,7 +197,7 @@
    },
    "when": "afternoon",
    "sideTrip": 1.54,
-   "credit": "David Stanley from Nanaimo, Canada, CC BY 2.0"
+   "credit": "Shyaman Prasad, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "anuradhapura",
@@ -216,7 +216,7 @@
    },
    "when": "morning",
    "sideTrip": 3.06,
-   "credit": "Z thomas, CC BY-SA 4.0"
+   "credit": "Chathura Anuradha Subasinghe, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "tooth",
@@ -235,7 +235,7 @@
    },
    "when": "18:30",
    "sideTrip": 0,
-   "credit": "A.Savin, FAL"
+   "credit": "Chathura Anuradha Subasinghe, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "knuckles",
@@ -254,7 +254,7 @@
    },
    "when": "morning",
    "sideTrip": 5.06,
-   "credit": "Nethupa Lekamge, CC BY-SA 4.0"
+   "credit": "Muhammadh Ashik, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "rafting",
@@ -273,7 +273,7 @@
    },
    "when": "morning",
    "sideTrip": 0,
-   "credit": "Pol van den Scheetek…, CC BY 3.0"
+   "credit": "Pol van den Scheetek, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "train",
@@ -288,7 +288,7 @@
    "about": "The best-scenery stretch of the hill country railway, tea fields all the way.",
    "when": "09:00 or 14:30",
    "sideTrip": 0.2,
-   "credit": "Angshuman Chatterjee, CC BY-SA 3.0"
+   "credit": "Danny Postma, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "horton",
@@ -307,7 +307,7 @@
    },
    "when": "sunrise",
    "sideTrip": 2.4,
-   "credit": "Pamuditha2000, CC BY-SA 4.0"
+   "credit": "Madhawa Mihiran, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "tea",
@@ -326,7 +326,7 @@
    },
    "when": "daytime",
    "sideTrip": 1.06,
-   "credit": "Bergentroll, CC0"
+   "credit": "Praveen Maleesha, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "ellarock",
@@ -345,7 +345,7 @@
    },
    "when": "06:00 start",
    "sideTrip": 0,
-   "credit": "Gayan Perera, CC BY-SA 4.0"
+   "credit": "Oleg Illarionov, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "ninearch",
@@ -364,7 +364,7 @@
    },
    "when": "train times",
    "sideTrip": 0,
-   "credit": "A.Savin, FAL"
+   "credit": "Adam Vandermeer, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "diyaluma",
@@ -383,7 +383,7 @@
    },
    "when": "late morning",
    "sideTrip": 2.5,
-   "credit": "SarangaRodrigo, CC BY-SA 4.0"
+   "credit": "Mahesh Malaka Udawatta, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "yala",
@@ -393,7 +393,7 @@
    "slot": "sunrise",
    "fee": "about USD 45 pp plus jeep",
    "warn": "Very busy with jeeps; sightings not guaranteed",
-   "photo": "leopard",
+   "photo": "yala",
    "about": "Leopard and elephant safari in Sri Lanka's most famous park.",
    "google": {
     "rating": "4.2",
@@ -403,7 +403,7 @@
    "when": "gate opening",
    "sideTrip": 1.24,
    "hub": "Tissa",
-   "credit": "Asirilak, CC BY-SA 4.0"
+   "credit": "Tommaso Delton, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "udawalawe",
@@ -421,7 +421,7 @@
    },
    "when": "morning",
    "sideTrip": 0,
-   "credit": "Z thomas, CC BY-SA 4.0"
+   "credit": "Riccardo Chiarini, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "surf",
@@ -440,7 +440,7 @@
    },
    "when": "morning",
    "sideTrip": 0,
-   "credit": "Annelicious i, CC BY-SA 4.0"
+   "credit": "Filipp Nekhaev, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "galle",
@@ -458,7 +458,7 @@
    },
    "when": "sunset",
    "sideTrip": 1.54,
-   "credit": "Jan Kranendonk (https://www.jankranendonk.nl), CC BY-SA 4.0"
+   "credit": "Hendrik Cornelissen, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "coconut",
@@ -476,7 +476,7 @@
    },
    "when": "sunset",
    "sideTrip": 0,
-   "credit": "Swanthika, CC BY-SA 4.0"
+   "credit": "Dinuka Lankaloka, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "hiriketiya",
@@ -491,8 +491,10 @@
     "reviews": "2,848",
     "url": "https://www.google.com/maps/search/Hiriketiya%20Beach,%20Dickwella,%20Sri%20Lanka"
    },
+   "photo": "hiriketiya",
    "when": "any",
-   "sideTrip": 2.14
+   "sideTrip": 2.14,
+   "credit": "Daniel Schacher, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "junglebeach",
@@ -510,7 +512,7 @@
    },
    "when": "morning",
    "sideTrip": 1.46,
-   "credit": "Hirushini Dematagoda, CC BY-SA 4.0"
+   "credit": "Siarhei Palishchuk, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "beachday",
@@ -523,7 +525,7 @@
    "about": "A whole day off: beach, swim, nap, repeat.",
    "when": "any",
    "sideTrip": 0,
-   "credit": "Praveenshashika, CC BY-SA 4.0"
+   "credit": "Sarmat Batagov, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "jaffna",
@@ -542,7 +544,7 @@
    },
    "when": "morning",
    "sideTrip": 0,
-   "credit": "Gane Kumaraswamy, CC BY-SA 2.0"
+   "credit": "Yercaud-elango, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "delft",
@@ -561,7 +563,7 @@
    },
    "when": "morning",
    "sideTrip": 1.54,
-   "credit": "MRuwan, CC BY-SA 4.0"
+   "credit": "Shenal Sadurshan, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "nainativu",
@@ -580,7 +582,7 @@
    },
    "when": "morning",
    "sideTrip": 1.54,
-   "credit": "Indi Samarajiva, CC BY 2.0"
+   "credit": "Thineshkumar Lingeswaran, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "aukana",
@@ -599,7 +601,7 @@
    },
    "when": "sunrise",
    "sideTrip": 2.4,
-   "credit": "Plpm2021, CC BY-SA 4.0"
+   "credit": "Plpm2021, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   },
   {
    "id": "rekawa",
@@ -615,8 +617,10 @@
     "reviews": "980",
     "url": "https://www.google.com/maps/search/Rekawa+Turtle+Conservation+Project,+Sri+Lanka"
    },
+   "photo": "rekawa",
    "when": "evening",
-   "sideTrip": 2.46
+   "sideTrip": 2.46,
+   "credit": "Jerzy Strzelecki, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
   }
  ]
 }
