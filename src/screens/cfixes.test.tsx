@@ -31,11 +31,21 @@ describe('R8 light-mode orange text token', () => {
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
   };
   const ratio = (fg: string, bg: string) => { const [a, b] = [lum(fg), lum(bg)].sort((x, y) => y - x); return (a + 0.05) / (b + 0.05); };
-  const light = css.slice(css.indexOf(':root {'), css.indexOf('@media'));
-  it('--coconut-text reaches 4.5:1 on white', () => {
-    const m = light.match(/--coconut-text:\s*(#[0-9A-Fa-f]{6})/);
-    expect(m).not.toBeNull();
-    expect(ratio(m![1], '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
+  // Dark is the default theme now, so the light tokens live in the [data-theme="light"] block.
+  const block = (start: string) => css.slice(css.indexOf(start), css.indexOf('}', css.indexOf(start)));
+  const token = (b: string, name: string) => b.match(new RegExp(`--${name}:\\s*(#[0-9A-Fa-f]{6})`))?.[1];
+  it('--coconut-text reaches 4.5:1 on white and on the light surface', () => {
+    const light = block(':root[data-theme="light"] {');
+    const fg = token(light, 'coconut-text');
+    expect(fg).toBeDefined();
+    expect(ratio(fg!, '#FFFFFF')).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(fg!, token(light, 'surface')!)).toBeGreaterThanOrEqual(4.5);
+  });
+  it('--coconut-text reaches 4.5:1 on the dark surface and card', () => {
+    const dark = block(':root {');
+    const fg = token(dark, 'coconut-text')!;
+    expect(ratio(fg, token(dark, 'surface')!)).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(fg, token(dark, 'card')!)).toBeGreaterThanOrEqual(4.5);
   });
   it('text uses of orange use the token, not the fill', () => {
     for (const sel of ['.pick .tag', '.day .d', '.grid td.must']) {

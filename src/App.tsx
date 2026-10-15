@@ -1,6 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import Avatar from './components/Avatar';
 import Compare from './components/Compare';
-import Toast from './components/Toast';
+import { IconGrid, IconGroup, IconRoute, IconSpark } from './components/Icons';
+import { cssEnter, lastNav, navigate } from './components/motion';
+import QuipBurst from './components/QuipBurst';
+import type { QuipKind } from './components/QuipBurst';
 import { answer, move, removeId, retier, startPlace, tierOf } from './lib/ranking';
 import Days from './screens/Days';
 import Everyone from './screens/Everyone';
@@ -23,6 +27,8 @@ import type { Item, Pace as PaceT, Pending, Person, Ranking, Response, Store, Ti
 type Step = 'days' | 'pace' | 'rate' | 'tabs';
 type Tab = 'My trip' | 'Group' | 'Everyone' | 'Suggest';
 const TABS: Tab[] = ['My trip', 'Group', 'Everyone', 'Suggest'];
+const TAB_ICON: Record<Tab, (p: { size?: number }) => JSX.Element> = { 'My trip': IconRoute, 'Group': IconGroup, 'Everyone': IconGrid, 'Suggest': IconSpark };
+type Say = (t?: string, kind?: QuipKind) => void;
 
 function MyTripTab() {
   const { state, me, items, legs } = useApp();
@@ -65,7 +71,7 @@ const blank = (name: Person): Response => ({
 
 interface Placing { ranking: Ranking; pending: Pending; source: 'rate' | 'rerank' }
 
-function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
+function Flow({ me, say }: { me: Person; say: Say }) {
   const { state, store, items, copy, clearMe } = useApp();
   const [draft, setDraft] = useState<Response>(() => {
     const saved = state.responses[me];
@@ -94,7 +100,7 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
 
   useEffect(() => { if (locked) setPlacing(null); }, [locked]);
 
-  const changeDays = () => { setEditing(true); setStep('days'); };
+  const changeDays = () => navigate('back', () => { setEditing(true); setStep('days'); });
   const changeLink = <button className="link" onClick={changeDays}>Change days or pace</button>;
 
   const commit = (r: Ranking, id: string) => save({ ranking: r, rated: draft.rated.includes(id) ? draft.rated : [...draft.rated, id] });
@@ -104,8 +110,9 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
     const r = structuredClone(draft.ranking);
     removeId(r, item.id);
     const pending = startPlace(r, item.id, tier);
-    say(pickQuip(copy.quips.tier[tier]));
-    if (pending) setPlacing({ ranking: r, pending, source: 'rate' });
+    say(pickQuip(copy.quips.tier[tier]), tier);
+    if (pending) navigate('fwd', () => setPlacing({ ranking: r, pending, source: 'rate' }));
+    else if (unrated.length === 1) navigate('fwd', () => commit(r, item.id));
     else commit(r, item.id);
   };
 
@@ -114,8 +121,7 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
     const r = structuredClone(active.ranking);
     const next = answer(r, active.pending, a);
     if (next) { setPlacing({ ...active, ranking: r, pending: next }); return; }
-    commit(r, active.pending.id);
-    setPlacing(null);
+    navigate('fwd', () => { commit(r, active.pending.id); setPlacing(null); });
   };
 
   const onMove = (id: string, dir: -1 | 1) => {
@@ -129,81 +135,101 @@ function Flow({ me, say }: { me: Person; say: (t?: string) => void }) {
     if (locked || tierOf(draft.ranking, id) === tier) return;
     const r = structuredClone(draft.ranking);
     const pending = retier(r, id, tier);
-    say(pickQuip(copy.quips.tier[tier]));
-    if (pending) setPlacing({ ranking: r, pending, source: 'rerank' });
+    say(pickQuip(copy.quips.tier[tier]), tier);
+    if (pending) navigate('fwd', () => setPlacing({ ranking: r, pending, source: 'rerank' }));
     else save({ ranking: r });
   };
 
   const submit = () => {
     save({ submitted: true });
-    setStep('tabs');
+    navigate('fwd', () => setStep('tabs'));
   };
 
   let content;
   if (active) {
-    content = <Compare ranking={active.ranking} pending={active.pending} byId={byId} onAnswer={onAnswer} onCancel={() => setPlacing(null)} />;
+    content = <Compare ranking={active.ranking} pending={active.pending} byId={byId} onAnswer={onAnswer} onCancel={() => navigate('back', () => setPlacing(null))} />;
   } else if (shown === 'days') {
     content = <Days days={draft.days} flex={draft.flex} onPick={(days, flex) => {
       save({ days, flex });
       say(pickQuip(copy.quips.days[flex ? 'flex' : String(days)]));
-      setStep(editing || draft.pace === null ? 'pace' : draft.submitted ? 'tabs' : 'rate');
+      navigate('fwd', () => setStep(editing || draft.pace === null ? 'pace' : draft.submitted ? 'tabs' : 'rate'));
     }} />;
   } else if (shown === 'pace') {
-    content = <Pace pace={draft.pace} onBack={() => setStep('days')} onPick={(p: PaceT) => {
+    content = <Pace pace={draft.pace} onBack={() => navigate('back', () => setStep('days'))} onPick={(p: PaceT) => {
       save({ pace: p });
       say(pickQuip(copy.quips.pace[String(p)]));
-      setEditing(false);
-      setStep(draft.submitted ? 'tabs' : 'rate');
+      navigate('fwd', () => { setEditing(false); setStep(draft.submitted ? 'tabs' : 'rate'); });
     }} />;
   } else if (shown === 'rate' && unrated.length > 0) {
     const total = unrated.length + draft.rated.filter(id => byId[id]).length;
-    content = <Rate item={unrated[0]} n={total - unrated.length + 1} total={total} copy={copy} onTier={t => pickTier(unrated[0], t)} />;
+    content = <Rate item={unrated[0]} next={unrated[1]} n={total - unrated.length + 1} total={total} copy={copy} onTier={t => pickTier(unrated[0], t)} />;
   } else if (shown === 'rate') {
     content = <Rerank ranking={draft.ranking} byId={byId} onMove={onMove} onRetier={onRetier} onSubmit={submit} />;
   } else {
     const Panel = PANELS[tab];
     content = (
       <>
-        <div role="tabpanel" aria-label={tab} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}><Panel /></div>
-        <div className="foot" style={{ flexDirection: 'column' }}>
+        <div role="tabpanel" aria-label={tab} className="panel"><Panel /></div>
+        <div className="foot stack">
           {locked
-            ? <div className="sub" style={{ marginTop: 0 }}>Ratings are locked, the group stage is open.</div>
-            : <button className="cta alt" onClick={() => setStep('rate')}>Edit my ratings</button>}
+            ? <div className="sub locked">Ratings are locked, the group stage is open.</div>
+            : <button className="cta alt" onClick={() => navigate('back', () => setStep('rate'))}>Edit my ratings</button>}
           {!locked && unrated.length > 0 && (
-            <button className="cta" onClick={() => setStep('rate')}>{unrated.length} new to rate</button>
+            <button className="cta" onClick={() => navigate('back', () => setStep('rate'))}>{unrated.length} new to rate</button>
           )}
           {!locked && changeLink}
-        </div>
-        <div className="tabs" role="tablist">
-          {TABS.map(t => <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>{t}</button>)}
         </div>
       </>
     );
   }
 
+  const where = active ? 'Compare' : shown === 'rate' ? changeLink : { days: 'Days', pace: 'Pace', rate: '', tabs: '' }[shown];
+  const enter = cssEnter() ? lastNav() : null;
+  const screenKey = active ? 'compare' : shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
+  useLayoutEffect(() => {
+    if (!/jsdom/.test(navigator.userAgent)) window.scrollTo(0, 0);
+  }, [screenKey]);
+
   return (
     <>
-      <div className="top"><span><b>{me}</b> <button className="link" onClick={clearMe}>Not you?</button></span><span>{active ? 'Compare' : shown === 'rate' ? changeLink : { days: 'Days', pace: 'Pace', rate: '', tabs: '' }[shown]}</span></div>
-      {content}
+      <header className="top">
+        <span className="who">
+          <Avatar name={me} size={30} />
+          <b>{me}</b>
+          <button className="link" onClick={() => navigate('back', clearMe)}>Not you?</button>
+        </span>
+        <span className="where">{where}</span>
+      </header>
+      <div className={`screen${enter ? ` enter-${enter}` : ''}`} key={screenKey}>{content}</div>
+      {shown === 'tabs' && !active && (
+        <nav className="tabs" role="tablist" aria-label="Sections">
+          {TABS.map(t => {
+            const Icon = TAB_ICON[t];
+            return <button key={t} role="tab" aria-selected={tab === t} onClick={() => { if (t !== tab) navigate('tab', () => setTab(t)); }}><Icon /><span>{t}</span></button>;
+          })}
+        </nav>
+      )}
     </>
   );
 }
 
 function Shell() {
-  const { me, setMe, copy, error, retry } = useApp();
-  const [toast, setToast] = useState<{ text: string; id: number } | null>(null);
+  const { me, setMe, copy, error, retry, items } = useApp();
+  const [toast, setToast] = useState<{ text: string; kind: QuipKind; id: number } | null>(null);
   const seq = useRef(0);
-  const say = useCallback((text?: string) => {
-    if (text) setToast({ text, id: ++seq.current });
+  const say = useCallback<Say>((text, kind = 'hi') => {
+    if (text) setToast({ text, kind, id: ++seq.current });
   }, []);
+  // Intro slideshow: Brittany-approved places first, then the rest, six at most.
+  const covers = [...items.filter(i => i.photo && copy.items[i.id]?.approved), ...items.filter(i => i.photo && !copy.items[i.id]?.approved)].slice(0, 6);
   const clear = useCallback(() => setToast(null), []);
   return (
     <div className="app">
       {error && <button className="errbar" onClick={retry}>{error}. Tap to retry</button>}
       {me
         ? <Flow key={me} me={me} say={say} />
-        : <Name welcome={copy.welcome} welcomeSub={copy.welcomeSub} onPick={p => { setMe(p); say(pickQuip(copy.quips.name[p])); }} />}
-      {toast && <Toast key={toast.id} text={toast.text} onDone={clear} />}
+        : <Name welcome={copy.welcome} welcomeSub={copy.welcomeSub} covers={covers} players={copy.players} onPick={p => { setMe(p); say(pickQuip(copy.quips.name[p])); }} />}
+      {toast && <QuipBurst key={toast.id} text={toast.text} kind={toast.kind} onDone={clear} />}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { IconDown, IconUp } from '../components/Icons';
 import { Cover } from '../components/PhotoCard';
 import { labels } from '../lib/ranking';
 import { TIERS } from '../types';
@@ -14,14 +15,15 @@ export default function Rerank({ ranking, byId, onMove, onRetier, onSubmit }: {
   return (
     <>
       <section className="body" aria-label="Your ranking">
-        <div className="big">Your ranking</div>
+        <div className="kicker">Step 3 of 3</div>
+        <div className="big display">Your ranking</div>
         <div className="sub">Move things up or down. Up to 3 can share a spot.</div>
         {TIERS.map(t => {
           const levels = ranking[t].map(l => l.filter(id => byId[id])).filter(l => l.length > 0);
           if (levels.length === 0) return null;
           return (
-            <div key={t}>
-              <div className="tierhead">{PLURAL[t]}<span>{levels.reduce((s, l) => s + l.length, 0)}</span></div>
+            <div key={t} className={`tiergroup tier-${t}`}>
+              <div className="tierhead"><span className="tierdot" aria-hidden="true" />{PLURAL[t]}<span>{levels.reduce((s, l) => s + l.length, 0)}</span></div>
               {levels.map(l => (
                 <div key={l[0]} className={`level${l.length > 1 ? ' tie' : ''}`}>
                   {l.map(id => (
@@ -35,8 +37,8 @@ export default function Rerank({ ranking, byId, onMove, onRetier, onSubmit }: {
                         </select>
                       </span>
                       <span className="mv">
-                        <button aria-label={`Move ${byId[id].name} up`} onClick={() => onMove(id, -1)}>▲</button>
-                        <button aria-label={`Move ${byId[id].name} down`} onClick={() => onMove(id, 1)}>▼</button>
+                        <button aria-label={`Move ${byId[id].name} up`} onClick={() => onMove(id, -1)}><IconUp size={18} /></button>
+                        <button aria-label={`Move ${byId[id].name} down`} onClick={() => onMove(id, 1)}><IconDown size={18} /></button>
                       </span>
                     </div>
                   ))}
@@ -46,7 +48,7 @@ export default function Rerank({ ranking, byId, onMove, onRetier, onSubmit }: {
           );
         })}
       </section>
-      <div className="foot"><button className="cta" onClick={onSubmit}>Done, submit</button></div>
+      <div className="foot sticky"><button className="cta" onClick={onSubmit}>Done, submit</button></div>
     </>
   );
 }
