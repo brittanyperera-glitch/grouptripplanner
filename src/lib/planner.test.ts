@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import catalogue from './__fixtures__/catalogue-46.json';
 import legs from '../data/legs.json';
 import liveCatalogue from '../data/catalogue.json';
-import { plan, mustFitDays } from './planner';
+import { plan, mustFitDays, planner } from './planner';
 import { groupResult } from './group';
 import { shortest } from './paths';
 import { emptyRanking, type AppState, type Item, type Leg, type Pace, type Person, type PlanInput, type Response } from '../types';
@@ -240,6 +240,45 @@ describe('fixed-time slots', () => {
     const p = plan({ items, scores: sc(['sigiriya', 'bawa', 'crab']), days: 9, pace: 1, legs: L });
     const day = p.days.find(d => d.entries.some(e => e.itemId === 'bawa'))!;
     expect(day.entries.some(e => e.itemId === 'crab')).toBe(true);
+  });
+});
+
+// Seeded Must sets: 15% of items are Musts (10), the rest score 0, 1 or 4.
+const mustSets = (its: Item[], count: number, seed = 7) => {
+  const rand = () => { seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const ids = its.map(i => i.id);
+  return Array.from({ length: count }, () => {
+    const mustIds = ids.filter(() => rand() < 0.15);
+    const scores = Object.fromEntries(ids.map(id => [id, mustIds.includes(id) ? 10 : [0, 1, 4][Math.floor(rand() * 3)]]));
+    return { scores, mustIds };
+  });
+};
+
+describe('personal plans keep their Musts', () => {
+  // Frozen catalogue, seeded set 4: its Musts fitted at 14-18 days, then lost one at 19 to Keens.
+  it('a Must that fits a shorter trip is never traded for Keens on a longer one', () => {
+    const { scores, mustIds } = mustSets(items, 4)[3];
+    for (let days = 14; days <= 21; days++) {
+      const p = plan({ items, scores, mustIds, days, pace: 2, legs: L });
+      expect(p.missingMusts, `${days} days`).toEqual([]);
+    }
+  });
+});
+
+describe.each([['frozen', items], ['live', liveCatalogue.items as Item[]]] as const)('mustFitDays binary search equals the linear scan (%s catalogue)', (_, its) => {
+  const ids = new Set(its.map(i => i.id));
+  const battery = [...snapshot.plans, ...snapshot.mustFitDays]
+    .map(c => c.input as { scores: Record<string, number>; mustIds?: string[] })
+    .filter(inp => inp.mustIds?.length)
+    .map(inp => ({ scores: inp.scores, mustIds: inp.mustIds!.filter(id => ids.has(id)) }));
+  const cases = [...battery, ...mustSets(its, 30)].flatMap((set, n) => ([0, 1, 2] as Pace[]).map(pace => [`set ${n + 1} pace ${pace}`, { ...set, pace }] as const));
+  it.each(cases)('%s', (_, input) => {
+    try {
+      planner.linearMustFit = true;
+      const linear = mustFitDays({ items: its, legs: L, ...input });
+      planner.linearMustFit = false;
+      expect(mustFitDays({ items: its, legs: L, ...input })).toBe(linear);
+    } finally { planner.linearMustFit = false; }
   });
 });
 

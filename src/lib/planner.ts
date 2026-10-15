@@ -53,7 +53,7 @@ const useSlot = (use: SlotUse, slot: Slot, site: number) => {
 };
 
 interface Ctx {
-  input: PlanInput; H: number; budget: number; d: Dist; score: (id: string) => number;
+  input: PlanInput; H: number; budget: number; d: Dist; score: (id: string) => number; raw: (id: string) => number;
   // Caches are keyed by content, not identity: a worker hands over fresh copies on every call.
   contentKey: string; itemsTag: object;
   idx: Map<string, number>; // position in input.items by id, which every per-item flag array uses
@@ -574,12 +574,16 @@ function toPlan(ctx: Ctx, e: Eval, forceFailed: boolean): Plan {
   const out: Plan = {
     route: e.c.route, areas: e.c.order, days, chosen: chosenIds,
     dropped: input.items.filter(i => ctx.score(i.id) > 0 && !chosenSet.has(i.id)).map(i => i.id).sort(),
-    travelHours: e.c.travel, fits: missingMusts.length === 0 && !e.overflow, missingMusts, score: e.score,
+    travelHours: e.c.travel, fits: missingMusts.length === 0 && !e.overflow, missingMusts,
+    score: e.chosen.reduce((s, i) => s + ctx.raw(i.id), 0),
   };
   if (e.overflow) out.overflow = true;
   if (forceFailed) out.forceFailed = true;
   return out;
 }
+
+// Above any total of non-Must scores in a plan (46 items at most 10.9 each, times five people).
+const MUST_WEIGHT = 1e4;
 
 const memo = new Map<string, Plan>();
 const MEMO_MAX = 200;
@@ -606,17 +610,27 @@ export function plan(input: PlanInput): Plan {
   const H = PACE_HOURS[input.pace];
   // What the candidates and their item weights depend on: not days, pace or Musts.
   const itemsKey = JSON.stringify(input.items.map(i => [i.id, i.area, i.hours, i.sideTrip, i.slot, i.hub ?? '', i.name]));
-  const contentKey = JSON.stringify([itemsKey, input.scores, input.legs.map(l => [l.a, l.b, l.hours]), [...(input.forceOut ?? [])].sort()]);
+  const musts = new Set(input.mustIds ?? []);
+  const contentKey = JSON.stringify([itemsKey, input.scores, input.legs.map(l => [l.a, l.b, l.hours]), [...(input.forceOut ?? [])].sort(), [...musts].sort()]);
+  const raw = (id: string) => input.scores[id] ?? 0;
   const ctx: Ctx = {
     input, H, budget: H * (input.days - 1) - CHECKIN, d: shortest(input.legs), contentKey, itemsTag: tagOf(itemsKey), idx: new Map(input.items.map((i, k) => [i.id, k])),
-    score: id => input.scores[id] ?? 0,
-    musts: new Set(input.mustIds ?? []), forceIn: new Set(input.forceIn ?? []), forceOut: new Set(input.forceOut ?? []),
+    // With Musts, every rated Must outweighs all other items together, so a personal plan never
+    // trades a Must for Keens (Brittany, 2026-10-15). Plan.score still reports the plain total.
+    score: musts.size ? id => raw(id) + (musts.has(id) && raw(id) > 0 ? MUST_WEIGHT : 0) : raw, raw,
+    musts, forceIn: new Set(input.forceIn ?? []), forceOut: new Set(input.forceOut ?? []),
   };
   const known = new Set(input.items.map(i => i.id));
   const forceIn = new Set([...ctx.forceIn].filter(id => known.has(id)));
   let result: Plan;
-  const withForce = forceIn.size ? search(ctx, forceIn) : null;
-  if (withForce && !withForce.overflow) result = toPlan(ctx, withForce, false);
+  // A personal plan first looks for the best plan holding every Must. Forcing them in means a
+  // longer trip can always keep a set that fitted a shorter one, so "every Must fits" never
+  // flips back to false as days are added (mustFitDays relies on that).
+  const allMusts = new Set([...forceIn, ...[...ctx.musts].filter(id => known.has(id) && !ctx.forceOut.has(id))]);
+  const withMusts = ctx.musts.size ? search(ctx, allMusts) : null;
+  const withForce = withMusts && !withMusts.overflow ? null : forceIn.size ? search(ctx, forceIn) : null;
+  if (withMusts && !withMusts.overflow) result = toPlan(ctx, withMusts, false);
+  else if (withForce && !withForce.overflow) result = toPlan(ctx, withForce, false);
   else {
     const free = search(ctx, new Set())!;
     // B.8: when no candidate can hold every forceIn item, ignore forceIn and say so.
@@ -627,9 +641,26 @@ export function plan(input: PlanInput): Plan {
   return structuredClone(result);
 }
 
-/** Smallest trip length (from days+1, or 5, up to 21) at which every Must fits (B.9). */
+/** Test-only switch: linearMustFit scans every length, the reference the binary search must match. */
+export const planner = { linearMustFit: false };
+
+/**
+ * Smallest trip length (from days+1, or 5, up to 21) at which every Must fits (B.9). Binary search:
+ * plan() searches with every Must forced in first, so once they fit, a longer trip fits them too.
+ */
 export function mustFitDays(input: Omit<PlanInput, 'days'> & { days?: number }): number | null {
   const start = input.days !== undefined ? input.days + 1 : 5;
-  for (let n = Math.max(5, start); n <= 21; n++) if (plan({ ...input, days: n }).fits) return n;
-  return null;
+  const fits = (n: number) => plan({ ...input, days: n }).fits;
+  let lo = Math.max(5, start);
+  if (planner.linearMustFit) {
+    for (let n = lo; n <= 21; n++) if (fits(n)) return n;
+    return null;
+  }
+  if (lo > 21) return null;
+  if (fits(lo)) return lo;
+  let hi = 21;
+  if (!fits(hi)) return null;
+  // Invariant: lo does not fit, hi fits.
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (fits(mid)) hi = mid; else lo = mid; }
+  return hi;
 }
