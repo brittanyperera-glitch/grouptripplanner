@@ -251,6 +251,23 @@ describe('route order is chosen by the plan it gives, not by travel alone', () =
   });
 });
 
+// Before a day closes (say the next item is a sunrise), later activities of the same area that can
+// happen any time, in the afternoon or at sunset fill what is left of it, such as the afternoon
+// after a drive in. These sets each fit only that way.
+describe('a day is filled before it closes', () => {
+  const cases: [string[], number, Pace][] = [
+    [['beachday', 'kottu', 'coconut', 'pettah', 'polonnaruwa'], 6, 1],
+    [['junglebeach', 'sigiriya', 'train', 'coconut'], 6, 2],
+    [['diyaluma', 'sigiriya', 'galle', 'surf', 'elephants'], 7, 1],
+    [['coconut', 'pettah', 'horton', 'galleface'], 6, 2],
+  ];
+  it.each(cases)('%j fit in %i days at pace %i', (must, days, pace) => {
+    const p = plan({ items: liveCatalogue.items as Item[], scores: sc(must), days, pace, legs: L, mustIds: must });
+    expect(p.missingMusts).toEqual([]);
+    expect(p.days.length).toBe(days);
+  });
+});
+
 describe('fixed-time slots', () => {
   const all = items.map(i => i.id);
   const plans = [

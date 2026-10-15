@@ -239,20 +239,26 @@ type Opt = { id: string; w: number; v: number; k: number; eve?: boolean }
 interface Prep { reserved: number; opts: Opt[]; core: Opt[]; forcedScore: number; byRatio: Opt[]; forced: Uint8Array; order?: Opt[] }
 // Schedule entries packed for the fit test, which runs many times per candidate.
 const MOVE = 1, SUNRISE = 2, MORNING = 4, NIGHT = 8, EVE = 16;
-interface Steps { hours: Float64Array; site: Float64Array; slot: Int8Array; at: Int32Array; flags: Uint8Array; fd: number; pos: Int32Array }
+// pos: each item's step; block: the arrival step of each step's area.
+interface Steps { hours: Float64Array; site: Float64Array; slot: Int8Array; at: Int32Array; flags: Uint8Array; fd: number; pos: Int32Array; block: Int32Array }
 const SLOTS = Object.keys(SLOT_ORDER) as Slot[];
 // slotFull() by slot index, for the packed fit test; slots with no window (any) are never full.
 const SLOT_ONE = SLOTS.map(sl => ONE_PER_DAY.includes(sl));
 const SLOT_WIN = SLOTS.map(sl => WINDOW[sl] ?? Infinity);
 // Scratch counters for minDays, which runs thousands of times per plan and is not re-entrant.
 const slotN = new Int32Array(SLOTS.length), slotSite = new Float64Array(SLOTS.length);
-// The last recorded minDays pass: for each step, where its day began, that day's number and whether
-// a day began at it; and the pass's result. An add-back trial differs from that pass at one step, so
-// it replays from that step's day and stops once a day begins where one began in the recorded pass.
-let sDay = new Int32Array(0), sN = new Int32Array(0), sStart = new Uint8Array(0), sFinal = 0;
+// The last recorded minDays pass: for each step, where its day began, that day's number, whether a
+// day began at it and which step pulled it forward (-1 if none); and the pass's result. An add-back
+// trial differs from that pass at one step, so it replays from the day its area began in and stops
+// once a day begins with a drive where one did in the recorded pass.
+let sDay = new Int32Array(0), sN = new Int32Array(0), sStart = new Uint8Array(0), sPull = new Int32Array(0), sFinal = 0;
+let doneBuf = new Uint8Array(0);
 function snapRoom(len: number) {
-  if (sN.length < len) { sDay = new Int32Array(len); sN = new Int32Array(len); sStart = new Uint8Array(len); }
+  if (sN.length < len) { sDay = new Int32Array(len); sN = new Int32Array(len); sStart = new Uint8Array(len); sPull = new Int32Array(len); doneBuf = new Uint8Array(len); }
 }
+// Slots that can fill the rest of a day before it closes: they need no particular start time.
+const FILL_SLOTS: Slot[] = ['any', 'afternoon', 'sunset'];
+const SLOT_FILL = SLOTS.map(sl => FILL_SLOTS.includes(sl));
 // Scratch flags for the capacity search, whose picks are thrown away.
 let chooseBuf = new Uint8Array(0);
 
@@ -308,7 +314,9 @@ function layout(ctx: Ctx, c: Cand): Steps {
   }
   const pos = new Int32Array(items.length).fill(-1);
   at.forEach((k, s) => { if (k >= 0) pos[k] = s; });
-  const steps: Steps = { hours: Float64Array.from(hours), site: Float64Array.from(site), slot: Int8Array.from(slot), at: Int32Array.from(at), flags: Uint8Array.from(flags), fd: d(c.route[c.route.length - 2], 'AIR'), pos };
+  const block = new Int32Array(at.length);
+  flags.forEach((f, s) => { block[s] = f & MOVE ? s : block[s - 1]; });
+  const steps: Steps = { hours: Float64Array.from(hours), site: Float64Array.from(site), slot: Int8Array.from(slot), at: Int32Array.from(at), flags: Uint8Array.from(flags), fd: d(c.route[c.route.length - 2], 'AIR'), pos, block };
   c.geo.steps = { tag: itemsTag, steps };
   return steps;
 }
@@ -331,17 +339,20 @@ function schedule(ctx: Ctx, c: Cand, chosen: Item[]): WorkDay[] {
   let cur: WorkDay = { area: null, entries: [], used: 0, cap: H / 2, closed: false };
   const days: WorkDay[] = [cur];
   const newDay = () => { cur = { area: here, entries: [], used: 0, cap: H, closed: false }; days.push(cur); };
+  // True when e cannot join the current day.
+  const opens = (e: DayEntry, slot?: Slot) => {
+    if (cur.entries.length === 0) return false;
+    if (e.kind === 'activity' && !!slot && EVE_SLOTS.includes(slot)) return slotFull(cur.slots ?? {}, slot, e.onSite!) || ((cur.eve ?? 0) > 0 && (cur.eve ?? 0) + e.hours > EVE_HOURS + EPS);
+    return e.hours > H + EPS || cur.closed
+      || (!!cur.dark && (e.kind === 'drive' || e.kind === 'train')) // no night drives on hill roads
+      || slot === 'sunrise' // one sunrise per day, never after another entry (B.5)
+      || (slot === 'morning' && cur.used > 3 + EPS)
+      || (e.kind === 'activity' && !!slot && slotFull(cur.slots ?? {}, slot, e.onSite!)) // one per fixed-time slot
+      || e.hours > cur.cap - cur.used + EPS;
+  };
   const put = (e: DayEntry, slot?: Slot) => {
     const eve = e.kind === 'activity' && !!slot && EVE_SLOTS.includes(slot);
-    if (cur.entries.length > 0) {
-      if (eve) { if (slotFull(cur.slots ?? {}, slot!, e.onSite!) || ((cur.eve ?? 0) > 0 && (cur.eve ?? 0) + e.hours > EVE_HOURS + EPS)) newDay(); }
-      else if (e.hours > H + EPS || cur.closed) newDay();
-      else if (cur.dark && (e.kind === 'drive' || e.kind === 'train')) newDay(); // no night drives on hill roads
-      else if (slot === 'sunrise') newDay(); // one sunrise per day, never after another entry (B.5)
-      else if (slot === 'morning' && cur.used > 3 + EPS) newDay();
-      else if (e.kind === 'activity' && slot && slotFull(cur.slots ?? {}, slot, e.onSite!)) newDay(); // one per fixed-time slot
-      else if (e.hours > cur.cap - cur.used + EPS) newDay();
-    }
+    if (opens(e, slot)) newDay();
     cur.entries.push(e);
     if (eve) cur.eve = (cur.eve ?? 0) + e.hours; else cur.used += e.hours;
     if (e.kind === 'activity' && slot) useSlot((cur.slots ??= {}), slot, e.onSite!);
@@ -362,10 +373,21 @@ function schedule(ctx: Ctx, c: Cand, chosen: Item[]): WorkDay[] {
     const acts = chosen
       .filter(i => i.area === area && !(c.train && i.id === TRAIN))
       .sort((a, b) => SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] || (a.id < b.id ? -1 : 1));
-    for (const i of acts) {
-      const hours = w(i);
-      put({ kind: 'activity', label: i.name, hours, itemId: i.id, onSite: i.hours, roundTrip: hours - i.hours }, i.slot);
-    }
+    const entry = (i: Item): DayEntry => { const hours = w(i); return { kind: 'activity', label: i.name, hours, itemId: i.id, onSite: i.hours, roundTrip: hours - i.hours }; };
+    const pulled = new Set<number>();
+    acts.forEach((i, at) => {
+      if (pulled.has(at)) return;
+      const e = entry(i);
+      // Before a daytime activity closes the day, later ones of this area that fit fill it.
+      if (!isEve(i) && !cur.closed && opens(e, i.slot)) {
+        for (let j = at + 1; j < acts.length && !cur.dark; j++) {
+          const x = acts[j], ex = entry(x);
+          if (pulled.has(j) || isEve(x) || !FILL_SLOTS.includes(x.slot) || opens(ex, x.slot)) continue;
+          put(ex, x.slot); pulled.add(j);
+        }
+      }
+      put(e, i.slot);
+    });
     prevHub = hub; prevArea = area;
   }
   return days;
@@ -447,27 +469,46 @@ function fractionalBound(c: Cand, p: Prep): number {
  * Mirrors put() and the departure tail step for step; the snapshot test pins the two together.
  * Stops early once more than `stop` days are used, when only "does it fit" matters.
  * With `from` >= 0, `on` must match the last recorded pass at every step but `from`: the scan starts
- * at the day that held `from` there. `record` records this pass (from that day on).
+ * at the day that held the arrival in `from`'s area there. `record` records this pass (from there on).
  */
 function minDays(ctx: Ctx, steps: Steps, on: Uint8Array, stop = Infinity, from = -1, record = false): number {
   const { H } = ctx;
-  const { hours: hs, at, flags, fd, slot: sl, site } = steps;
-  let n = 1, count = 0, used = 0, eve = 0, cap = H / 2, closed = false, dark = false, day = 0;
-  const nUse = slotN, siteUse = slotSite;
+  const { hours: hs, at, flags, fd, slot: sl, site, block } = steps;
+  const len = hs.length;
+  snapRoom(len);
+  let n = 1, count = 0, used = 0, eve = 0, cap = H / 2, closed = false, dark = false, day = 0, b = -1;
+  const nUse = slotN, siteUse = slotSite, done = doneBuf;
   nUse.fill(0); siteUse.fill(0);
   // A day other than the first starts fresh: its first step is placed without a check.
-  if (from >= 0 && sDay[from] > 0) { day = sDay[from]; n = sN[from]; cap = H; }
-  for (let s = day; s < hs.length; s++) {
+  if (from >= 0) { b = block[from]; if (sDay[b] > 0) { day = sDay[b]; n = sN[b]; cap = H; } }
+  // Steps pulled forward into a day before `day` (by the step that opened it, at the latest) stay done.
+  for (let t = day; t < len; t++) {
+    const kept = from >= 0 && sPull[t] >= 0 && sPull[t] <= day;
+    done[t] = kept ? 1 : 0;
+    if (record && !kept) sPull[t] = -1;
+  }
+  for (let s = day; s < len; s++) {
     if (record) { sDay[s] = day; sN[s] = n; sStart[s] = 0; }
-    if (at[s] >= 0 && !on[at[s]]) continue;
+    if (done[s] || (at[s] >= 0 && !on[at[s]])) continue;
     const hours = hs[s], f = flags[s], k = sl[s], night = (f & EVE) !== 0;
     const slotTaken = k >= 0 && nUse[k] > 0 && (SLOT_ONE[k] || (SLOT_WIN[k] < Infinity && (nUse[k] >= 2 || siteUse[k] + site[s] > SLOT_WIN[k] + EPS)));
     if (count > 0) {
       const fresh = night ? slotTaken || (eve > 0 && eve + hours > EVE_HOURS + EPS) : hours > H + EPS || closed || (dark && (f & MOVE) !== 0) || (f & SUNRISE) !== 0 || ((f & MORNING) !== 0 && used > 3 + EPS) || slotTaken || hours > cap - used + EPS;
       if (fresh) {
+        // Before a daytime activity closes the day, later ones of the same area that fit fill it.
+        if (!night && (f & MOVE) === 0 && !closed) {
+          for (let t = s + 1; t < len && (flags[t] & MOVE) === 0 && !dark; t++) {
+            const kt = sl[t];
+            if (done[t] || !on[at[t]] || (flags[t] & EVE) !== 0 || !SLOT_FILL[kt] || hs[t] > H + EPS || hs[t] > cap - used + EPS) continue;
+            if (nUse[kt] > 0 && (SLOT_ONE[kt] || (SLOT_WIN[kt] < Infinity && (nUse[kt] >= 2 || siteUse[kt] + site[t] > SLOT_WIN[kt] + EPS)))) continue;
+            done[t] = 1; if (record) sPull[t] = s;
+            count++; used += hs[t]; nUse[kt]++; siteUse[kt] += site[t];
+            if (flags[t] & NIGHT) dark = true;
+          }
+        }
         ++n;
-        // In step with the recorded pass from here on, just n days apart.
-        if (from >= 0 && !record && s > from && sStart[s]) return sFinal + n - sN[s] - 1;
+        // A day that begins with the drive into a later area is in step with the recorded pass.
+        if (from >= 0 && !record && (f & MOVE) !== 0 && s > b && sStart[s]) return sFinal + n - sN[s] - 1;
         if (n > stop) return n;
         count = 0; used = 0; eve = 0; cap = H; closed = false; dark = false; nUse.fill(0); siteUse.fill(0); day = s;
         if (record) sStart[s] = 1;
@@ -553,7 +594,7 @@ function refillOrder(ctx: Ctx, p: Prep): Opt[] {
 function fill(ctx: Ctx, steps: Steps, on: Uint8Array, order: Opt[], room: number, skip = -1): number {
   const N = ctx.input.days;
   snapRoom(steps.hours.length);
-  minDays(ctx, steps, on, Infinity, 0, true);
+  minDays(ctx, steps, on, Infinity, -1, true);
   for (const o of order) {
     const k = o.k;
     if (on[k] || k === skip || o.w > room) continue;
