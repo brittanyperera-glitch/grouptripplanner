@@ -15,20 +15,19 @@ Best place to get fruit, in my opinion, is the roadside stalls. They're literall
 - **Guava**: There's white or pink guava, try both. The pink ones are much sweeter than the white ones.
 - **King coconut (orange coconut)**: The coconut water is a popular drink and these ones are deffo safe from the roadside (cause the shell, obvs). One hack: when you finish it, ask them to crack it open. There's loads of really soft, sweet coconut flesh inside which you can eat and it is lush. They even make you a little spoon out of coconut shell to eat it with.
 - **Durian**: Some people love it, some people hate it. It's the one that's famously smelly and banned in a lot of airports, but that's from the peel. Once you open it up, the fruit doesn't really have a smell. Tastes quite custardy and creamy.
-- **Bananas** `[drafted in Britt's tone]`: There's like 29 types here apparently, so a banana is not just a banana. Kolikuttu is the fancy sweet one, seeni kesel are the tiny sweet ones, rath kesel are red. Try whatever the stall has.
-- **Wood apple (divul)** `[drafted in Britt's tone]`: Looks like a rock, tastes sweet and sour and kinda funky. Get it as a juice, honestly so good.
-- **Soursop (anoda)** `[drafted in Britt's tone]`: Creamy, sweet and a bit tangy. Lush fresh or in a juice.
-- **Rose apple (jambu)** `[drafted in Britt's tone]`: Crunchy and watery, v refreshing on a hot day.
-- **Pineapple** `[drafted in Britt's tone]`: Proper pineapple, not the sad supermarket ones. Get it from a stall with chilli and salt.
-- **Papaya** `[drafted in Britt's tone]`: Everywhere at breakfast. Squeeze some lime on it, trust me.
+- **Bananas**: 29 types of banana?! Collect them all.
+- **Wood apple (divul)**: Banging juice fruit.
+- **Soursop (anoda)**: Top 3 fruits of all time.
+- **Rose apple (jambu)**: Mid tbh, like a crunchy water balloon.
+- **Pineapple**: Not sad supermarket ones.
 
 ## Food to try
 
 - **Kottu roti**: The GOAT of Sri Lankan food. On my Last Supper menu. It's street food so you can watch them make it, it's cool. Even though street food is a bit less reliable hygiene-wise, it tastes way better than the restaurant stuff, so it's up to you if you want to take the risk. If you're veggie, get the egg kottu or the cheese one. Still banging.
 - **Hoppers (with or without egg)**: Similar to a pancake batter, it's quite crispy and you have it with a chilli sambal. So nice.
-- **String hoppers** `[drafted in Britt's tone]`: Little nests of rice noodles, usually breakfast with dhal and coconut sambal. Comfort food.
-- **Pol roti** `[drafted in Britt's tone]`: Coconut flatbread with lunu miris (spicy onion chilli sambal). Simple but slaps.
-- **Rice and curry** `[drafted in Britt's tone]`: Not one curry, like five, plus rice, dhal and sambal. Mix it all up with your hands if you're brave.
+- **String hoppers**: Noodle nest ting.
+- **Pol roti**: Coconut flatbread with lunu miris (spicy onion chilli sambal). Simple but slaps.
+- **Rice and curry**: Yo you gotta eat with your hands tho.
 - **Short eats**: Short eats is the name for any snack you see on the way to somewhere. They're sweet or savoury and they're stunning. Loads of veggie options too. The best veggie ones are:
   - *Elawolu roti* (roti parcels of flavoured potato and veggies)
   - *Bithara roti* (same but with egg for the prote)
@@ -41,7 +40,7 @@ Best place to get fruit, in my opinion, is the roadside stalls. They're literall
 - **Anything devilled**: It just means fried and tossed in what is basically a sweet and sour sauce, but with more flavour and much nicer.
 - **Sri Lankan fried rice**: It's different to the Chinese ones and one of the nice basic dishes.
 - **Seafood**: It's literally fresh out the water if you go to a beach restaurant... and if the prawns come with shell, try eating them with the shell cause that's the SL way and the shell has loads of flavour.
-- **Jaffna crab curry** `[drafted in Britt's tone]`: Spicy, rich and messy. If you like crab this is the one.
+- **Jaffna crab curry**: Northern speciality, properly spicy. Wear a bib.
 - **Curry, must-try veggie dishes**:
   - Wattaka (pumpkin)
   - Batu moju (fried aubergine)
@@ -63,7 +62,7 @@ Best place to get fruit, in my opinion, is the roadside stalls. They're literall
 - **Kiri toffee**: Fudge but with coconut milk.
 - **The palm sugar pancake one**: Don't know what they're called but palm sugar n coconut all wrapped up in a pancake. You'll know if you see it ;)
 - **Kokis**: I'm not the biggest fan, kinda just deep fried batter. Vessel for oil.
-- **Pani walalu** `[drafted in Britt's tone]`: Sticky syrupy spirals. Sweet tooth only.
+- **Pani walalu**: Wayyy too sweet imo.
 
 ## Beach spots
 
