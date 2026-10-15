@@ -1,6 +1,6 @@
 /* RouteMap on paper (docs/theme-postcard.md): soft blue-grey sea, light sage island, thin ink coast, the thin red dashed route. */
-.map { --map-sea: #dce6e6; --map-land: #cddab8; border-radius: var(--r-card); overflow: hidden; background: var(--map-sea); box-shadow: var(--shadow-card); }
-.map svg { display: block; width: 100%; height: auto; }
+.map { --map-sea: #dce6e6; --map-land: #cddab8; border-radius: var(--r-card); background: var(--map-sea); box-shadow: var(--shadow-card); }
+.map svg { display: block; width: 100%; height: auto; overflow: visible; }
 .map-sea { fill: var(--map-sea); }
 .map-shore { fill: none; stroke: var(--white); stroke-width: 12; stroke-linejoin: round; opacity: .7; }
 .map-land { fill: var(--map-land); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; }

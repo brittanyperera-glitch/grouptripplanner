@@ -3,6 +3,7 @@ import './Map.css';
 import { motion } from './motion';
 import { buildLegs, legD, tukHeight, tukTransform, useLegDrive, type Leg } from './routeDrive';
 import { engineStart, engineStop, horn } from './sound';
+import { Landmark, placeLandmarks, type Box, type Obstacle } from './Landmarks';
 import TukTuk from './TukTuk';
 import type { Hub } from '../types';
 
@@ -47,6 +48,39 @@ const parkOff = (h: Hub): [number, number] => {
 };
 type Drive = 'idle' | 'done' | { k: number; moving: boolean };
 
+/** The stamp box RouteMap draws behind a stop's name, in map units. */
+function tagBox(h: Hub) {
+  const { x, y, anchor } = hubLabel(h);
+  const w = HUB[h].name.length * TAG_CH;
+  const x0 = anchor === 'end' ? x - w : anchor === 'start' ? x : x - w / 2;
+  return { x: x0 - 4, y: y - 10.5, w: w + 8, h: 14 };
+}
+const CARD: Box = { l: -60, t: 10, r: 290, b: 480 }; // the viewBox, i.e. the card
+const ROOM: Box = { l: CARD.l - 12, t: CARD.t - 8, r: CARD.r + 12, b: CARD.b + 8 }; // how far a landmark may bleed past the card
+
+/** Where each hub's landmark sits on `route`, and what it had to stay clear of (exported for the tests). */
+export function routeLayout(route: Hub[]) {
+  const stops = [...new Set(route)];
+  const obstacles: Obstacle[] = [];
+  for (const h of stops) {
+    const [x, y] = hubXY(h);
+    const t = tagBox(h);
+    obstacles.push({ what: `${h} name`, box: { l: t.x, t: t.y, r: t.x + t.w, b: t.y + t.h } });
+    obstacles.push({ what: `${h} pin`, box: { l: x - 6, t: y - 6, r: x + 6, b: y + 6 } });
+    // The tuk-tuk halts at every stop, on the side away from the name; its art is 72 x 60 with the wheels 23 up from the top.
+    const [px0, py0] = parkOff(h);
+    obstacles.push({ what: `tuk-tuk at ${h}`, box: { l: x + px0 - TUK_W / 2 - 6, r: x + px0 + TUK_W / 2 + 6, t: y + py0 - 24, b: y + py0 + 3 } });
+  }
+  const track: [number, number][] = [];
+  route.slice(1).forEach((h, k) => {
+    const [ax, ay] = hubXY(route[k]), [bx, by] = hubXY(h);
+    const n = Math.max(2, Math.round(Math.hypot(bx - ax, by - ay) / 4));
+    for (let i = 0; i <= n; i++) track.push([ax + ((bx - ax) * i) / n, ay + ((by - ay) * i) / n]);
+  });
+  const placed = placeLandmarks(stops.map(h => ({ hub: h, ...(([x, y]) => ({ x, y }))(hubXY(h)) })), obstacles, track, ROOM, CARD);
+  return { placed, obstacles };
+}
+
 // Schematic island with the route drawn over it. `route` starts and ends at AIR.
 // `drive` (My trip): once it is true and motion is on, the route draws leg by leg while a tuk-tuk drives it, then parks.
 export default function RouteMap({ route, drive = false }: { route: Hub[]; drive?: boolean }) {
@@ -69,6 +103,7 @@ export default function RouteMap({ route, drive = false }: { route: Hub[]; drive
   }, [animate, at, legs]);
 
   const stops = [...new Set(route)];
+  const layout = useMemo(() => routeLayout(route).placed, [route]);
   const run = animate && typeof at === 'object' ? at : null;
   // Before the first leg starts (at === 'idle') nothing is drawn yet: deciding that in render, not in the effect, keeps the finished route off the first painted frame.
   const pre = animate && at === 'idle';
@@ -95,6 +130,8 @@ export default function RouteMap({ route, drive = false }: { route: Hub[]; drive
   return (
     <div className="map" data-drive={animate ? (run ? 'on' : at) : undefined}>
       <svg viewBox="-60 10 350 470" role="img" aria-label={`Route: ${route.map(h => HUB[h].name).join(', ')}`}>
+        <defs><clipPath id={`card${uid}`}><rect x="-60" y="10" width="350" height="470" rx="16" /></clipPath></defs>
+        <g clipPath={`url(#card${uid})`}>
         <rect className="map-sea" x="-60" y="10" width="350" height="470" />
         <polygon className="map-shore" points={pts(COAST)} />
         <polygon className="map-land" points={pts(COAST)} />
@@ -122,11 +159,10 @@ export default function RouteMap({ route, drive = false }: { route: Hub[]; drive
         )}
         {shownStops.map(h => {
           const { x, y, anchor } = hubLabel(h);
-          const w = HUB[h].name.length * TAG_CH;
-          const x0 = anchor === 'end' ? x - w : anchor === 'start' ? x : x - w / 2;
+          const t = tagBox(h);
           return (
             <g key={h}>
-              <rect className="stop-tag" x={x0 - 4} y={y - 10.5} width={w + 8} height="14" rx="2" />
+              <rect className="stop-tag" x={t.x} y={t.y} width={t.w} height={t.h} rx="2" />
               <text className="stop-label" x={x} y={y} textAnchor={anchor}>{HUB[h].name}</text>
             </g>
           );
@@ -135,6 +171,9 @@ export default function RouteMap({ route, drive = false }: { route: Hub[]; drive
           const [x, y] = hubXY(h);
           return <circle key={h} className="stop-dot" cx={x} cy={y} r="4" />;
         })}
+        </g>
+        {/* Landmarks sit outside the card's clip so they can bleed past its edge. Each pops when its stop appears: on mount, staggered, or as the tuk-tuk arrives. */}
+        {shownStops.map((h, i) => layout[h] && <Landmark key={h} hub={h} placed={layout[h]} pop={motion() === 'full'} delay={animate ? 0 : i * 90} />)}
         {animate && at !== 'idle' && (
           <g ref={tukRef} transform={tukTransform(hx + parkOff(tukHub)[0], hy + parkOff(tukHub)[1], tukLeg.b[0] < tukLeg.a[0], TUK_W)}>
             <TukTuk width={TUK_W} driving={!!run?.moving} idle={!!run && !run.moving} />

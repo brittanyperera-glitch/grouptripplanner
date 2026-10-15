@@ -1,0 +1,12 @@
+/* Hub landmarks on RouteMap: pop-up-book cut-outs that spring up from their pin (overshoot lives in the keyframes, the easing stays on the scale). */
+.lm { pointer-events: none; }
+.lm-pop { transform-box: fill-box; transform-origin: 50% 100%; }
+.lm-pop[data-pop="on"] { animation: lm-pop var(--dur-slow) var(--ease) both; animation-delay: var(--lm-delay, 0ms); }
+@keyframes lm-pop {
+  0% { transform: translate(var(--lm-dx), var(--lm-dy)) scale(.15); opacity: 0; }
+  55% { transform: translate(0, -3px) scale(1.1); opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+.lm-lead { fill: none; stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 1.5 3; stroke-linecap: round; opacity: .55; }
+.lm-lead[data-pop="on"] { animation: lm-fade var(--dur-slow) var(--ease) both; animation-delay: var(--lm-delay, 0ms); }
+@keyframes lm-fade { from { opacity: 0; } to { opacity: .55; } }
