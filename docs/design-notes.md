@@ -119,3 +119,4 @@ Clickable mockup of Section 1: `docs/mockups/section1-flow.html` (photos and cre
 - Header (Brittany 2026-10-15): the name in the top app bar uses the same heading style as the place names on the swipe cards.
 - Ground colour (Brittany 2026-10-15): page background is the dark green (Postcard ink green #1e2a26 family) with light paper text on it; cards stay light paper with ink text. Accents adjusted to keep contrast on both.
 - Front page (Brittany 2026-10-15): the opening also takes the Postcard theme (supersedes "Homecoming opening stays"): keep the full-bleed photo slideshow and copy; Postcard heading face, stamp kicker, green-tinted scrim, Postcard button, green desktop margins.
+- Ground colour REVERSED (Brittany 2026-10-15, after seeing it): cream paper background (#f4ede0) with ink text everywhere, not dark green. Supersedes the "dark green page ground" bullet above.
