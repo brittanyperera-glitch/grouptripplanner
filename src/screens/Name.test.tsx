@@ -77,6 +77,19 @@ describe('character select page', () => {
   });
 });
 
+describe('select', () => {
+  it('Select shows the picked character\'s selfie full screen, and a tap continues straight away', async () => {
+    setMotion(true);
+    const { user, onPick } = await open();
+    await user.click(screen.getByRole('button', { name: 'Select' }));
+    const lock = screen.getByRole('dialog', { name: 'Brittany selected' });
+    expect(within(lock).getByRole('img', { name: 'Brittany selfie' })).toHaveAttribute('src', '/img/players/brittany-selfie.png');
+    expect(onPick).not.toHaveBeenCalled();
+    await user.click(lock);
+    expect(onPick).toHaveBeenCalledWith('Brittany');
+  });
+});
+
 describe('selfie', () => {
   it('a Selfie button opens the centred character\'s selfie, and a tap closes it', async () => {
     setMotion(true);

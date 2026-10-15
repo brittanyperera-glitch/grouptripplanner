@@ -9,7 +9,7 @@ import { PEOPLE } from '../types';
 import type { Item, Person } from '../types';
 
 const SLIDE_MS = 4500;
-const FLASH_MS = 900;
+const FLASH_MS = 1800;
 
 type Players = NonNullable<Copy["players"]>;
 
@@ -41,6 +41,8 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
   const [broken, setBroken] = useState<Set<string>>(new Set());
   const [idx, setIdx] = useState(0);
   const [flash, setFlash] = useState<Person | null>(null);
+  const lockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (lockTimer.current) clearTimeout(lockTimer.current); }, []);
   const [selfie, setSelfie] = useState(false);
   const lane = useRef<HTMLDivElement>(null);
   const shots = covers.filter(c => c.photo && !broken.has(c.id));
@@ -94,7 +96,14 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
     if (flash) return;
     if (still) { onPick(p); return; }
     setFlash(p);
-    setTimeout(() => onPick(p), FLASH_MS);
+    lockTimer.current = setTimeout(() => finish(p), FLASH_MS);
+  };
+  // The selfie lock-in continues on its own, or straight away on a tap; onPick fires once either way.
+  const finish = (p: Person) => {
+    if (lockTimer.current === null) return;
+    clearTimeout(lockTimer.current);
+    lockTimer.current = null;
+    onPick(p);
   };
   const tap = (p: Person, i: number) => {
     if (still || i === idx) go(p);
@@ -146,14 +155,14 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
               {PEOPLE.map((n, i) => (
                 <button key={n} className={`char${i === idx ? ' on' : ''}`} aria-current={i === idx} onClick={() => tap(n, i)}
                   style={{ '--bop-delay': `${(i * 0.31).toFixed(2)}s` } as CSSProperties}>
-                  <Avatar name={n} crop="stage" size={220} bob={bobOk} />
                   <span className="char-name">{n}</span>
+                  <Avatar name={n} crop="stage" size={220} bob={bobOk} />
                 </button>
               ))}
             </div>
             <button className="nav next" aria-label="Next character" disabled={idx === PEOPLE.length - 1} onClick={() => goTo(idx + 1)}><IconRight size={20} /></button>
+            <button className="selfie-btn" onClick={() => setSelfie(true)}>Selfie</button>
           </div>
-          <button className="selfie-btn" onClick={() => setSelfie(true)}>Selfie</button>
           <div className="player-card" key={chosen}>
             <div className="pc-id">
               <h2 className="pc-name">{chosen}</h2>
@@ -171,7 +180,8 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
         </div>
       )}
       {flash && (
-        <div className="flash" aria-hidden="true">
+        <div className="flash" role="dialog" aria-label={`${flash} selected`} onClick={() => finish(flash)}>
+          <img className="flash-selfie" src={`/img/players/${flash.toLowerCase()}-selfie.png`} alt={`${flash} selfie`} />
           <span className="flash-kicker">Character selected</span>
           <span className="flash-name">{flash}</span>
         </div>
