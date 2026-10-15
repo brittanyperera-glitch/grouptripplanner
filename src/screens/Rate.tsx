@@ -198,7 +198,7 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
                 <span key={t} className={`stamp ${t}`} aria-hidden="true" style={{ opacity: lead === t ? leadAmount : 0 }}>{LABEL[t]}</span>
               ))}
               <div className="caption">
-                <span className="area-tag"><IconPin size={13} />{item.area}</span>
+                <span className="area-tag"><IconPin size={13} />{item.category ? `${item.area} · ${item.category}` : item.area}</span>
                 <h2 className="title">{item.name}</h2>
               </div>
             </Cover>

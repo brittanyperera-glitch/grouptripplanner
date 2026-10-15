@@ -9,9 +9,10 @@ export type Slot = 'sunrise' | 'morning' | 'afternoon' | 'sunset' | 'evening' | 
 export type Area = 'Colombo' | 'North' | 'East coast' | 'Cultural Triangle' | 'Kandy and Knuckles' | 'Kitulgala' | 'Hill country' | 'Ella' | 'Wild south' | 'South coast';
 export const AREAS: Area[] = ['Colombo', 'North', 'East coast', 'Cultural Triangle', 'Kandy and Knuckles', 'Kitulgala', 'Hill country', 'Ella', 'Wild south', 'South coast'];
 export type Hub = 'AIR' | 'Colombo' | 'Jaffna' | 'Trincomalee' | 'Sigiriya' | 'Kandy' | 'Kitulgala' | 'Nuwara Eliya' | 'Ella' | 'Tissa' | 'Udawalawe' | 'Weligama';
+export type Category = 'Food' | 'Temple' | 'History' | 'Nature' | 'Hike' | 'Wildlife' | 'Beach' | 'Train' | 'Adventure' | 'Culture' | 'Nightlife';
 export interface Item {
   id: string; name: string; area: Area; about: string; hours: number; slot: Slot; fee: string;
-  sideTrip: number; book?: string; warn?: string; photo?: string; hub?: Hub;
+  category?: Category; sideTrip: number; book?: string; warn?: string; photo?: string; hub?: Hub;
   google?: { rating: string; reviews: string; url: string }; suggestedBy?: Person; credit?: string; when?: string;
 }
 export interface Leg { a: Hub; b: Hub; hours: number; src: string }

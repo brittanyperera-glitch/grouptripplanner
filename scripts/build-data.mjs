@@ -87,7 +87,9 @@ const SLOT = {
 
 const cat = JSON.parse(read('data/catalogue.json'));
 const credits = JSON.parse(read('docs/mockups/img/credits.json'));
+const CATEGORIES = ['Food', 'Temple', 'History', 'Nature', 'Hike', 'Wildlife', 'Beach', 'Train', 'Adventure', 'Culture', 'Nightlife'];
 const items = cat.items.map((it) => {
+  if (!CATEGORIES.includes(it.category)) throw new Error(`${it.id} has category "${it.category}", expected one of ${CATEGORIES.join(', ')}`);
   if (!(it.slot in SLOT)) throw new Error(`unmapped slot "${it.slot}" on ${it.id}`);
   // A name that promises sunset or night must be scheduled then, or the planner drives straight after it.
   if (/sunset|evening|night|dinner/i.test(it.name) && !['sunset', 'evening', 'late'].includes(SLOT[it.slot]))
