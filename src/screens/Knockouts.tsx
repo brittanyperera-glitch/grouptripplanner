@@ -66,7 +66,7 @@ export default function Knockouts({ group }: { group: GroupResult }) {
           const first = byId[ids[0]];
           const mine = me !== null && k.votes[s].includes(me);
           return (
-            <button key={s} className="pick tall scene" aria-pressed={mine} disabled={me === null} onClick={() => { if (me) void store.vote({ forkId: k.forkId, name: me, choice: s }); }}>
+            <button key={s} className="pick tall list scene" aria-pressed={mine} disabled={me === null} onClick={() => { if (me) void store.vote({ forkId: k.forkId, name: me, choice: s }); }}>
               {first && <Cover item={first} className="ph" named={false} />}
               {mine && <span className="mine" aria-hidden="true"><IconCheck size={16} /></span>}
               <span className="pick-copy">

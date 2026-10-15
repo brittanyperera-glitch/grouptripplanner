@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import Avatar from '../components/Avatar';
 import { IconLeft, IconRight } from '../components/Icons';
@@ -28,6 +28,26 @@ function StatBars({ stats }: { stats: { label: string; value: number }[] }) {
       ))}
     </div>
   );
+}
+
+// Sized from the real rendered width: the name shrinks until it fits the screen, whatever the name or font width.
+function FlashName({ name }: { name: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current; const box = el?.parentElement;
+    if (!el || !box) return;
+    const fit = () => {
+      el.style.fontSize = '';
+      const avail = box.clientWidth - 32;
+      const natural = el.offsetWidth;
+      if (natural > avail) el.style.fontSize = `${parseFloat(getComputedStyle(el).fontSize) * avail / natural}px`;
+    };
+    fit();
+    void document.fonts?.ready.then(fit);
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, [name]);
+  return <span ref={ref} className="flash-name">{name}</span>;
 }
 
 export default function Name({ welcome, welcomeSub, covers = [], players = {}, onPick }: {
@@ -184,7 +204,7 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
         <div className="flash" role="dialog" aria-label={`${flash} selected`} onClick={() => finish(flash)}>
           <img className="flash-selfie" src={`/img/players/${flash.toLowerCase()}-selfie.png`} alt={`${flash} selfie`} />
           <span className="flash-kicker">Character selected</span>
-          <span className="flash-name">{flash}</span>
+          <FlashName name={flash} />
         </div>
       )}
     </div>

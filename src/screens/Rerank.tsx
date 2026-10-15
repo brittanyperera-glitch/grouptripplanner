@@ -30,7 +30,7 @@ export default function Rerank({ ranking, byId, onMove, onRetier, onSubmit, titl
               {levels.map(l => (
                 <div key={l[0]} className={`level${onMove && l.length > 1 ? ' tie' : ''}`}>
                   {l.map(id => (
-                    <div key={id} className="item">
+                    <div key={id} className={`item${onMove ? ' moves' : ''}`}>
                       {onMove && <span className="rk">{lab[id]}</span>}
                       <Cover item={byId[id]} className="th" named={false} />
                       <span className="tc">
