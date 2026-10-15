@@ -10,7 +10,7 @@ Her three upgrades:
 1. A real illustrated island: stylised Sri Lanka silhouette, tea plantations, jungle, coastline, tiny landmarks.
    Bold hand-drawn route.
 2. The tuk-tuk reacts at each stop: bounces to a halt, little speech bubble, reveals that day's card.
-   (Sound: the app's standing decision is no sound, vibration only. Keep sound out.)
+   (Sound: now on, see the 2026-10-15 sound bullet in docs/design-notes.md.)
 3. A proper payoff: a MISSION COMPLETE screen with the whole winning itinerary, the group's chosen experiences,
    and the five characters reacting (the selfies in public/img/players/*-selfie.png).
 
