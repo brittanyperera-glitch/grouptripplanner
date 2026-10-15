@@ -215,6 +215,26 @@ describe.each([['frozen', items], ['live', liveCatalogue.items as Item[]]] as co
   });
 });
 
+// Afternoon activities (park safaris, a sunset beach) run until the parks close at 18:00
+// (research/google_listings.md: Kaudulla and Hurulu "Closes 6 PM"), so nothing drives after them.
+describe.each([['frozen', items], ['live', liveCatalogue.items as Item[]]] as const)('afternoon activities end at dusk (%s catalogue)', (_, its) => {
+  const slotOf = new Map(its.map(i => [i.id, i.slot]));
+  const all = its.map(i => i.id);
+  const plans = [
+    ...([0, 1] as Pace[]).flatMap(pace => [9, 14].map(days => [`all Keen ${days}d pace ${pace}`, plan({ items: its, scores: sc(all, 4), days, pace, legs: L })] as const)),
+    ['elephants, tooth, sigiriya 9d', plan({ items: its, scores: sc(['elephants', 'tooth', 'sigiriya', 'train']), days: 9, pace: 0, legs: L, mustIds: ['elephants', 'tooth', 'sigiriya', 'train'] })] as const,
+  ];
+  it.each(plans)('%s: no drive or train after an afternoon activity on the same day', (_, p) => {
+    for (const day of p.days) {
+      let after = false;
+      for (const e of day.entries) {
+        if (e.kind === 'drive' || e.kind === 'train') expect(after, `day ${day.n}: ${e.label}`).toBe(false);
+        if (e.kind === 'activity' && slotOf.get(e.itemId!) === 'afternoon') after = true;
+      }
+    }
+  });
+});
+
 describe('fixed-time slots', () => {
   const all = items.map(i => i.id);
   const plans = [

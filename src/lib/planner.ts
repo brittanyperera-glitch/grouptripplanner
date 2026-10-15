@@ -5,7 +5,9 @@ import { shortest } from './paths';
 // "any" fills daytime; ordering it last put e.g. a temple visit after late-night kottu.
 const SLOT_ORDER: Record<Slot, number> = { sunrise: 0, morning: 1, any: 2, afternoon: 3, sunset: 4, evening: 5, late: 6 };
 const RAIN_AREAS: Area[] = ['Hill country', 'Ella'];
-const NIGHT_SLOTS: Slot[] = ['sunset', 'evening', 'late'];
+// Activities after which nobody drives that day. Afternoon ones (park safaris, a sunset beach) run until
+// the parks close at 18:00 (research/google_listings.md: Kaudulla and Hurulu "Closes 6 PM").
+const DUSK_SLOTS: Slot[] = ['afternoon', 'sunset', 'evening', 'late'];
 const CHECKIN = 3;
 const TRAIN = 'train';
 const EPS = 1e-9;
@@ -20,7 +22,7 @@ interface Tmpl {
 }
 interface Cand extends Tmpl { cap: number; tmpl: Tmpl }
 
-// dark: a sunset, evening or late activity has happened, so no more driving today.
+// dark: an afternoon, sunset, evening or late activity has happened, so no more driving today.
 interface WorkDay {
   area: Area | null; entries: DayEntry[]; used: number; cap: number; closed: boolean; dark?: boolean;
   slots?: SlotUse; // activities so far per slot, for the fixed-time rule
@@ -271,7 +273,7 @@ function layout(ctx: Ctx, c: Cand): Steps {
     items
       .filter(i => i.area === area && !(c.train && i.id === TRAIN))
       .sort((a, b) => SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] || (a.id < b.id ? -1 : 1))
-      .forEach(i => push(weightOf(i, c.wsHub, d), idx.get(i.id)!, slotFlags(i.slot) | (NIGHT_SLOTS.includes(i.slot) ? NIGHT : 0) | (isEve(i) ? EVE : 0), i));
+      .forEach(i => push(weightOf(i, c.wsHub, d), idx.get(i.id)!, slotFlags(i.slot) | (DUSK_SLOTS.includes(i.slot) ? NIGHT : 0) | (isEve(i) ? EVE : 0), i));
     prevHub = hub; prevArea = area;
   }
   const steps: Steps = { hours: Float64Array.from(hours), site: Float64Array.from(site), slot: Int8Array.from(slot), at: Int32Array.from(at), flags: Uint8Array.from(flags), fd: d(c.route[c.route.length - 2], 'AIR') };
@@ -308,7 +310,7 @@ function schedule(ctx: Ctx, c: Cand, chosen: Item[]): WorkDay[] {
     if (eve) cur.eve = (cur.eve ?? 0) + e.hours; else cur.used += e.hours;
     if (e.kind === 'activity' && slot) useSlot((cur.slots ??= {}), slot, e.onSite!);
     if (!eve && e.hours > H + EPS) cur.closed = true; // a long entry owns its whole day (B.3)
-    if (e.kind === 'activity' && slot && NIGHT_SLOTS.includes(slot)) cur.dark = true;
+    if (e.kind === 'activity' && slot && DUSK_SLOTS.includes(slot)) cur.dark = true;
   };
   const w = (i: Item) => weightOf(i, c.wsHub, d);
   const train = chosen.find(i => i.id === TRAIN);
