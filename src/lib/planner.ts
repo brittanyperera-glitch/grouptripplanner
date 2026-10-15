@@ -18,8 +18,11 @@ type Dist = (a: Hub, b: Hub) => number;
 // Everything about a candidate except its hour budget: shared by plans that differ only in days or pace.
 interface Tmpl {
   set: Area[]; order: Area[]; route: Hub[]; routeKey: string; wsHub: Hub; train: boolean;
-  travel: number; ub: number; pool: Item[]; forced: Item[]; forcedW: number; geo: Geo; prep?: Prep;
+  travel: number; ub: number; pool: Item[]; forced: Item[]; forcedW: number; geo: Geo; grp: Grp;
 }
+// Orders of one area set (same train choice and Wild south hub) share their items, so they share
+// the knapsack options and the knapsack table; they differ only in travel and day packing.
+interface Grp { prep?: Prep; knap?: Knapsack; top?: number; travel: number; key: string }
 interface Cand extends Tmpl { cap: number; tmpl: Tmpl }
 
 // dark: an afternoon, sunset, evening or late activity has happened, so no more driving today.
@@ -88,6 +91,7 @@ function routeFor(order: Area[], wsHub: Hub, train: boolean, d: Dist) {
 
 // Row buffers shared by every Knapsack: one table per evaluated candidate. Only one instance is live at a time.
 let kVal = new Float64Array(0), kCnt = new Int32Array(0), kTake = new Uint8Array(0);
+let kOwner: object | null = null; // the Knapsack whose table the buffers hold
 
 /**
  * 0/1 knapsack in quarter hours; ties prefer fewer items. The full table is kept, so the optimal
@@ -96,6 +100,7 @@ let kVal = new Float64Array(0), kCnt = new Int32Array(0), kTake = new Uint8Array
 class Knapsack {
   private W: number;
   constructor(private opts: { id: string; w: number; v: number }[], cap: number) {
+    kOwner = this;
     const W = (this.W = Math.max(0, cap) + 1), n = opts.length, size = (n + 1) * W;
     if (kVal.length < size) { kVal = new Float64Array(size); kCnt = new Int32Array(size); kTake = new Uint8Array(size); }
     const val = kVal, cnt = kCnt, take = kTake;
@@ -156,15 +161,29 @@ function templates(ctx: Ctx, forceIn: Set<string>): Tmpl[] {
   const trainOpts = forceIn.has(TRAIN) ? [true] : trainItem ? [false, true] : [false];
   const wsHubs = [...new Set(pool.filter(i => i.area === 'Wild south').map(i => i.hub ?? AREA_HUB[i.area]))].sort();
   const out: Tmpl[] = [];
+  const grps = new Map<string, Tmpl>();
   for (const g of geometry(d, eligible, trainOpts, wsHubs, [...mandatory])) {
     const { has, wsHub, train } = g;
+    const key = `${g.set.join('|')}#${train}#${wsHub}`;
+    const same = grps.get(key);
+    if (same) {
+      same.grp.travel = Math.min(same.grp.travel, g.travel);
+      out.push({ ...same, order: g.order, route: g.route, routeKey: g.routeKey, travel: g.travel, geo: g });
+      continue;
+    }
     const inSet = pool.filter(i => has.has(i.area) && (train || i.id !== TRAIN));
     const forced = inSet.filter(i => forceIn.has(i.id) || (train && i.id === TRAIN));
     const forcedW = forced.reduce((s, i) => s + dayW(i, wsHub, d), 0);
     const ub = inSet.reduce((s, i) => s + Math.max(0, score(i.id)), 0);
-    out.push({ set: g.set, order: g.order, route: g.route, routeKey: g.routeKey, wsHub, train, travel: g.travel, ub, pool: inSet, forced, forcedW, geo: g });
+    const t: Tmpl = { set: g.set, order: g.order, route: g.route, routeKey: g.routeKey, wsHub, train, travel: g.travel, ub, pool: inSet, forced, forcedW, geo: g, grp: { travel: g.travel, key } };
+    grps.set(key, t);
+    out.push(t);
   }
-  return out.sort((a, b) => b.ub - a.ub || a.travel - b.travel || (a.routeKey < b.routeKey ? -1 : a.routeKey > b.routeKey ? 1 : 0));
+  // Best bound first; a set's orders stay together, cheapest first, so they reuse one knapsack table.
+  // Travel compares within EPS: a route and its reverse sum the same legs in another order.
+  const cmp = (x: string, y: string) => (x < y ? -1 : x > y ? 1 : 0);
+  const near = (x: number, y: number) => (Math.abs(x - y) <= EPS ? 0 : x - y);
+  return out.sort((a, b) => b.ub - a.ub || near(a.grp.travel, b.grp.travel) || cmp(a.grp.key, b.grp.key) || near(a.travel, b.travel) || cmp(a.routeKey, b.routeKey));
 }
 
 interface Geo {
@@ -193,15 +212,17 @@ function geometry(d: Dist, eligible: Area[], trainOpts: boolean[], wsHubs: Hub[]
       seen.add(k);
       const variants: Hub[] = has.has('Wild south') && wsHubs.length ? wsHubs : [AREA_HUB['Wild south']];
       for (const wsHub of variants) {
-        // Direction and Colombo position change only travel, so keep the cheapest order (B.10).
+        // Every direction and Colombo position is its own candidate: besides travel they decide the
+        // half arrival day, what shares the departure day and where sunrise breaks fall.
         const core = set.filter(a => a !== 'Colombo');
         const orders = [core, [...core].reverse()].flatMap(o => (has.has('Colombo') ? [['Colombo' as Area, ...o], [...o, 'Colombo' as Area]] : [o]));
-        let best: (ReturnType<typeof routeFor> & { order: Area[] }) | null = null;
+        const keys = new Set<string>();
         for (const order of orders) {
           const r = routeFor(order, wsHub, train, d);
-          if (!best || r.travel < best.travel - EPS || (Math.abs(r.travel - best.travel) <= EPS && r.routeKey < best.routeKey)) best = { ...r, order };
+          if (keys.has(r.routeKey)) continue;
+          keys.add(r.routeKey);
+          out.push({ set, has, order, route: r.route, routeKey: r.routeKey, wsHub, train, travel: r.travel });
         }
-        if (best) out.push({ set, has, order: best.order, route: best.route, routeKey: best.routeKey, wsHub, train, travel: best.travel });
       }
     }
   }
@@ -215,19 +236,28 @@ type Opt = { id: string; w: number; v: number; k: number; eve?: boolean }
 // core: the options the knapsack sees. A second fixed-time item for the same slot in the same area
 // needs a day of its own, which hours cannot express, so only the best one per (area, slot) is in
 // core; the others can still come back in evaluate()'s add-back pass when a day is free.
-interface Prep { reserved: number; opts: Opt[]; core: Opt[]; forcedScore: number; byRatio: Opt[]; forced: Uint8Array }
+interface Prep { reserved: number; opts: Opt[]; core: Opt[]; forcedScore: number; byRatio: Opt[]; forced: Uint8Array; order?: Opt[] }
 // Schedule entries packed for the fit test, which runs many times per candidate.
 const MOVE = 1, SUNRISE = 2, MORNING = 4, NIGHT = 8, EVE = 16;
-interface Steps { hours: Float64Array; site: Float64Array; slot: Int8Array; at: Int32Array; flags: Uint8Array; fd: number }
+interface Steps { hours: Float64Array; site: Float64Array; slot: Int8Array; at: Int32Array; flags: Uint8Array; fd: number; pos: Int32Array }
 const SLOTS = Object.keys(SLOT_ORDER) as Slot[];
 // slotFull() by slot index, for the packed fit test; slots with no window (any) are never full.
 const SLOT_ONE = SLOTS.map(sl => ONE_PER_DAY.includes(sl));
 const SLOT_WIN = SLOTS.map(sl => WINDOW[sl] ?? Infinity);
 // Scratch counters for minDays, which runs thousands of times per plan and is not re-entrant.
 const slotN = new Int32Array(SLOTS.length), slotSite = new Float64Array(SLOTS.length);
+// The last recorded minDays pass: for each step, where its day began, that day's number and whether
+// a day began at it; and the pass's result. An add-back trial differs from that pass at one step, so
+// it replays from that step's day and stops once a day begins where one began in the recorded pass.
+let sDay = new Int32Array(0), sN = new Int32Array(0), sStart = new Uint8Array(0), sFinal = 0;
+function snapRoom(len: number) {
+  if (sN.length < len) { sDay = new Int32Array(len); sN = new Int32Array(len); sStart = new Uint8Array(len); }
+}
+// Scratch flags for the capacity search, whose picks are thrown away.
+let chooseBuf = new Uint8Array(0);
 
 function prep(ctx: Ctx, c: Cand): Prep {
-  return (c.tmpl.prep ??= buildPrep(ctx, c));
+  return (c.tmpl.grp.prep ??= buildPrep(ctx, c));
 }
 
 function buildPrep(ctx: Ctx, c: Cand): Prep {
@@ -242,7 +272,7 @@ function buildPrep(ctx: Ctx, c: Cand): Prep {
   }
   const byRatio = opts.filter(o => o.w > 0).sort((a, b) => b.v / b.w - a.v / a.w);
   const taken = new Set(c.forced.filter(i => ONE_PER_DAY.includes(i.slot)).map(i => `${i.area}|${i.slot}`));
-  const slotKey = (o: Opt) => { const i = c.pool.find(x => x.id === o.id)!; return ONE_PER_DAY.includes(i.slot) ? `${i.area}|${i.slot}` : null; };
+  const slotKey = (o: Opt) => { const i = ctx.input.items[o.k]; return ONE_PER_DAY.includes(i.slot) ? `${i.area}|${i.slot}` : null; };
   const extra = new Set<string>();
   for (const o of [...opts].sort((a, b) => b.v / Math.max(1, b.w) - a.v / Math.max(1, a.w) || (a.id < b.id ? -1 : 1))) {
     const key = slotKey(o);
@@ -276,14 +306,20 @@ function layout(ctx: Ctx, c: Cand): Steps {
       .forEach(i => push(weightOf(i, c.wsHub, d), idx.get(i.id)!, slotFlags(i.slot) | (DUSK_SLOTS.includes(i.slot) ? NIGHT : 0) | (isEve(i) ? EVE : 0), i));
     prevHub = hub; prevArea = area;
   }
-  const steps: Steps = { hours: Float64Array.from(hours), site: Float64Array.from(site), slot: Int8Array.from(slot), at: Int32Array.from(at), flags: Uint8Array.from(flags), fd: d(c.route[c.route.length - 2], 'AIR') };
+  const pos = new Int32Array(items.length).fill(-1);
+  at.forEach((k, s) => { if (k >= 0) pos[k] = s; });
+  const steps: Steps = { hours: Float64Array.from(hours), site: Float64Array.from(site), slot: Int8Array.from(slot), at: Int32Array.from(at), flags: Uint8Array.from(flags), fd: d(c.route[c.route.length - 2], 'AIR'), pos };
   c.geo.steps = { tag: itemsTag, steps };
   return steps;
 }
 
 /** Marks the chosen items: every forced one plus the knapsack's picks at capacity x. */
-function choose(p: Prep, knap: Knapsack, x: number): Uint8Array {
-  const on = Uint8Array.from(p.forced);
+function choose(p: Prep, knap: Knapsack, x: number, scratch = false): Uint8Array {
+  let on: Uint8Array;
+  if (scratch) {
+    if (chooseBuf.length !== p.forced.length) chooseBuf = new Uint8Array(p.forced.length);
+    (on = chooseBuf).set(p.forced);
+  } else on = Uint8Array.from(p.forced);
   for (const j of knap.pick(x)) on[p.core[j].k] = 1;
   return on;
 }
@@ -410,20 +446,32 @@ function fractionalBound(c: Cand, p: Prep): number {
  * Day count of assemble(ctx, c, schedule(ctx, c, chosen), 0, true) without building the days.
  * Mirrors put() and the departure tail step for step; the snapshot test pins the two together.
  * Stops early once more than `stop` days are used, when only "does it fit" matters.
+ * With `from` >= 0, `on` must match the last recorded pass at every step but `from`: the scan starts
+ * at the day that held `from` there. `record` records this pass (from that day on).
  */
-function minDays(ctx: Ctx, steps: Steps, on: Uint8Array, stop = Infinity): number {
+function minDays(ctx: Ctx, steps: Steps, on: Uint8Array, stop = Infinity, from = -1, record = false): number {
   const { H } = ctx;
   const { hours: hs, at, flags, fd, slot: sl, site } = steps;
-  let n = 1, count = 0, used = 0, eve = 0, cap = H / 2, closed = false, dark = false;
+  let n = 1, count = 0, used = 0, eve = 0, cap = H / 2, closed = false, dark = false, day = 0;
   const nUse = slotN, siteUse = slotSite;
   nUse.fill(0); siteUse.fill(0);
-  for (let s = 0; s < hs.length; s++) {
+  // A day other than the first starts fresh: its first step is placed without a check.
+  if (from >= 0 && sDay[from] > 0) { day = sDay[from]; n = sN[from]; cap = H; }
+  for (let s = day; s < hs.length; s++) {
+    if (record) { sDay[s] = day; sN[s] = n; sStart[s] = 0; }
     if (at[s] >= 0 && !on[at[s]]) continue;
     const hours = hs[s], f = flags[s], k = sl[s], night = (f & EVE) !== 0;
     const slotTaken = k >= 0 && nUse[k] > 0 && (SLOT_ONE[k] || (SLOT_WIN[k] < Infinity && (nUse[k] >= 2 || siteUse[k] + site[s] > SLOT_WIN[k] + EPS)));
     if (count > 0) {
       const fresh = night ? slotTaken || (eve > 0 && eve + hours > EVE_HOURS + EPS) : hours > H + EPS || closed || (dark && (f & MOVE) !== 0) || (f & SUNRISE) !== 0 || ((f & MORNING) !== 0 && used > 3 + EPS) || slotTaken || hours > cap - used + EPS;
-      if (fresh) { if (++n > stop) return n; count = 0; used = 0; eve = 0; cap = H; closed = false; dark = false; nUse.fill(0); siteUse.fill(0); }
+      if (fresh) {
+        ++n;
+        // In step with the recorded pass from here on, just n days apart.
+        if (from >= 0 && !record && s > from && sStart[s]) return sFinal + n - sN[s] - 1;
+        if (n > stop) return n;
+        count = 0; used = 0; eve = 0; cap = H; closed = false; dark = false; nUse.fill(0); siteUse.fill(0); day = s;
+        if (record) sStart[s] = 1;
+      }
     }
     count++;
     if (night) eve += hours; else used += hours;
@@ -432,9 +480,11 @@ function minDays(ctx: Ctx, steps: Steps, on: Uint8Array, stop = Infinity): numbe
     if (f & NIGHT) dark = true;
   }
   const capN = H / 2 - fd - CHECKIN;
-  if (fd <= EPS) return n + 1;
-  if (capN >= -EPS) return n >= 2 && !dark && used <= capN + EPS ? n : n + 1;
-  return !closed && !dark && n >= 2 && cap - used >= fd - EPS ? n + 1 : n + 2;
+  const total = fd <= EPS ? n + 1
+    : capN >= -EPS ? (n >= 2 && !dark && used <= capN + EPS ? n : n + 1)
+    : !closed && !dark && n >= 2 && cap - used >= fd - EPS ? n + 1 : n + 2;
+  if (record) sFinal = total;
+  return total;
 }
 
 /**
@@ -447,9 +497,13 @@ function evaluate(ctx: Ctx, c: Cand, p: Prep, bar: Eval | null): Eval | null {
   const N = ctx.input.days;
   const { pool } = c;
   const top = Math.max(0, c.cap - p.reserved);
-  const knap = new Knapsack(p.core, top);
+  // The table answers every capacity up to the one it was built for, so a set's later (dearer)
+  // orders reuse it while no other set has overwritten the shared buffers.
+  const g = c.tmpl.grp;
+  if (!g.knap || kOwner !== g.knap || g.top! < top) { g.knap = new Knapsack(p.core, top); g.top = top; }
+  const knap = g.knap;
   const steps = layout(ctx, c);
-  const over = (x: number) => minDays(ctx, steps, choose(p, knap, x)) - N;
+  const over = (x: number) => minDays(ctx, steps, choose(p, knap, x, true)) - N;
   let x = top, hi = -1;
   for (;;) {
     const o = over(x);
@@ -464,7 +518,7 @@ function evaluate(ctx: Ctx, c: Cand, p: Prep, bar: Eval | null): Eval | null {
   }
   if (hi > 0) {
     let lo = x;
-    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (minDays(ctx, steps, choose(p, knap, mid), N) <= N) lo = mid; else hi = mid; }
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (minDays(ctx, steps, choose(p, knap, mid, true), N) <= N) lo = mid; else hi = mid; }
     x = lo;
   }
   const on = choose(p, knap, x);
@@ -482,19 +536,32 @@ function evaluate(ctx: Ctx, c: Cand, p: Prep, bar: Eval | null): Eval | null {
     }
     if (beaten(c, bound, bar)) return null;
   }
-  // Evenings go after the daytime items, best value first, to fill the nights the days leave.
-  const evenings = p.opts.filter(o => o.eve).sort((a, b) => b.v - a.v || (a.id < b.id ? -1 : 1));
-  const order = [...p.byRatio, ...evenings].sort((a, b) => Number(ctx.musts.has(b.id)) - Number(ctx.musts.has(a.id)));
-  for (let added = true; added; ) {
-    added = false;
-    for (const o of order) {
-      const k = o.k;
-      if (on[k] || o.w > room) continue;
-      on[k] = 1;
-      if (minDays(ctx, steps, on, N) <= N) { room -= o.w; added = true; } else on[k] = 0;
-    }
-  }
+  // One pass is enough: the day count never falls when an item is added (each day is packed
+  // greedily and any part of a day that fits still fits), so an item that failed cannot fit later.
+  fill(ctx, steps, on, refillOrder(ctx, p), room);
   return result(ctx, c, on);
+}
+
+/** Musts first, then daytime items by value per hour, then evenings best first (to fill the nights). */
+function refillOrder(ctx: Ctx, p: Prep): Opt[] {
+  if (p.order) return p.order;
+  const evenings = p.opts.filter(o => o.eve).sort((a, b) => b.v - a.v || (a.id < b.id ? -1 : 1));
+  return (p.order = [...p.byRatio, ...evenings].sort((a, b) => Number(ctx.musts.has(b.id)) - Number(ctx.musts.has(a.id))));
+}
+
+/** Adds each item of `order` that still fits the hours and the days; returns the hours left. */
+function fill(ctx: Ctx, steps: Steps, on: Uint8Array, order: Opt[], room: number, skip = -1): number {
+  const N = ctx.input.days;
+  snapRoom(steps.hours.length);
+  minDays(ctx, steps, on, Infinity, 0, true);
+  for (const o of order) {
+    const k = o.k;
+    if (on[k] || k === skip || o.w > room) continue;
+    on[k] = 1;
+    const s = steps.pos[k];
+    if (minDays(ctx, steps, on, N, s) <= N) { room -= o.w; minDays(ctx, steps, on, Infinity, s, true); } else on[k] = 0;
+  }
+  return room;
 }
 
 function result(ctx: Ctx, c: Cand, on: Uint8Array): Eval {
@@ -509,24 +576,17 @@ function result(ctx: Ctx, c: Cand, on: Uint8Array): Eval {
  * cut never does, often an evening for a daytime item. Too slow to run on every candidate.
  */
 function polish(ctx: Ctx, e: Eval): Eval {
-  const { c } = e, p = prep(ctx, c), N = ctx.input.days, steps = layout(ctx, c);
+  const { c } = e, p = prep(ctx, c), steps = layout(ctx, c), order = refillOrder(ctx, p);
   const on = Uint8Array.from(e.on!);
   let room = Math.max(0, c.cap - p.reserved);
   for (const o of p.opts) if (on[o.k]) room -= o.w;
-  const evenings = p.opts.filter(o => o.eve).sort((a, b) => b.v - a.v || (a.id < b.id ? -1 : 1));
-  const order = [...p.byRatio, ...evenings].sort((a, b) => Number(ctx.musts.has(b.id)) - Number(ctx.musts.has(a.id)));
   const val = (a: Uint8Array) => p.opts.reduce((s, o) => s + (a[o.k] ? o.v : 0), 0);
   for (let improved = true; improved; ) {
     improved = false;
     for (const r of p.opts) {
       if (!on[r.k]) continue;
       const trial = Uint8Array.from(on); trial[r.k] = 0;
-      let rm = room + r.w;
-      for (const o of order) {
-        if (trial[o.k] || o.k === r.k || o.w > rm) continue;
-        trial[o.k] = 1;
-        if (minDays(ctx, steps, trial, N) <= N) rm -= o.w; else trial[o.k] = 0;
-      }
+      const rm = fill(ctx, steps, trial, order, room + r.w, r.k);
       if (val(trial) > val(on) + EPS) { on.set(trial); room = rm; improved = true; }
     }
   }
@@ -541,22 +601,44 @@ const better = (a: Eval, b: Eval) => {
 };
 
 const POLISH = 3;
+// A set's other orders (direction, Colombo first or last) are tried best-scoring sets first, for up
+// to half as many evaluations as the sets' cheapest orders took: a compute budget. Measured on 726
+// test plans it keeps 9 in 10 of the extra Musts that trying every order finds, at the old speed.
+const ORDER_BUDGET = 0.5;
 
 function search(ctx: Ctx, forceIn: Set<string>): Eval | null {
   let best: Eval | null = null;
   const leaders: Eval[] = [];
+  const firsts: Cand[] = [], rest = new Map<Grp, Cand[]>();
   for (const c of candidates(ctx, forceIn)) {
+    const r = rest.get(c.tmpl.grp);
+    if (r) r.push(c); else { rest.set(c.tmpl.grp, []); firsts.push(c); }
+  }
+  const tried = new Map<Grp, number>();
+  const visit = (c: Cand): boolean => {
     const bar = best && !best.overflow ? best : null;
     if (bar) {
       // Branch and bound: c's value can never exceed its upper bound (B.10).
-      if (c.ub < bar.score - EPS) break;
-      if (Math.abs(c.ub - bar.score) <= EPS && (c.travel > bar.c.travel + EPS || (Math.abs(c.travel - bar.c.travel) <= EPS && c.routeKey >= bar.c.routeKey))) continue;
+      if (c.ub < bar.score - EPS) return false;
+      if (Math.abs(c.ub - bar.score) <= EPS && (c.travel > bar.c.travel + EPS || (Math.abs(c.travel - bar.c.travel) <= EPS && c.routeKey >= bar.c.routeKey))) return true;
     }
     const p = prep(ctx, c);
-    if (bar && beaten(c, fractionalBound(c, p), bar)) continue;
+    if (bar && beaten(c, fractionalBound(c, p), bar)) return true;
     const e = evaluate(ctx, c, p, bar);
+    if (e && !tried.has(c.tmpl.grp)) tried.set(c.tmpl.grp, e.overflow ? -Infinity : e.score);
     if (e && !e.overflow) leaders.push(e);
     if (e && (!best || better(e, best))) best = e;
+    return true;
+  };
+  for (const c of firsts) if (!visit(c)) break;
+  // A set whose cheapest order was pruned by its bound has dearer orders with lower bounds. While
+  // nothing fits, every order is tried: an order that fits keeps fitting with more days, which
+  // mustFitDays relies on.
+  const found = best as Eval | null; // set inside visit(), which the compiler cannot see
+  let budget = found && !found.overflow ? ORDER_BUDGET * tried.size : Infinity;
+  for (const [g] of [...tried].sort((a, b) => (b[1] > a[1] ? 1 : b[1] < a[1] ? -1 : 0) || (a[0].key < b[0].key ? -1 : 1))) {
+    for (const c of rest.get(g)!) { if (budget-- <= 0) break; visit(c); }
+    if (budget <= 0) break;
   }
   // Polish the highest-scoring few and keep the best; polishing never lowers a score.
   leaders.sort((a, b) => b.score - a.score);

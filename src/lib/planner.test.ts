@@ -235,6 +235,22 @@ describe.each([['frozen', items], ['live', liveCatalogue.items as Item[]]] as co
   });
 });
 
+// Direction and Colombo's position change more than travel: they decide which day is the half
+// arrival day, what shares the departure day, and where sunrise breaks fall. Each Must set below
+// fits only in an order that is not the cheapest-travel one (found by trying every order).
+describe('route order is chosen by the plan it gives, not by travel alone', () => {
+  const cases: [string[], number, Pace][] = [
+    [['rekawa', 'pettah', 'surf', 'galleface'], 5, 1],
+    [['horton', 'dambulla', 'train'], 5, 0],
+    [['horton', 'crab', 'beachday', 'udawalawe', 'tea'], 6, 0],
+  ];
+  it.each(cases)('%j fit in %i days at pace %i', (must, days, pace) => {
+    const p = plan({ items: liveCatalogue.items as Item[], scores: sc(must), days, pace, legs: L, mustIds: must });
+    expect(p.missingMusts).toEqual([]);
+    expect(p.days.length).toBe(days);
+  });
+});
+
 describe('fixed-time slots', () => {
   const all = items.map(i => i.id);
   const plans = [
