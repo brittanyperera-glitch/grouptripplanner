@@ -120,8 +120,27 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
   });
   const ref = useRef(draft);
   const [step, setStep] = useState<Step>(() => (draft.days === null ? 'days' : draft.pace === null ? 'pace' : draft.submitted ? 'tabs' : 'rate'));
-  const [tab, setTab] = useState<Tab>('My trip');
+  const [tab, setTabState] = useState<Tab>('My trip');
   const [editing, setEditing] = useState(false);
+
+  // Each tab switch is a history entry with the same URL, so a phone's Back returns to the previous tab
+  // instead of leaving the app. The hash is left alone because the raw page routes on it.
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  const setTab = useCallback((t: Tab) => {
+    history.pushState({ ...history.state, tpTab: t }, '');
+    setTabState(t);
+  }, []);
+  useEffect(() => {
+    if (step !== 'tabs') return;
+    history.replaceState({ ...history.state, tpTab: tabRef.current }, '');
+    const onPop = (e: PopStateEvent) => {
+      const t = (e.state as { tpTab?: Tab } | null)?.tpTab;
+      if (t && TABS.includes(t)) navigate('back', () => setTabState(t));
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [step]);
 
   const save = useCallback((patch: Partial<Omit<Response, 'name'>>) => {
     ref.current = { ...ref.current, ...patch };

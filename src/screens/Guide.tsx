@@ -19,6 +19,7 @@ export default function Guide() {
         ))}
       </div>
       <div className="guide-section" role="region" aria-label={section.id}>
+        <h2 className="big display guide-title">{section.label}</h2>
         {section.intro && <p className="guide-intro">{section.intro}</p>}
         {section.phrases ? (
           <ul className="guide-phrases">
@@ -33,7 +34,7 @@ export default function Guide() {
         ) : (
           section.entries?.map((e, i) => (
             <article className="guide-entry" key={e.title ?? i}>
-              {e.title && <h3>{e.title}</h3>}
+              {e.title && <h3><span className="guide-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{e.title}</h3>}
               {e.body && <p>{e.body}</p>}
               {e.list && <ul>{e.list.map(l => <li key={l}>{l}</li>)}</ul>}
               {e.after && <p>{e.after}</p>}
