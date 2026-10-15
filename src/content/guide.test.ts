@@ -58,8 +58,8 @@ describe('guide.json mirrors docs/guide', () => {
     expect([...shown].filter(t => !inMd.has(t))).toEqual([]);
   });
 
-  it('has the six sections in order', () => {
-    expect(sections.map(s => s.id)).toEqual(['Food', 'Fruit', 'Desserts', 'Beaches', 'Packing', 'Phrases']);
+  it('has the five sections in order (packing cut by Brittany 2026-10-15)', () => {
+    expect(sections.map(s => s.id)).toEqual(['Food', 'Fruit', 'Desserts', 'Beaches', 'Phrases']);
   });
 
   it('carries no draft tags and no em dashes', () => {

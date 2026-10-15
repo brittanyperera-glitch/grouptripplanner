@@ -188,60 +188,6 @@
       ]
     },
     {
-      "id": "Packing",
-      "label": "Packing list",
-      "entries": [
-        {
-          "body": "Light, breathable clothes: it is hot and humid on the coast and in the Cultural Triangle."
-        },
-        {
-          "body": "One warm layer: hill country nights (Nuwara Eliya, Ella) get cold."
-        },
-        {
-          "body": "Rain jacket or small umbrella: December is wet season in the north and east."
-        },
-        {
-          "body": "Temple outfit: something that covers shoulders and knees, plus shoes you can slip off (you go barefoot inside)."
-        },
-        {
-          "body": "Swimwear, and a quick-dry towel."
-        },
-        {
-          "body": "Sunscreen, hat and sunglasses."
-        },
-        {
-          "body": "Insect repellent (mosquitoes at dusk)."
-        },
-        {
-          "body": "Plug adapter: Sri Lanka uses type D and type G sockets, 230 V."
-        },
-        {
-          "body": "Power bank for long drives and train days."
-        },
-        {
-          "body": "Basic meds: rehydration salts, anti-diarrhoea tablets, antihistamines, plasters."
-        },
-        {
-          "body": "Hand sanitiser and tissues (not every toilet has paper)."
-        },
-        {
-          "body": "Comfy shoes with grip for Pidurangala and Ella Rock."
-        },
-        {
-          "body": "Small dry bag for boat trips and rafting."
-        },
-        {
-          "body": "Day pack."
-        },
-        {
-          "body": "Some cash in rupees (LKR) for roadside stalls and tuk-tuks; cards work in most hotels and bigger restaurants."
-        },
-        {
-          "body": "Copies of your passport and travel authorisation, saved on your phone."
-        }
-      ]
-    },
-    {
       "id": "Phrases",
       "label": "Phrases",
       "phrases": [
@@ -273,7 +219,7 @@
         {
           "english": "Yes",
           "sinhala": "Ow",
-          "say": "oh"
+          "say": "aoh"
         },
         {
           "english": "No",
@@ -303,22 +249,22 @@
         {
           "english": "Let's go",
           "sinhala": "Yamu",
-          "say": "YA-moo"
+          "say": "Yah-mooh"
         },
         {
           "english": "Let's eat",
           "sinhala": "Kamu",
-          "say": "KA-moo"
+          "say": "kuh-mooh"
         },
         {
           "english": "Let's drink",
           "sinhala": "Bomu",
-          "say": "BO-moo"
+          "say": "boh-mooh"
         },
         {
           "english": "How much?",
           "sinhala": "Kiyada?",
-          "say": "KEE-ya-da"
+          "say": "key-yuh-the"
         },
         {
           "english": "Too expensive!",
