@@ -82,23 +82,32 @@ export default function Knockouts({ group }: { group: GroupResult }) {
     </div>
   );
 
+  // The place head to heads only exist once North or South is settled (group.ts, D6), so the
+  // region result heads them and leaves the Decided list.
+  const regionResult = group.results.find(r => r.forkId === REGION_FORK);
+  const regionLine = (r: typeof group.results[number]) => `${r.winner === 'a' ? 'North' : 'South'} beat ${r.winner === 'a' ? 'South' : 'North'}`;
+  const placesOpen = group.knockouts.some(k => k.forkId !== REGION_FORK);
+  const decided = group.results.filter(r => !(placesOpen && r === regionResult));
+
   return (
     <section className="body" aria-label="Knockouts">
       {group.knockouts.length > 0 && <div className="kicker">Group knockouts</div>}
       {group.knockouts.length > 0 && <div className="big display">Vote on these</div>}
       {group.knockouts.length > 0 && <div className="sub">Three votes settle each one.</div>}
+      {placesOpen && regionResult && <div className="tierhead"><IconCheck size={16} />{regionLine(regionResult)}</div>}
       {group.knockouts.map(k => k.forkId === REGION_FORK ? region(k) : (
         <div key={k.forkId} role="group" aria-label={`Knockout: ${names(k.a)} or ${names(k.b)}`} className="ko">
           <div className="vs2 face">{side(k, 'a')}{side(k, 'b')}<span className="vs" aria-hidden="true">VS</span></div>
           {tally(k)}
         </div>
       ))}
-      {group.results.length > 0 && (
+      {group.knockouts.some(k => k.forkId === REGION_FORK) && <div className="sub">Head to heads on places come once North or South is settled.</div>}
+      {decided.length > 0 && (
         <div>
           <div className="tierhead"><IconCheck size={16} />Decided</div>
-          {group.results.map(r => (
+          {decided.map(r => (
             <div key={r.forkId} className="decided">
-              {r.forkId === REGION_FORK && `${r.winner === 'a' ? 'North' : 'South'} beat ${r.winner === 'a' ? 'South' : 'North'}`}
+              {r.forkId === REGION_FORK && regionLine(r)}
               {r.forkId !== REGION_FORK && r.winner === 'a' && `${names(r.a)} beat ${names(r.b)}`}
               {r.forkId !== REGION_FORK && r.winner === 'b' && `${names(r.b)} beat ${names(r.a)}`}
               {r.forkId !== REGION_FORK && r.winner === 'displaced' && `${names(r.a)} dropped out after an earlier result`}

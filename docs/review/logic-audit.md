@@ -85,3 +85,10 @@ D1 to D4: no change, as decided. "Sweep" below means 120 seeded groups (live cat
 - Red before the change: `AssertionError: expected [ 'aukana', 'coconut', 'crab', …(12) ] to include 'pettah'` and `AssertionError: expected false to be true` (a knocked-down Must item in the final plan). Red with `settle` removed: `AssertionError: expected [ 'aukana', 'beachday', …(12) ] to include 'dambulla'`.
 - Sweep: a knocked-down item came back in 22 of 120 groups (40 items). Questions per group 7.1 before and after (854 and 855 in all); "dropped out" lines 24 before, 15 after; no question asked twice and no result changed between two identical calls, before or after.
 - No existing test changed; the planner snapshot does not move (the planner is unchanged).
+
+### D6: "North or South?" first, alone
+
+- While "North or South?" is open, `groupResult` builds no place head to heads; they are worked out from the plan that follows its result. The Group tab says "Head to heads on places come once North or South is settled." under the region card, and once it is settled the result ("South beat North") heads the place head to heads instead of sitting in the Decided list.
+- One existing test encoded the rule this replaces: "asks item questions for the south while the region fork holds the north items back" expected place questions beside an open region question. It now asks the region question alone, then checks the same 5-question cap once South wins.
+- Red before the change: `AssertionError: expected [ 'region:north', …(4) ] to deeply equal [ 'region:north' ]`; on the screen, `Unable to find an element with the text: /Head to heads on places come once North or South is settled/` and `AssertionError: expected +0 to be truthy` (region result after the place card).
+- Sweep, before D5 and D6, then after both: questions on the first screen 585 then 120 (4.9 then 1 per group, every seeded group has a region question); questions per group in all 7.1 then 6.8; voting rounds per group 2.3 then 3.2; a knocked-down item came back in 21 of 120 groups (35 items).

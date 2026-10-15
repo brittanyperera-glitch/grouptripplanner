@@ -49,4 +49,21 @@ describe('region knockout card', () => {
     render(<AppProvider store={new SpyStore()}><Knockouts group={group({ knockouts: [], results: [{ forkId: 'region:north', a: NORTH, b: SOUTH, winner: 'b' }] })} /></AppProvider>);
     expect(await screen.findByText('South beat North')).toBeInTheDocument();
   });
+  // D6 (Brittany 2026-10-15): North or South first, alone; the place head to heads follow it.
+  it('says the place head to heads come next while North or South is open', async () => {
+    render(<AppProvider store={new SpyStore()}><Knockouts group={group()} /></AppProvider>);
+    expect(await screen.findByText(/Head to heads on places come once North or South is settled/)).toBeInTheDocument();
+  });
+  it('shows the region result above the place head to heads that follow it', async () => {
+    const g = group({
+      knockouts: [{ forkId: 'ko:galle', a: ['galle'], b: ['horton'], votes: { a: [], b: [] } }],
+      results: [{ forkId: 'region:north', a: NORTH, b: SOUTH, winner: 'b' }],
+    });
+    render(<AppProvider store={new SpyStore()}><Knockouts group={g} /></AppProvider>);
+    const line = await screen.findByText('South beat North');
+    const card = screen.getByRole('group', { name: /^Knockout: / });
+    expect(line.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByText('South beat North')).toHaveLength(1);
+    expect(screen.queryByText(/come once North or South is settled/)).toBeNull();
+  });
 });

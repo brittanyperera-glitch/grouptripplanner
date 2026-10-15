@@ -105,22 +105,28 @@ describe('group', () => {
     expect(g9.days).toBe(9); expect(g9.extras.length).toBeGreaterThan(0);
   });
   // The 5-question cap counts questions asked. Two people Must all five north items, so those top
-  // the contested list; behind the open "North or South?" fork they used to fill the 5 places and
-  // then be skipped, leaving no question for the south Musts that did not fit.
-  it('asks item questions for the south while the region fork holds the north items back', () => {
+  // the contested list; once "North or South?" goes South they must not fill the 5 places.
+  // D6 (Brittany 2026-10-15): the item questions wait until "North or South?" is settled.
+  it('asks "North or South?" alone, then item questions for the south once South wins', () => {
     const N5 = ['jaffna', 'delft', 'nainativu', 'trinco', 'pigeon'];
     const mk = (name: Person, must: string[]): Response => {
       const r = emptyRanking(); r.must = must.map(m => [m]); r.meh = items.filter(i => !must.includes(i.id)).map(i => [i.id]);
       return { name, days: 9, flex: false, pace: 1, ranking: r, rated: items.map(i => i.id), submitted: true, updatedAt: '' };
     };
-    const g = groupResult({ responses: {
+    const s: AppState = { responses: {
       Brittany: mk('Brittany', N5), Alex: mk('Alex', N5),
       Antek: mk('Antek', ['sigiriya', 'yala', 'galle', 'knuckles']),
       Lazza: mk('Lazza', ['ellarock', 'horton', 'polonnaruwa', 'hiriketiya']),
       Saulie: mk('Saulie', ['anuradhapura', 'diyaluma', 'rafting', 'train']),
-    }, suggestions: [], votes: [] }, items, L);
+    }, suggestions: [], votes: [] };
+    expect(groupResult(s, items, L).knockouts.map(k => k.forkId)).toEqual(['region:north']);
+    for (const name of ['Antek', 'Lazza'] as const) s.votes.push({ forkId: 'region:north', name, choice: 'b' });
+    expect(groupResult(s, items, L).knockouts.map(k => k.forkId)).toEqual(['region:north']);
+    s.votes.push({ forkId: 'region:north', name: 'Saulie', choice: 'b' });
+    const g = groupResult(s, items, L);
     const asked = g.knockouts.filter(k => k.forkId.startsWith('ko:'));
-    expect(g.knockouts[0].forkId).toBe('region:north');
+    expect(g.results[0]).toMatchObject({ forkId: 'region:north', winner: 'b' });
+    expect(asked.length).toBe(g.knockouts.length);
     expect(asked.length).toBeGreaterThan(0);
     expect(asked.length).toBeLessThanOrEqual(5);
     expect(asked.every(k => !N5.includes(k.forkId.slice(3)))).toBe(true);

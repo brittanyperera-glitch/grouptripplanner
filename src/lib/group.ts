@@ -98,10 +98,13 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
     }
   }
 
+  // D6 (Brittany 2026-10-15): item questions wait until "North or South?" is settled, since its
+  // result changes what each of them would cost.
+  const regionOpen = knockouts.length > 0;
   // At most MAX_CONTESTED item questions. Items settled without one (north items behind the region
   // question, items that fit for free or ride on another question) do not use up a place.
   let asked = 0;
-  for (const c of contested) {
+  for (const c of regionOpen ? [] : contested) {
     if (asked >= MAX_CONTESTED) break;
     if (skipNorth && northSet.has(c)) continue;
     if (P.chosen.includes(c)) continue;
