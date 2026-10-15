@@ -1,2 +1,3 @@
 /* A day with no photo: paper strip, so its labels take ink, not the white used over photos. */
-.strip.plain .day-area { color: var(--muted); }
+.strip.plain { --ink: var(--card-ink); --muted: var(--card-muted); --line: rgba(30, 42, 38, .12); --chip: rgba(30, 42, 38, .07); color: var(--ink); }
+.strip.plain .day-area { color: var(--ink); }

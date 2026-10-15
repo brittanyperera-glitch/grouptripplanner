@@ -10,6 +10,8 @@ import { FLING, tierFor, useSwipe } from './useSwipe';
 import './Rate.css';
 
 const LABEL: Record<Tier, string> = { must: 'Must', keen: 'Keen', meh: 'Meh', skip: 'Skip' };
+// Within this many px of the bottom counts as having seen the whole card.
+const MORE_SLACK_PX = 24;
 // Left to right the buttons mirror the swipe: left is Skip, right is Must.
 const ORDER: Tier[] = ['skip', 'meh', 'keen', 'must'];
 const ARROW: Record<Tier, ReactNode> = { must: <IconRight size={16} />, keen: <IconUp size={16} />, meh: <IconDown size={16} />, skip: <IconLeft size={16} /> };
@@ -116,6 +118,24 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
     : demoTier ? { transform: `translate(${ddx * DEMO_PX}px, ${ddy * DEMO_PX}px) rotate(${ddx * 2}deg)` } : undefined;
   const rv = extra.review ? parseReview(extra.review) : null;
 
+  // "More below" until this card's bottom has been on screen once (Brittany 2026-10-15: people missed the reviews).
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    let seen = false;
+    const check = () => {
+      const left = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+      if (left <= MORE_SLACK_PX) seen = true;
+      setMore(!seen && left > MORE_SLACK_PX);
+    };
+    check();
+    // Photos load after the first check and lengthen the card, so watch the page height too (absent in jsdom).
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(check);
+    ro?.observe(document.body);
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => { ro?.disconnect(); window.removeEventListener('scroll', check); window.removeEventListener('resize', check); };
+  }, [item.id]);
+
   return (
     <>
       <div className="body flush rate">
@@ -183,6 +203,11 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
         </div>
       </div>
       <div className="tiers">
+        {more && (
+          <button className="rate-more" onClick={() => window.scrollBy({ top: window.innerHeight * 0.6, behavior: motion() === 'full' ? 'smooth' : 'auto' })}>
+            More below<IconDown size={14} />
+          </button>
+        )}
         {ORDER.map(t => (
           <button key={t} className={`t ${t}`} onClick={() => commit(t)}>
             <span className="t-ico">{ARROW[t]}</span>{LABEL[t]}
