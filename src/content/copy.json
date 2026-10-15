@@ -4,16 +4,18 @@
   "howto": {
     "intro": [
       "You're about to see a series of some serious Sri Lanka classics.",
-      "Every one gets a vote. Swipe the card or tap the buttons.",
+      "Every one gets a vote. Swipe the word or tap the buttons.",
       "Quick practice first. None of this counts."
     ],
     "practice": {
-      "skip": { "word": "Skip", "line": "Not for me. Swipe left." },
-      "meh": { "word": "Meh", "line": "Take it or leave it. Swipe down." },
-      "keen": { "word": "Keen", "line": "Sounds good. Swipe up." },
-      "must": { "word": "Must", "line": "Can't miss it. Swipe right." }
+      "skip": { "say": "You can {Skip} it.", "line": "Swipe it left." },
+      "meh": { "say": "Or be {Meh} about it.", "line": "Swipe it down." },
+      "keen": { "say": "Be {Keen}.", "line": "Swipe it up." },
+      "must": { "say": "Or it's a {Must}.", "line": "Swipe it right." }
     },
     "nudge": "Other way, mate.",
+    "progress": "Practice",
+    "natural": "You're a natural.",
     "ranking": [
       "Must beats Keen beats Meh. Skips are out.",
       "On Your picks, drag to order each pile. Order counts.",

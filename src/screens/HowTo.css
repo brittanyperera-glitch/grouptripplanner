@@ -1,4 +1,5 @@
-/* How-to: typed instructions and a four-swipe practice round. Tokens only; see docs/theme-postcard.md. */
+/* How-to: typed instructions, then four one-sentence practice screens where the vote word is what you swipe. Tokens only; see docs/theme-postcard.md.
+   The flying word reuses Rate's fly-off (.ghost.fly-*, styles.css) and its stamp look (.stamp, Rate.css). */
 .hw { gap: 12px; }
 .hw-top { display: flex; justify-content: flex-end; }
 .hw-lines { display: flex; flex-direction: column; gap: 10px; }
@@ -8,37 +9,93 @@
 .hw-rank p:first-child { font: 600 18px/1.35 var(--font-body); text-transform: none; }
 .hw-rank { gap: 14px; margin-top: 8px; }
 
-.hw-practice { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
-.hw-step { margin: 0; font-size: 14px; font-weight: 700; color: var(--muted); letter-spacing: .02em; }
-.hw-card {
-  position: relative; box-sizing: border-box; min-height: 190px; padding: 16px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  background: var(--white); border-radius: var(--r-card); box-shadow: var(--shadow-2);
+/* Typewriter caret: no width, so the line wraps exactly as it will once typed. */
+.hw-caret { position: relative; display: inline-block; width: 0; height: 1em; vertical-align: text-bottom; }
+.hw-caret::after { content: ""; position: absolute; left: 0; top: .08em; width: 2px; height: 1.05em; background: var(--red); }
+
+.hw-practice { flex: 1; display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
+.hw-progress { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hw-count { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-variant-numeric: tabular-nums; color: var(--ink); }
+.hw-slots { display: flex; gap: 6px; }
+.hw-slot { box-sizing: border-box; width: 28px; height: 20px; border: var(--stamp-border) var(--line-strong); border-radius: var(--r-stamp); }
+.hw-slot.filled { border-style: solid; }
+.hw-slot.skip { background: var(--card-ink); border-color: var(--card-ink); }
+.hw-slot.meh { background: var(--card-muted); border-color: var(--card-muted); }
+.hw-slot.keen { background: var(--card-teal); border-color: var(--card-teal); }
+.hw-slot.must { background: var(--red-deep); border-color: var(--red-deep); }
+
+/* The stage is one sentence, centred between the progress row and the buttons. --say sizes the sentence, the pill and the flying stamp together. */
+.hw-stage { --say: clamp(34px, 11vw, 48px); position: relative; flex: 1; min-height: 190px; display: flex; flex-direction: column; justify-content: center; }
+.hw-say { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.hw-sentence { margin: 0; text-align: center; font: 800 var(--say)/1.25 var(--font-head); color: var(--ink); text-wrap: balance; }
+.hw-leave { position: absolute; z-index: 1; pointer-events: none; }
+.hw-step { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: .02em; color: var(--muted); visibility: hidden; }
+.hw-step.shown { visibility: visible; }
+
+/* The pill is the grab target (hw-card is its name in the tests). A dashed stamp border says "this is the thing". */
+.hw-pill {
+  box-sizing: border-box; position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 6px; vertical-align: middle;
+  margin: 4px 2px; padding: 2px 12px 2px 14px; font-size: 1.4em; line-height: 1; letter-spacing: .04em; text-transform: uppercase;
+  border: 3px dashed currentColor; border-radius: 8px; background: rgba(255, 255, 255, .94);
   touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none;
-  transition: transform var(--dur-slow) var(--ease);
 }
-.hw-card.dragging { cursor: grabbing; transition: none; }
-.hw-word { font: 800 clamp(64px, 22vw, 96px)/.9 var(--font-head); letter-spacing: .04em; text-transform: uppercase; }
-.hw-word.must { color: var(--red-deep); }
-.hw-word.keen { color: var(--card-teal); }
-.hw-word.meh { color: var(--card-muted); }
-.hw-word.skip { color: var(--card-ink); }
-.hw-arrow { display: inline-flex; color: var(--card-muted); }
-.hw-nudge { min-height: 20px; font-size: 14px; font-weight: 700; color: var(--red-ink); }
+.hw-pill.dragging { cursor: grabbing; }
+.hw-pill.skip { color: var(--card-ink); }
+.hw-pill.meh { color: var(--card-muted); }
+.hw-pill.keen { color: var(--card-teal); }
+.hw-pill.must { color: var(--red-deep); }
+.hw-oldpill { visibility: hidden; }
+/* While the sentence types in, the pill holds its place unseen until its word starts, and its arrow waits for the end. */
+.hw-pill.unreached, .hw-pill.typing .hw-arrow { visibility: hidden; }
+.hw-arrow { display: inline-flex; }
+.hw-nudge { min-height: 20px; text-align: center; font-size: 14px; font-weight: 700; color: var(--red-ink); }
 
 .hw-tiers { margin: 0 -20px; }
 .t.target { box-shadow: 0 0 0 3px var(--coconut); }
 
-/* The card leans toward the swipe it is asking for; the arrow nudges the same way. */
-@keyframes hw-lean-left { 0%, 100% { transform: none; } 50% { transform: translate(-34px, 0) rotate(-3deg); } }
-@keyframes hw-lean-right { 0%, 100% { transform: none; } 50% { transform: translate(34px, 0) rotate(3deg); } }
-@keyframes hw-lean-up { 0%, 100% { transform: none; } 50% { transform: translate(0, -26px); } }
-@keyframes hw-lean-down { 0%, 100% { transform: none; } 50% { transform: translate(0, 26px); } }
-@keyframes hw-bump { 0%, 100% { translate: 0; } 25% { translate: -6px; } 75% { translate: 6px; } }
+/* Payoff: the word flies off as a stamp, the sentence leaves the same way, and small shapes burst from where the word was. */
+.hw-flyword { position: absolute; z-index: 4; pointer-events: none; }
+.hw-flyword .stamp {
+  position: static; box-sizing: border-box; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 0;
+  font: 800 calc(var(--say) * 1.4)/1 var(--font-head); letter-spacing: .04em; transform: rotate(var(--tilt));
+}
+.hw-flyword.must { --tilt: -12deg; }
+.hw-flyword.skip { --tilt: 12deg; }
+.hw-flyword.keen { --tilt: -4deg; }
+.hw-flyword.meh { --tilt: 4deg; }
+.hw-burst { position: absolute; z-index: 3; width: 0; height: 0; pointer-events: none; }
+.hw-burst span { position: absolute; left: 0; top: 0; width: 14px; height: 14px; margin: -7px 0 0 -7px; background: var(--tc); }
+.hw-burst span:nth-child(3n + 1) { border-radius: 50%; }
+.hw-burst span:nth-child(3n) { clip-path: polygon(50% 0, 100% 100%, 0 100%); width: 18px; height: 18px; margin: -9px 0 0 -9px; }
+.hw-burst.must { --tc: var(--red-deep); }
+.hw-burst.keen { --tc: var(--card-teal); }
+.hw-burst.meh { --tc: var(--card-muted); }
+.hw-burst.skip { --tc: var(--card-ink); }
+
+/* Finale: the line, Brittany, and the tuk-tuk across the screen once. */
+.hw-finale { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding-top: 10px; }
+.hw-natural { margin: 0; font: 800 clamp(40px, 13vw, 56px)/.92 var(--font-head); text-transform: uppercase; text-wrap: balance; color: var(--red-ink); }
+.hw-hero { display: grid; place-items: center; }
+.hw-finale.still { padding-top: 0; }
+.hw-finale.still .hw-natural { font-size: 30px; }
+.hw-lane { position: relative; align-self: stretch; height: 64px; margin: 0 -20px; overflow: hidden; }
+.hw-lane::after { content: ""; position: absolute; left: 0; right: 0; bottom: 5px; height: 2px; background: repeating-linear-gradient(90deg, var(--red) 0 6px, transparent 6px 12px); }
+.hw-tuk { position: absolute; left: 0; bottom: 6px; transform: translateX(-90px); }
+
+@keyframes hw-bump { 0%, 100% { translate: 0; rotate: 0deg; } 25% { translate: -8px; rotate: -2deg; } 75% { translate: 8px; rotate: 2deg; } }
+@keyframes hw-stamp-in { from { scale: 1.9; opacity: 0; } }
+@keyframes hw-slot-in { from { scale: 1.7; opacity: 0; } }
+@keyframes hw-burst { to { transform: rotate(var(--a)) translateX(var(--d)) scale(.3); opacity: 0; } }
+@keyframes hw-out { to { translate: calc(var(--ox) * 40%) calc(var(--oy) * 60px); opacity: 0; } }
+@keyframes hw-blink { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: no-preference) {
-  .hw-card.anim:not(.dragging).dir-skip { animation: hw-lean-left var(--dur-slow) var(--ease-in-out) infinite alternate; }
-  .hw-card.anim:not(.dragging).dir-must { animation: hw-lean-right var(--dur-slow) var(--ease-in-out) infinite alternate; }
-  .hw-card.anim:not(.dragging).dir-keen { animation: hw-lean-up var(--dur-slow) var(--ease-in-out) infinite alternate; }
-  .hw-card.anim:not(.dragging).dir-meh { animation: hw-lean-down var(--dur-slow) var(--ease-in-out) infinite alternate; }
-  .hw-card.nudged .hw-word { animation: hw-bump var(--dur) var(--ease); }
+  .hw-pill.nudged { animation: hw-bump var(--dur) var(--ease); }
+  .hw-leave { animation: hw-out var(--dur-slow) var(--ease-in) forwards; }
+  .hw-stamp { animation: hw-stamp-in var(--dur-fast) var(--ease) backwards; }
+  .hw-slot.filled { animation: hw-slot-in var(--dur) var(--ease); }
+  .hw-burst span { animation: hw-burst var(--dur-slow) var(--ease) forwards; transform: rotate(var(--a)); }
+  .hw-step.shown { animation: rise var(--dur) var(--ease) backwards; }
+  .hw-caret::after { animation: hw-blink var(--dur-slow) steps(1) infinite; }
+  .hw-natural { animation: rise var(--dur-slow) var(--ease) backwards; }
+  .hw-hero { animation: rise var(--dur-slow) var(--ease) 120ms backwards; }
 }
