@@ -22,7 +22,25 @@ for (const height of [844, 667]) {
       }, n);
     }
     console.log(height, JSON.stringify(m));
-    expect(m.Alex.fill).toBeGreaterThanOrEqual(0.8);
+    if (height >= 667) expect(m.Alex.fill).toBeGreaterThanOrEqual(0.8);
     for (const n of names) expect(m[n].inside, n).toBe(true);
+  });
+}
+
+// The character page never exceeds the viewport, so Select is always on screen.
+for (const [width, height] of [[390, 568], [390, 667], [390, 844], [1280, 800]]) {
+  test(`character page fits ${width} x ${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await page.getByRole('button', { name: 'Choose your character' }).click();
+    await page.waitForTimeout(700);
+    const r = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollHeight, inner: innerHeight,
+      selectBottom: Array.from(document.querySelectorAll('button')).find(b => b.textContent?.trim() === 'Select')!.getBoundingClientRect().bottom,
+    }));
+    expect(r.scroll).toBeLessThanOrEqual(r.inner);
+    expect(r.selectBottom).toBeLessThanOrEqual(r.inner);
   });
 }
