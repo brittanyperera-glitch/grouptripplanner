@@ -30,7 +30,7 @@
    },
    "when": "morning",
    "sideTrip": 0,
-   "credit": "Pierre Andre Leclercq, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Brittany's pick, private use"
   },
   {
    "id": "galleface",
@@ -49,7 +49,7 @@
    },
    "when": "sunset",
    "sideTrip": 0,
-   "credit": "Tharindu Madusanka Perera, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Brittany's pick, private use"
   },
   {
    "id": "crab",
@@ -69,7 +69,7 @@
    },
    "when": "evening",
    "sideTrip": 0,
-   "credit": "Vikram Aditya, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Brittany's pick, private use"
   },
   {
    "id": "rooftop",
@@ -88,7 +88,7 @@
    },
    "when": "evening",
    "sideTrip": 0,
-   "credit": "Thilina Alagiyawanna, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Zoshua Colah, private use"
   },
   {
    "id": "kottu",
@@ -148,7 +148,7 @@
    },
    "when": "sunrise",
    "sideTrip": 0.3,
-   "credit": "Lou Lou B Photo, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Anil Reddy, private use"
   },
   {
    "id": "dambulla",
@@ -168,7 +168,7 @@
    },
    "when": "morning",
    "sideTrip": 1.14,
-   "credit": "Vedanth Ravi, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Vedanth Ravi, private use"
   },
   {
    "id": "polonnaruwa",
@@ -207,7 +207,7 @@
    },
    "when": "afternoon",
    "sideTrip": 1.54,
-   "credit": "Shyaman Prasad, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Rajiv Perera, private use"
   },
   {
    "id": "anuradhapura",
@@ -247,7 +247,7 @@
    },
    "when": "18:30",
    "sideTrip": 0,
-   "credit": "Chathura Anuradha Subasinghe, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Chathura Anuradha Subasinghe, private use"
   },
   {
    "id": "knuckles",
@@ -267,7 +267,7 @@
    },
    "when": "morning",
    "sideTrip": 5.06,
-   "credit": "Muhammadh Ashik, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Thushal Madhushankha, private use"
   },
   {
    "id": "rafting",
@@ -303,7 +303,7 @@
    "about": "The best-scenery stretch of the hill country railway, tea fields all the way.",
    "when": "09:00 or 14:30",
    "sideTrip": 0.2,
-   "credit": "Danny Postma, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Danny Postma, private use"
   },
   {
    "id": "horton",
@@ -323,7 +323,7 @@
    },
    "when": "sunrise",
    "sideTrip": 2.4,
-   "credit": "Madhawa Mihiran, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Brittany's pick, private use"
   },
   {
    "id": "tea",
@@ -343,7 +343,7 @@
    },
    "when": "daytime",
    "sideTrip": 1.06,
-   "credit": "Praveen Maleesha, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Praveen Maleesha, private use"
   },
   {
    "id": "ellarock",
@@ -363,7 +363,7 @@
    },
    "when": "06:00 start",
    "sideTrip": 0,
-   "credit": "Oleg Illarionov, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Egle Sidaraviciute, private use"
   },
   {
    "id": "ninearch",
@@ -383,7 +383,7 @@
    },
    "when": "train times",
    "sideTrip": 0,
-   "credit": "Adam Vandermeer, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "gemmmm, private use"
   },
   {
    "id": "diyaluma",
@@ -403,7 +403,7 @@
    },
    "when": "late morning",
    "sideTrip": 2.5,
-   "credit": "Mahesh Malaka Udawatta, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Lakshan Mamalgaha, private use"
   },
   {
    "id": "yala",
@@ -424,7 +424,7 @@
    "when": "gate opening",
    "sideTrip": 1.24,
    "hub": "Tissa",
-   "credit": "Tommaso Delton, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Tommaso Delton, private use"
   },
   {
    "id": "udawalawe",
@@ -463,7 +463,7 @@
    },
    "when": "morning",
    "sideTrip": 0,
-   "credit": "Filipp Nekhaev, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Lucas Klein, private use"
   },
   {
    "id": "galle",
@@ -482,7 +482,7 @@
    },
    "when": "sunset",
    "sideTrip": 1.54,
-   "credit": "Hendrik Cornelissen, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Shainee Fernando, private use"
   },
   {
    "id": "coconut",
@@ -501,7 +501,7 @@
    },
    "when": "sunset",
    "sideTrip": 0,
-   "credit": "Dinuka Lankaloka, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Dinuka Lankaloka, private use"
   },
   {
    "id": "hiriketiya",
@@ -520,7 +520,7 @@
    "photo": "hiriketiya",
    "when": "any",
    "sideTrip": 2.14,
-   "credit": "Daniel Schacher, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Daniel Schacher, private use"
   },
   {
    "id": "junglebeach",
@@ -539,7 +539,7 @@
    },
    "when": "morning",
    "sideTrip": 1.46,
-   "credit": "Siarhei Palishchuk, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Siarhei Palishchuk, private use"
   },
   {
    "id": "beachday",
@@ -553,7 +553,7 @@
    "about": "A whole day off: beach, swim, nap, repeat.",
    "when": "any",
    "sideTrip": 0,
-   "credit": "Sarmat Batagov, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Eirik Skarstein, private use"
   },
   {
    "id": "jaffna",
@@ -573,7 +573,7 @@
    },
    "when": "morning",
    "sideTrip": 0,
-   "credit": "Yercaud-elango, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Brittany's pick, private use"
   },
   {
    "id": "delft",
@@ -593,7 +593,7 @@
    },
    "when": "morning",
    "sideTrip": 1.54,
-   "credit": "Shenal Sadurshan, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Shenal Sadurshan, private use"
   },
   {
    "id": "nainativu",
@@ -613,7 +613,7 @@
    },
    "when": "morning",
    "sideTrip": 1.54,
-   "credit": "Thineshkumar Lingeswaran, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Thineshkumar Lingeswaran, private use"
   },
   {
    "id": "aukana",
@@ -633,7 +633,7 @@
    },
    "when": "sunrise",
    "sideTrip": 2.4,
-   "credit": "Plpm2021, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Carlos Delgado, private use"
   },
   {
    "id": "rekawa",
