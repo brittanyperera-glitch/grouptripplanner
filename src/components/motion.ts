@@ -16,10 +16,19 @@ export function motion(): Motion {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'reduced' : 'full';
 }
 
-type VTDoc = Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } };
+type VT = { finished: Promise<void>; skipTransition(): void };
+type VTDoc = Document & { startViewTransition?: (cb: () => void) => VT };
 
 let last: Nav = 'fwd';
 export const lastNav = () => last;
+let running: VT | null = null;
+
+/**
+ * Ends the screen-change transition now. A full-screen overlay that opens with the change (the route reveal) must
+ * call it: the transition paints the new screen's snapshot above the live page, so the screen under the overlay
+ * showed for its whole length.
+ */
+export function skipNavTransition() { running?.skipTransition(); }
 
 /** Runs a navigation inside a view transition when the browser has them and motion is on. */
 export function navigate(dir: Nav, update: () => void) {
@@ -29,7 +38,8 @@ export function navigate(dir: Nav, update: () => void) {
   const root = document.documentElement;
   root.dataset.nav = dir;
   const vt = doc.startViewTransition(() => flushSync(update));
-  void vt.finished.finally(() => { if (root.dataset.nav === dir) delete root.dataset.nav; });
+  running = vt;
+  void vt.finished.finally(() => { if (running === vt) running = null; if (root.dataset.nav === dir) delete root.dataset.nav; });
 }
 
 /** Haptic tick on a swipe: longer pattern on Must. No-op without navigator.vibrate (iOS Safari) or when motion is off. */

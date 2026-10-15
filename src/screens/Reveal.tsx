@@ -1,11 +1,11 @@
 import './Premiere.css';
 import './Reveal.css';
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import Avatar from '../components/Avatar';
 import { useOpenGuide } from '../components/GuideNav';
 import { COAST, hubLabel, hubName, hubXY, px } from '../components/Map';
-import { motion } from '../components/motion';
+import { motion, skipNavTransition } from '../components/motion';
 import { buildLegs, legD, tukHeight, tukTransform, useLegDrive, type Pt } from '../components/routeDrive';
 import TransportLine, { transportOf, type Transport } from '../components/TransportLine';
 import { engineStart, engineStop, horn, isMuted, jingle, setMuted, stopAll, thud, unlock } from '../components/sound';
@@ -334,6 +334,9 @@ export function Reveal({ plan, cards = NO_CARDS, who, onClose }: { plan: Plan; c
   const tukRef = useRef<SVGGElement>(null);
   const legRef = useRef<SVGGElement>(null);
   const home = k === stops.length;
+  // Opening with a screen change (submitting your picks lands on My trip, which autoplays this) must not let the
+  // transition show the finished route underneath first.
+  useLayoutEffect(() => { skipNavTransition(); }, []);
 
   // Sequence: intro, then for each leg drive, then hold at the stop (or at the airport after the last leg).
   useEffect(() => {
