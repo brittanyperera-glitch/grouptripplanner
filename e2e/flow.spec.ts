@@ -83,7 +83,7 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
   await expect(page.getByText(/^Day 10\b/)).toHaveCount(0);
   await shot(page, 'group-final');
   await expect(page.getByText(/Your list is saved\. 1 of 5 done/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Play trailer' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Play route reveal' })).toHaveCount(0);
   await shot(page, 'saved-not-locked');
   await expect(page.getByText(/Provisional until all five finalize their lists \(1 of 5 done\)/)).toBeVisible();
 

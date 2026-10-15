@@ -45,7 +45,7 @@ function splitReview(r: string): [string, string | null] {
 // Shared-element name: the rated card's photo morphs into the same place's compare card.
 export const vtName = (id: string) => `pic-${id.replace(/[^A-Za-z0-9_-]/g, '_')}`;
 
-function TukTuk() {
+export function TukTuk() {
   return (
     <svg viewBox="0 0 40 28" width="34" height="24">
       <path d="M6 20V9a5 5 0 0 1 5-5h14l7 8v8z" fill="#FF7A1A" />

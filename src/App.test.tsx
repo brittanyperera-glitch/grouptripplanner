@@ -272,7 +272,7 @@ describe('submit, lock and errors', () => {
     await openGroup([]);
     await screen.findByRole('region', { name: 'Finalize your list' });
     expect(screen.queryByText(/Provisional until all five finalize/)).toBeNull();
-    expect(screen.queryByLabelText('Trailer')).toBeNull();
+    expect(screen.queryByLabelText('Route reveal')).toBeNull();
   });
 
   it('after I save, the plan shows and Edit my list reopens the Finalize step until the lock', async () => {
@@ -284,18 +284,18 @@ describe('submit, lock and errors', () => {
     expect(screen.queryByText(/Provisional until all five finalize/)).toBeNull();
   });
 
-  it('shows no Play trailer button before the lock', async () => {
+  it('shows no Play route reveal button before the lock', async () => {
     await openGroup(['Alex', 'Lazza']);
-    expect(await screen.findByText(/The trailer drops once all five lock their lists/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Play trailer' })).toBeNull();
+    expect(await screen.findByText(/The route reveal drops once all five lock their lists/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Play route reveal' })).toBeNull();
     expect(screen.getByRole('list', { name: 'Still to go' }).children).toHaveLength(3);
   });
 
-  it('offers Play trailer, and no Edit my list, once the plan is locked', async () => {
+  it('offers Play route reveal, and no Edit my list, once the plan is locked', async () => {
     await openGroup([...PEOPLE]);
-    expect(await screen.findByRole('button', { name: 'Play trailer' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Play route reveal' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Edit my list' })).toBeNull();
-    expect(screen.queryByText(/The trailer drops once/)).toBeNull();
+    expect(screen.queryByText(/The route reveal drops once/)).toBeNull();
   });
 
   it('keeps ratings editable before the group opens', async () => {

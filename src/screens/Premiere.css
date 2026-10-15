@@ -13,17 +13,9 @@
 
 .trailer { position: fixed; inset: 0; z-index: 80; background: #050608; color: #F5F1EA; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
 .trailer-close { all: unset; cursor: pointer; position: absolute; top: 12px; right: 12px; z-index: 2; padding: 8px 14px; border-radius: var(--r-pill); background: rgba(0, 0, 0, .55); font-size: var(--fs-sm); font-weight: 800; }
-.trailer-title { text-align: center; display: flex; flex-direction: column; gap: 10px; animation: tr-in .6s var(--ease) both; }
-.trailer-day { position: absolute; inset: 0; animation: tr-in .4s var(--ease) both; }
-.trailer-day img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: tr-zoom 3s linear both; }
-.trailer-cap { position: absolute; left: 20px; right: 20px; bottom: 56px; display: flex; flex-direction: column; gap: 6px; }
-.trailer-cap .big { overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .poster-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; max-height: 100%; padding: 48px 16px 16px; box-sizing: border-box; cursor: default; }
 .poster-art { display: block; height: min(calc(100dvh - 150px), calc((100vw - 32px) * 16 / 9)); width: auto; aspect-ratio: 9 / 16; border-radius: 6px; flex: none; }
 .poster-wrap .cta { flex: none; width: min(280px, 100%); }
-@keyframes tr-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes tr-zoom { from { transform: scale(1); } to { transform: scale(1.12); } }
-@media (prefers-reduced-motion: reduce) { .trailer-title, .trailer-day, .trailer-day img { animation: none; } }
 .premiere-todo { display: flex; gap: 8px; flex-wrap: wrap; }
 .body.edit-list { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
 .body.edit-list .sub { margin: 0; }

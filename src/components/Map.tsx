@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, type ReactNode } from 'react';
 import type { Hub } from '../types';
 
 const COAST: [number, number][] = [[9.83, 80.25], [9.66, 80.02], [9.38, 80.12], [9.0, 79.92], [8.6, 79.92], [8.23, 79.75], [8.03, 79.83], [7.58, 79.79], [7.2, 79.83], [6.93, 79.85], [6.58, 79.96], [6.42, 80.0], [6.2, 80.07], [6.03, 80.22], [5.94, 80.46], [5.92, 80.59], [6.02, 80.8], [6.12, 81.12], [6.22, 81.33], [6.4, 81.6], [6.84, 81.84], [7.2, 81.85], [7.72, 81.7], [8.15, 81.43], [8.57, 81.23], [8.95, 81.0], [9.27, 80.82], [9.6, 80.55], [9.83, 80.25]];
@@ -19,16 +19,25 @@ const HUB: Record<Hub, { lat: number; lon: number; name: string; side: 'l' | 'r'
 };
 
 const px = (lat: number, lon: number): [number, number] => [(lon - 79.55) * 118, (9.95 - lat) * 118];
+/** Map-space position of a hub, for drawing on top of RouteMap. */
+export const hubXY = (h: Hub) => px(HUB[h].lat, HUB[h].lon);
+/** Where RouteMap prints a hub's name, so a caller can print a second line under it. */
+export function hubLabel(h: Hub) {
+  const [x, y] = hubXY(h);
+  const { side } = HUB[h];
+  return { side, x: side === 'l' ? x - 10 : side === 'r' ? x + 10 : x, y: side === 't' ? y - 11 : y + 4, anchor: side === 'l' ? 'end' : side === 'r' ? 'start' : 'middle' } as const;
+}
 const pts = (list: [number, number][]) => list.map(([a, o]) => px(a, o).map(n => n.toFixed(1)).join(',')).join(' ');
 
 // Schematic island with the route drawn over it. `route` starts and ends at AIR.
-export default function RouteMap({ route }: { route: Hub[] }) {
+// `overlay` and `extraHeight` (route reveal only): draw on top in map coordinates; room under the south coast for a second label line.
+export default function RouteMap({ route, overlay, extraHeight = 0 }: { route: Hub[]; overlay?: ReactNode; extraHeight?: number }) {
   const uid = useId().replace(/[^A-Za-z0-9]/g, '');
   const line = pts(route.map(h => [HUB[h].lat, HUB[h].lon]));
   const stops = [...new Set(route)];
   return (
     <div className="map scene">
-      <svg viewBox="-60 10 340 470" role="img" aria-label={`Route: ${route.map(h => HUB[h].name).join(', ')}`}>
+      <svg viewBox={`-60 10 340 ${470 + extraHeight}`} role="img" aria-label={`Route: ${route.map(h => HUB[h].name).join(', ')}`}>
         <defs>
           <linearGradient id={`route${uid}`} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#FFC15E" /><stop offset=".55" stopColor="#FF7A1A" /><stop offset="1" stopColor="#FF4D6D" />
@@ -54,6 +63,7 @@ export default function RouteMap({ route }: { route: Hub[] }) {
             </g>
           );
         })}
+        {overlay}
       </svg>
     </div>
   );
