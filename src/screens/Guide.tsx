@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import guide from '../content/guide.json';
+import Avatar from '../components/Avatar';
 
 type Entry = { title?: string; body?: string; list?: string[]; after?: string };
 type Phrase = { english: string; sinhala: string; say: string };
@@ -12,14 +13,17 @@ export default function Guide() {
   const section = SECTIONS.find(s => s.id === id) ?? SECTIONS[0];
   return (
     <section className="body guide" aria-label="Guide">
-      <div className="kicker">Britt's guide</div>
+      <header className="guide-head">
+        <Avatar name="Brittany" size={52} />
+        <h1 className="big display guide-name">Britt's guide</h1>
+      </header>
       <div className="guide-chips" role="group" aria-label="Guide sections">
         {SECTIONS.map(s => (
           <button key={s.id} aria-pressed={s.id === section.id} onClick={() => setId(s.id)}>{s.id}</button>
         ))}
       </div>
       <div className="guide-section" role="region" aria-label={section.id}>
-        <h2 className="big display guide-title">{section.label}</h2>
+        <h2 className="big guide-title">{section.label}</h2>
         {section.intro && <p className="guide-intro">{section.intro}</p>}
         {section.phrases ? (
           <ul className="guide-phrases">

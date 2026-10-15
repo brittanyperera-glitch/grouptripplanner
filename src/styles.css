@@ -463,7 +463,10 @@ h1.big { margin: 0; }
 .guide-chips button[aria-pressed="true"] { color: var(--on-red); background: var(--red); box-shadow: none; }
 .guide-chips button:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
 .guide-section { display: flex; flex-direction: column; gap: 10px; }
-.guide-title { margin: 4px 0 0; color: var(--ink); }
+/* The guide's own name leads (Brittany 2026-10-15: it read as a small stamp); the section name sits under it. */
+.guide-head { display: flex; align-items: center; gap: 12px; }
+.guide-name { margin: 0; font-size: var(--fs-3xl); color: var(--red-ink); }
+.guide-title { margin: 6px 0 0; font-size: 30px; color: var(--ink); }
 .guide-intro { margin: 0; color: var(--ink); font-size: 15px; line-height: 1.5; }
 .guide-entry { padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); }
 .guide-entry h3 { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px; font-family: var(--font-head); font-size: 26px; font-weight: 800; text-transform: uppercase; line-height: 1; color: var(--ink); }
