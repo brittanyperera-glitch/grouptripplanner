@@ -1,8 +1,8 @@
 # Guide: Britt's food, fruit and beach picks
 
 Source of truth for the in-app Guide. Entries are Brittany's own words from her notes, lightly cleaned
-(two personal asides made general, "tiger sharks" corrected to blacktip reef sharks). Entries marked
-`[drafted in Britt's tone]` were not in her notes; Claude wrote them in her voice for her to check.
+(two personal asides made general, "tiger sharks" corrected to blacktip reef sharks). Entries not in
+her notes were drafted and then reviewed and rewritten by Brittany on 2026-10-15.
 
 ## Fruit
 
