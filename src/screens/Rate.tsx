@@ -22,7 +22,12 @@ export default function Rate({ item, n, total, copy, onTier }: {
           {item.about && <div className="about">{item.about}</div>}
           <div className="facts">{facts(item)}</div>
           {item.warn && <div className="fact-warn"><b>Heads up:</b> {item.warn}</div>}
-          {extra.approved && <div className="approved">👍 Brittany approved</div>}
+          {extra.approved && (
+            <div className="approved">
+              👍 Brittany approved
+              <div className="approved-note">Only because I've been and can vouch for it. The others aren't necessarily bad.</div>
+            </div>
+          )}
           {item.google && (
             <a className="gr" href={item.google.url} target="_blank" rel="noopener noreferrer">See it on Google Maps</a>
           )}

@@ -143,6 +143,14 @@ describe('rating card', () => {
     expect(screen.getByText('1 of 3')).toBeInTheDocument();
   });
 
+  it('explains what Brittany approved means', async () => {
+    (copy.items as Record<string, { approved?: boolean }>).a = { approved: true };
+    await onCard(THREE);
+    expect(screen.getByText(/Brittany approved/)).toBeInTheDocument();
+    expect(screen.getByText(/can vouch for it\. The others aren't necessarily bad/)).toBeInTheDocument();
+    delete (copy.items as Record<string, unknown>).a;
+  });
+
   it('hides empty review and take', async () => {
     await onCard(THREE);
     expect(screen.queryByText(/Brittany:/)).not.toBeInTheDocument();
