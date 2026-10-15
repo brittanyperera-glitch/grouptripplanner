@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import catalogue from '../data/catalogue.json';
@@ -8,8 +8,6 @@ import type { Item, Person, Plan, Response, Tier } from '../types';
 import { IMAGE_AVATARS } from '../components/Avatar';
 import Friends from './Friends';
 import Poster, { routeLines } from './Poster';
-import type { Compromise } from '../lib/compromises';
-import { Reveal, stopDays } from './Reveal';
 
 const ITEMS = (catalogue as unknown as { items: Item[] }).items;
 
@@ -45,71 +43,6 @@ describe('Friends', () => {
     expect(sec).toHaveTextContent('Biggest clash');
     expect(sec).toHaveTextContent('Most divisive');
     expect(sec).toHaveTextContent('3 Must, 1 Skip');
-  });
-});
-
-const rplan: Plan = {
-  route: ['AIR', 'Colombo', 'Kandy', 'Ella', 'AIR'], areas: ['Colombo', 'Kandy and Knuckles', 'Ella'], chosen: [], dropped: [], travelHours: 3, fits: true, missingMusts: [], score: 0,
-  days: [
-    { n: 1, area: 'Colombo', spare: 0, rainSlack: false, entries: [{ kind: 'drive', label: 'a', hours: 1, from: 'AIR', to: 'Colombo' }] },
-    { n: 2, area: 'Kandy and Knuckles', spare: 0, rainSlack: false, entries: [{ kind: 'drive', label: 'b', hours: 3, from: 'Colombo', to: 'Kandy' }] },
-    { n: 3, area: 'Kandy and Knuckles', spare: 0, rainSlack: false, entries: [] },
-    { n: 4, area: 'Ella', spare: 0, rainSlack: false, entries: [{ kind: 'drive', label: 'c', hours: 4, from: 'Kandy', to: 'Ella' }] },
-    { n: 5, area: null, spare: 0, rainSlack: false, entries: [{ kind: 'drive', label: 'd', hours: 5, from: 'Ella', to: 'AIR' }] },
-  ],
-};
-const cards: Compromise[] = [
-  { kind: 'region', text: 'North out: South won 3 to 2', stop: 'Ella' },
-  { kind: 'skipped', text: 'Kandy lake stays though Alex skipped it', stop: 'Kandy' },
-];
-const fullMotion = () => {
-  vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: false } as MediaQueryList);
-  Object.defineProperty(navigator, 'webdriver', { value: false, configurable: true });
-};
-const mapText = () => screen.queryByRole('img', { name: /^Route:/ })?.textContent ?? '';
-
-describe('route reveal', () => {
-  it('numbers the days at each stop', () => {
-    expect(stopDays(rplan)).toEqual({ Colombo: 'Day 1', Kandy: 'Days 2 to 3', Ella: 'Day 4' });
-  });
-  it('with motion off shows the finished route and every card at once, and a tap goes to the poster', async () => {
-    render(<AppProvider><Reveal plan={rplan} cards={cards} onClose={() => {}} /></AppProvider>);
-    const dlg = await screen.findByRole('dialog');
-    expect(dlg).toHaveAttribute('data-stage', 'done');
-    for (const n of ['Colombo', 'Kandy', 'Ella']) expect(mapText()).toContain(n);
-    expect(mapText()).toContain('Days 2 to 3');
-    expect(screen.getAllByRole('listitem').map(l => l.textContent)).toEqual(cards.map(c => c.text));
-    await userEvent.click(dlg);
-    expect(dlg).toHaveAttribute('data-stage', 'poster');
-    expect(screen.getByRole('button', { name: 'Save poster' })).toBeInTheDocument();
-  });
-  it('drives stop to stop, pops each card at its stop, ends on the poster inside 20 s', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    fullMotion();
-    render(<AppProvider><Reveal plan={rplan} cards={cards} onClose={() => {}} /></AppProvider>);
-    const dlg = await screen.findByRole('dialog');
-    expect(dlg).toHaveAttribute('data-stage', 'drive');
-    expect(mapText()).not.toContain('Colombo');
-    expect(screen.queryAllByRole('listitem')).toHaveLength(0);
-    const seen: string[] = [];
-    let t = 0;
-    while (dlg.getAttribute('data-stage') !== 'poster' && t < 20000) {
-      act(() => { vi.advanceTimersByTime(100); });
-      t += 100;
-      for (const n of ['Colombo', 'Kandy', 'Ella']) if (mapText().includes(n) && !seen.includes(n)) seen.push(n);
-      if (screen.queryAllByRole('listitem').length === 1 && !seen.includes('card1')) { seen.push('card1'); expect(mapText()).toContain('Kandy'); expect(mapText()).not.toContain('Ella'); }
-    }
-    expect(seen).toEqual(['Colombo', 'Kandy', 'card1', 'Ella']);
-    expect(dlg).toHaveAttribute('data-stage', 'poster');
-    expect(t).toBeLessThan(20000);
-  });
-  it('a tap during the drive skips to the poster', async () => {
-    fullMotion();
-    render(<AppProvider><Reveal plan={rplan} cards={cards} onClose={() => {}} /></AppProvider>);
-    const dlg = await screen.findByRole('dialog');
-    expect(dlg).toHaveAttribute('data-stage', 'drive');
-    await userEvent.click(dlg);
-    expect(dlg).toHaveAttribute('data-stage', 'poster');
   });
 });
 

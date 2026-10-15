@@ -3,6 +3,7 @@ import type { CSSProperties, PointerEvent as RPointerEvent, ReactNode } from 're
 import { IconClock, IconDown, IconExternal, IconLeft, IconPin, IconRight, IconSun, IconTicket, IconUp, IconWarn } from '../components/Icons';
 import { buzz, motion } from '../components/motion';
 import { Cover } from '../components/PhotoCard';
+import TukTuk from '../components/TukTuk';
 import type { Copy } from '../state';
 import type { Item, Tier } from '../types';
 
@@ -44,20 +45,6 @@ function splitReview(r: string): [string, string | null] {
 
 // Shared-element name: the rated card's photo morphs into the same place's compare card.
 export const vtName = (id: string) => `pic-${id.replace(/[^A-Za-z0-9_-]/g, '_')}`;
-
-export function TukTuk() {
-  return (
-    <svg viewBox="0 0 40 28" width="34" height="24">
-      <path d="M6 20V9a5 5 0 0 1 5-5h14l7 8v8z" fill="#FF7A1A" />
-      <path d="M8 6.5h16v2H8z" fill="#2BB673" />
-      <path d="M13 9h9v6h-9z" fill="#BFE8FF" opacity=".9" />
-      <path d="M25 9l5 5h-5z" fill="#BFE8FF" opacity=".9" />
-      <path d="M4 20h30" stroke="#1A0E04" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="11" cy="22" r="3.6" fill="#1A0E04" /><circle cx="11" cy="22" r="1.3" fill="#FFC15E" />
-      <circle cx="30" cy="22" r="3.6" fill="#1A0E04" /><circle cx="30" cy="22" r="1.3" fill="#FFC15E" />
-    </svg>
-  );
-}
 
 function Palm() {
   return (
@@ -173,7 +160,7 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
       <div className="body flush rate">
         <div className="road" role="progressbar" aria-label="Places rated" aria-valuemin={0} aria-valuemax={total} aria-valuenow={n - 1}>
           <span className="road-line" aria-hidden="true" />
-          <span className="tuktuk" aria-hidden="true" style={{ '--p': (n - 1) / Math.max(1, total) } as CSSProperties}><TukTuk /></span>
+          <span className="tuktuk" aria-hidden="true" style={{ '--p': (n - 1) / Math.max(1, total) } as CSSProperties}><TukTuk width={34} idle /></span>
           <span className="palm" aria-hidden="true"><Palm /></span>
         </div>
         <div className="deck">

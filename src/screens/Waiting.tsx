@@ -1,6 +1,7 @@
 import Avatar from '../components/Avatar';
 import { useOpenGuide } from '../components/GuideNav';
 import { IconCheck } from '../components/Icons';
+import TukTuk from '../components/TukTuk';
 import { useApp } from '../state';
 import { isLocal } from '../store';
 import { emptyRanking, PEOPLE } from '../types';
@@ -41,6 +42,12 @@ export default function Waiting() {
     <section className="body" aria-label="Waiting for the group">
       <div className="kicker">Group plan</div>
       <div className="big display">{done.length} of {PEOPLE.length} done</div>
+      {/* The tuk-tuk idles at the group's progress, waiting on the rest. */}
+      <div aria-hidden="true" style={{ position: 'relative', height: 38, marginTop: 4 }}>
+        <span style={{ position: 'absolute', bottom: -2, left: `calc(${done.length / PEOPLE.length} * (100% - 46px))`, transition: 'left .3s' }}>
+          <TukTuk width={46} idle />
+        </span>
+      </div>
       <div className="meter" aria-hidden="true"><span style={{ width: `${(done.length / PEOPLE.length) * 100}%` }} /></div>
       <div className="sub">The group plan opens when all five have submitted.</div>
       <div className="wait-grid" role="list" aria-label="Who has submitted">
