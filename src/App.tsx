@@ -141,14 +141,13 @@ function Flow({ me, say }: { me: Person; say: Say }) {
   let content;
   if (shown === 'days') {
     content = <Days days={draft.days} flex={draft.flex} onPick={(days, flex) => {
+      // No quip screen on the setup steps (Brittany 2026-10-15).
       save({ days, flex });
-      say(pickQuip(copy.quips.days[flex ? 'flex' : String(days)]));
       navigate('fwd', () => setStep(editing || draft.pace === null ? 'pace' : draft.submitted ? 'tabs' : 'rate'));
     }} />;
   } else if (shown === 'pace') {
     content = <Pace pace={draft.pace} onBack={() => navigate('back', () => setStep('days'))} onPick={(p: PaceT) => {
       save({ pace: p });
-      say(pickQuip(copy.quips.pace[String(p)]));
       navigate('fwd', () => { setEditing(false); setStep(draft.submitted ? 'tabs' : 'rate'); });
     }} />;
   } else if (shown === 'rate' && unrated.length > 0) {
