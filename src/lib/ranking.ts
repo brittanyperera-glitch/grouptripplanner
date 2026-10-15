@@ -1,7 +1,7 @@
 import { TIERS, type Pending, type Ranking, type Tier } from '../types';
 
 const MAX_TIE = 3;
-const BASE: Record<Tier, number> = { must: 10, keen: 4, meh: 1, skip: -3 };
+export const BASE: Record<Tier, number> = { must: 10, keen: 4, meh: 1, skip: -3 };
 
 export function tierOf(r: Ranking, id: string): Tier | null {
   for (const t of TIERS) if (r[t].some(l => l.includes(id))) return t;

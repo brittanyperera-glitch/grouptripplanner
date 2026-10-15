@@ -3,7 +3,7 @@ import catalogue from './__fixtures__/catalogue-46.json'; import legs from '../d
 import { groupResult, personPlan } from './group';
 import liveCatalogue from '../data/catalogue.json';
 import { plan } from './planner';
-import { score } from './ranking';
+import { BASE, score, tierOf } from './ranking';
 import { PEOPLE, emptyRanking, type AppState, type Item, type Leg, type Person, type Response, type Tier } from '../types';
 const items = catalogue.items as Item[]; const L = legs as Leg[];
 // Five seeded people rating every item: about 15% Must, 30% Keen, 30% Meh, 25% Skip.
@@ -171,6 +171,70 @@ describe('personPlan', () => {
 describe('group performance', () => {
   it('group logic is fast enough', () => {
     const t = performance.now(); groupResult(base(), items, L); expect(performance.now() - t).toBeLessThan(4000);
+  });
+});
+
+// D5 (Brittany 2026-10-15): the losing side of an item head to head is knocked down, not out.
+// Seed 5 on the live catalogue, 9 days. These votes are what the five would vote by their own scores.
+const SEED5_VOTES: [string, 'a' | 'b'][] = [['region:north', 'b'], ['ko:knuckles', 'b'], ['ko:rafting', 'a'], ['ko:pettah', 'b'], ['ko:crab', 'a'], ['ko:diyaluma', 'b']];
+const seed5 = (votes: [string, 'a' | 'b'][]) => {
+  const s = seeded(liveCatalogue.items as Item[], 5);
+  for (const [forkId, choice] of votes) for (const name of ['Brittany', 'Alex', 'Antek'] as const) s.votes.push({ forkId, name, choice });
+  return s;
+};
+// Votes for every open question by each person's own scores, until nothing is open.
+const voteThrough = (s: AppState, its: Item[]) => {
+  let g = groupResult(s, its, L);
+  for (let round = 0; round < 12 && g.knockouts.length; round++) {
+    for (const k of g.knockouts) {
+      const sum = (p: Person, ids: string[]) => ids.reduce((n, id) => n + score(s.responses[p]!.ranking, id), 0);
+      const choice = PEOPLE.filter(p => sum(p, k.a) >= sum(p, k.b)).length >= 3 ? 'a' : 'b';
+      for (const name of PEOPLE.slice(0, 3)) s.votes.push({ forkId: k.forkId, name, choice });
+    }
+    g = groupResult(s, its, L);
+  }
+  return g;
+};
+
+describe('knocked down, not out (D5)', () => {
+  it('items that lost a head to head come back when a later result reroutes the trip past them', () => {
+    const g = groupResult(seed5(SEED5_VOTES), liveCatalogue.items as Item[], L);
+    expect(g.knockouts).toEqual([]);
+    const lost = g.results.flatMap(r => !r.forkId.startsWith('ko:') ? [] : r.winner === 'a' ? r.b : r.winner === 'b' ? [r.a[0]] : []);
+    expect(lost).toEqual(expect.arrayContaining(['pettah', 'beachday', 'rekawa']));
+    for (const id of ['pettah', 'beachday', 'rekawa']) expect(g.final!.chosen).toContain(id);
+  });
+  it('a knocked-down item counts each Must rating of it as a bare Keen', () => {
+    const s = seed5(SEED5_VOTES); const live = liveCatalogue.items as Item[];
+    const g = groupResult(s, live, L);
+    const lost = new Set(g.results.flatMap(r => !r.forkId.startsWith('ko:') ? [] : r.winner === 'a' ? r.b : r.winner === 'b' ? [r.a[0]] : []));
+    const rs = Object.values(s.responses);
+    const demoted = (id: string) => rs.reduce((n, r) => n + (tierOf(r!.ranking, id) === 'must' ? BASE.keen : score(r!.ranking, id)), 0);
+    const raw = (id: string) => rs.reduce((n, r) => n + score(r!.ranking, id), 0);
+    const back = g.final!.chosen.filter(id => lost.has(id));
+    expect(back.some(id => rs.some(r => tierOf(r!.ranking, id) === 'must'))).toBe(true);
+    expect(g.final!.score).toBeCloseTo(g.final!.chosen.reduce((n, id) => n + (lost.has(id) ? demoted(id) : raw(id)), 0), 6);
+  });
+  it('later Keep votes leave the side the group voted to add in the plan', () => {
+    const votes = SEED5_VOTES.map(([f, c]): [string, 'a' | 'b'] => [f, f === 'ko:crab' ? 'b' : c]);
+    const g = groupResult(seed5(votes), liveCatalogue.items as Item[], L);
+    expect(g.knockouts).toEqual([]);
+    const add = g.results.find(r => r.forkId === 'ko:rafting')!;
+    expect(add.winner).toBe('a');
+    for (const id of add.a) expect(g.final!.chosen).toContain(id);
+  });
+  it('never asks about an item twice, finishes, and gives the same result every time', () => {
+    for (const [its, days] of [[liveCatalogue.items as Item[], 9], [items, 9], [liveCatalogue.items as Item[], 14]] as const) {
+      for (let seed = 1; seed <= 10; seed++) {
+        const s = seeded(its, seed); for (const r of Object.values(s.responses)) r!.days = days;
+        const g = voteThrough(s, its);
+        expect(g.final, `seed ${seed}`).not.toBeNull();
+        const ids = [...g.results.map(r => r.forkId), ...g.knockouts.map(k => k.forkId)];
+        const items1 = ids.filter(f => f.startsWith('ko:')).map(f => f.split(':')[1]);
+        expect(new Set(items1).size, `seed ${seed}`).toBe(items1.length);
+        expect(JSON.stringify(groupResult(s, its, L))).toBe(JSON.stringify(g));
+      }
+    }
   });
 });
 

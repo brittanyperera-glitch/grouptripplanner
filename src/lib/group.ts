@@ -1,12 +1,13 @@
 import { PEOPLE, type AppState, type GroupResult, type Item, type Knockout, type Leg, type Pace, type Person, type Plan, type Response } from '../types';
 import { mustFitDays, plan } from './planner';
-import { score, scoresFor, tierOf } from './ranking';
+import { BASE, score, scoresFor, tierOf } from './ranking';
 
 const VOTES_TO_RESOLVE = 3; // majority of 5
 const MAX_CONTESTED = 5;
 const EXTRAS_DAYS = 14;
 const NORTH_AREAS = new Set<string>(['North', 'East coast']);
 const REGION_FORK = 'region:north';
+const EPS = 1e-9;
 
 // The Days screen offers 5 to 21 (src/screens/Days.tsx); anything stored outside that is clamped.
 const daysOf = (r: Response) => (r.flex ? 14 : Math.min(21, Math.max(5, r.days ?? 9)));
@@ -40,6 +41,19 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
   const run = (F: Set<string>, O: Set<string>, d = days) => plan({ items, scores, days: d, pace, legs, forceIn: [...F], forceOut: [...O] });
 
   const F = new Set<string>(), O = new Set<string>();
+  // D5 (Brittany 2026-10-15): the losing side of an item head to head is knocked down, not out. Each
+  // Must rating of it counts as a bare Keen, so it comes back only if room opens, and never ahead of a
+  // plain Keen on that rating. O is left to the region question, which stays decisive.
+  const knocked = new Set<string>();
+  const knockDown = (id: string) => {
+    if (knocked.has(id)) return;
+    knocked.add(id);
+    scores[id] = rs.reduce((n, r) => n + (tierOf(r.ranking, id) === 'must' ? BASE.keen : score(r.ranking, id)), 0);
+  };
+  // The plan a vote picked holds none of the items it knocks down, so it stays valid at the same score.
+  // A re-run replaces it only when it scores higher: the planner's search is budgeted, and without this
+  // a lowered score could reshuffle it into a worse plan that happens to bring a knocked item back.
+  const settle = (picked: Plan) => { const next = run(F, O); return next.score > picked.score + EPS ? next : picked; };
   const baseP = run(F, O);
   const rated = (id: string, t: 'must' | 'keen') => rs.filter(r => tierOf(r.ranking, id) === t).length;
   const contested = ids
@@ -92,7 +106,8 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
     if (skipNorth && northSet.has(c)) continue;
     if (P.chosen.includes(c)) continue;
     if (covered.has(c)) continue;
-    if (O.has(c)) { results.push({ forkId: `ko:${c}:displaced`, a: [c], b: [], winner: 'displaced' }); continue; }
+    // Knocked down by an earlier result and still out: no second question about it.
+    if (knocked.has(c)) { results.push({ forkId: `ko:${c}:displaced`, a: [c], b: [], winner: 'displaced' }); continue; }
     const Q = run(new Set([...F, c]), O);
     if (Q.forceFailed) continue;
     const b = P.chosen.filter(id => !Q.chosen.includes(id) && !F.has(id));
@@ -106,8 +121,8 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
     for (const v of state.votes) if (v.forkId === forkId) latest.set(v.name, v.choice);
     const who = (side: 'a' | 'b') => PEOPLE.filter(p => latest.get(p) === side);
     const votes = { a: who('a'), b: who('b') };
-    if (votes.a.length >= VOTES_TO_RESOLVE) { F.add(c); b.forEach(id => O.add(id)); results.push({ forkId, a, b, winner: 'a' }); P = run(F, O); }
-    else if (votes.b.length >= VOTES_TO_RESOLVE) { O.add(c); results.push({ forkId, a, b, winner: 'b' }); P = run(F, O); }
+    if (votes.a.length >= VOTES_TO_RESOLVE) { F.add(c); b.forEach(knockDown); results.push({ forkId, a, b, winner: 'a' }); P = settle(Q); }
+    else if (votes.b.length >= VOTES_TO_RESOLVE) { knockDown(c); results.push({ forkId, a, b, winner: 'b' }); P = settle(P); }
     else { knockouts.push({ forkId, a, b, votes }); a.forEach(id => covered.add(id)); }
   }
 

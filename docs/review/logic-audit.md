@@ -71,3 +71,17 @@ All fixes together against the pre-audit planner, on 540 seeded test plans (both
 - The train never runs too late for the 14:30 departure, no sunset item ends after dusk, and every plan ends with check-in, across all 249 sweep plans.
 - Empty or degenerate input (nobody rated, everyone Skips, one person rated, empty catalogue, 21 or 30 days) does not crash; the same input gives the same plan.
 - Speed: measured the way the speed tests run (one warm-up, one timed call, CPU time, on a busy machine), the all-Keen 14-day plan takes 48 to 57 ms against 52 to 58 before the audit, mustFitDays 81 to 90 against 118 to 129, and the 2-north 3-south group about 200 ms in isolation, the same as before.
+
+## Decisions implemented (Brittany 2026-10-15)
+
+D1 to D4: no change, as decided. "Sweep" below means 120 seeded groups (live catalogue and the 46-item fixture, 9 and 14 days, seeds 1 to 30), each voted through to a final plan, every person voting for the side their own scores favour. The sweep files were deleted before commit.
+
+### D5: knocked down, not out
+
+- The losing side of an item head to head (the "Keep" items when "Add" wins, the added item when "Keep" wins) is no longer force-excluded. Each Must rating of it now counts as a bare Keen (4 points, no in-tier bonus), so it comes back only when a later result makes room, and never ahead of a plain Keen on that rating. Code: `knockDown` in `src/lib/group.ts`.
+- "North or South?" stays decisive: the losing region's items are still forced out, as before.
+- No loops: an item knocked down and still out when its own turn comes is listed as "dropped out after an earlier result", never asked about again. Each item gets at most one question per group, checked over 30 seeded groups voted to the end, with the same result on every call.
+- A plan the group voted for stays unless a re-run beats it on score (`settle`). The planner's route search is budgeted, so without this a lowered score could reshuffle it into a worse plan: in seed 5 a later "Keep" vote dropped three of the items the group had just voted to add.
+- Red before the change: `AssertionError: expected [ 'aukana', 'coconut', 'crab', …(12) ] to include 'pettah'` and `AssertionError: expected false to be true` (a knocked-down Must item in the final plan). Red with `settle` removed: `AssertionError: expected [ 'aukana', 'beachday', …(12) ] to include 'dambulla'`.
+- Sweep: a knocked-down item came back in 22 of 120 groups (40 items). Questions per group 7.1 before and after (854 and 855 in all); "dropped out" lines 24 before, 15 after; no question asked twice and no result changed between two identical calls, before or after.
+- No existing test changed; the planner snapshot does not move (the planner is unchanged).
