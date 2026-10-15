@@ -9,11 +9,13 @@ import { answer, move, removeId, retier, startPlace, tierOf } from './lib/rankin
 import Days from './screens/Days';
 import Everyone from './screens/Everyone';
 import Extras from './screens/Extras';
+import Friends from './screens/Friends';
 import Knockouts from './screens/Knockouts';
 import MyTrip from './screens/MyTrip';
 import Name from './screens/Name';
 import Pace from './screens/Pace';
 import Plan from './screens/Plan';
+import Premiere from './screens/Trailer';
 import Raw, { wantsRaw } from './screens/Raw';
 import Rate from './screens/Rate';
 import Rerank from './screens/Rerank';
@@ -50,6 +52,8 @@ function GroupTab() {
       {(group.knockouts.length > 0 || group.results.length > 0) && <Knockouts group={group} />}
       <Plan group={group} />
       <Extras group={group} />
+      <Friends />
+      <Premiere group={group} />
     </>
   );
 }
