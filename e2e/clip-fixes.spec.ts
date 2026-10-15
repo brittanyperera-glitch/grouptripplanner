@@ -15,7 +15,7 @@ const NORTH = ['jaffna', 'delft', 'nainativu'];
 const SOUTH = ['sigiriya', 'yala', 'galle'];
 const FRIENDS = [friend('Brittany', NORTH), friend('Alex', NORTH), friend('Antek', SOUTH), friend('Lazza', SOUTH), friend('Saulie', SOUTH)];
 
-const VIEWPORTS = [{ width: 390, height: 844 }, { width: 360, height: 740 }];
+const VIEWPORTS = [{ width: 390, height: 844 }, { width: 360, height: 740 }, { width: 1280, height: 800 }];
 
 for (const vp of VIEWPORTS) {
   const tag = `${vp.width}x${vp.height}`;
@@ -34,11 +34,12 @@ for (const vp of VIEWPORTS) {
     const name = page.locator('.flash-name');
     await expect(name).toBeVisible();
     await page.waitForTimeout(700);
-    const b = await name.evaluate(e => { const r = e.getBoundingClientRect(); return { left: r.left, right: r.right, width: r.width, vw: window.innerWidth }; });
+    // Measure against the visible app column, not the window: on desktop the overlay spans the window but the column clips it.
+    const b = await name.evaluate(e => { const r = e.getBoundingClientRect(); const c = (e.closest('.app') ?? document.body).getBoundingClientRect(); return { left: r.left, right: r.right, width: r.width, colLeft: c.left, colRight: c.right }; });
     console.log(`lockin ${tag}`, JSON.stringify(b));
     await shot(page, `lockin-${tag}`);
-    expect(b.left).toBeGreaterThanOrEqual(0);
-    expect(b.right).toBeLessThanOrEqual(b.vw);
+    expect(b.left).toBeGreaterThanOrEqual(b.colLeft);
+    expect(b.right).toBeLessThanOrEqual(b.colRight);
   });
 
   test(`picks rows do not squeeze or overlap ${tag}`, async ({ page }) => {

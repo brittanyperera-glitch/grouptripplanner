@@ -38,7 +38,9 @@ function StatBars({ stats }: { stats: { label: string; value: number }[] }) {
 function FlashName({ name }: { name: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
-    const el = ref.current; const box = el?.parentElement;
+    const el = ref.current;
+    // Fit the visible app column: the fixed overlay spans the whole window on desktop, but the column clips it.
+    const box = el?.closest<HTMLElement>('.app') ?? el?.parentElement;
     if (!el || !box) return;
     const fit = () => {
       el.style.fontSize = '';
