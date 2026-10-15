@@ -73,7 +73,7 @@ describe('character select page', () => {
     setMotion(false);
     await open();
     expect(document.querySelectorAll('.char .bob').length).toBe(0);
-    expect(within(screen.getByRole('button', { name: 'Alex' })).getByText('Alex')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Alex' })).toBeInTheDocument();
   });
 });
 
@@ -95,13 +95,13 @@ describe('selfie', () => {
     setMotion(true);
     const { user } = await open();
     expect(screen.queryByRole('dialog')).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Selfie' }));
+    await user.click(screen.getByRole('button', { name: 'Take a selfie' }));
     const dlg = screen.getByRole('dialog', { name: 'Brittany selfie' });
     expect(within(dlg).getByRole('img', { name: 'Brittany selfie' })).toHaveAttribute('src', '/img/players/brittany-selfie.png');
     await user.click(dlg);
     expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.keyDown(window, { key: 'ArrowRight' });
-    await user.click(screen.getByRole('button', { name: 'Selfie' }));
+    await user.click(screen.getByRole('button', { name: 'Take a selfie' }));
     expect(screen.getByRole('img', { name: 'Alex selfie' })).toHaveAttribute('src', '/img/players/alex-selfie.png');
   });
 });

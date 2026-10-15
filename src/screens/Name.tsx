@@ -153,19 +153,20 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
             <button className="nav prev" aria-label="Previous character" disabled={idx === 0} onClick={() => goTo(idx - 1)}><IconLeft size={20} /></button>
             <div className="carousel" ref={lane} onScroll={onScroll}>
               {PEOPLE.map((n, i) => (
-                <button key={n} className={`char${i === idx ? ' on' : ''}`} aria-current={i === idx} onClick={() => tap(n, i)}
+                <button key={n} className={`char${i === idx ? ' on' : ''}`} aria-label={n} aria-current={i === idx} onClick={() => tap(n, i)}
                   style={{ '--bop-delay': `${(i * 0.31).toFixed(2)}s` } as CSSProperties}>
-                  <span className="char-name">{n}</span>
                   <Avatar name={n} crop="stage" size={220} bob={bobOk} />
                 </button>
               ))}
             </div>
             <button className="nav next" aria-label="Next character" disabled={idx === PEOPLE.length - 1} onClick={() => goTo(idx + 1)}><IconRight size={20} /></button>
-            <button className="selfie-btn" onClick={() => setSelfie(true)}>Selfie</button>
           </div>
           <div className="player-card" key={chosen}>
             <div className="pc-id">
-              <h2 className="pc-name">{chosen}</h2>
+              <div className="pc-row">
+                <h2 className="pc-name">{chosen}</h2>
+                <button className="selfie-btn" onClick={() => setSelfie(true)}>Take a selfie</button>
+              </div>
               {card?.title && <span className="pc-title">{card.title}</span>}
             </div>
             {stats.length > 0 && <StatBars stats={stats} />}
