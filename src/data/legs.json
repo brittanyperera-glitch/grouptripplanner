@@ -166,5 +166,11 @@
   "b": "Jaffna",
   "hours": 7.8,
   "src": "maps_legs_extra.md: Colombo -> Jaffna 7 hr 48 min"
+ },
+ {
+  "a": "Weligama",
+  "b": "Colombo",
+  "hours": 2,
+  "src": "maps_legs_extra.md: Weligama -> Colombo 2 hr (estimate)"
  }
 ]

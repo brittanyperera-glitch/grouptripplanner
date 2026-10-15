@@ -97,3 +97,33 @@ D1 to D4: no change, as decided. "Sweep" below means 120 seeded groups (live cat
 
 - Skip is unchanged (minus 3, no veto). Each activity in the group plan (Group tab, "The trip") now carries a muted line naming everyone who rated it Skip, for example "Skipped by Alex and Lazza". My trip does not show it, and the trailer is left as it is. Code: `skippedBy` on `DayRows` in `src/screens/MyTrip.tsx`, filled by `src/screens/Plan.tsx`.
 - Red before the change: `Unable to find an element with the text: Skipped by Alex and Lazza`.
+
+### D8: Weligama to Colombo, estimated
+
+- New row 38 in `research/maps_legs_extra.md`: Weligama to Colombo, 2 h, with a note starting "Estimate" (Southern Expressway; Colombo to Galle is 1 h 23 by expressway per induwara.lk, research/research_transport.md line 17, which is a road calculator figure rather than a Google Maps reading, plus about half an hour from Weligama to the expressway). `scripts/build-data.mjs` keeps "(estimate)" in the leg's src for such rows, so `src/data/legs.json` says `"src": "maps_legs_extra.md: Weligama -> Colombo 2 hr (estimate)"`. Replace the row once it is measured.
+- Red before the change: `AssertionError: expected undefined to be 2`. Weligama to Colombo was 3.13 h via the airport; it is now 2 h.
+- The planner snapshot uses the live legs, so it moved (a designed reference, regenerated, nothing else changed). No case scores lower; mustFitDays cases are unchanged:
+
+| case | old score | new score | travel h, old to new |
+|---|---|---|---|
+| everything must 9d | 210 | 220 | 12.56 to 16.40 |
+| all keen 5d pace 0 | 60 | 60 | 13.58 to 12.53 |
+| all keen 14d pace 0 | 120 | 120 | 18.31 to 17.24 |
+| all keen 21d pace 0 | 148 | 148 | 29.15 to 22.07 |
+| all keen 5d pace 1 | 48 | 52 | 11.66 to 11.63 |
+| all keen 9d pace 1 | 84 | 88 | 12.56 to 16.40 |
+| all keen 14d pace 1 | 116 | 116 | 22.47 to 21.34 |
+| all keen 21d pace 1 | 140 | 144 | 27.99 to 22.24 |
+| all keen 5d pace 2 | 32 | 36 | 6.26 to 5.13 |
+| all keen 9d pace 2 | 68 | 68 | 12.39 to 11.08 |
+| all keen 14d pace 2 | 96 | 100 | 17.41 to 16.23 |
+| all keen 21d pace 2 | 124 | 128 | 16.63 to 20.44 |
+| mixed scores 14d pace 0 | 132 | 133 | 22.35 to 21.34 |
+| group 2 north 3 south 9d | 245.8 | 255.9 | 22.60 to 20.27 |
+| group 2 north 3 south 14d | 331.7 | 333.8 | 29.70 to 28.57 |
+| group forceIn jaffna 9d | 228.4 | 238.1 | 27.39 to 26.26 |
+| group forceIn jaffna forceOut galle 9d | 209.4 | 222.6 | 27.39 to 27.85 |
+| group forceOut galle 9d | 227.3 | 232.1 | 21.40 to 22.07 |
+
+- The new leg also changed the seed 5 votes the D5 tests were written on, so those tests now check properties over seeds 1 to 20 instead of one fixed vote list: a lost Must comes back in at least one group (red before D5: `AssertionError: expected 0 to be greater than 0`), every final score counts knocked-down Musts as Keen, and seed 38 keeps Sigiriya after later Keep votes (red without `settle`: `AssertionError: expected [ Array(16) ] to include 'sigiriya'`; 270.9 with it against 268.1). Riders on an Add side are not promised: in seed 17 a re-run that scores higher (295.9 against 293.1) drops Pidurangala.
+- Sweep after D5, D6 and D8: a knocked-down item came back in 15 of 120 groups (20 items); 6.6 questions per group (791 in all); 3.1 voting rounds per group; no question asked twice; identical calls give identical results.

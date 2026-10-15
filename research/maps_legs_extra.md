@@ -37,3 +37,4 @@
 | 35 Weligama -> Hikkaduwa | 1 hr 5 min | 56.0 | Fastest now via Southern Expressway/E01, tolls. Alternatives 1 hr 13 min (54.2 km, B153) and 1 hr 24 min (47.5 km, A2) |
 | 36 Nuwara Eliya -> Damro Labookellie Tea | 32 min | 12.9 | Fastest, despite usual traffic, via A5. Alternative 34 min (13.6 km). Google resolved destination to Labookellie Tea Lounge |
 | 37 Sigiriya -> Mihintale | 1 hr 22 min | 68.5 | Fastest, lighter traffic than usual, via A11 and A9. Alternatives 1 hr 25 min (70.9 km) and 1 hr 36 min (72.2 km) |
+| 38 Weligama -> Colombo | 2 hr | - | Estimate, not a Google Maps reading (Brittany 2026-10-15, logic audit D8): Southern Expressway/E01. Colombo to Galle is 1 h 23 by expressway (research/research_transport.md line 17, induwara.lk), plus about half an hour from Weligama to the expressway. Replace with a measured time. |

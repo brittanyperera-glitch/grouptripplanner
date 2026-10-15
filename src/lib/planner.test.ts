@@ -17,6 +17,13 @@ describe('paths', () => {
     expect(d('AIR', 'Sigiriya')).toBeGreaterThan(3); expect(d('Sigiriya', 'AIR')).toBe(d('AIR', 'Sigiriya'));
     expect(Number.isFinite(d('Colombo', 'Tissa'))).toBe(true);
   });
+  // D8 (Brittany 2026-10-15): about 2 h on the Southern Expressway until it is measured in Google Maps.
+  it('has the Weligama to Colombo leg as a marked estimate, not routed via the airport', () => {
+    const leg = L.find(l => [l.a, l.b].sort().join() === 'Colombo,Weligama');
+    expect(leg?.hours).toBe(2);
+    expect(leg?.src).toMatch(/estimate/);
+    expect(shortest(L)('Weligama', 'Colombo')).toBe(2);
+  });
   it('throws on an unknown hub', () => {
     expect(() => shortest(L)('AIR', 'Nowhere' as never)).toThrow();
   });

@@ -1,5 +1,6 @@
 // Builds src/data/{catalogue,legs}.json from the research files, and copies photos.
-// Every drive hour comes from a Google Maps reading in research/; a missing leg throws.
+// Every drive hour comes from a Google Maps reading in research/, except rows whose note starts
+// "Estimate", which keep "(estimate)" in their src; a missing leg throws.
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -21,7 +22,7 @@ function tableRows(md, startMarker) {
 
 const legRows = [
   ...tableRows(read('research/google_listings.md'), '## A.').map((c) => ({ label: c[0], dur: c[1], src: 'google_listings.md A' })),
-  ...tableRows(read('research/maps_legs_extra.md')).map((c) => ({ label: c[0].replace(/^\d+\s+/, ''), dur: c[1], src: 'maps_legs_extra.md' })),
+  ...tableRows(read('research/maps_legs_extra.md')).map((c) => ({ label: c[0].replace(/^\d+\s+/, ''), dur: /^estimate/i.test(c[3] ?? '') ? `${c[1]} (estimate)` : c[1], src: 'maps_legs_extra.md' })),
 ].map((r) => ({ ...r, hours: Math.round(hoursOf(r.dur) * 100) / 100 }));
 
 const HUB_ALIAS = [
