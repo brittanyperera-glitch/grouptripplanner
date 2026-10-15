@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 
 import './Map.css';
 import { motion } from './motion';
 import { buildLegs, legD, tukHeight, tukTransform, useLegDrive, type Leg } from './routeDrive';
+import { engineStart, engineStop, horn } from './sound';
 import TukTuk from './TukTuk';
 import type { Hub } from '../types';
 
@@ -69,9 +70,18 @@ export default function RouteMap({ route, drive = false }: { route: Hub[]; drive
 
   const stops = [...new Set(route)];
   const run = animate && typeof at === 'object' ? at : null;
+  // Before the first leg starts (at === 'idle') nothing is drawn yet: deciding that in render, not in the effect, keeps the finished route off the first painted frame.
+  const pre = animate && at === 'idle';
+  // Putter while a leg draws, horn at each halt; silent unless a tap has already unlocked sound (components/sound.ts).
+  const moving = !!run?.moving, halted = !!run && !run.moving;
+  useEffect(() => {
+    if (moving) engineStart();
+    return () => engineStop();
+  }, [moving, run?.k]);
+  useEffect(() => { if (halted) horn(); }, [halted, run?.k]);
   useLegDrive(!!run?.moving, run ? legs[run.k] : undefined, parkOff(run ? route[run.k] : 'AIR'), parkOff(run ? route[run.k + 1] : 'AIR'), TUK_W, tukRef, lineRef);
-  const drawn = run ? (run.moving ? run.k : run.k + 1) : legs.length;
-  const shown = run ? new Set(route.slice(0, drawn + 1)) : null;
+  const drawn = pre ? 0 : run ? (run.moving ? run.k : run.k + 1) : legs.length;
+  const shown = pre ? new Set(route.slice(0, 1)) : run ? new Set(route.slice(0, drawn + 1)) : null;
   const shownStops = stops.filter(h => !shown || shown.has(h));
   const tukHub = run ? route[run.moving ? run.k : run.k + 1] : 'AIR';
   const tukLeg = run ? legs[run.k] : legs[legs.length - 1];
@@ -88,10 +98,10 @@ export default function RouteMap({ route, drive = false }: { route: Hub[]; drive
         <rect className="map-sea" x="-60" y="10" width="350" height="470" />
         <polygon className="map-shore" points={pts(COAST)} />
         <polygon className="map-land" points={pts(COAST)} />
-        {run ? (
+        {run || pre ? (
           <>
             {legs.slice(0, drawn).map(legLine)}
-            {run.moving && (
+            {run?.moving && (
               // The leg draws itself: a mask reveals the dashed line as --o runs 1 to 0 (a plain dashoffset would erase the dashes).
               <g key={`live${run.k}`} ref={lineRef} style={{ '--o': 1 } as CSSProperties}>
                 <mask id={`reveal${uid}${run.k}`} maskUnits="userSpaceOnUse" x="-60" y="10" width="350" height="470">

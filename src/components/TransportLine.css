@@ -1,0 +1,4 @@
+/* Postcard transport row: a mode icon and one line of text, in the muted ink the itinerary uses for small print. */
+.tline { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--muted); font: 700 11px/1.3 var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
+.tline svg { flex: none; color: var(--red); }
+.tline-txt { min-width: 0; overflow-wrap: anywhere; }

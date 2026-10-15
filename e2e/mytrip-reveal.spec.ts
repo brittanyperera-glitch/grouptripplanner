@@ -107,3 +107,67 @@ test('with motion off My trip is static and does not play the reveal by itself',
   await page.getByRole('button', { name: 'Back to my trip' }).click();
   await expect(page.getByRole('dialog', { name: 'Route reveal' })).toHaveCount(0);
 });
+
+// The route must not be visible before its draw-on starts. Samples every animation frame (the DOM as it is about to
+// be painted, sampled after every DOM change and every frame) from page start and records how much of the route is drawn: dashed lines outside a draw-on mask count in
+// full, a masked live leg counts (1 - --o).
+const SAMPLER = `(() => {
+  const frames = [];
+  window.__frames = frames;
+  const len = el => (el.getTotalLength ? el.getTotalLength() : 0);
+  const sample = () => {
+    const map = document.querySelector('[aria-label="My trip"] .map svg');
+    const rv = document.querySelector('.rv svg');
+    const out = {};
+    if (map) {
+      let drawn = 0;
+      map.querySelectorAll('.route-line').forEach(p => {
+        const live = p.closest('[mask]');
+        const o = live ? parseFloat(getComputedStyle(live.parentElement).getPropertyValue('--o') || '1') : 0;
+        drawn += len(p) * (1 - o);
+      });
+      out.map = drawn;
+      out.n = map.querySelectorAll('.route-line').length;
+      out.d = map.parentElement.getAttribute('data-drive');
+    }
+    if (rv) {
+      let drawn = 0;
+      rv.querySelectorAll('.rv-route').forEach(p => {
+        const live = p.closest('.rv-route-live');
+        const o = live ? parseFloat(getComputedStyle(live).getPropertyValue('--o') || '1') : 0;
+        drawn += len(p) * (1 - o);
+      });
+      out.rv = drawn;
+      out.stage = document.querySelector('.rv').getAttribute('data-stage');
+    }
+    if (out.map !== undefined || out.rv !== undefined) frames.push(out);
+  };
+  // A mutation observer runs right after each React commit, before the browser can paint it; rAF covers style-only changes.
+  const tick = () => { sample(); requestAnimationFrame(tick); };
+  new MutationObserver(sample).observe(document, { subtree: true, childList: true, attributes: true });
+  requestAnimationFrame(tick);
+})();`;
+type Frames = { n?: number; d?: string; map?: number; rv?: number; stage?: string }[];
+
+test('the route is not drawn on the first frames of My trip drive or of the reveal', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.addInitScript(SAMPLER);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?quips=1');
+  await page.evaluate(r => { localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r)); localStorage.setItem('tp:reveal-mine', '1'); }, me);
+  await page.reload();
+  await expect(page.locator('[aria-label="My trip"] .map')).toHaveAttribute('data-drive', 'on');
+  const frames = await page.evaluate(() => (window as unknown as { __frames: Frames }).__frames);
+  const firstMap = frames.find(f => f.map !== undefined)!;
+  expect(firstMap.map, 'My trip map shows drawn route on its first frame').toBeLessThan(1);
+
+  await page.evaluate(() => { (window as unknown as { __frames: unknown[] }).__frames.length = 0; });
+  await page.getByRole('button', { name: 'Play my route reveal' }).click();
+  await expect(page.getByRole('dialog', { name: 'Route reveal' })).toHaveAttribute('data-stage', 'drive', { timeout: 8000 });
+  await page.waitForTimeout(300);
+  const rv = (await page.evaluate(() => (window as unknown as { __frames: Frames }).__frames)).filter(f => f.rv !== undefined);
+  const early = rv.filter(f => f.stage === 'intro');
+  const firstDrive = rv.find(f => f.stage === 'drive')!;
+  expect(Math.max(0, ...early.map(f => f.rv!)), 'reveal shows route during intro').toBeLessThan(1);
+  expect(firstDrive.rv, 'reveal first drive frame already shows part of the route').toBeLessThan(1);
+});

@@ -15,6 +15,9 @@ function hoursOf(s) {
   return (h ? +h[1] : 0) + (m ? +m[1] / 60 : 0);
 }
 
+// The km column: a plain number, or null for "-" (an estimate has no Google reading).
+export const kmOf = (s) => (/^\d+(?:\.\d+)?$/.test(s) ? Number(s) : null);
+
 function tableRows(md, startMarker) {
   const part = startMarker ? md.split(startMarker)[1].split('\n## ')[0] : md;
   return part.split('\n').filter((l) => l.startsWith('|') && !/^\|\s*-/.test(l) && !/^\|\s*(leg|Leg)\s*\|/.test(l))
@@ -22,9 +25,9 @@ function tableRows(md, startMarker) {
 }
 
 const legRows = [
-  ...tableRows(read('research/google_listings.md'), '## A.').map((c) => ({ label: c[0], dur: c[1], src: 'google_listings.md A' })),
-  ...tableRows(read('research/maps_legs_extra.md')).map((c) => ({ label: c[0].replace(/^\d+\s+/, ''), dur: /^estimate/i.test(c[3] ?? '') ? `${c[1]} (estimate)` : c[1], src: 'maps_legs_extra.md' })),
-].map((r) => ({ ...r, hours: Math.round(hoursOf(r.dur) * 100) / 100 }));
+  ...tableRows(read('research/google_listings.md'), '## A.').map((c) => ({ label: c[0], dur: c[1], kmRaw: c[2], src: 'google_listings.md A' })),
+  ...tableRows(read('research/maps_legs_extra.md')).map((c) => ({ label: c[0].replace(/^\d+\s+/, ''), kmRaw: c[2], dur: /^estimate/i.test(c[3] ?? '') ? `${c[1]} (estimate)` : c[1], src: 'maps_legs_extra.md' })),
+].map((r) => ({ ...r, hours: Math.round(hoursOf(r.dur) * 100) / 100, km: kmOf(r.kmRaw) }));
 
 const HUB_ALIAS = [
   [/^(BIA airport|Bandaranaike International Airport)$/i, 'AIR'],
@@ -38,8 +41,17 @@ const legs = [];
 for (const r of legRows) {
   const [a, b] = r.label.split('->').map((s) => s.trim());
   const ha = hubOf(a), hb = hubOf(b);
-  if (ha && hb && ha !== hb) legs.push({ a: ha, b: hb, hours: r.hours, src: `${r.src}: ${r.label} ${r.dur}` });
+  if (ha && hb && ha !== hb) legs.push({ a: ha, b: hb, hours: r.hours, ...(r.km === null ? {} : { km: r.km }), src: `${r.src}: ${r.label} ${r.dur}` });
 }
+
+// Every hub-to-hub row with a numeric km in its table must carry it into legs.json; a leg with none stays without km.
+const hubRows = legRows.filter((r) => { const [a, b] = r.label.split('->').map((x) => hubOf(x.trim())); return a && b && a !== b; });
+const withKm = hubRows.filter((r) => /^\d+(?:\.\d+)?$/.test(r.kmRaw));
+if (withKm.length === 0) throw new Error('no leg carries a km value: check the km column parser');
+legs.forEach((l, i) => {
+  const r = hubRows[i], want = /^\d+(?:\.\d+)?$/.test(r.kmRaw) ? Number(r.kmRaw) : undefined;
+  if (l.km !== want) throw new Error(`leg ${r.label}: km ${l.km} in legs.json, ${r.kmRaw} in the research table`);
+});
 
 const legHours = (from, toPattern) => {
   const row = legRows.find((r) => {

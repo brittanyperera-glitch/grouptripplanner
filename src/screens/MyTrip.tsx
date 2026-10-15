@@ -5,7 +5,9 @@ import RouteMap from '../components/Map';
 import { motion } from '../components/motion';
 import { Cover } from '../components/PhotoCard';
 import { useApp } from '../state';
-import type { DayEntry, Item, Plan } from '../types';
+import type { DayEntry, Item, Leg, Plan } from '../types';
+import { unlock } from '../components/sound';
+import TransportLine, { transportOf } from '../components/TransportLine';
 import { Reveal } from './Reveal';
 
 // A day with this many driving hours or more gets a "Long driving day" note.
@@ -16,7 +18,6 @@ const hrs = (h: number) => h.toFixed(1);
 const hrsShort = (h: number) => (Number.isInteger(h) ? String(h) : hrs(h));
 
 function entryText(e: DayEntry): string {
-  if (e.kind === 'drive') return `${e.label.replace(/^Drive from .+? to /, 'Drive to ')}, about ${hrs(e.hours)} h`;
   if (e.kind === 'activity') return `${e.label}, ${hrsShort(e.onSite ?? e.hours)} h`;
   return e.hours > 0 ? `${e.label}, ${hrsShort(e.hours)} h` : e.label;
 }
@@ -27,7 +28,7 @@ const andList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')
 
 // One card per day. The header strip is the day's first activity photo when we have one.
 // skippedBy is for the group plan only (D7): a Skip is a strong minus, not a veto, so it is named.
-export function DayRows({ plan, items = [], skippedBy }: { plan: Plan; items?: Item[]; skippedBy?: (id: string) => string[] }) {
+export function DayRows({ plan, items = [], legs = [], skippedBy }: { plan: Plan; items?: Item[]; legs?: Leg[]; skippedBy?: (id: string) => string[] }) {
   const byId = new Map(items.map(i => [i.id, i]));
   return (
     <div role="list" aria-label="Days" className="days">
@@ -48,12 +49,13 @@ export function DayRows({ plan, items = [], skippedBy }: { plan: Plan; items?: I
             <span className="timeline">
               {d.entries.map((e, i) => {
                 const Icon = ICON[e.kind];
+                const move = transportOf(e, legs);
                 const skipped = e.kind === 'activity' && e.itemId && skippedBy ? skippedBy(e.itemId) : [];
                 return (
                   <span key={i} className={`entry ${e.kind}`}>
                     <span className="dot" aria-hidden="true"><Icon size={13} /></span>
                     <span className="entry-txt">
-                      {entryText(e)}
+                      {move ? <TransportLine t={move} /> : entryText(e)}
                       {e.kind === 'activity' && (e.roundTrip ?? 0) >= MIN_ROUND_TRIP && (
                         <small>plus about {hrs(e.roundTrip ?? 0)} h there and back</small>
                       )}
@@ -81,7 +83,7 @@ export const REVEAL_SEEN_KEY = 'tp:reveal-mine';
 const seen = () => { try { return localStorage.getItem(REVEAL_SEEN_KEY) !== null; } catch { return true; } };
 
 export default function MyTrip({ plan, days }: { plan: Plan & { mustFit: number | null }; days: number }) {
-  const { items, me } = useApp();
+  const { items, legs, me } = useApp();
   const name = (id: string) => items.find(i => i.id === id)?.name ?? id;
   // The first visit with motion on plays the reveal; the map's own drive waits until it closes.
   const [revealing, setRevealing] = useState(() => motion() === 'full' && !!me && !seen());
@@ -99,9 +101,9 @@ export default function MyTrip({ plan, days }: { plan: Plan & { mustFit: number 
         </div>
       )}
       <RouteMap route={plan.route} drive={!revealing} />
-      {me && <button type="button" className="cta mytrip-reveal" onClick={() => setRevealing(true)}>Play my route reveal</button>}
+      {me && <button type="button" className="cta mytrip-reveal" onClick={() => { unlock(); setRevealing(true); }}>Play my route reveal</button>}
       {revealing && me && <Reveal plan={plan} who={me} onClose={() => setRevealing(false)} />}
-      <DayRows plan={plan} items={items} />
+      <DayRows plan={plan} items={items} legs={legs} />
     </section>
   );
 }

@@ -14,7 +14,7 @@ export interface Item {
   category?: Category; sideTrip: number; book?: string; warn?: string; photo?: string; hub?: Hub;
   google?: { rating: string; reviews: string; url: string }; suggestedBy?: Person; credit?: string; when?: string;
 }
-export interface Leg { a: Hub; b: Hub; hours: number; src: string }
+export interface Leg { a: Hub; b: Hub; hours: number; km?: number; src: string }
 export type Pace = 0 | 1 | 2; // pack, balanced, slow
 export const PACE_HOURS: Record<Pace, number> = { 0: 11, 1: 9, 2: 7 };
 export interface PlanInput {
