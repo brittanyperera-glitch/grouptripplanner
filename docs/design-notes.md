@@ -105,3 +105,4 @@ Clickable mockup of Section 1: `docs/mockups/section1-flow.html` (photos and cre
 - Characters: Brittany's image-AI characters (lineup pose + selfie per person) replace the drawn avatars.
 - D5 mechanism (Brittany chose 2026-10-15): a Must that loses a head to head is scored as if each Must rating of it were Keen, and is no longer force-excluded.
 - Selfies (Brittany 2026-10-15): a Selfie button on the character page shows that person's emote; the Group results show the five selfies as the crew.
+- Final ranking (Brittany 2026-10-15): after the head to heads, everyone gets a "Finalize your list" screen pre-filled with their ranking; they move items up and down, up to 5 may share a spot (draw cap 5 everywhere, was 3). The group plan is rebuilt from the final lists; head to head winners stay in and losers stay knocked down to Keen unless re-ranked.
