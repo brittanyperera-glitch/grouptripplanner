@@ -80,3 +80,17 @@ Clickable mockup of Section 1: `docs/mockups/section1-flow.html` (photos and cre
 - Days are split into morning and afternoon slots. Drive legs use real per-leg times and consume slots.
 - Activities carry time-of-day rules (sunrise, morning safari, 09:00 train).
 - Small enough to brute-force in the browser: under about 10k combinations, scored, best kept.
+
+## UI decisions, Brittany 2026-10-15
+- Friendship stats: pair agreement, your travel twin, your biggest clash, and the most divisive place. Shown only after all five vote.
+- Trailer: 15 s auto-play of the route day by day, tap to skip, ends on the poster.
+- Poster: 9:16 movie poster with all five full-body avatars, title, route, dates and a "starring" credits line.
+- "Best of each kind" step: dropped.
+- Keep every raw choice: each swipe tier, re-rank, head-to-head and swap is saved as an append-only history (never overwritten), so Brittany can read everyone's starting opinions and edit the list from them. Today responses and knockout votes are upserts (src/store/supabase.ts:58, :76), so first opinions are lost on change.
+- Raw choices: a hidden page only Brittany can open (secret link), one table per friend, with a Download CSV button; also logged in the database.
+- Photo credit: hidden behind a small "i" button on the photo, nothing printed over the image.
+- Swipe cards get a small category chip next to the area (e.g. COLOMBO · FOOD).
+- Vibration only on swipe (bigger buzz on Must); no sound.
+- Quip burst plays on Must and Skip only; Keen and Meh slide away quietly.
+- First card plays a one-time animated demo of the four swipe directions.
+- Waiting screen: avatars with who's done; no nudge button.
