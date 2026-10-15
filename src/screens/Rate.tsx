@@ -1,48 +1,210 @@
-import { PhotoCard } from '../components/PhotoCard';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { CSSProperties, PointerEvent as RPointerEvent, ReactNode } from 'react';
+import { IconClock, IconDown, IconExternal, IconLeft, IconPin, IconRight, IconSun, IconTicket, IconUp, IconWarn } from '../components/Icons';
+import { Cover } from '../components/PhotoCard';
 import type { Copy } from '../state';
-import { TIERS } from '../types';
 import type { Item, Tier } from '../types';
 
 const LABEL: Record<Tier, string> = { must: 'Must', keen: 'Keen', meh: 'Meh', skip: 'Skip' };
+// Left to right the buttons mirror the swipe: left is Skip, right is Must.
+const ORDER: Tier[] = ['skip', 'meh', 'keen', 'must'];
+const ARROW: Record<Tier, ReactNode> = { must: <IconRight size={16} />, keen: <IconUp size={16} />, meh: <IconDown size={16} />, skip: <IconLeft size={16} /> };
+const KEYS: Record<string, Tier> = { ArrowRight: 'must', ArrowUp: 'keen', ArrowDown: 'meh', ArrowLeft: 'skip' };
 
-export function facts(item: Item): string {
-  return [item.area, item.when, `${item.hours} h`, item.fee].filter(Boolean).join(' · ');
+// A drag this far along one axis rates the card; a quick flick counts from FLICK_MIN at FLICK_SPEED px/ms.
+export const FLING = 100;
+const FLICK_MIN = 40;
+const FLICK_SPEED = 0.5;
+
+export function tierFor(dx: number, dy: number): Tier {
+  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? 'must' : 'skip';
+  return dy < 0 ? 'keen' : 'meh';
 }
 
-export default function Rate({ item, n, total, copy, onTier }: {
-  item: Item; n: number; total: number; copy: Copy; onTier: (t: Tier) => void;
+export function factPills(item: Item): [ReactNode, string][] {
+  const out: [ReactNode, string][] = [[<IconClock size={14} />, `${item.hours} h`]];
+  if (item.fee) out.push([<IconTicket size={14} />, item.fee]);
+  if (item.when) out.push([<IconSun size={14} />, item.when]);
+  return out;
+}
+
+// Reviews end in "(Name, Google review)": the source becomes the citation line.
+function splitReview(r: string): [string, string | null] {
+  const m = r.match(/^([\s\S]*\S)\s*\(([^()]+)\)\s*$/);
+  return m ? [m[1], m[2]] : [r, null];
+}
+
+// Shared-element name: the rated card's photo morphs into the same place's compare card.
+export const vtName = (id: string) => `pic-${id.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+
+function TukTuk() {
+  return (
+    <svg viewBox="0 0 40 28" width="34" height="24">
+      <path d="M6 20V9a5 5 0 0 1 5-5h14l7 8v8z" fill="#FF7A1A" />
+      <path d="M8 6.5h16v2H8z" fill="#2BB673" />
+      <path d="M13 9h9v6h-9z" fill="#BFE8FF" opacity=".9" />
+      <path d="M25 9l5 5h-5z" fill="#BFE8FF" opacity=".9" />
+      <path d="M4 20h30" stroke="#1A0E04" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="11" cy="22" r="3.6" fill="#1A0E04" /><circle cx="11" cy="22" r="1.3" fill="#FFC15E" />
+      <circle cx="30" cy="22" r="3.6" fill="#1A0E04" /><circle cx="30" cy="22" r="1.3" fill="#FFC15E" />
+    </svg>
+  );
+}
+
+function Palm() {
+  return (
+    <svg viewBox="0 0 28 28" width="24" height="24">
+      <path d="M2 25c6-3 18-3 24 0" stroke="#FFC15E" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+      <path d="M14 24c0-6 1-11 3-15" stroke="#C98B4E" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+      <path d="M17 9c-3-3-8-3-10 0M17 9c1-4 6-6 9-4M17 9c4-1 8 2 8 5M17 9c-2 2-3 5-2 8" stroke="#2BB673" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+interface Drag { dx: number; dy: number }
+interface Ghost { item: Item; tier: Tier; dx: number; dy: number; k: number }
+
+export default function Rate({ item, next, n, total, copy, onTier }: {
+  item: Item; next?: Item; n: number; total: number; copy: Copy; onTier: (t: Tier) => void;
 }) {
   const extra = copy.items[item.id] ?? {};
+  const [drag, setDrag] = useState<Drag | null>(null);
+  const [ghost, setGhost] = useState<Ghost | null>(null);
+  const start = useRef<{ x: number; y: number; id: number } | null>(null);
+  const last = useRef<{ x: number; y: number; t: number; vx: number; vy: number } | null>(null);
+
+  const commit = useCallback((tier: Tier, dx = 0, dy = 0) => {
+    start.current = null;
+    setDrag(null);
+    setGhost({ item, tier, dx, dy, k: Date.now() });
+    onTier(tier);
+  }, [item, onTier]);
+
+  useEffect(() => {
+    if (!ghost) return;
+    const t = setTimeout(() => setGhost(null), 420);
+    return () => clearTimeout(t);
+  }, [ghost]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target instanceof Element ? e.target : null;
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || el?.closest('input, select, textarea')) return;
+      const tier = KEYS[e.key];
+      if (!tier) return;
+      e.preventDefault();
+      commit(tier);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [commit]);
+
+  const down = (e: RPointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if ((e.target as HTMLElement).closest('a, button')) return;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    start.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    last.current = { x: e.clientX, y: e.clientY, t: e.timeStamp, vx: 0, vy: 0 };
+    setDrag({ dx: 0, dy: 0 });
+  };
+  const moveTo = (e: RPointerEvent<HTMLDivElement>) => {
+    const s = start.current;
+    if (!s || e.pointerId !== s.id) return;
+    const l = last.current;
+    if (l) {
+      const dt = e.timeStamp - l.t;
+      last.current = dt > 0 ? { x: e.clientX, y: e.clientY, t: e.timeStamp, vx: (e.clientX - l.x) / dt, vy: (e.clientY - l.y) / dt } : { ...l, x: e.clientX, y: e.clientY };
+    }
+    setDrag({ dx: e.clientX - s.x, dy: e.clientY - s.y });
+  };
+  const up = (e: RPointerEvent<HTMLDivElement>) => {
+    const s = start.current;
+    if (!s || e.pointerId !== s.id) return;
+    const dx = e.clientX - s.x;
+    const dy = e.clientY - s.y;
+    const tier = tierFor(dx, dy);
+    const horizontal = tier === 'must' || tier === 'skip';
+    const dist = Math.abs(horizontal ? dx : dy);
+    const speed = Math.abs(horizontal ? last.current?.vx ?? 0 : last.current?.vy ?? 0);
+    if (dist >= FLING || (dist >= FLICK_MIN && speed >= FLICK_SPEED)) commit(tier, dx, dy);
+    else { start.current = null; setDrag(null); }
+  };
+  const cancel = () => { start.current = null; setDrag(null); };
+
+  const lead = drag && (drag.dx !== 0 || drag.dy !== 0) ? tierFor(drag.dx, drag.dy) : null;
+  const leadAmount = drag && lead ? Math.min(1, Math.abs(lead === 'must' || lead === 'skip' ? drag.dx : drag.dy) / FLING) : 0;
+  const cardStyle: CSSProperties | undefined = drag
+    ? { transform: `translate(${drag.dx}px, ${drag.dy}px) rotate(${drag.dx * 0.05}deg)` }
+    : undefined;
+  const [quote, cite] = extra.review ? splitReview(extra.review) : ['', null];
+
   return (
     <>
-      <div className="body flush">
-        <PhotoCard item={item} n={n} total={total} />
+      <div className="body flush rate">
+        <div className="road" role="progressbar" aria-label="Places rated" aria-valuemin={0} aria-valuemax={total} aria-valuenow={n - 1}>
+          <span className="road-line" aria-hidden="true" />
+          <span className="tuktuk" aria-hidden="true" style={{ '--p': (n - 1) / Math.max(1, total) } as CSSProperties}><TukTuk /></span>
+          <span className="palm" aria-hidden="true"><Palm /></span>
+        </div>
+        <div className="deck">
+          {next && (
+            <div className="peek scene" aria-hidden="true">
+              <Cover item={next} className="peek-photo" named={false} />
+            </div>
+          )}
+          {ghost && (
+            <div key={ghost.k} className={`card ghost scene fly-${ghost.tier}`} aria-hidden="true"
+              style={{ '--gx': `${ghost.dx}px`, '--gy': `${ghost.dy}px`, '--gr': `${ghost.dx * 0.05}deg` } as CSSProperties}>
+              <Cover item={ghost.item} className="ghost-photo" named={false}><div className="scrim" /></Cover>
+              <span className={`stamp ${ghost.tier}`}>{LABEL[ghost.tier]}</span>
+            </div>
+          )}
+          <div key={item.id} className={`card scene${drag ? ' dragging' : ''}`} style={{ viewTransitionName: vtName(item.id), ...cardStyle }}
+            onPointerDown={down} onPointerMove={moveTo} onPointerUp={up} onPointerCancel={cancel}>
+            <Cover item={item} className="photo" named={false}>
+              <div className="scrim" />
+              <span className="count">{n} of {total}</span>
+              {(['must', 'keen', 'meh', 'skip'] as Tier[]).map(t => (
+                <span key={t} className={`stamp ${t}`} aria-hidden="true" style={{ opacity: lead === t ? leadAmount : 0 }}>{LABEL[t]}</span>
+              ))}
+              <div className="caption">
+                <span className="area-tag"><IconPin size={13} />{item.area}</span>
+                <h2 className="title">{item.name}</h2>
+              </div>
+              {item.credit && <span className="credit">Photo: {item.credit}</span>}
+            </Cover>
+          </div>
+        </div>
         <div className="info">
-          <div className="title">{item.name}</div>
-          {item.about && <div className="about">{item.about}</div>}
-          <div className="facts">{facts(item)}</div>
-          {item.warn && <div className="fact-warn"><b>Heads up:</b> {item.warn}</div>}
+          <div className="pills">
+            {factPills(item).map(([icon, text]) => <span key={text} className="pill">{icon}<span>{text}</span></span>)}
+          </div>
+          {item.about && <p className="about">{item.about}</p>}
+          {item.warn && <div className="fact-warn"><IconWarn size={16} /><span><b>Heads up:</b> {item.warn}</span></div>}
+          {extra.review && (
+            <blockquote className="review">
+              <p>{extra.reviewUrl ? <a href={extra.reviewUrl} target="_blank" rel="noopener noreferrer">{quote}</a> : quote}</p>
+              {cite && <cite>{cite}</cite>}
+            </blockquote>
+          )}
+          {extra.take && <div className="take"><b>Brittany:</b> {extra.take}</div>}
           {extra.approved && (
             <div className="approved">
-              👍 Brittany approved
+              <span className="approved-stamp">👍 Brittany approved</span>
               <div className="approved-note">Only because I've been and can vouch for it. The others aren't necessarily bad.</div>
             </div>
           )}
           {item.google && (
-            <a className="gr" href={item.google.url} target="_blank" rel="noopener noreferrer">See it on Google Maps</a>
+            <a className="gr" href={item.google.url} target="_blank" rel="noopener noreferrer">See it on Google Maps<IconExternal size={15} /></a>
           )}
-          {extra.review && (
-            <div className="review">
-              {extra.reviewUrl
-                ? <a href={extra.reviewUrl} target="_blank" rel="noopener noreferrer">{extra.review}</a>
-                : extra.review}
-            </div>
-          )}
-          {extra.take && <div className="take"><b>Brittany:</b> {extra.take}</div>}
         </div>
       </div>
       <div className="tiers">
-        {TIERS.map(t => <button key={t} className={`t ${t}`} onClick={() => onTier(t)}>{LABEL[t]}</button>)}
+        {ORDER.map(t => (
+          <button key={t} className={`t ${t}`} onClick={() => commit(t)}>
+            <span className="t-ico">{ARROW[t]}</span>{LABEL[t]}
+          </button>
+        ))}
       </div>
     </>
   );

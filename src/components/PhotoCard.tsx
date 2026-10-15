@@ -12,7 +12,7 @@ export function Cover({ item, className, named = true, children }: { item: Item;
   const [failed, setFailed] = useState(false);
   if (!item.photo || failed) {
     return (
-      <div className={`${className} nophoto`} style={{ background: AREA_COLOR[item.area] }}>
+      <div className={`cover ${className} nophoto`} style={{ background: `linear-gradient(160deg, ${AREA_COLOR[item.area]}, #0B0D10 140%)` }}>
         {named && <span>{item.name}</span>}
         <small className="nopic">No picture yet</small>
         {children}
@@ -20,18 +20,9 @@ export function Cover({ item, className, named = true, children }: { item: Item;
     );
   }
   return (
-    <div className={className}>
-      <img src={`/img/${item.photo}.jpg`} alt="" onError={() => setFailed(true)} />
+    <div className={`cover ${className}`}>
+      <img src={`/img/${item.photo}.jpg`} alt="" decoding="async" onError={() => setFailed(true)} />
       {children}
     </div>
-  );
-}
-
-export function PhotoCard({ item, n, total }: { item: Item; n: number; total: number }) {
-  return (
-    <Cover item={item} className="photo">
-      <span className="count">{n} of {total}</span>
-      {item.credit && <span className="credit">Photo: {item.credit}</span>}
-    </Cover>
   );
 }

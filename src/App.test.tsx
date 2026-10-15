@@ -135,7 +135,9 @@ describe('rating card', () => {
   it('shows credit, facts, and a Google Maps link with no star rating', async () => {
     await onCard(THREE);
     expect(screen.getByText(/Credit a/)).toBeInTheDocument();
-    expect(screen.getByText('Cultural Triangle · morning · 3 h · free')).toBeInTheDocument();
+    // Facts are separate pills now (area on the photo, then time, fee and best time).
+    expect(screen.getByText('Cultural Triangle')).toBeInTheDocument();
+    for (const fact of ['3 h', 'free', 'morning']) expect(screen.getByText(fact)).toBeInTheDocument();
     const link = screen.getByRole('link', { name: 'See it on Google Maps' });
     expect(link).toHaveAttribute('href', 'https://maps.example/a');
     expect(link).toHaveAttribute('target', '_blank');
