@@ -577,9 +577,7 @@ function evaluate(ctx: Ctx, c: Cand, p: Prep, bar: Eval | null): Eval | null {
     }
     if (beaten(c, bound, bar)) return null;
   }
-  // One pass is enough: the day count never falls when an item is added (each day is packed
-  // greedily and any part of a day that fits still fits), so an item that failed cannot fit later.
-  fill(ctx, steps, on, refillOrder(ctx, p), room);
+  fill(ctx, steps, on, refillOrder(ctx, p), room, -1, true);
   return result(ctx, c, on);
 }
 
@@ -590,17 +588,24 @@ function refillOrder(ctx: Ctx, p: Prep): Opt[] {
   return (p.order = [...p.byRatio, ...evenings].sort((a, b) => Number(ctx.musts.has(b.id)) - Number(ctx.musts.has(a.id))));
 }
 
-/** Adds each item of `order` that still fits the hours and the days; returns the hours left. */
-function fill(ctx: Ctx, steps: Steps, on: Uint8Array, order: Opt[], room: number, skip = -1): number {
+/**
+ * Adds each item of `order` that still fits the hours and the days; returns the hours left. With
+ * `repeat`, passes again while one adds something: an item can fit once another is in, because a
+ * day that closes pulls later activities forward.
+ */
+function fill(ctx: Ctx, steps: Steps, on: Uint8Array, order: Opt[], room: number, skip = -1, repeat = false): number {
   const N = ctx.input.days;
   snapRoom(steps.hours.length);
   minDays(ctx, steps, on, Infinity, -1, true);
-  for (const o of order) {
-    const k = o.k;
-    if (on[k] || k === skip || o.w > room) continue;
-    on[k] = 1;
-    const s = steps.pos[k];
-    if (minDays(ctx, steps, on, N, s) <= N) { room -= o.w; minDays(ctx, steps, on, Infinity, s, true); } else on[k] = 0;
+  for (let added = true; added; added = added && repeat) {
+    added = false;
+    for (const o of order) {
+      const k = o.k;
+      if (on[k] || k === skip || o.w > room) continue;
+      on[k] = 1;
+      const s = steps.pos[k];
+      if (minDays(ctx, steps, on, N, s) <= N) { room -= o.w; added = true; minDays(ctx, steps, on, Infinity, s, true); } else on[k] = 0;
+    }
   }
   return room;
 }
