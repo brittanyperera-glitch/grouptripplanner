@@ -9,10 +9,10 @@ const PLURAL: Record<Tier, string> = { must: 'Musts', keen: 'Keens', meh: 'Mehs'
 
 // Two uses: "Your picks" before submitting (tiers only, no order) and "Finalize your list" after the
 // head to heads (onMove given: ranks, up and down, draws up to 5).
-export default function Rerank({ ranking, byId, onMove, onRetier, onSubmit, title, kicker, sub, cta, tag }: {
+export default function Rerank({ ranking, byId, onMove, onRetier, onSubmit, title, kicker, sub, cta, tag, sticky = true }: {
   ranking: Ranking; byId: Record<string, Item>;
   onMove?: (id: string, dir: -1 | 1) => void; onRetier: (id: string, t: Tier) => void; onSubmit: () => void;
-  title: string; kicker?: string; sub: string; cta: string; tag?: (id: string) => string | undefined;
+  title: string; kicker?: string; sub: string; cta: string; tag?: (id: string) => string | undefined; sticky?: boolean;
 }) {
   const lab = labels(ranking);
   return (
@@ -54,7 +54,7 @@ export default function Rerank({ ranking, byId, onMove, onRetier, onSubmit, titl
           );
         })}
       </section>
-      <div className="foot sticky"><button className="cta" onClick={onSubmit}>{cta}</button></div>
+      <div className={`foot${sticky ? ' sticky' : ''}`}><button className="cta" onClick={onSubmit}>{cta}</button></div>
     </>
   );
 }

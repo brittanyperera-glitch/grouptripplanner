@@ -18,7 +18,9 @@ export default function Plan({ group }: { group: GroupResult }) {
       <div className="kicker">Group plan</div>
       <div className="big display">The trip</div>
       <div className="sub">
-        {group.final ? `${plan.days.length} days, about ${plan.travelHours.toFixed(1)} h driving` : 'Provisional until the knockouts are done'}
+        {!group.final ? 'Provisional until the knockouts are done'
+          : group.locked ? `${plan.days.length} days, about ${plan.travelHours.toFixed(1)} h driving`
+            : `Provisional until all five finalize their lists (${group.finalized.length} of 5 done)`}
       </div>
       <RouteMap route={plan.route} />
       <DayRows plan={plan} items={items} skippedBy={id => PEOPLE.filter(p => { const r = state.responses[p]; return !!r && tierOf(r.ranking, id) === 'skip'; })} />

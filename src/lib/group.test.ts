@@ -3,7 +3,7 @@ import catalogue from './__fixtures__/catalogue-46.json'; import legs from '../d
 import { groupResult, personPlan } from './group';
 import liveCatalogue from '../data/catalogue.json';
 import { plan } from './planner';
-import { BASE, score, tierOf } from './ranking';
+import { BASE, finalListFrom, score, setTier, tierOf } from './ranking';
 import { PEOPLE, emptyRanking, type AppState, type Item, type Leg, type Person, type Response, type Tier } from '../types';
 const items = catalogue.items as Item[]; const L = legs as Leg[];
 // Five seeded people rating every item: about 15% Must, 30% Keen, 30% Meh, 25% Skip.
@@ -239,6 +239,41 @@ describe('knocked down, not out (D5)', () => {
         expect(JSON.stringify(groupResult(s, its, L))).toBe(JSON.stringify(g));
       }
     }
+  });
+});
+
+// Brittany 2026-10-15: after the head to heads everyone finalizes their own list, and the group
+// plan is rebuilt from those lists. Head to head winners stay in; a knocked-down Must starts in Keen.
+describe('final lists', () => {
+  it('the Finalize list starts in tier order, one spot each, with knocked-down Musts at the end of Keen', () => {
+    const r = emptyRanking(); r.must = [['x', 'y']]; r.keen = [['k']]; r.meh = [['m1', 'm2']];
+    expect(finalListFrom(r, ['x', 'k'])).toEqual({ must: [['y']], keen: [['k'], ['x']], meh: [['m1'], ['m2']], skip: [] });
+  });
+  const resolved = () => { const s = seeded(LIVE, 3); const g = voteThrough(s, LIVE); return { s, g }; };
+  it('with no final lists the plan is the head to head plan and nothing is locked', () => {
+    const { g } = resolved();
+    expect(g.knockouts).toEqual([]);
+    expect(g.finalized).toEqual([]); expect(g.locked).toBe(false);
+    expect([...g.knocked].sort()).toEqual([...lostIn(g)].sort());
+  });
+  it('rebuilds the plan from the saved lists, keeps the winners in, and locks once all five saved', () => {
+    const { s, g } = resolved();
+    const winners = g.results.filter(r => r.forkId.startsWith('ko:') && r.winner === 'a').map(r => r.a[0]);
+    const regionIn = g.results.find(r => r.forkId === 'region:north' && r.winner === 'a')?.a ?? [];
+    const x = g.final!.chosen.find(id => g.base!.chosen.includes(id) && !regionIn.includes(id))!;
+    expect(winners.length).toBeGreaterThan(0); expect(x).toBeDefined();
+    const toSkip = (r: ReturnType<typeof finalListFrom>, ids: string[]) => { for (const id of ids) setTier(r, id, 'skip'); return r; };
+    for (const p of PEOPLE.slice(0, 4)) s.responses[p]!.final = toSkip(finalListFrom(s.responses[p]!.ranking, g.knocked), [x, ...winners]);
+    const g4 = groupResult(s, LIVE, L);
+    expect(g4.finalized).toEqual(PEOPLE.slice(0, 4)); expect(g4.locked).toBe(false);
+    expect(g4.results).toEqual(g.results); expect(g4.knockouts).toEqual([]);
+    s.responses.Saulie!.final = toSkip(finalListFrom(s.responses.Saulie!.ranking, g.knocked), [x, ...winners]);
+    const g5 = groupResult(s, LIVE, L);
+    expect(g5.locked).toBe(true);
+    expect(g5.final!.chosen).not.toContain(x);
+    for (const w of winners) expect(g5.final!.chosen).toContain(w);
+    const rs = PEOPLE.map(p => s.responses[p]!.final!);
+    expect(g5.final!.score).toBeCloseTo(g5.final!.chosen.reduce((n, id) => n + rs.reduce((m, r) => m + score(r, id), 0), 0), 6);
   });
 });
 

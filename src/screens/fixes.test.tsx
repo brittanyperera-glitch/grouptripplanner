@@ -26,7 +26,7 @@ const seedResp = (r: Response) => localStorage.setItem(`tp:resp:${r.name}`, JSON
 beforeEach(() => localStorage.clear());
 
 const group = (over: Partial<GroupResult>): GroupResult => ({
-  open: true, days: 9, pace: 1, base: null, final: null, extras: [], results: [], knockouts: [], ...over,
+  open: true, days: 9, pace: 1, base: null, final: null, extras: [], results: [], knockouts: [], knocked: [], finalized: [], locked: false, ...over,
 });
 const show = (g: GroupResult) => render(<AppProvider store={new LocalStore()}><Knockouts group={g} /></AppProvider>);
 

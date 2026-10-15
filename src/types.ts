@@ -37,6 +37,8 @@ export const PEOPLE: Person[] = ['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie']
 export interface Response {
   name: Person; days: number | null; flex: boolean; pace: Pace | null;
   ranking: Ranking; rated: string[]; submitted: boolean; updatedAt: string;
+  // The Finalize list, saved after the head to heads; ranking stays as submitted, which the head to heads use.
+  final?: Ranking | null;
 }
 export interface Suggestion { id: string; name: Person; title: string; area: Area; note: string; status: 'pending' | 'live' | 'rejected'; createdAt: string }
 export interface Vote { forkId: string; name: Person; choice: 'a' | 'b' }
@@ -61,6 +63,8 @@ export interface GroupResult {
   open: boolean; days: number; pace: Pace; base: Plan | null; knockouts: Knockout[];
   results: { forkId: string; a: string[]; b: string[]; winner: 'a' | 'b' | 'displaced' }[]; final: Plan | null;
   extras: { id: string; who: { name: Person; tier: Tier }[] }[];
+  // Items that lost a head to head; who has saved a Finalize list; locked once all five have.
+  knocked: string[]; finalized: Person[]; locked: boolean;
 }
 export const AREA_HUB: Record<Area, Hub> = {
   'Colombo': 'Colombo', 'North': 'Jaffna', 'East coast': 'Trincomalee', 'Cultural Triangle': 'Sigiriya', 'Kandy and Knuckles': 'Kandy', 'Kitulgala': 'Kitulgala',

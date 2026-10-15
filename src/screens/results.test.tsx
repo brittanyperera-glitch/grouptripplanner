@@ -26,7 +26,7 @@ class SpyStore extends LocalStore {
 }
 
 const group = (over: Partial<GroupResult> = {}): GroupResult => ({
-  open: true, days: 9, pace: 1, base: null, final: null, extras: [], results: [],
+  open: true, days: 9, pace: 1, base: null, final: null, extras: [], results: [], knocked: [], finalized: [], locked: false,
   knockouts: [{ forkId: 'ko:fixture', a: [A.id], b: [B.id], votes: { a: [], b: ['Lazza'] } }],
   ...over,
 });

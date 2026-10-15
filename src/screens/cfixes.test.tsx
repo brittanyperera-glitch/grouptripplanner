@@ -8,7 +8,7 @@ import Extras from './Extras';
 
 const css = readFileSync('src/styles.css', 'utf8');
 const group = (over: Partial<GroupResult>): GroupResult => ({
-  open: true, days: 9, pace: 1, base: null, final: null, extras: [], results: [], knockouts: [], ...over,
+  open: true, days: 9, pace: 1, base: null, final: null, extras: [], results: [], knockouts: [], knocked: [], finalized: [], locked: false, ...over,
 });
 const show = (g: GroupResult) => render(<AppProvider store={new LocalStore()}><Extras group={g} /><p>ready</p></AppProvider>);
 const extra = { id: 'galle', who: [{ name: 'Alex' as const, tier: 'must' as const }] };

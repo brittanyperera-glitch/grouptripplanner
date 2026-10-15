@@ -1,4 +1,4 @@
-import { TIERS, type Ranking, type Tier } from '../types';
+import { emptyRanking, TIERS, type Ranking, type Tier } from '../types';
 
 // Draws exist only on the Finalize screen, up to 5 to a spot (Brittany 2026-10-15).
 export const MAX_TIE = 5;
@@ -17,6 +17,18 @@ export function removeId(r: Ranking, id: string): void {
 export function setTier(r: Ranking, id: string, tier: Tier): void {
   removeId(r, id);
   r[tier] = [[...r[tier].flat(), id]];
+}
+
+/**
+ * The Finalize list as it opens: tier order, one spot each, and any knocked-down item this person
+ * rated Must moved to the end of their Keens (it lost a head to head; moving it back up is theirs to do).
+ */
+export function finalListFrom(r: Ranking, knocked: string[]): Ranking {
+  const out = emptyRanking();
+  const down = r.must.flat().filter(id => knocked.includes(id));
+  for (const t of TIERS) out[t] = r[t].flat().filter(id => !(t === 'must' && down.includes(id))).map(id => [id]);
+  out.keen.push(...down.map(id => [id]));
+  return out;
 }
 
 export function move(r: Ranking, id: string, dir: -1 | 1): void {

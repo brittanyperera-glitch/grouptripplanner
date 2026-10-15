@@ -33,7 +33,7 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
   const open = PEOPLE.every(p => state.responses[p]?.submitted);
   const days = rs.length ? Math.min(...rs.map(daysOf)) : 9;
   const pace = medianPace(rs.flatMap(r => (r.pace === null ? [] : [r.pace])));
-  if (!open) return { open, days, pace, base: null, knockouts: [], results: [], final: null, extras: [] };
+  if (!open) return { open, days, pace, base: null, knockouts: [], results: [], final: null, extras: [], knocked: [], finalized: [], locked: false };
 
   const ids = items.map(i => i.id);
   const scores: Record<string, number> = Object.fromEntries(ids.map(id => [id, rs.reduce((n, r) => n + score(r.ranking, id), 0)]));
@@ -45,10 +45,11 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
   // Must rating of it counts as a bare Keen, so it comes back only if room opens, and never ahead of a
   // plain Keen on that rating. O is left to the region question, which stays decisive.
   const knocked = new Set<string>();
+  const rating = (r: Response, id: string) => (knocked.has(id) && tierOf(r.ranking, id) === 'must' ? BASE.keen : score(r.ranking, id));
   const knockDown = (id: string) => {
     if (knocked.has(id)) return;
     knocked.add(id);
-    scores[id] = rs.reduce((n, r) => n + (tierOf(r.ranking, id) === 'must' ? BASE.keen : score(r.ranking, id)), 0);
+    scores[id] = rs.reduce((n, r) => n + rating(r, id), 0);
   };
   // The plan a vote picked holds none of the items it knocks down, so it stays valid at the same score.
   // A re-run replaces it only when it scores higher: the planner's search is budgeted, and without this
@@ -129,6 +130,16 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
     else { knockouts.push({ forkId, a, b, votes }); a.forEach(id => covered.add(id)); }
   }
 
+  // After the head to heads, the plan is rebuilt from each saved Finalize list (Brittany 2026-10-15).
+  // Winners stay forced in and the losing region stays out; anyone without a list counts as submitted,
+  // knock-downs included. Their submitted ratings keep driving the head to heads above, so a saved
+  // list never reopens or changes a question.
+  const finalized = knockouts.length ? [] : rs.filter(r => r.final).map(r => r.name);
+  if (finalized.length) {
+    const val = (r: Response, id: string) => (r.final && tierOf(r.final, id) ? score(r.final, id) : rating(r, id));
+    for (const id of ids) scores[id] = rs.reduce((n, r) => n + val(r, id), 0);
+    P = run(F, O);
+  }
   const final = knockouts.length ? null : P;
   const kept = new Set((final ?? baseP).chosen);
   // The plan's own items stay in, so "you'd also get" holds for the whole list at once.
@@ -137,5 +148,5 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
     .map(id => ({ id, who: rs.flatMap(r => { const t = tierOf(r.ranking, id); return t === 'must' || t === 'keen' ? [{ name: r.name, tier: t }] : []; }) }))
     .filter(e => e.who.length > 0)
     .sort((x, y) => scores[y.id] - scores[x.id] || (x.id < y.id ? -1 : 1));
-  return { open, days, pace, base: baseP, knockouts, results, final, extras };
+  return { open, days, pace, base: baseP, knockouts, results, final, extras, knocked: [...knocked].sort(), finalized, locked: finalized.length === PEOPLE.length };
 }

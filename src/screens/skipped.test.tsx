@@ -25,7 +25,7 @@ const twoItems = (): PlanT & { mustFit: number | null } => ({
     { kind: 'activity', label: B.name, hours: 2, onSite: 2, itemId: B.id },
   ] }],
 });
-const group = (p: PlanT): GroupResult => ({ open: true, days: 9, pace: 1, base: p, final: p, knockouts: [], results: [], extras: [] });
+const group = (p: PlanT): GroupResult => ({ open: true, days: 9, pace: 1, base: p, final: p, knockouts: [], results: [], extras: [], knocked: [], finalized: [], locked: false });
 
 beforeEach(() => {
   localStorage.clear();

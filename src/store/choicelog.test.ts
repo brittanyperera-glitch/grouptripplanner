@@ -27,6 +27,17 @@ describe('choice log', () => {
     expect((re[0].value as { ranking: Ranking }).ranking.must).toEqual([['b']]);
   });
 
+  it('a saved final list is logged as a re-rank of the final list, once per change', async () => {
+    const { base, store } = setup();
+    const r = rk({ must: [['a', 'b']] });
+    await store.saveResponse('Alex', { ranking: r, rated: ['a', 'b'] });
+    await store.saveResponse('Alex', { ranking: r, rated: ['a', 'b'], final: rk({ must: [['b'], ['a']] }) });
+    await store.saveResponse('Alex', { ranking: r, rated: ['a', 'b'], final: rk({ must: [['b'], ['a']] }) });
+    const re = (await base.loadLog()).filter(e => e.kind === 'rerank');
+    expect(re.map(e => e.ref)).toEqual(['final']);
+    expect((re[0].value as { ranking: Ranking }).ranking.must).toEqual([['b'], ['a']]);
+  });
+
   it('a changed knockout vote keeps both votes, and a repeated click adds nothing', async () => {
     const { base, store } = setup();
     await store.vote({ forkId: 'ko:x', name: 'Alex', choice: 'a' });

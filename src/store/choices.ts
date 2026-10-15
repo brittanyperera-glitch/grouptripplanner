@@ -18,6 +18,9 @@ export function diffResponse(name: Person, prev: Response | undefined, patch: Pa
   if (patch.ranking && fresh.length === 0 && !same(patch.ranking, prev?.ranking ?? emptyRanking())) {
     out.push({ name, kind: 'rerank', ref: null, value: { ranking: patch.ranking } });
   }
+  if (patch.final && !same(patch.final, prev?.final ?? null)) {
+    out.push({ name, kind: 'rerank', ref: 'final', value: { ranking: patch.final } });
+  }
   if (patch.days !== undefined && (patch.days !== (prev?.days ?? null) || (patch.flex ?? false) !== (prev?.flex ?? false))) {
     out.push({ name, kind: 'days', ref: null, value: { days: patch.days, flex: patch.flex ?? false } });
   }
@@ -48,7 +51,7 @@ export function describeChoice(e: ChoiceEntry, nameOf: (id: string) => string): 
   const v = (e.value ?? {}) as Record<string, unknown>;
   const time = e.at;
   if (e.kind === 'tier') return { time, what: 'Swipe', place: nameOf(e.ref ?? ''), choice: v.tier ? TIER_LABEL[v.tier as keyof typeof TIER_LABEL] : '' };
-  if (e.kind === 'rerank') return { time, what: 'Re-rank', place: 'Whole list', choice: v.ranking ? rankingText(v.ranking as Ranking, nameOf) : '' };
+  if (e.kind === 'rerank') return { time, what: 'Re-rank', place: e.ref === 'final' ? 'Final list' : 'Whole list', choice: v.ranking ? rankingText(v.ranking as Ranking, nameOf) : '' };
   if (e.kind === 'days') return { time, what: 'Days', place: '', choice: v.flex ? 'Flexible' : `${v.days} days` };
   if (e.kind === 'pace') return { time, what: 'Pace', place: '', choice: PACE_LABEL[v.pace as number] ?? String(v.pace) };
   if (e.kind === 'suggest') return { time, what: 'Suggestion', place: String(e.ref ?? ''), choice: [v.title, v.note].filter(Boolean).join(': ') };

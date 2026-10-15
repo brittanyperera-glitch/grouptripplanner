@@ -5,7 +5,7 @@ import type { AppState, ChoiceEntry, ChoiceInput, Person, Response, Store, Sugge
 
 interface RespRow {
   name: Person; days: number | null; flex?: boolean | null; pace: Response['pace'];
-  ranking: Response['ranking'] | null; rated: string[] | null; submitted: boolean | null; updated_at: string | null;
+  ranking: (Response['ranking'] & { final?: Response['final'] }) | null; rated: string[] | null; submitted: boolean | null; updated_at: string | null;
 }
 interface SuggRow {
   id: string; name: Person; title: string; area: Suggestion['area']; note: string | null;
@@ -14,11 +14,16 @@ interface SuggRow {
 interface LogRow { id: string; name: Person; kind: ChoiceEntry['kind']; ref: string | null; value: unknown; at: string }
 interface VoteRow { fork_id: string; name: Person; choice: 'a' | 'b' }
 
-const toResponse = (r: RespRow): Response => ({
-  name: r.name, days: r.days, flex: r.flex ?? false, pace: r.pace,
-  ranking: r.ranking ?? emptyRanking(), rated: r.rated ?? [], submitted: r.submitted ?? false,
-  updatedAt: r.updated_at ?? new Date(0).toISOString(),
-});
+// The Finalize list is kept inside the ranking jsonb column under "final", so the live table needs
+// no new column.
+const toResponse = (r: RespRow): Response => {
+  const { final, ...ranking } = r.ranking ?? { ...emptyRanking(), final: null };
+  return {
+    name: r.name, days: r.days, flex: r.flex ?? false, pace: r.pace,
+    ranking, final: final ?? null, rated: r.rated ?? [], submitted: r.submitted ?? false,
+    updatedAt: r.updated_at ?? new Date(0).toISOString(),
+  };
+};
 
 const RELOAD_DEBOUNCE_MS = 200;
 
@@ -56,6 +61,7 @@ export class SupabaseStore implements Store {
     for (const k of ['days', 'flex', 'pace', 'ranking', 'rated', 'submitted'] as const) {
       if (patch[k] !== undefined) cols[k] = patch[k];
     }
+    if (patch.final !== undefined && patch.ranking) cols.ranking = { ...patch.ranking, final: patch.final };
     const { error } = await this.db.from('responses').upsert(cols, { onConflict: 'name' });
     if (error) throw error;
   }

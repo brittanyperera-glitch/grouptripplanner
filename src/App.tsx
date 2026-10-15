@@ -9,6 +9,7 @@ import { setTier, tierOf } from './lib/ranking';
 import Days from './screens/Days';
 import Everyone from './screens/Everyone';
 import Extras from './screens/Extras';
+import Finalize from './screens/Finalize';
 import Friends from './screens/Friends';
 import Knockouts from './screens/Knockouts';
 import MyTrip from './screens/MyTrip';
@@ -51,6 +52,7 @@ function GroupTab() {
     <>
       <CrewStrip />
       {(group.knockouts.length > 0 || group.results.length > 0) && <Knockouts group={group} />}
+      <Finalize group={group} />
       <Plan group={group} />
       <Extras group={group} />
       <Friends />

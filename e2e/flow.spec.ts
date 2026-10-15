@@ -23,6 +23,10 @@ const FRIENDS = [
 const BRITTANY_MUSTS = new Set(['Sigiriya Rock', 'Elephant safari', 'Nanu Oya to Ella train', 'Ella Rock hike', 'Galle Fort and sunset', 'Weligama surf lesson']);
 
 test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
+  const groupTab = async () => {
+    await page.getByRole('tab', { name: 'Group' }).click();
+    await expect(page.getByRole('region', { name: 'The trip' })).toBeVisible();
+  };
   test.setTimeout(240_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
@@ -47,17 +51,18 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
   await expect(page.getByText(/Your best 9 days/)).toBeVisible();
   await shot(page, 'mytrip');
 
-  await page.getByRole('tab', { name: 'Group' }).click();
+  await groupTab();
   await shot(page, 'group-open');
-  for (let round = 0; round < 6; round++) {
+  for (let round = 0; round < 12; round++) {
     const forks = page.getByRole('group', { name: /^Knockout:/ });
     const n = await forks.count();
     if (n === 0) break;
     for (const who of ['Brittany', 'Alex', 'Lazza']) {
       if (who !== 'Brittany') {
         await page.getByRole('button', { name: 'Not you?' }).click();
+        await page.getByRole('button', { name: 'Choose your character' }).click();
         await page.getByRole('button', { name: who, exact: true }).click();
-        await page.getByRole('tab', { name: 'Group' }).click();
+        await groupTab();
       }
       const f = page.getByRole('group', { name: /^Knockout:/ });
       for (let i = 0; i < await f.count(); i++) await f.nth(i).locator('button.pick').first().click();
@@ -65,13 +70,20 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
     await page.getByRole('button', { name: 'Not you?' }).click();
     await page.getByRole('button', { name: 'Choose your character' }).click();
     await page.getByRole('button', { name: 'Brittany', exact: true }).click();
-    await page.getByRole('tab', { name: 'Group' }).click();
+    await groupTab();
   }
   await expect(page.getByRole('group', { name: /^Knockout:/ })).toHaveCount(0);
   await expect(page.getByText('Provisional until the knockouts are done')).toHaveCount(0);
   await expect(page.getByText(/^Day 9\b/).first()).toBeVisible();
   await expect(page.getByText(/^Day 10\b/)).toHaveCount(0);
   await shot(page, 'group-final');
+
+  // After the head to heads each friend finalizes their own list (Brittany 2026-10-15).
+  await expect(page.getByRole('region', { name: 'Finalize your list' })).toBeVisible();
+  await shot(page, 'finalize');
+  await page.getByRole('button', { name: 'Save my list' }).click();
+  await expect(page.getByText(/Your final list is saved\. 1 of 5 done/)).toBeVisible();
+  await expect(page.getByText(/Provisional until all five finalize their lists \(1 of 5 done\)/)).toBeVisible();
 
   await page.getByRole('tab', { name: 'Everyone' }).click();
   await shot(page, 'everyone');

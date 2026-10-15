@@ -245,6 +245,19 @@ describe('submit, lock and errors', () => {
     expect(await screen.findByRole('list', { name: 'The crew' })).toBeInTheDocument();
   });
 
+  it('offers Finalize your list on the Group tab once the head to heads are done', async () => {
+    for (const p of PEOPLE) seed(row(p, { submitted: true, rated: ['a', 'b', 'c'], ranking: { ...emptyRanking(), must: [['a', 'b', 'c']] } }));
+    localStorage.setItem('tp:me', 'Alex');
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('tab', { name: 'Group' }));
+    const list = await screen.findByRole('region', { name: 'Finalize your list' });
+    expect(Array.from(list.querySelectorAll('.rk')).map(n => n.textContent)).toEqual(['1', '2', '3']);
+    await user.click(screen.getByRole('button', { name: 'Save my list' }));
+    await waitFor(() => expect(savedAlex().final?.must).toEqual([['a'], ['b'], ['c']]));
+    expect(await screen.findByText(/Your final list is saved\. 1 of 5 done/)).toBeInTheDocument();
+  });
+
   it('keeps ratings editable before the group opens', async () => {
     seed(row('Alex', { submitted: true, rated: ['a', 'b', 'c'], ranking: { ...emptyRanking(), must: [['a'], ['b'], ['c']] } }));
     localStorage.setItem('tp:me', 'Alex');
