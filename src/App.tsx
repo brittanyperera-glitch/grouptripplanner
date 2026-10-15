@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Avatar from './components/Avatar';
+import CrewStrip from './components/CrewStrip';
 import Compare from './components/Compare';
 import { IconGrid, IconGroup, IconRoute, IconSpark } from './components/Icons';
 import { cssEnter, lastNav, navigate } from './components/motion';
@@ -49,6 +50,7 @@ function GroupTab() {
   if (!group.open) return <Waiting />;
   return (
     <>
+      <CrewStrip />
       {(group.knockouts.length > 0 || group.results.length > 0) && <Knockouts group={group} />}
       <Plan group={group} />
       <Extras group={group} />

@@ -246,6 +246,15 @@ describe('submit, lock and errors', () => {
     expect(screen.getByText(/ratings are locked/i)).toBeInTheDocument();
   });
 
+  it('shows the crew selfies at the top of the Group tab once the group is open', async () => {
+    for (const p of PEOPLE) seed(row(p, { submitted: true, rated: ['a', 'b', 'c'], ranking: { ...emptyRanking(), must: [['a'], ['b'], ['c']] } }));
+    localStorage.setItem('tp:me', 'Alex');
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('tab', { name: 'Group' }));
+    expect(await screen.findByRole('list', { name: 'The crew' })).toBeInTheDocument();
+  });
+
   it('keeps ratings editable before the group opens', async () => {
     seed(row('Alex', { submitted: true, rated: ['a', 'b', 'c'], ranking: { ...emptyRanking(), must: [['a'], ['b'], ['c']] } }));
     localStorage.setItem('tp:me', 'Alex');

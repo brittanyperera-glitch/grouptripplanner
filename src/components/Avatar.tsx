@@ -23,7 +23,9 @@ export const LOOKS: Record<Person, Look> = {
 
 // Friends whose generated full-body PNG is in public/img/players/<lowercase name>.png. Add a name here once
 // the file is committed; a static list means no request is made to probe for a missing file.
-export const IMAGE_AVATARS: ReadonlySet<Person> = new Set<Person>([]);
+export const IMAGE_AVATARS: ReadonlySet<Person> = new Set<Person>(['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie']);
+// Real heights in cm for the PNG figures, measured from each figure's own pixel height (the crops differ).
+export const IMAGE_CM: Record<Person, number> = { Alex: 188, Saulie: 183, Antek: 178, Lazza: 170, Brittany: 160 };
 // Top of the SVG figure's head above the feet at 200 cm, in grid units; the PNG is fitted to the same height.
 const FIGURE_H = 211;
 
@@ -31,6 +33,8 @@ const HEAD_SCALE = 1.3;
 const BODY_WIDEN = 1.2;
 // Same frame for everyone so a row of tiles shows their real height differences.
 const FULL_BOX = '10 -10 84 228';
+// A little wider for the PNGs: Antek's laptop and Lazza's flag push their figures past 84 units at true height.
+const IMAGE_FULL_BOX = '6 -10 92 228';
 
 const EDGE = { stroke: 'rgba(11, 13, 16, .35)', strokeWidth: 1, strokeLinejoin: 'round' as const };
 
@@ -134,18 +138,20 @@ function head(l: Look): ReactNode {
  */
 export default function Avatar({ name, size = 80, crop = 'bust', bob = false, image = IMAGE_AVATARS.has(name) }: { name: Person; size?: number; crop?: 'bust' | 'full'; bob?: boolean; image?: boolean }) {
   const l = LOOKS[name] ?? LOOKS.Saulie;
-  const s = l.height / 200;
+  const cm = image ? IMAGE_CM[name] : l.height;
+  const s = cm / 200;
   const id = `av-${name}-${crop}`;
   // Stylised proportions: a bigger head (scaled about the chin) and a wider body read better at tile size.
   const bodyT = `translate(52 214) scale(${(s * l.build * BODY_WIDEN).toFixed(3)} ${s.toFixed(3)}) translate(-52 -214)`;
   const headT = `translate(52 214) scale(${s.toFixed(3)}) translate(-52 -214) translate(52 50) scale(${HEAD_SCALE}) translate(-52 -50)`;
   const bust = crop === 'bust';
-  const headY = 214 - (214 - 30.5) * s;
-  const box = bust ? `16 ${(headY - 30).toFixed(1)} 72 72` : FULL_BOX;
+  const headY = image ? 214 - FIGURE_H * s : 214 - (214 - 30.5) * s;
+  const top = headY - (image ? 6 : 30);
+  const box = bust ? `16 ${top.toFixed(1)} 72 72` : image ? IMAGE_FULL_BOX : FULL_BOX;
   const [, , bw, bh] = box.split(' ').map(Number);
   return (
     <svg viewBox={box} width={(size * bw) / bh} height={size} aria-hidden="true" focusable="false"
-      className={`avatar-art ${crop}`} data-person={name} data-height={l.height}>
+      className={`avatar-art ${crop}`} data-person={name} data-height={cm}>
       <defs>
         <linearGradient id={`${id}-bg`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={l.bg[0]} /><stop offset="1" stopColor={l.bg[1]} /></linearGradient>
         <pattern id={`${id}-camo`} width="22" height="22" patternUnits="userSpaceOnUse">
@@ -154,11 +160,11 @@ export default function Avatar({ name, size = 80, crop = 'bust', bob = false, im
           <path d="M12 2c2-1 5 0 5 2s-3 3-5 1zM0 11c2-1 4 0 4 2s-3 2-4 1z" fill="#9A8660" />
         </pattern>
       </defs>
-      {bust && <rect x="16" y={headY - 30} width="72" height="72" rx="18" fill={`url(#${id}-bg)`} />}
+      {bust && <rect x="16" y={top} width="72" height="72" rx="18" fill={`url(#${id}-bg)`} />}
       <g className={bob ? 'bob' : undefined}>
         <ellipse cx="54" cy="208" rx="26" ry="4" fill="rgba(0,0,0,.28)" />
         {image ? (
-          <image href={`/img/players/${name.toLowerCase()}.png`} x="10" width="84" y={(214 - FIGURE_H * s).toFixed(1)} height={(FIGURE_H * s).toFixed(1)} preserveAspectRatio="xMidYMax meet" />
+          <image href={`/img/players/${name.toLowerCase()}.png`} x="-40" width="184" y={(214 - FIGURE_H * s).toFixed(1)} height={(FIGURE_H * s).toFixed(1)} preserveAspectRatio="xMidYMax meet" />
         ) : (
           <>
             <g transform={bodyT}>{body(l, id)}{shoes(l)}</g>

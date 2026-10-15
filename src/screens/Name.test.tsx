@@ -76,3 +76,19 @@ describe('character select page', () => {
     expect(within(screen.getByRole('button', { name: 'Alex' })).getByText('Alex')).toBeInTheDocument();
   });
 });
+
+describe('selfie', () => {
+  it('a Selfie button opens the centred character\'s selfie, and a tap closes it', async () => {
+    setMotion(true);
+    const { user } = await open();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Selfie' }));
+    const dlg = screen.getByRole('dialog', { name: 'Brittany selfie' });
+    expect(within(dlg).getByRole('img', { name: 'Brittany selfie' })).toHaveAttribute('src', '/img/players/brittany-selfie.png');
+    await user.click(dlg);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    await user.click(screen.getByRole('button', { name: 'Selfie' }));
+    expect(screen.getByRole('img', { name: 'Alex selfie' })).toHaveAttribute('src', '/img/players/alex-selfie.png');
+  });
+});

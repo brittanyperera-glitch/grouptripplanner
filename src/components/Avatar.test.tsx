@@ -4,7 +4,7 @@ import { PEOPLE } from '../types';
 import type { Person } from '../types';
 import Avatar from './Avatar';
 
-const draw = (name: Person) => render(<Avatar name={name} crop="full" size={200} />).container.querySelector('svg') as SVGSVGElement;
+const draw = (name: Person) => render(<Avatar name={name} crop="full" size={200} image={false} />).container.querySelector('svg') as SVGSVGElement;
 const has = (svg: SVGSVGElement, part: string) => svg.querySelector(`[data-part="${part}"]`) !== null;
 // Rendered height: the vertical scale applied to the body group.
 const scaleY = (svg: SVGSVGElement) => Number(svg.querySelector('g[transform]')!.getAttribute('transform')!.match(/scale\([\d.]+ ([\d.]+)\)/)![1]);
@@ -49,6 +49,23 @@ describe('full-body avatars', () => {
 });
 
 describe('image avatars', () => {
+  it('are on by default for all five and keep the real height order from the feet', () => {
+    const h = Object.fromEntries(PEOPLE.map(p => {
+      const svg = render(<Avatar name={p} crop="full" size={200} />).container.querySelector('svg') as SVGSVGElement;
+      expect(svg.querySelector('image')?.getAttribute('href')).toBe(`/img/players/${p.toLowerCase()}.png`);
+      return [p, Number(svg.querySelector('image')!.getAttribute('height'))];
+    })) as Record<Person, number>;
+    expect([...PEOPLE].sort((a, b) => h[b] - h[a])).toEqual(['Alex', 'Saulie', 'Antek', 'Lazza', 'Brittany']);
+  });
+
+  it('the head-and-shoulders crop starts at the top of the figure so the face is inside it', () => {
+    const svg = render(<Avatar name="Alex" size={60} />).container.querySelector('svg') as SVGSVGElement;
+    const [, y, , h] = svg.getAttribute('viewBox')!.split(' ').map(Number);
+    const img = svg.querySelector('image')!;
+    expect(Number(img.getAttribute('y'))).toBeGreaterThan(y);
+    expect(Number(img.getAttribute('y'))).toBeLessThan(y + h / 4);
+  });
+
   it('uses public/img/players/<name>.png when switched on, scaled from the feet, and the SVG figure otherwise', () => {
     const on = render(<Avatar name="Alex" crop="full" size={200} image />).container.querySelector('svg') as SVGSVGElement;
     const img = on.querySelector('image')!;

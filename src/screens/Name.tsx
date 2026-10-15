@@ -41,6 +41,7 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
   const [broken, setBroken] = useState<Set<string>>(new Set());
   const [idx, setIdx] = useState(0);
   const [flash, setFlash] = useState<Person | null>(null);
+  const [selfie, setSelfie] = useState(false);
   const lane = useRef<HTMLDivElement>(null);
   const shots = covers.filter(c => c.photo && !broken.has(c.id));
   const chosen = PEOPLE[idx];
@@ -152,6 +153,7 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
             </div>
             <button className="nav next" aria-label="Next character" disabled={idx === PEOPLE.length - 1} onClick={() => goTo(idx + 1)}><IconRight size={20} /></button>
           </div>
+          <button className="selfie-btn" onClick={() => setSelfie(true)}>Selfie</button>
           <div className="player-card" key={chosen}>
             <div className="pc-id">
               <h2 className="pc-name">{chosen}</h2>
@@ -160,6 +162,12 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
             {stats.length > 0 && <StatBars stats={stats} />}
           </div>
           <button className="cta play" onClick={() => go(chosen)}>Select</button>
+        </div>
+      )}
+      {selfie && page === 'select' && (
+        <div className="selfie-pop" role="dialog" aria-label={`${chosen} selfie`} onClick={() => setSelfie(false)}>
+          <img src={`/img/players/${chosen.toLowerCase()}-selfie.png`} alt={`${chosen} selfie`} />
+          <span>Tap to close</span>
         </div>
       )}
       {flash && (
