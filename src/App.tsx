@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import Avatar from './components/Avatar';
 import CrewStrip from './components/CrewStrip';
 import { GuideNav } from './components/GuideNav';
+import { MUTE_KEY } from './components/sound';
 import { IconBook, IconGrid, IconGroup, IconRoute, IconSpark } from './components/Icons';
 import { cssEnter, lastNav, navigate } from './components/motion';
 import QuipBurst from './components/QuipBurst';
@@ -25,8 +26,10 @@ import Rate from './screens/Rate';
 import Rerank from './screens/Rerank';
 import Suggest from './screens/Suggest';
 import Waiting from './screens/Waiting';
-import { AppProvider, pickQuip, useApp } from './state';
+import { AppProvider, ME_KEY, pickQuip, useApp } from './state';
 import { connectionMissingNow } from './store';
+import { clearLocalProgress } from './store/fresh';
+import { isLocalStoreKey } from './store/local';
 import { useGroupResult, usePersonPlan } from './workers/usePlan';
 import { AREAS, emptyRanking, PEOPLE } from './types';
 import type { Item, Pace as PaceT, Person, Ranking, Response, Store, Tier } from './types';
@@ -86,7 +89,30 @@ const blank = (name: Person): Response => ({
   name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: new Date().toISOString(),
 });
 
-function Flow({ me, say }: { me: Person; say: Say }) {
+const START_OVER_ARMED_MS = 4000;
+
+/**
+ * Not you? and Start over. Start over takes two taps: the first arms it for a few seconds (no browser
+ * dialog). While armed, Not you? steps aside so the longer label fits; the button keeps its DOM node and focus.
+ */
+function WhoActions({ onNotYou, onStartOver }: { onNotYou(): void; onStartOver(): void }) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(false), START_OVER_ARMED_MS);
+    return () => clearTimeout(t);
+  }, [armed]);
+  return (
+    <>
+      {!armed && <button className="link" onClick={onNotYou}>Not you?</button>}
+      <button className={`link${armed ? ' armed' : ''}`} onClick={() => (armed ? onStartOver() : setArmed(true))}>
+        {armed ? 'Tap again to start over' : 'Start over'}
+      </button>
+    </>
+  );
+}
+
+function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): void }) {
   const { state, store, items, copy, clearMe } = useApp();
   const [draft, setDraft] = useState<Response>(() => {
     const saved = state.responses[me];
@@ -187,7 +213,7 @@ function Flow({ me, say }: { me: Person; say: Say }) {
         <span className="who">
           <Avatar name={me} size={30} />
           <b>{me}</b>
-          <button className="link" onClick={() => navigate('back', clearMe)}>Not you?</button>
+          <WhoActions onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} />
         </span>
         <span className="where">{where}</span>
       </header>
@@ -205,7 +231,16 @@ function Flow({ me, say }: { me: Person; say: Say }) {
 }
 
 function Shell() {
-  const { me, setMe, copy, error, retry, items } = useApp();
+  const { me, setMe, copy, error, retry, items, store } = useApp();
+  const [resets, setResets] = useState(0);
+  // My row goes back to blank on the server (the choice log keeps its history), this browser forgets my
+  // progress but not who I am or the mute switch, and Flow remounts on the first step.
+  const startOver = useCallback(() => {
+    if (!me) return;
+    clearLocalProgress(k => k === ME_KEY || k === MUTE_KEY || isLocalStoreKey(k));
+    void store.saveResponse(me, { days: null, flex: false, pace: null, ranking: emptyRanking(), final: null, rated: [], submitted: false });
+    navigate('back', () => setResets(n => n + 1));
+  }, [me, store]);
   const [toast, setToast] = useState<{ text: string; kind: QuipKind; id: number } | null>(null);
   const seq = useRef(0);
   const say = useCallback<Say>((text, kind = 'hi') => {
@@ -218,7 +253,7 @@ function Shell() {
     <div className="app">
       {error && <button className="errbar" onClick={retry}>{error}. Tap to retry</button>}
       {me
-        ? <Flow key={me} me={me} say={say} />
+        ? <Flow key={`${me}:${resets}`} me={me} say={say} onStartOver={startOver} />
         : <Name welcome={copy.welcome} welcomeSub={copy.welcomeSub} covers={covers} players={copy.players} onPick={p => { setMe(p); say(pickQuip(copy.quips.name[p])); }} />}
       {toast && <QuipBurst key={toast.id} text={toast.text} kind={toast.kind} onDone={clear} />}
     </div>

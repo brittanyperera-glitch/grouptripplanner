@@ -25,6 +25,8 @@ describe('supabase/schema.sql', () => {
   it('keeps the name check, the flex column and the realtime publication', () => {
     expect(sql.match(/check \(name in \('Brittany','Alex','Antek','Lazza','Saulie'\)\)/g)).toHaveLength(3);
     expect(sql).toMatch(/flex boolean not null default false/);
-    expect(sql).toMatch(/alter publication supabase_realtime add table responses, suggestions, knockout_votes/);
+    // Added through a guarded loop so a re-run does not fail on a table that is already published.
+    expect(sql).toMatch(/array\['responses','suggestions','knockout_votes'\]/);
+    expect(sql).toMatch(/alter publication supabase_realtime add table %I/);
   });
 });

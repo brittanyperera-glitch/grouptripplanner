@@ -5,6 +5,7 @@ type Patch = Partial<Omit<Response, 'name'>>;
 type Job =
   | { kind: 'resp'; key: string; name: Person; patch: Patch; waiters: Array<() => void> }
   | { kind: 'vote'; key: string; vote: Vote; waiters: Array<() => void> }
+  | { kind: 'log'; key: 'log'; entries: ChoiceInput[]; waiters: Array<() => void> }
   | { kind: 'op'; key: null; run: () => Promise<void>; waiters: Array<() => void> };
 
 interface Hooks { onFail(): void; onClear(): void }
@@ -51,12 +52,12 @@ export class WriteQueue {
         return Promise.all([saved, this.logAll([{ name: s.name, kind: 'suggest', ref: s.area, value: { title: s.title, note: s.note } }])]).then(() => undefined);
       },
       setSuggestionStatus: (id, st) => this.add({ kind: 'op', key: null, run: () => base.setSuggestionStatus(id, st), waiters: [] }),
-      logChoice: c => this.add({ kind: 'op', key: null, run: () => base.logChoice(c), waiters: [] }),
+      logChoice: c => this.logAll([c]),
       loadLog: () => base.loadLog(),
     };
   }
 
-  /** Runs one pass over everything queued or failed. Resolves true when nothing is left failing. */
+  /** Runs one pass over everything queued or failed. Resolves true when no choice is left unsaved (log entries may still wait). */
   flush(): Promise<boolean> {
     if (!this.running) {
       this.running = true;
@@ -65,18 +66,13 @@ export class WriteQueue {
     return this.current;
   }
 
-  /** Queues the log writes for one user action after its save. Each entry is dropped once written, so a retry never repeats one. */
+  /**
+   * Queues log writes into the one shared log job, so failed entries wait together and a retry costs one
+   * request. Each entry is dropped once written, so a retry never repeats one.
+   */
   private logAll(todo: ChoiceInput[]): Promise<void> {
     if (todo.length === 0) return Promise.resolve();
-    return this.add({
-      kind: 'op', key: null, waiters: [],
-      run: async () => {
-        while (todo.length > 0) {
-          await this.base.logChoice(todo[0]);
-          todo.shift();
-        }
-      },
-    });
+    return this.add({ kind: 'log', key: 'log', entries: [...todo], waiters: [] });
   }
 
   private add(job: Job): Promise<void> {
@@ -90,7 +86,15 @@ export class WriteQueue {
   private exec(j: Job): Promise<void> {
     if (j.kind === 'resp') return this.base.saveResponse(j.name, j.patch);
     if (j.kind === 'vote') return this.base.vote(j.vote);
+    if (j.kind === 'log') return this.writeLog(j.entries);
     return j.run();
+  }
+
+  private async writeLog(entries: ChoiceInput[]): Promise<void> {
+    while (entries.length > 0) {
+      await this.base.logChoice(entries[0]);
+      entries.shift();
+    }
   }
 
   private async drain(): Promise<boolean> {
@@ -111,14 +115,16 @@ export class WriteQueue {
       this.queue.unshift(...failed);
       this.running = false;
     }
-    if (failed.length > 0) {
+    // A failed log write loses no choice (the response row holds them all), so it stays queued but raises nothing.
+    const unsaved = failed.filter(j => j.kind !== 'log').length;
+    if (unsaved > 0) {
       this.dirty = true;
       this.hooks.onFail();
     } else if (this.dirty) {
       this.dirty = false;
       this.hooks.onClear();
     }
-    return failed.length === 0;
+    return unsaved === 0;
   }
 }
 
@@ -128,6 +134,8 @@ function merge(into: Job, from: Job, intoIsNewer = false): void {
     into.patch = intoIsNewer ? { ...from.patch, ...into.patch } : { ...into.patch, ...from.patch };
   } else if (into.kind === 'vote' && from.kind === 'vote' && !intoIsNewer) {
     into.vote = from.vote;
+  } else if (into.kind === 'log' && from.kind === 'log') {
+    into.entries = intoIsNewer ? [...from.entries, ...into.entries] : [...into.entries, ...from.entries];
   }
   into.waiters.push(...from.waiters);
 }

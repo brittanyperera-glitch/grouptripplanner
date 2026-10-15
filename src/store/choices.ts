@@ -21,7 +21,7 @@ export function diffResponse(name: Person, prev: Response | undefined, patch: Pa
   if (patch.final && !same(patch.final, prev?.final ?? null)) {
     out.push({ name, kind: 'rerank', ref: 'final', value: { ranking: patch.final } });
   }
-  if (patch.days !== undefined && (patch.days !== (prev?.days ?? null) || (patch.flex ?? false) !== (prev?.flex ?? false))) {
+  if (patch.days !== undefined && patch.days !== null && (patch.days !== (prev?.days ?? null) || (patch.flex ?? false) !== (prev?.flex ?? false))) {
     out.push({ name, kind: 'days', ref: null, value: { days: patch.days, flex: patch.flex ?? false } });
   }
   if (patch.pace !== undefined && patch.pace !== null && patch.pace !== (prev?.pace ?? null)) {

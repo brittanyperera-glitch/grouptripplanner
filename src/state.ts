@@ -1,12 +1,12 @@
-import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import catalogue from './data/catalogue.json';
 import legsData from './data/legs.json';
 import copyData from './content/copy.json';
 import { getStore } from './store';
 import { WriteQueue } from './store/queue';
-import { PEOPLE } from './types';
-import type { AppState, Item, Leg, Person, Store } from './types';
+import { emptyRanking, PEOPLE } from './types';
+import type { AppState, Item, Leg, Person, Response, Store } from './types';
 
 // A quip is one line, or a list the app picks from at random so it doesn't repeat.
 export type Quip = string | string[];
@@ -26,7 +26,45 @@ interface AppValue {
   items: Item[]; legs: Leg[]; copy: Copy; error: string | null; retry(): void;
 }
 
-const ME_KEY = 'tp:me';
+export const ME_KEY = 'tp:me';
+// My own saves, kept here until the server has them, so a failed save survives a reload of the page.
+const UNSAVED_KEY = (p: Person) => `tp:unsaved:${p}`;
+type Rows = AppState['responses'];
+
+const blankRow = (name: Person): Response => ({
+  name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: new Date(0).toISOString(),
+});
+
+/** True when the server has not yet caught up with a local save (missing, or written before it). */
+const ahead = (local: Response, server?: Response) => !server || Date.parse(server.updatedAt) < Date.parse(local.updatedAt);
+
+function readUnsaved(): Rows {
+  const out: Rows = {};
+  for (const p of PEOPLE) {
+    try {
+      const raw = localStorage.getItem(UNSAVED_KEY(p));
+      const r = raw ? (JSON.parse(raw) as Response) : null;
+      if (r && r.name === p && typeof r.updatedAt === 'string') out[p] = r;
+    } catch { /* storage unavailable or corrupt: nothing to restore */ }
+  }
+  return out;
+}
+
+function writeUnsaved(rows: Rows): void {
+  for (const p of PEOPLE) {
+    try {
+      const r = rows[p];
+      if (r) localStorage.setItem(UNSAVED_KEY(p), JSON.stringify(r)); else localStorage.removeItem(UNSAVED_KEY(p));
+    } catch { /* storage unavailable: the overlay lasts this visit */ }
+  }
+}
+
+/** Server state with my not-yet-stored saves on top, so a reload that lacks them never wipes them from screen. */
+function withLocal(server: AppState, local: Rows): AppState {
+  const responses = { ...server.responses };
+  for (const r of Object.values(local)) if (r && ahead(r, server.responses[r.name])) responses[r.name] = r;
+  return { ...server, responses };
+}
 const copy: Copy = copyData;
 
 export function liveItems(state: AppState): Item[] {
@@ -62,7 +100,12 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
     try { return getStore(); } catch { return null; }
   }, [injected, attempt]);
   const [error, setError] = useState<string | null>(null);
-  const [state, setState] = useState<AppState | null>(null);
+  const [server, setServer] = useState<AppState | null>(null);
+  const [local, setLocal] = useState<Rows>(readUnsaved);
+  const serverRef = useRef(server);
+  serverRef.current = server;
+  const localRef = useRef(local);
+  localRef.current = local;
   const [me, setMeState] = useState<Person | null>(readMe);
   const queue = useMemo(() => base && new WriteQueue(base, {
     onFail: () => setError("Couldn't save"),
@@ -73,7 +116,7 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
   const load = useCallback(async () => {
     try {
       if (!base) throw new Error('no store');
-      setState(await base.load());
+      setServer(await base.load());
       setError(null);
     } catch {
       setError("Couldn't load");
@@ -82,8 +125,42 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
 
   useEffect(() => {
     void load();
-    return base?.subscribe(setState);
+    return base?.subscribe(setServer);
   }, [base, load]);
+
+  // Drop a local row once the server holds it (or something newer), and keep the rest on disk.
+  useEffect(() => {
+    if (!server) return;
+    setLocal(l => {
+      const kept = Object.fromEntries(Object.entries(l).filter(([, r]) => r && ahead(r, server.responses[r.name]))) as Rows;
+      return Object.keys(kept).length === Object.keys(l).length ? l : kept;
+    });
+  }, [server]);
+  useEffect(() => writeUnsaved(local), [local]);
+
+  // Saves left over from an earlier visit go back into the queue once, after the first server read.
+  const replayed = useRef(false);
+  useEffect(() => {
+    if (!server || !queue || replayed.current) return;
+    replayed.current = true;
+    for (const r of Object.values(localRef.current)) {
+      if (!r || !ahead(r, server.responses[r.name])) continue;
+      const { name, updatedAt: _at, ...patch } = r;
+      void queue.store.saveResponse(name, patch);
+    }
+  }, [server, queue]);
+
+  const store = useMemo<Store | null>(() => queue && {
+    ...queue.store,
+    saveResponse: (name, patch) => {
+      setLocal(l => {
+        const prev = l[name] ?? serverRef.current?.responses[name] ?? blankRow(name);
+        return { ...l, [name]: { ...prev, ...patch, name, updatedAt: new Date().toISOString() } };
+      });
+      return queue.store.saveResponse(name, patch);
+    },
+  }, [queue]);
+  const state = useMemo(() => server && withLocal(server, local), [server, local]);
 
   const retry = useCallback(() => {
     if (!queue) { setAttempt(a => a + 1); return; }
@@ -107,6 +184,6 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
         : createElement('div', { className: 'body' }, createElement('div', { className: 'sub' }, 'Loading')));
   }
 
-  const value: AppValue = { state, me, setMe, clearMe, store: (queue as WriteQueue).store, items: liveItems(state), legs, copy, error, retry };
+  const value: AppValue = { state, me, setMe, clearMe, store: store as Store, items: liveItems(state), legs, copy, error, retry };
   return createElement(Ctx.Provider, { value }, children);
 }

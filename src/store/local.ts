@@ -6,6 +6,9 @@ const VOTES = 'tp:votes';
 const LOG = 'tp:log';
 const respKey = (n: Person) => `tp:resp:${n}`;
 
+/** The keys that are this store's shared data (everyone's rows, votes, suggestions, log), not one person's progress. */
+export const isLocalStoreKey = (k: string) => k === SUGG || k === VOTES || k === LOG || k.startsWith('tp:resp:');
+
 function read<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
