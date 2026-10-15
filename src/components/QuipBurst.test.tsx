@@ -29,7 +29,7 @@ describe('QuipBurst', () => {
     setMotion(false);
     const onDone = vi.fn();
     const clicked = vi.fn();
-    render(<><button onClick={clicked}>Next</button><QuipBurst text="solid" kind="keen" onDone={onDone} /></>);
+    render(<><button onClick={clicked}>Next</button><QuipBurst text="solid" kind="must" onDone={onDone} /></>);
     const rule = css.split('\n').find(l => l.startsWith('.quip {'));
     expect(rule).toContain('pointer-events: none');
     const next = screen.getByRole('button', { name: 'Next' });
@@ -52,7 +52,7 @@ describe('QuipBurst', () => {
 
   it('with reduced motion shows the line with a plain fade and no particles', () => {
     setMotion(true);
-    render(<QuipBurst text="hmm interesting choice" kind="meh" onDone={() => {}} />);
+    render(<QuipBurst text="hmm interesting choice" kind="skip" onDone={() => {}} />);
     expect(screen.getByRole('status').textContent).toBe('hmm interesting choice');
     expect(document.querySelector('.quip-reduced')).not.toBeNull();
     expect(document.querySelectorAll('.quip-p').length).toBe(0);
@@ -69,5 +69,14 @@ describe('QuipBurst', () => {
     window.history.replaceState(null, '', '/?quips=1');
     render(<QuipBurst text="say less" kind="must" onDone={() => {}} />);
     expect(document.querySelector('.quip.quip-full')).not.toBeNull();
+  });
+
+  it.each(['keen', 'meh'] as const)('%s plays nothing: no overlay, no toast, and it finishes at once', kind => {
+    setMotion(false);
+    const onDone = vi.fn();
+    const { container } = render(<QuipBurst text="quiet" kind={kind} onDone={onDone} />);
+    expect(container.innerHTML).toBe('');
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(onDone).toHaveBeenCalled();
   });
 });

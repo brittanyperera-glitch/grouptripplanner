@@ -62,9 +62,12 @@ const sizeOf = (t: string) => (t.length <= 10 ? 'xl' : t.length <= 24 ? 'l' : t.
 
 export default function QuipBurst({ text, kind = 'hi', onDone }: { text: string; kind?: QuipKind; onDone: () => void }) {
   const mode = useMemo(motion, []);
+  // Only Must and Skip get a burst; Keen and Meh just slide away.
+  const quiet = kind === 'keen' || kind === 'meh';
   const parts = useMemo(() => (mode === 'full' ? particles(kind) : []), [mode, kind]);
 
   useEffect(() => {
+    if (quiet) { onDone(); return; }
     const t = setTimeout(onDone, LIFE[mode]);
     // Tap anywhere to skip. The overlay ignores the pointer, so that same tap still reaches the app.
     const skip = () => onDone();
@@ -75,22 +78,22 @@ export default function QuipBurst({ text, kind = 'hi', onDone }: { text: string;
       document.removeEventListener('pointerdown', skip, true);
       document.removeEventListener('keydown', skip, true);
     };
-  }, [mode, onDone]);
+  }, [mode, onDone, quiet]);
 
+  if (quiet) return null;
   if (mode === 'still') return <div className="quip-toast" role="status">{text}</div>;
 
   const words = text.split(/\s+/).filter(Boolean);
   return (
     <div className={`quip quip-${kind} quip-${mode}`} style={{ '--life': `${LIFE[mode]}ms` } as CSSProperties}>
       <div className="quip-flash" aria-hidden="true" />
-      {mode === 'full' && (kind === 'must' || kind === 'keen' || kind === 'hi') && <div className="quip-ring" aria-hidden="true" />}
+      {mode === 'full' && (kind === 'must' || kind === 'hi') && <div className="quip-ring" aria-hidden="true" />}
       {parts.length > 0 && (
         <div className="quip-parts" aria-hidden="true">
           {parts.map((p, i) => <span key={i} className="quip-p" style={p.style}>{p.glyph}</span>)}
         </div>
       )}
       <div className="quip-stage">
-        {mode === 'full' && kind === 'meh' && <div className="quip-emoji shrug" aria-hidden="true">🤷</div>}
         {mode === 'full' && kind === 'skip' && <div className="quip-emoji drop" aria-hidden="true">💧</div>}
         {KICKER[kind] && <div className="quip-kicker" aria-hidden="true">{KICKER[kind]}</div>}
         <p className={`quip-text ${sizeOf(text)}`} role="status">
