@@ -147,19 +147,19 @@
   },
   "players": {
     "Brittany": {
-      "title": "The Organiser",
+      "title": "The Sri Lankan",
       "stats": [
         {
-          "label": "Group chat diplomacy",
-          "value": 10
+          "label": "Vibe coder",
+          "value": 9.1
         },
         {
-          "label": "Spreadsheet energy",
-          "value": 9
+          "label": "Conflict avoidant",
+          "value": 8
         },
         {
-          "label": "Patience for maybes",
-          "value": 3
+          "label": "President",
+          "value": 100
         }
       ]
     },
@@ -167,16 +167,16 @@
       "title": "Solo Wolf",
       "stats": [
         {
-          "label": "Navigation",
-          "value": 9
+          "label": "Ego",
+          "value": 11
         },
         {
-          "label": "Waiting for others",
-          "value": 2
+          "label": "Not like other boys mentality",
+          "value": 9.6
         },
         {
-          "label": "Hike stamina",
-          "value": 8
+          "label": "Competitiveness",
+          "value": 12
         }
       ]
     },
@@ -185,32 +185,32 @@
       "stats": [
         {
           "label": "Sinhala",
-          "value": 1
+          "value": 3
         },
         {
-          "label": "Rice and curry spice",
-          "value": 6
+          "label": "Spice tolerance",
+          "value": 3.5
         },
         {
-          "label": "Charm with the aunties",
-          "value": 9
+          "label": "Charm with family members",
+          "value": 9.0
         }
       ]
     },
     "Lazza": {
-      "title": "Post-Blounge Legend",
+      "title": "Blounge Enthusiast",
       "stats": [
         {
-          "label": "Beach bar radar",
-          "value": 10
+          "label": "Beach bar stamina",
+          "value": 10.0
         },
         {
-          "label": "Early starts",
-          "value": 2
+          "label": "Travel yap",
+          "value": 8.9
         },
         {
-          "label": "Vibes",
-          "value": 10
+          "label": "Yank",
+          "value": 100
         }
       ]
     },

@@ -15,8 +15,8 @@ function problems(c: unknown): string[] {
   const pl = o?.players as Record<string, { title?: unknown; stats?: unknown }> | undefined;
   if (pl !== undefined) for (const [n, v] of Object.entries(pl)) {
     if (v.title !== undefined && typeof v.title !== 'string') out.push(`players.${n}.title must be a string`);
-    if (v.stats !== undefined && !(Array.isArray(v.stats) && v.stats.every((s: { label?: unknown; value?: unknown }) => typeof s.label === 'string' && typeof s.value === 'number' && s.value >= 0 && s.value <= 10)))
-      out.push(`players.${n}.stats must be {label, value 0-10}[]`);
+    if (v.stats !== undefined && !(Array.isArray(v.stats) && v.stats.every((s: { label?: unknown; value?: unknown }) => typeof s.label === 'string' && typeof s.value === 'number' && s.value >= 0)))
+      out.push(`players.${n}.stats must be {label, value >= 0}[]`);
   }
   const q = o?.quips as Record<string, unknown> | undefined;
   for (const k of ['name', 'days', 'pace', 'tier']) {

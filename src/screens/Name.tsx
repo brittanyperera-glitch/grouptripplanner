@@ -19,7 +19,7 @@ export function daysUntil(date: string, now = new Date()): number {
   return Math.round((Date.UTC(y, m - 1, d) - today) / 86_400_000);
 }
 
-type Players = NonNullable<Copy['players']>;
+type Players = NonNullable<Copy["players"]>;
 
 export default function Name({ welcome, welcomeSub, covers = [], players = {}, onPick }: {
   welcome: string; welcomeSub?: string; covers?: Item[]; players?: Players; onPick: (p: Person) => void;
@@ -63,7 +63,7 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
   const card = chosen ? players[chosen] : undefined;
   const stats = (card?.stats ?? [])
     .filter(st => st.label && Number.isFinite(st.value))
-    .map(st => ({ label: st.label, value: Math.max(0, Math.min(10, st.value)) }));
+    .map(st => ({ label: st.label, value: Math.max(0, st.value) }));
   const current = shots.length ? shots[slide % shots.length] : undefined;
   const words = welcome.split(/\s+/).filter(Boolean);
 
@@ -125,8 +125,9 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
                   {stats.map((st, i) => (
                     <div key={st.label} className="stat">
                       <span className="stat-label">{st.label}</span>
-                      <span className="bar" role="meter" aria-label={st.label} aria-valuemin={0} aria-valuemax={10} aria-valuenow={st.value}>
-                        <span style={{ '--v': st.value / 10, '--i': i } as CSSProperties} />
+                      {/* Joke stats can go past 10 ("ego 11", "president 100"): the bar fills, then breaks the scale. */}
+                      <span className={`bar${st.value > 10 ? ' over' : ''}`} role="meter" aria-label={st.label} aria-valuemin={0} aria-valuemax={10} aria-valuenow={Math.min(10, st.value)} aria-valuetext={String(st.value)}>
+                        <span style={{ '--v': Math.min(10, st.value) / 10, '--i': i } as CSSProperties} />
                       </span>
                       <span className="stat-val">{st.value}</span>
                     </div>

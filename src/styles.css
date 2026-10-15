@@ -496,3 +496,11 @@ h1.big { margin: 0; }
 @keyframes q-fall { 0% { opacity: 0; transform: translate(0, 0); } 10% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); } }
 @keyframes q-shrug { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(-16deg) translateY(-6px); } 35% { transform: rotate(14deg); } 55% { transform: rotate(-10deg) translateY(-4px); } 75% { transform: rotate(6deg); } }
 @keyframes q-drop { 0% { opacity: 0; transform: translateY(-160px) scale(.8); } 30% { opacity: 1; } 70% { transform: translateY(0) scale(1, 1); } 82% { transform: translateY(4px) scale(1.25, .7); } 100% { transform: translateY(0) scale(1); } }
+/* A stat past 10 bursts out of its bar */
+.bar.over { overflow: visible; box-shadow: 0 0 0 1px #FF4D6D, 0 0 18px rgba(255, 77, 109, .55); }
+.bar.over > span { background: linear-gradient(90deg, #FF7A1A, #FF4D6D, #FFD25E); }
+.stat:has(.bar.over) .stat-val { color: #FF6B86; }
+@media (prefers-reduced-motion: no-preference) {
+  .bar.over { animation: over-pulse 1.1s ease-in-out 900ms infinite alternate; }
+  @keyframes over-pulse { from { transform: scaleX(1); } to { transform: scaleX(1.035); } }
+}
