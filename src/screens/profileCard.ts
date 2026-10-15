@@ -6,7 +6,7 @@ export interface CardStat { label: string; value: number }
 export type Tier = 'lo' | 'mid' | 'hi';
 export interface CardData {
   name: Person; no: number; total: number; title: string; stats: CardStat[]; heightCm: number; kit: string[];
-  /** Rarity, 1 to 5 stars: the average of the stats shown (each capped at 10), halved. */
+  /** Rarity: always 5 stars, the top label. */
   stars: number; rarity: string;
   /** Brittany's one-line fun fact for the player, from profile.json. */
   fact: string | null;
@@ -35,9 +35,9 @@ const FALLBACK: [string, string] = PALETTE.Brittany;
 export const tierOf = (v: number): Tier => (v >= 8 ? 'hi' : v >= 4 ? 'mid' : 'lo');
 export const TIER = { hi: { fill: '#bf3a22', ink: '#ffffff' }, mid: { fill: '#f2b632', ink: '#1e2a26' }, lo: { fill: '#1f6f6b', ink: '#ffffff' } };
 
-export function rarityOf(stats: CardStat[]) {
-  const mean = stats.length ? stats.reduce((a, s) => a + Math.min(10, s.value), 0) / stats.length : 0;
-  const stars = Math.max(1, Math.min(5, Math.round(mean / 2)));
+/** Every card is 5 stars, the top rarity (Brittany 2026-10-16: "All the cards should be 5/5"). */
+export function rarityOf(_stats: CardStat[]) {
+  const stars = 5;
   return { stars, rarity: profile.rarity[stars - 1] };
 }
 

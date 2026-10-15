@@ -27,7 +27,7 @@ for (const scheme of ['dark', 'light'] as const) {
       const bar = document.querySelector('.tabs')!;
       return { bar: r(bar), tabs: Array.from(bar.querySelectorAll('button')).map(b => ({ ...r(b), sw: b.scrollWidth, cw: b.clientWidth })) };
     });
-    expect(boxes.tabs).toHaveLength(5);
+    expect(boxes.tabs).toHaveLength(6);
     for (const t of boxes.tabs) {
       expect(t.l).toBeGreaterThanOrEqual(boxes.bar.l);
       expect(t.r).toBeLessThanOrEqual(boxes.bar.r);
@@ -39,7 +39,7 @@ for (const scheme of ['dark', 'light'] as const) {
     console.log(`TABS ${scheme}`, JSON.stringify(boxes.tabs.map(t => [Math.round(t.l), Math.round(t.r), Math.round(t.r - t.l)])), 'bar', Math.round(boxes.bar.l), Math.round(boxes.bar.r));
 
     await page.getByRole('button', { name: 'Open the guide' }).click();
-    await expect(page.getByRole('region', { name: 'Food' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Phrases' })).toBeVisible();
     await page.waitForTimeout(600);
     await shot(page, `guide-food-${scheme}`);
 

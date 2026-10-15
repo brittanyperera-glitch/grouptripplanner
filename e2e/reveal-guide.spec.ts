@@ -26,7 +26,7 @@ test('See Britt\'s guide on Mission ready closes the reveal and opens the Guide'
   await guide.click();
   await expect(page.getByRole('dialog', { name: 'Route reveal' })).toHaveCount(0);
   await expect(page.getByRole('tab', { name: 'Guide', selected: true })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Food' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Phrases' })).toBeVisible();
   // The reveal's scroll lock is gone with it.
   expect(await page.evaluate(() => getComputedStyle(document.body).overflow)).not.toBe('hidden');
 });

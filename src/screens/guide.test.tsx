@@ -46,7 +46,8 @@ describe('Guide access', () => {
     await user.click(await screen.findByRole('tab', { name: 'Group' }));
     await user.click(await screen.findByRole('button', { name: 'Open the guide' }));
     expect(await screen.findByRole('tab', { name: 'Guide', selected: true })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Food' })).toBeInTheDocument();
+    // Brittany 2026-10-16: the Guide opens on Phrases.
+    expect(screen.getByRole('region', { name: 'Phrases' })).toBeInTheDocument();
   });
 });
 
@@ -56,6 +57,8 @@ describe('Guide sections', () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(await screen.findByRole('tab', { name: 'Guide' }));
+    await screen.findByRole('region', { name: 'Phrases' });
+    await user.click(screen.getByRole('button', { name: 'Food' }));
     const food = await screen.findByRole('region', { name: 'Food' });
     expect(within(food).getByText('Kottu roti')).toBeInTheDocument();
     expect(screen.queryByText('Jackfruit')).toBeNull();

@@ -41,10 +41,10 @@ import type { Item, Pace as PaceT, Person, Ranking, Response, Store, Tier } from
 
 type Step = 'days' | 'pace' | 'howto' | 'rate' | 'tabs';
 const howtoCopy = () => (copyData as unknown as { howto?: HowToCopy }).howto;
-type Tab = 'My trip' | 'Picks' | 'Group' | 'Suggest' | 'Guide';
+type Tab = 'My trip' | 'Picks' | 'Group' | 'Suggest' | 'Guide' | 'Profile';
 // The tab bar only renders once I have submitted, so Guide is never offered before that.
-const TABS: Tab[] = ['My trip', 'Picks', 'Group', 'Suggest', 'Guide'];
-const TAB_ICON: Record<Tab, (p: { size?: number }) => JSX.Element> = { 'My trip': IconRoute, 'Picks': IconList, 'Group': IconGroup, 'Suggest': IconSpark, 'Guide': IconBook };
+const TABS: Tab[] = ['My trip', 'Picks', 'Group', 'Suggest', 'Guide', 'Profile'];
+const TAB_ICON: Record<Tab, (p: { size?: number }) => JSX.Element> = { 'My trip': IconRoute, 'Picks': IconList, 'Group': IconGroup, 'Suggest': IconSpark, 'Guide': IconBook, 'Profile': IconGroup };
 type Say = (t?: string, kind?: QuipKind) => void;
 
 function MyTripTab() {
@@ -90,7 +90,7 @@ function SuggestTab() {
 }
 
 // Picks is drawn inside Flow, which holds my draft ranking.
-const PANELS: Record<Exclude<Tab, 'Picks'>, () => JSX.Element> = { 'My trip': MyTripTab, 'Group': GroupTab, 'Suggest': SuggestTab, 'Guide': Guide };
+const PANELS: Record<Exclude<Tab, 'Picks' | 'Profile'>, () => JSX.Element> = { 'My trip': MyTripTab, 'Group': GroupTab, 'Suggest': SuggestTab, 'Guide': Guide };
 
 const blank = (name: Person): Response => ({
   name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: new Date().toISOString(),
@@ -151,7 +151,13 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
   // The profile card sits over whatever step or tab I was on; Back closes it and that screen is still there.
   const [profileOpen, setProfileOpen] = useState(false);
   const scrollBack = useRef<number | null>(null);
-  const openProfile = () => { if (profileOpen) return; scrollBack.current = window.scrollY; navigate('fwd', () => setProfileOpen(true)); };
+  // On the tabs the profile is its own tab (Brittany 2026-10-16); before that it opens over the current step.
+  const openProfile = () => {
+    if (step === 'tabs') { if (tabRef.current !== 'Profile') navigate('tab', () => setTab('Profile')); return; }
+    if (profileOpen) return;
+    scrollBack.current = window.scrollY;
+    navigate('fwd', () => setProfileOpen(true));
+  };
   const closeProfile = () => navigate('back', () => setProfileOpen(false));
 
   // Each tab switch is a history entry with the same URL, so a phone's Back returns to the previous tab
@@ -265,6 +271,9 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
         )}
       </div>
     );
+  } else if (tab === 'Profile') {
+    // Back goes to the tab I came from: tab switches are history entries.
+    content = <div role="tabpanel" aria-label="Profile" className="panel"><Profile name={me} players={copy.players} onBack={() => history.back()} /></div>;
   } else {
     const Panel = PANELS[tab];
     content = (
@@ -294,7 +303,8 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
         <nav className="tabs" role="tablist" aria-label="Sections">
           {TABS.map(t => {
             const Icon = TAB_ICON[t];
-            return <button key={t} role="tab" aria-selected={tab === t} onClick={() => { if (t !== tab) navigate('tab', () => setTab(t)); }}><Icon /><span>{t}</span></button>;
+            const icon = t === 'Profile' ? <span className="tab-me" aria-hidden="true"><Avatar name={me} size={22} /></span> : <Icon />;
+            return <button key={t} role="tab" aria-selected={tab === t} onClick={() => { if (t !== tab) navigate('tab', () => setTab(t)); }}>{icon}<span>{t}</span></button>;
           })}
         </nav>
       )}

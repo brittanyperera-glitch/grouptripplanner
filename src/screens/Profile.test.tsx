@@ -100,11 +100,11 @@ describe('profile card contents', () => {
     expect(lines.join(' ')).toBe(FACTS.Lazza);
   });
 
-  it('rarity is the average of the stats halved into 1 to 5 stars, capped per stat at 10', () => {
-    expect(rarityOf([{ label: 'a', value: 100 }, { label: 'b', value: 100 }])).toEqual({ stars: 5, rarity: 'Legendary' });
-    expect(rarityOf([{ label: 'a', value: 0 }])).toEqual({ stars: 1, rarity: 'Common' });
-    expect(rarityOf([{ label: 'a', value: 6 }])).toEqual({ stars: 3, rarity: 'Rare' });
-    expect(rarityOf([]).stars).toBe(1);
+  // Brittany 2026-10-16: "All the cards should be 5/5", whatever the stats.
+  it('every card is 5 stars, Legendary, whatever the stats', () => {
+    for (const stats of [[{ label: 'a', value: 100 }], [{ label: 'a', value: 0 }], [{ label: 'a', value: 6 }], []]) {
+      expect(rarityOf(stats)).toEqual({ stars: 5, rarity: 'Legendary' });
+    }
   });
 
   it('every player gets a different card colour', () => {

@@ -15,7 +15,7 @@ for (const w of [320, 360, 390, 1280]) {
     await page.goto('/');
     await page.evaluate(r => { localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:reveal-mine', '1'); localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r)); }, me);
     await page.reload();
-    await expect(page.getByRole('tab')).toHaveCount(5);
+    await expect(page.getByRole('tab')).toHaveCount(6);
     const m = await page.evaluate(() => {
       const bar = document.querySelector('.tabs')!.getBoundingClientRect();
       const tabs = [...document.querySelectorAll('.tabs [role=tab]')];

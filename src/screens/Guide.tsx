@@ -6,7 +6,8 @@ import PhrasePanel, { type Phrase } from './PhraseCards';
 type Entry = { title?: string; body?: string; list?: string[]; after?: string };
 type Section = { id: string; label: string; intro?: string; entries?: Entry[]; phrases?: Phrase[] };
 
-const SECTIONS = guide.sections as Section[];
+// Phrases leads and opens first (Brittany 2026-10-16); the rest keep the guide's own order.
+const SECTIONS = [...(guide.sections as Section[])].sort((a, b) => Number(b.id === 'Phrases') - Number(a.id === 'Phrases'));
 
 /** "Elawolu roti (roti parcels...)": the name before the bracket is bold (Brittany 2026-10-15), the rest stays as written. */
 function Named({ text }: { text: string }) {

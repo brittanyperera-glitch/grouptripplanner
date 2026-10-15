@@ -89,7 +89,8 @@ describe('Back from the profile', () => {
     await userEvent.click(within(tabs).getByRole('tab', { name: 'Suggest' }));
     await userEvent.click(screen.getByRole('button', { name: `Alex, ${profile.headerLabel}` }));
     await onProfile('Alex');
-    expect(screen.queryByRole('tablist', { name: 'Sections' })).toBeNull();
+    // Brittany 2026-10-16: on the tabs, the profile is its own tab in the bar.
+    expect(within(screen.getByRole('tablist', { name: 'Sections' })).getByRole('tab', { name: 'Profile' })).toHaveAttribute('aria-selected', 'true');
     await userEvent.click(screen.getByRole('button', { name: profile.back }));
     await waitFor(() => expect(screen.getByRole('tab', { name: 'Suggest' })).toHaveAttribute('aria-selected', 'true'));
   });
