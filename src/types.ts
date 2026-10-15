@@ -40,6 +40,10 @@ export interface Response {
 }
 export interface Suggestion { id: string; name: Person; title: string; area: Area; note: string; status: 'pending' | 'live' | 'rejected'; createdAt: string }
 export interface Vote { forkId: string; name: Person; choice: 'a' | 'b' }
+export type ChoiceKind = 'tier' | 'rerank' | 'knockout' | 'days' | 'pace' | 'suggest';
+// ref is the item id (tier), the fork id (knockout), the area (suggest) or null.
+export interface ChoiceInput { name: Person; kind: ChoiceKind; ref: string | null; value: unknown }
+export interface ChoiceEntry extends ChoiceInput { id: string; at: string }
 export interface AppState { responses: Partial<Record<Person, Response>>; suggestions: Suggestion[]; votes: Vote[] }
 export interface Store {
   load(): Promise<AppState>;
@@ -48,6 +52,8 @@ export interface Store {
   setSuggestionStatus(id: string, status: Suggestion['status']): Promise<void>;
   vote(v: Vote): Promise<void>;
   subscribe(cb: (s: AppState) => void): () => void;
+  logChoice(c: ChoiceInput): Promise<void>;
+  loadLog(): Promise<ChoiceEntry[]>;
 }
 // a = contested item first, then anything else forcing it in adds; b = items it would displace
 export interface Knockout { forkId: string; a: string[]; b: string[]; votes: { a: Person[]; b: Person[] } }

@@ -1,0 +1,11 @@
+.raw { position: fixed; inset: 0; overflow: auto; padding: 20px 16px 48px; background: var(--surface); color: var(--ink); font-size: var(--fs-sm); }
+.raw header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.raw h1 { margin: 0; font-size: var(--fs-lg); }
+.raw h2 { margin: 24px 0 8px; font-size: var(--fs-md); }
+.raw h2 span { color: var(--muted); font-weight: 400; margin-left: 6px; }
+.raw button { min-height: 40px; padding: 0 16px; border: 0; border-radius: var(--r-pill); background: var(--coconut); color: var(--must-ink); font-weight: 600; cursor: pointer; }
+.raw button:disabled { opacity: .5; cursor: default; }
+.raw table { width: 100%; border-collapse: collapse; }
+.raw th, .raw td { text-align: left; vertical-align: top; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+.raw th { color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--surface); }
+.raw td:first-child { white-space: nowrap; color: var(--muted); }

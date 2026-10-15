@@ -1,8 +1,9 @@
 import { emptyRanking, PEOPLE } from '../types';
-import type { AppState, Person, Response, Store, Suggestion, Vote } from '../types';
+import type { AppState, ChoiceEntry, ChoiceInput, Person, Response, Store, Suggestion, Vote } from '../types';
 
 const SUGG = 'tp:sugg';
 const VOTES = 'tp:votes';
+const LOG = 'tp:log';
 const respKey = (n: Person) => `tp:resp:${n}`;
 
 function read<T>(key: string, fallback: T): T {
@@ -68,6 +69,15 @@ export class LocalStore implements Store {
     const rest = (await this.load()).votes.filter(x => !(x.forkId === v.forkId && x.name === v.name));
     write(VOTES, [...rest, v]);
     await this.emit();
+  }
+
+  async logChoice(c: ChoiceInput): Promise<void> {
+    write(LOG, [...(await this.loadLog()), { ...c, id: crypto.randomUUID(), at: new Date().toISOString() }]);
+  }
+
+  async loadLog(): Promise<ChoiceEntry[]> {
+    const log = read<ChoiceEntry[]>(LOG, []);
+    return Array.isArray(log) ? log : [];
   }
 
   subscribe(cb: (s: AppState) => void): () => void {

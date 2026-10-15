@@ -14,6 +14,7 @@ import MyTrip from './screens/MyTrip';
 import Name from './screens/Name';
 import Pace from './screens/Pace';
 import Plan from './screens/Plan';
+import Raw, { wantsRaw } from './screens/Raw';
 import Rate from './screens/Rate';
 import Rerank from './screens/Rerank';
 import Suggest from './screens/Suggest';
@@ -236,6 +237,7 @@ function Shell() {
 
 export default function App({ store }: { store?: Store }) {
   useEffect(() => { document.title = 'Sri Lanka Trip Picker'; }, []);
+  if (wantsRaw(window.location.hash)) return <Raw store={store} />;
   if (!store && connectionMissingNow()) {
     return (
       <div className="app">

@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { emptyRanking } from '../types';
-import type { AppState, Person, Response, Store, Suggestion, Vote } from '../types';
+import type { AppState, ChoiceEntry, ChoiceInput, Person, Response, Store, Suggestion, Vote } from '../types';
 
 interface RespRow {
   name: Person; days: number | null; flex?: boolean | null; pace: Response['pace'];
@@ -11,6 +11,7 @@ interface SuggRow {
   id: string; name: Person; title: string; area: Suggestion['area']; note: string | null;
   status: Suggestion['status']; created_at: string;
 }
+interface LogRow { id: string; name: Person; kind: ChoiceEntry['kind']; ref: string | null; value: unknown; at: string }
 interface VoteRow { fork_id: string; name: Person; choice: 'a' | 'b' }
 
 const toResponse = (r: RespRow): Response => ({
@@ -78,6 +79,18 @@ export class SupabaseStore implements Store {
       { onConflict: 'fork_id,name' },
     );
     if (error) throw error;
+  }
+
+  // Append-only: choice_log has insert and select policies only, and is kept out of the realtime publication.
+  async logChoice(c: ChoiceInput): Promise<void> {
+    const { error } = await this.db.from('choice_log').insert({ id: crypto.randomUUID(), name: c.name, kind: c.kind, ref: c.ref, value: c.value });
+    if (error) throw error;
+  }
+
+  async loadLog(): Promise<ChoiceEntry[]> {
+    const { data, error } = await this.db.from('choice_log').select('*').order('at');
+    if (error) throw error;
+    return ((data ?? []) as LogRow[]).map(x => ({ id: x.id, name: x.name, kind: x.kind, ref: x.ref, value: x.value, at: x.at }));
   }
 
   subscribe(cb: (s: AppState) => void): () => void {

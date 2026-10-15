@@ -26,14 +26,27 @@ create table if not exists knockout_votes (
   primary key (fork_id, name)
 );
 
+-- Every choice as it was made, never updated or deleted, so the starting opinions survive re-ranks and changed votes.
+create table if not exists choice_log (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  kind text not null check (kind in ('tier','rerank','knockout','days','pace','suggest')),
+  ref text,
+  value jsonb,
+  at timestamptz not null default now()
+);
+
 alter table responses enable row level security;
 alter table suggestions enable row level security;
 alter table knockout_votes enable row level security;
+alter table choice_log enable row level security;
 
 -- The anon key ships in the browser, so anon can read, add and change rows but never delete them.
 drop policy if exists "anon all" on responses;
 drop policy if exists "anon all" on suggestions;
 drop policy if exists "anon all" on knockout_votes;
+drop policy if exists "anon select" on choice_log;
+drop policy if exists "anon insert" on choice_log;
 
 create policy "anon select" on responses for select to anon using (true);
 create policy "anon insert" on responses for insert to anon with check (true);
@@ -46,5 +59,8 @@ create policy "anon update" on suggestions for update to anon using (true) with 
 create policy "anon select" on knockout_votes for select to anon using (true);
 create policy "anon insert" on knockout_votes for insert to anon with check (true);
 create policy "anon update" on knockout_votes for update to anon using (true) with check (true);
+
+create policy "anon select" on choice_log for select to anon using (true);
+create policy "anon insert" on choice_log for insert to anon with check (true);
 
 alter publication supabase_realtime add table responses, suggestions, knockout_votes;

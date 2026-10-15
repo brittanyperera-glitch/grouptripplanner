@@ -20,6 +20,8 @@ Without Supabase keys the app saves to this browser only, which is good for tryi
 3. Vercel: choose Add New Project, import the repo, add the environment variables VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY with the two values, and click Deploy.
 4. Send the Vercel link to the group.
 
+The `choice_log` table in supabase/schema.sql is append-only and keeps every swipe, re-rank, head to head, days, pace and suggestion as made; only you read it, at `/#/raw-<VITE_RAW_KEY>` (default key `tp-raw-local`, so set your own in Vercel), with a Download CSV button.
+
 ## Editing the words
 
 Brittany's welcome message, quips and per-place lines live in src/content/copy.json. Empty fields are hidden.
