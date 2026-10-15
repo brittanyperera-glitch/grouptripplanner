@@ -55,7 +55,7 @@ create or replace function public.trip_ok() returns boolean
 language sql stable security definer set search_path = public, extensions as $$
   select exists (
     select 1 from trip_secret
-    where key_hash = encode(digest(coalesce(current_setting('request.headers', true)::json->>'x-trip-key', ''), 'sha256'), 'hex')
+    where key_hash = encode(digest(lower(btrim(coalesce(current_setting('request.headers', true)::json->>'x-trip-key', ''))), 'sha256'), 'hex')
   )
 $$;
 revoke all on function public.trip_ok() from public;
