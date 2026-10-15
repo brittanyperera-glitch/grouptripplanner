@@ -42,9 +42,19 @@ alter table knockout_votes enable row level security;
 alter table choice_log enable row level security;
 
 -- The anon key ships in the browser, so anon can read, add and change rows but never delete them.
+-- Every policy is dropped before it is created, so the script can be re-run on a database that already has some of it.
 drop policy if exists "anon all" on responses;
 drop policy if exists "anon all" on suggestions;
 drop policy if exists "anon all" on knockout_votes;
+drop policy if exists "anon select" on responses;
+drop policy if exists "anon insert" on responses;
+drop policy if exists "anon update" on responses;
+drop policy if exists "anon select" on suggestions;
+drop policy if exists "anon insert" on suggestions;
+drop policy if exists "anon update" on suggestions;
+drop policy if exists "anon select" on knockout_votes;
+drop policy if exists "anon insert" on knockout_votes;
+drop policy if exists "anon update" on knockout_votes;
 drop policy if exists "anon select" on choice_log;
 drop policy if exists "anon insert" on choice_log;
 
@@ -63,4 +73,15 @@ create policy "anon update" on knockout_votes for update to anon using (true) wi
 create policy "anon select" on choice_log for select to anon using (true);
 create policy "anon insert" on choice_log for insert to anon with check (true);
 
-alter publication supabase_realtime add table responses, suggestions, knockout_votes;
+-- Adding a table that is already in the publication is an error, so add only the missing ones.
+do $$
+declare t text;
+begin
+  foreach t in array array['responses','suggestions','knockout_votes'] loop
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
+      execute format('alter publication supabase_realtime add table %I', t);
+    end if;
+  end loop;
+end $$;
+
+notify pgrst, 'reload schema';
