@@ -37,6 +37,7 @@ describe('R2 serial full-row saves', () => {
     }
     const user = userEvent.setup();
     render(<App store={new Flaky()} />);
+    await user.click(await screen.findByRole('button', { name: 'Choose your character' }));
     await user.click(await screen.findByRole('button', { name: 'Alex' }));
     await user.click(await screen.findByRole('button', { name: /^9 days/ }));
     await screen.findByRole('button', { name: /Couldn't save\. Tap to retry/ });

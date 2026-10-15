@@ -31,7 +31,7 @@ describe('R1 production without Supabase keys', () => {
     vi.stubEnv('VITE_SUPABASE_URL', '');
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
     render(<App />);
-    expect(await screen.findByRole('button', { name: 'Alex' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Choose your character' })).toBeInTheDocument();
     expect(screen.queryByText(MSG)).toBeNull();
   });
 

@@ -1,67 +1,105 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import Avatar from '../components/Avatar';
-import { IconDown } from '../components/Icons';
-import { motion } from '../components/motion';
+import { IconLeft, IconRight } from '../components/Icons';
+import { motion, navigate } from '../components/motion';
+import { CreditButton } from '../components/PhotoCard';
 import type { Copy } from '../state';
 import { PEOPLE } from '../types';
 import type { Item, Person } from '../types';
 
-// Placeholder until flights are booked: early December 2026.
-export const DEPARTURE = '2026-12-05';
 const SLIDE_MS = 4500;
-const AUTO_OPEN_MS = 3600;
 const FLASH_MS = 900;
 
-export function daysUntil(date: string, now = new Date()): number {
-  const [y, m, d] = date.split('-').map(Number);
-  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.round((Date.UTC(y, m - 1, d) - today) / 86_400_000);
-}
-
 type Players = NonNullable<Copy["players"]>;
+
+function StatBars({ stats }: { stats: { label: string; value: number }[] }) {
+  return (
+    <div className="stats">
+      {stats.map((st, i) => (
+        <div key={st.label} className="stat">
+          <span className="stat-label">{st.label}</span>
+          {/* Joke stats can go past 10 ("ego 11", "president 100"): the bar fills, then breaks the scale. */}
+          <span className={`bar${st.value > 10 ? ' over' : ''}`} role="meter" aria-label={st.label} aria-valuemin={0} aria-valuemax={10} aria-valuenow={Math.min(10, st.value)} aria-valuetext={String(st.value)}>
+            <span style={{ '--v': Math.min(10, st.value) / 10, '--i': i } as CSSProperties} />
+          </span>
+          <span className="stat-val">{st.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function Name({ welcome, welcomeSub, covers = [], players = {}, onPick }: {
   welcome: string; welcomeSub?: string; covers?: Item[]; players?: Players; onPick: (p: Person) => void;
 }) {
-  const [still] = useState(() => motion() !== 'full');
-  const bobOk = !still;
-  const [open, setOpen] = useState(still);
-  const [slide, setSlide] = useState(() => (still ? 0 : Math.floor(Math.random() * 6)));
+  const [mode] = useState(motion);
+  const still = mode === 'still';
+  const bobOk = mode === 'full';
+  const [page, setPage] = useState<'intro' | 'select'>('intro');
+  const [slide, setSlide] = useState(() => (mode !== 'full' ? 0 : Math.floor(Math.random() * 6)));
   const [broken, setBroken] = useState<Set<string>>(new Set());
-  const [chosen, setChosen] = useState<Person | null>(null);
+  const [idx, setIdx] = useState(0);
   const [flash, setFlash] = useState<Person | null>(null);
+  const lane = useRef<HTMLDivElement>(null);
   const shots = covers.filter(c => c.photo && !broken.has(c.id));
-  const left = daysUntil(DEPARTURE);
+  const chosen = PEOPLE[idx];
 
   useEffect(() => {
-    if (still || shots.length < 2) return;
+    if (mode !== 'full' || shots.length < 2 || page !== 'intro') return;
     const t = setInterval(() => setSlide(s => s + 1), SLIDE_MS);
     return () => clearInterval(t);
-  }, [still, shots.length]);
+  }, [mode, shots.length, page]);
 
-  // The intro never blocks: it opens itself, and a tap, scroll or key opens it sooner.
+  const centre = useCallback((i: number) => {
+    const el = lane.current;
+    const item = el?.children[i] as HTMLElement | undefined;
+    if (!el || !item) return;
+    el.scrollTo?.({ left: item.offsetLeft - (el.clientWidth - item.offsetWidth) / 2, behavior: bobOk ? 'smooth' : 'auto' });
+  }, [bobOk]);
+  const goTo = useCallback((i: number) => {
+    const n = Math.max(0, Math.min(PEOPLE.length - 1, i));
+    setIdx(n);
+    centre(n);
+  }, [centre]);
+
   useEffect(() => {
-    if (open) return;
-    const t = setTimeout(() => setOpen(true), AUTO_OPEN_MS);
-    const reveal = (e: Event) => { if (!(e instanceof KeyboardEvent) || e.key !== 'Tab') setOpen(true); };
-    window.addEventListener('wheel', reveal, { passive: true });
-    window.addEventListener('keydown', reveal);
-    return () => { clearTimeout(t); window.removeEventListener('wheel', reveal); window.removeEventListener('keydown', reveal); };
-  }, [open]);
+    if (page !== 'select') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') goTo(idx + 1);
+      else if (e.key === 'ArrowLeft') goTo(idx - 1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [page, idx, goTo]);
 
-  // Under tests one tap picks and continues; people get a preview card first, then a second tap plays.
+  // Swiping the carousel updates which character is centred.
+  const onScroll = () => {
+    const el = lane.current;
+    if (!el) return;
+    const mid = el.scrollLeft + el.clientWidth / 2;
+    let best = 0;
+    let gap = Infinity;
+    Array.from(el.children).forEach((c, i) => {
+      const it = c as HTMLElement;
+      const d = Math.abs(it.offsetLeft + it.offsetWidth / 2 - mid);
+      if (d < gap) { gap = d; best = i; }
+    });
+    setIdx(best);
+  };
+
+  // Under tests one tap picks and continues; people centre a character first, then pick with Select.
   const go = (p: Person) => {
     if (flash) return;
     if (still) { onPick(p); return; }
     setFlash(p);
     setTimeout(() => onPick(p), FLASH_MS);
   };
-  const tap = (p: Person) => {
-    if (motion() === 'still' || chosen === p) go(p);
-    else setChosen(p);
+  const tap = (p: Person, i: number) => {
+    if (still || i === idx) go(p);
+    else goTo(i);
   };
-  const card = chosen ? players[chosen] : undefined;
+  const card = players[chosen];
   const stats = (card?.stats ?? [])
     .filter(st => st.label && Number.isFinite(st.value))
     .map(st => ({ label: st.label, value: Math.max(0, st.value) }));
@@ -69,80 +107,64 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
   const words = welcome.split(/\s+/).filter(Boolean);
 
   return (
-    <div className={`welcome${open ? ' open' : ''}${flash ? ' shake' : ''}`}>
-      <div className="intro scene" onPointerDown={() => setOpen(true)}>
-        <div className="slides" aria-hidden="true">
-          {shots.map((c, i) => (
-            <img key={c.id} src={`/img/${c.photo}.jpg`} alt="" className={c === current ? 'on' : ''}
-              style={{ animationDelay: `${-i * 3}s` }}
-              onError={() => setBroken(b => new Set(b).add(c.id))} />
-          ))}
-        </div>
-        <div className="warm" />
-        <div className="scrim" />
-        <div className="intro-copy">
-          {left >= 0 && (
-            <span className="countdown"><span className="live" aria-hidden="true" />{left === 0 ? 'Departing today' : `Departing in ${left} day${left === 1 ? '' : 's'}`}</span>
-          )}
-          {welcome && (
-            <h1 className="big display">
-              {words.flatMap((w, i) => {
-                const word = <span key={i} className="w" style={{ '--i': i } as CSSProperties}>{w}</span>;
-                return i === 0 ? [word] : [' ', word];
-              })}
-            </h1>
-          )}
-          {welcome && welcomeSub && <div className="sub" style={{ '--i': words.length } as CSSProperties}>{welcomeSub}</div>}
-          {!open && <button className="cue" onClick={() => setOpen(true)}>Choose your player<IconDown size={18} /></button>}
-        </div>
-        {current?.credit && <span className="credit">Photo: {current.name}, {current.credit}</span>}
-      </div>
-      {open && (
-        <div className="select">
-          <div className="select-head">
-            <h2 className="choose">Choose your player</h2>
-            <div className="sub">One link for all five of us. Tap your name, no account or password.</div>
-          </div>
-          <div className="roster">
-            {PEOPLE.map((n, i) => (
-              <button key={n} className={`player${chosen === n ? ' on' : ''}`} aria-pressed={chosen === n} onClick={() => tap(n)}
-                style={{ animationDelay: `${i * 60}ms` }}>
-                <Avatar name={n} crop="full" size={150} bob={chosen === n && bobOk} />
-                <span className="player-name">{n}</span>
-              </button>
+    <div className={`welcome${flash ? ' shake' : ''}`}>
+      {page === 'intro' ? (
+        <div className="intro scene">
+          <div className="slides" aria-hidden="true">
+            {shots.map((c, i) => (
+              <img key={c.id} src={`/img/${c.photo}.jpg`} alt="" className={c === current ? 'on' : ''}
+                style={{ animationDelay: `${-i * 3}s` }}
+                onError={() => setBroken(b => new Set(b).add(c.id))} />
             ))}
           </div>
-          {chosen && (
-            <div className="player-card" key={chosen}>
-              <div className="pc-figure"><Avatar name={chosen} crop="full" size={214} bob={bobOk} /></div>
-              <div className="pc-body">
-                <div className="pc-id">
-                  <span className="pc-name">{chosen}</span>
-                  {card?.title && <span className="pc-title">{card.title}</span>}
-                </div>
-                {stats.length > 0 && (
-                  <div className="stats">
-                    {stats.map((st, i) => (
-                      <div key={st.label} className="stat">
-                        <span className="stat-label">{st.label}</span>
-                        {/* Joke stats can go past 10 ("ego 11", "president 100"): the bar fills, then breaks the scale. */}
-                        <span className={`bar${st.value > 10 ? ' over' : ''}`} role="meter" aria-label={st.label} aria-valuemin={0} aria-valuemax={10} aria-valuenow={Math.min(10, st.value)} aria-valuetext={String(st.value)}>
-                          <span style={{ '--v': Math.min(10, st.value) / 10, '--i': i } as CSSProperties} />
-                        </span>
-                        <span className="stat-val">{st.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button className="cta play" onClick={() => go(chosen)}>Play as {chosen}</button>
+          <div className="warm" />
+          <div className="scrim" />
+          <div className="intro-copy">
+            {welcome && (
+              <h1 className="big display">
+                {words.flatMap((w, i) => {
+                  const word = <span key={i} className="w" style={{ '--i': i } as CSSProperties}>{w}</span>;
+                  return i === 0 ? [word] : [' ', word];
+                })}
+              </h1>
+            )}
+            {welcome && welcomeSub && <div className="sub" style={{ '--i': words.length } as CSSProperties}>{welcomeSub}</div>}
+            <button className="cta intro-cta" onClick={() => navigate('fwd', () => setPage('select'))}>Choose your character</button>
+          </div>
+          {current?.credit && <CreditButton credit={current.credit} />}
+        </div>
+      ) : (
+        <div className="select scene">
+          <div className="select-head">
+            <h2 className="choose">Choose your character</h2>
+            <div className="sub">One link for all five of us. No account or password.</div>
+          </div>
+          <div className="carousel-wrap">
+            <button className="nav prev" aria-label="Previous character" disabled={idx === 0} onClick={() => goTo(idx - 1)}><IconLeft size={20} /></button>
+            <div className="carousel" ref={lane} onScroll={onScroll}>
+              {PEOPLE.map((n, i) => (
+                <button key={n} className={`char${i === idx ? ' on' : ''}`} aria-current={i === idx} onClick={() => tap(n, i)}
+                  style={{ '--bop-delay': `${(i * 0.31).toFixed(2)}s` } as CSSProperties}>
+                  <Avatar name={n} crop="full" size={220} bob={bobOk} />
+                  <span className="char-name">{n}</span>
+                </button>
+              ))}
             </div>
-          )}
+            <button className="nav next" aria-label="Next character" disabled={idx === PEOPLE.length - 1} onClick={() => goTo(idx + 1)}><IconRight size={20} /></button>
+          </div>
+          <div className="player-card" key={chosen}>
+            <div className="pc-id">
+              <h2 className="pc-name">{chosen}</h2>
+              {card?.title && <span className="pc-title">{card.title}</span>}
+            </div>
+            {stats.length > 0 && <StatBars stats={stats} />}
+          </div>
+          <button className="cta play" onClick={() => go(chosen)}>Select</button>
         </div>
       )}
       {flash && (
         <div className="flash" aria-hidden="true">
-          <span className="flash-kicker">Player selected</span>
+          <span className="flash-kicker">Character selected</span>
           <span className="flash-name">{flash}</span>
         </div>
       )}

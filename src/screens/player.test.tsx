@@ -15,6 +15,7 @@ describe('player card stats', () => {
     const user = userEvent.setup();
     const players = { Alex: { title: 'Solo Wolf', stats: [{ label: 'Ego', value: 11 }, { label: 'Navigation', value: 4 }] } };
     render(<Name welcome="" players={players} onPick={() => {}} />);
+    await user.click(await screen.findByRole('button', { name: 'Choose your character' }));
     await user.click(await screen.findByRole('button', { name: /^Alex$/ }));
     const ego = await screen.findByRole('meter', { name: 'Ego' });
     expect(ego).toHaveClass('over');

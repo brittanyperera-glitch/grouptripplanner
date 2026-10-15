@@ -36,6 +36,7 @@ beforeEach(() => {
 });
 
 async function toRate(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole('button', { name: 'Choose your character' }));
   await user.click(await screen.findByRole('button', { name: 'Alex' }));
   await user.click(await screen.findByRole('button', { name: /^9 days/ }));
   await user.click(await screen.findByRole('button', { name: /^Balanced/ }));
@@ -76,6 +77,7 @@ describe('rating flow', () => {
   it('flexible is saved as 14 days with flex true', async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Choose your character' }));
     await user.click(await screen.findByRole('button', { name: 'Alex' }));
     await user.click(await screen.findByRole('button', { name: /^Flexible/ }));
     await waitFor(() => {
@@ -87,6 +89,7 @@ describe('rating flow', () => {
   it('custom days uses a stepper limited to 5 to 21', async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Choose your character' }));
     await user.click(await screen.findByRole('button', { name: 'Alex' }));
     await user.click(await screen.findByRole('button', { name: /^My own number/ }));
     for (let i = 0; i < 20; i++) await user.click(screen.getByRole('button', { name: 'More days' }));
@@ -185,6 +188,7 @@ describe('quips', () => {
   it('shows no toast when the quip is empty', async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Choose your character' }));
     await user.click(await screen.findByRole('button', { name: 'Alex' }));
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
@@ -193,6 +197,7 @@ describe('quips', () => {
     copy.quips.name = { Alex: 'Alex has arrived' };
     const user = userEvent.setup();
     render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Choose your character' }));
     await user.click(await screen.findByRole('button', { name: 'Alex' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Alex has arrived');
   });
@@ -201,6 +206,7 @@ describe('quips', () => {
     (copy.quips as { name: Record<string, string | string[]> }).name = { Alex: ['line one', 'line two'] };
     const user = userEvent.setup();
     render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Choose your character' }));
     await user.click(await screen.findByRole('button', { name: 'Alex' }));
     expect((await screen.findByRole('status')).textContent).toMatch(/^line (one|two)$/);
   });
@@ -257,6 +263,7 @@ describe('submit, lock and errors', () => {
     }
     const user = userEvent.setup();
     render(<App store={new Flaky()} />);
+    await user.click(await screen.findByRole('button', { name: 'Choose your character' }));
     await user.click(await screen.findByRole('button', { name: 'Alex' }));
     await user.click(await screen.findByRole('button', { name: /^9 days/ }));
     const banner = await screen.findByRole('button', { name: /Couldn't save\. Tap to retry/ });
