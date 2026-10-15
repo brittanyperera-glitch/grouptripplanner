@@ -145,3 +145,8 @@ D1 to D4: no change, as decided. "Sweep" below means 120 seeded groups (live cat
 - Locked: the group plan counts as final once all five have saved a list. Until then it says "Provisional until all five finalize their lists (n of 5 done)", and each person can change their saved list.
 - Red before the change: `TypeError: finalListFrom is not a function`, `AssertionError: expected undefined to deeply equal []` (no finalized list on the result), `AssertionError: expected [] to deeply equal [ 'final' ]` (choice log), `AssertionError: expected { name: 'Alex', …(2) } to match object { ranking: { …(5) } }` (Supabase write), and `Failed to resolve import "./Finalize"`. The e2e flow now saves Brittany's list after the head to heads.
 - The e2e flow had been passing without voting: it counted head to heads while the Group tab was still computing (none shown), and its switch to Alex and Lazza no longer opened the character picker. It now waits for "The trip" before counting, opens the picker, and allows 12 rounds, since place questions now follow the region question.
+
+### Blast radius
+
+- GroupResult is read by 8 files outside group.ts and types.ts: App.tsx (Group tab), Knockouts, Plan, Extras, Trailer, Finalize, workers/usePlan.ts and workers/plan.worker.ts; six screen tests build one by hand and were given the three new fields. forceOut is set only in group.ts and read only in planner.ts. Trailer still shows the plan as soon as the head to heads are done rather than waiting for the lock.
+- The carousel-fill e2e spec fails at 390 x 844 and 390 x 667 (`Cannot read properties of undefined (reading 'getBoundingClientRect')`): it finds each character tile by its name text, which the character page commit aadef3f removed. Not part of this work.
