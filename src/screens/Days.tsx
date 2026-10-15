@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { IconInfinity, IconMinus, IconPlus } from '../components/Icons';
+import './Rate.css';
 
 const MIN = 5;
 const MAX = 21;

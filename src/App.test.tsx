@@ -171,7 +171,7 @@ describe('rating card', () => {
     await onCard([mk('a', 'Alpha Rock', 'Cultural Triangle', { photo: undefined }), ...THREE.slice(1)]);
     const block = document.querySelector('.photo.nophoto') as HTMLElement | null;
     expect(block).toBeInTheDocument();
-    expect(within(block as HTMLElement).getByText('Alpha Rock')).toBeInTheDocument();
+    expect(within(document.querySelector('.card:not(.ghost)') as HTMLElement).getByText('Alpha Rock')).toBeInTheDocument();
   });
 
   it('hides the Google rating when the item has none', async () => {

@@ -6,6 +6,7 @@ import { Cover } from '../components/PhotoCard';
 import TukTuk from '../components/TukTuk';
 import type { Copy } from '../state';
 import type { Item, Tier } from '../types';
+import './Rate.css';
 
 const LABEL: Record<Tier, string> = { must: 'Must', keen: 'Keen', meh: 'Meh', skip: 'Skip' };
 // Left to right the buttons mirror the swipe: left is Skip, right is Must.
@@ -37,10 +38,13 @@ export function factPills(item: Item): [ReactNode, string][] {
   return out;
 }
 
-// Reviews end in "(Name, Google review)": the source becomes the citation line.
-function splitReview(r: string): [string, string | null] {
+// Reviews end in "(Name, Google review)", "(Google review)" or "(Google AI Overview)": the last comma splits a person from the source.
+export function parseReview(r: string): { quote: string; name: string | null; source: string | null } {
   const m = r.match(/^([\s\S]*\S)\s*\(([^()]+)\)\s*$/);
-  return m ? [m[1], m[2]] : [r, null];
+  if (!m) return { quote: r, name: null, source: null };
+  const cite = m[2].trim();
+  const i = cite.lastIndexOf(', ');
+  return i < 0 ? { quote: m[1], name: null, source: cite } : { quote: m[1], name: cite.slice(0, i), source: cite.slice(i + 2) };
 }
 
 // Shared-element name: the rated card's photo morphs into the same place's compare card.
@@ -153,11 +157,12 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
   const cardStyle: CSSProperties | undefined = drag
     ? { transform: `translate(${drag.dx}px, ${drag.dy}px) rotate(${drag.dx * 0.05}deg)` }
     : demoTier ? { transform: `translate(${ddx * DEMO_PX}px, ${ddy * DEMO_PX}px) rotate(${ddx * 2}deg)` } : undefined;
-  const [quote, cite] = extra.review ? splitReview(extra.review) : ['', null];
+  const rv = extra.review ? parseReview(extra.review) : null;
 
   return (
     <>
       <div className="body flush rate">
+        <div className="rate-meta"><span className="count">{n} of {total}</span></div>
         <div className="road" role="progressbar" aria-label="Places rated" aria-valuemin={0} aria-valuemax={total} aria-valuenow={n - 1}>
           <span className="road-line" aria-hidden="true" />
           <span className="tuktuk" aria-hidden="true" style={{ '--p': (n - 1) / Math.max(1, total) } as CSSProperties}><TukTuk width={34} idle /></span>
@@ -165,54 +170,59 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
         </div>
         <div className="deck">
           {next && (
-            <div className="peek scene" aria-hidden="true">
+            <div className="peek" aria-hidden="true">
               <Cover item={next} className="peek-photo" named={false} />
             </div>
           )}
           {ghost && (
-            <div key={ghost.k} className={`card ghost scene fly-${ghost.tier}`} aria-hidden="true"
+            <div key={ghost.k} className={`card ghost fly-${ghost.tier}`} aria-hidden="true"
               style={{ '--gx': `${ghost.dx}px`, '--gy': `${ghost.dy}px`, '--gr': `${ghost.dx * 0.05}deg` } as CSSProperties}>
               <Cover item={ghost.item} className="ghost-photo" named={false}><div className="scrim" /></Cover>
               <span className={`stamp ${ghost.tier}`}>{LABEL[ghost.tier]}</span>
             </div>
           )}
-          <div key={item.id} className={`card scene${drag ? ' dragging' : ''}`} style={{ viewTransitionName: vtName(item.id), ...cardStyle }}
+          <div key={item.id} className={`card${drag ? ' dragging' : ''}`} style={{ viewTransitionName: vtName(item.id), ...cardStyle }}
             onPointerDown={down} onPointerMove={moveTo} onPointerUp={up} onPointerCancel={cancel}>
             <Cover item={item} className="photo" named={false} credit>
               <div className="scrim" />
-              <span className="count">{n} of {total}</span>
+              <span className="area-tag stamp-label solid"><IconPin size={13} />{item.category ? `${item.area} · ${item.category}` : item.area}</span>
               {(['must', 'keen', 'meh', 'skip'] as Tier[]).map(t => (
                 <span key={t} className={`stamp ${t}`} aria-hidden="true" style={{ opacity: lead === t ? leadAmount : 0 }}>{LABEL[t]}</span>
               ))}
-              <div className="caption">
-                <span className="area-tag"><IconPin size={13} />{item.category ? `${item.area} · ${item.category}` : item.area}</span>
-                <h2 className="title">{item.name}</h2>
-              </div>
             </Cover>
-          </div>
-        </div>
-        <div className="info">
-          <div className="pills">
-            {factPills(item).map(([icon, text]) => <span key={text} className="pill">{icon}<span>{text}</span></span>)}
-          </div>
-          {item.about && <p className="about">{item.about}</p>}
-          {item.warn && <div className="fact-warn"><IconWarn size={16} /><span><b>Heads up:</b> {item.warn}</span></div>}
-          {extra.review && (
-            <blockquote className="review">
-              <p>{extra.reviewUrl ? <a href={extra.reviewUrl} target="_blank" rel="noopener noreferrer">{quote}</a> : quote}</p>
-              {cite && <cite>{cite}</cite>}
-            </blockquote>
-          )}
-          {extra.take && <div className="take"><b>Brittany:</b> {extra.take}</div>}
-          {extra.approved && (
-            <div className="approved">
-              <span className="approved-stamp"><IconThumb size={15} className="icon-thumb" />Brittany approved</span>
-              <div className="approved-note">Only because I've been and can vouch for it. The others aren't necessarily bad.</div>
+            <div className="info">
+              <h2 className="title">{item.name}</h2>
+              <div className="pills">
+                {factPills(item).map(([icon, text]) => <span key={text} className="pill">{icon}<span>{text}</span></span>)}
+              </div>
+              {item.about && <p className="about">{item.about}</p>}
+              {item.warn && <div className="fact-warn"><IconWarn size={16} /><span><b>Heads up:</b> {item.warn}</span></div>}
+              {rv && (
+                <figure className="review">
+                  <figcaption className="review-head">
+                    {rv.name && <span className="review-badge" aria-hidden="true">{Array.from(rv.name)[0].toUpperCase()}</span>}
+                    <span className="review-who">
+                      {rv.name && <b className="review-name">{rv.name}</b>}
+                      {rv.source && <span className="review-source">{rv.source}</span>}
+                    </span>
+                  </figcaption>
+                  <blockquote className="review-quote">
+                    {extra.reviewUrl ? <a href={extra.reviewUrl} target="_blank" rel="noopener noreferrer">{rv.quote}</a> : rv.quote}
+                  </blockquote>
+                </figure>
+              )}
+              {extra.take && <div className="take"><b>Brittany:</b> {extra.take}</div>}
+              {extra.approved && (
+                <div className="approved">
+                  <span className="approved-stamp"><IconThumb size={15} className="icon-thumb" />Brittany approved</span>
+                  <div className="approved-note">Only because I've been and can vouch for it. The others aren't necessarily bad.</div>
+                </div>
+              )}
+              {item.google && (
+                <a className="gr" href={item.google.url} target="_blank" rel="noopener noreferrer">See it on Google Maps<IconExternal size={15} /></a>
+              )}
             </div>
-          )}
-          {item.google && (
-            <a className="gr" href={item.google.url} target="_blank" rel="noopener noreferrer">See it on Google Maps<IconExternal size={15} /></a>
-          )}
+          </div>
         </div>
       </div>
       <div className="tiers">

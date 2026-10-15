@@ -1,0 +1,89 @@
+/* Swipe card, Pace and Days screens (Postcard wave 2). Tokens only; see docs/theme-postcard.md. */
+
+/* rating */
+.rate { flex: 1; --photo-h: clamp(240px, 40dvh, 340px); }
+.rate-meta { display: flex; justify-content: flex-end; margin: 10px 20px 0; }
+.count { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-variant-numeric: tabular-nums; color: var(--ink); }
+.road { position: relative; height: 34px; margin: 2px 20px 6px; }
+.road-line { position: absolute; left: 0; right: 30px; top: 22px; height: 2px; background: repeating-linear-gradient(90deg, var(--red) 0 6px, transparent 6px 12px); }
+.tuktuk { position: absolute; top: 2px; left: calc(var(--p) * (100% - 34px - 30px)); transition: left var(--dur-slow) var(--ease); }
+.palm { position: absolute; right: 0; top: 4px; }
+
+/* The deck is as tall as the card; the peek and the flying ghost sit behind and over it. */
+.deck { position: relative; margin: 0 16px 16px; }
+.card, .peek { border-radius: var(--r-card); background: var(--white); }
+.card { position: relative; z-index: 2; padding: 10px 10px 18px; box-shadow: var(--shadow-2); touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; transition: transform var(--dur-slow) var(--ease); }
+.card.dragging { cursor: grabbing; transition: none; }
+.peek { position: absolute; inset: 0; z-index: 1; overflow: hidden; transform: translateY(14px) scale(.92); filter: brightness(.9); box-shadow: var(--shadow-card); }
+.card.ghost { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
+.card .photo { position: relative; height: var(--photo-h); border-radius: var(--r-photo); touch-action: none; }
+.peek-photo, .ghost-photo { position: absolute; inset: 10px 10px auto; height: var(--photo-h); border-radius: var(--r-photo); }
+.card .nopic { position: absolute; left: 12px; top: 44px; }
+.area-tag { position: absolute; left: 10px; top: 10px; max-width: calc(100% - 60px); }
+.card .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .28) 0%, rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 72%, rgba(5, 6, 8, .5) 100%); pointer-events: none; }
+.title { margin: 0; font-size: 44px; line-height: .92; color: var(--ink); text-wrap: balance; }
+.stamp { position: absolute; z-index: 2; top: 30%; padding: 4px 14px; border: 3px dashed currentColor; border-radius: 8px; font: 800 40px/1.05 var(--font-head); letter-spacing: .06em; text-transform: uppercase; background: rgba(255, 255, 255, .94); pointer-events: none; }
+.stamp.must { left: 18px; color: var(--red-deep); transform: rotate(-12deg); }
+.stamp.skip { right: 18px; color: var(--card-ink); transform: rotate(12deg); }
+.stamp.keen { left: 50%; top: auto; bottom: 34%; color: var(--card-teal); transform: translateX(-50%) rotate(-4deg); }
+.stamp.meh { left: 50%; top: 14%; color: var(--card-muted); transform: translateX(-50%) rotate(4deg); }
+.card.ghost .stamp { opacity: 1; }
+
+.info { padding: 14px 8px 0; display: flex; flex-direction: column; gap: 12px; }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border: var(--stamp-border) var(--teal); border-radius: var(--r-stamp); color: var(--teal); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.pill svg { color: currentColor; }
+.about { margin: 0; font-size: 15px; line-height: 1.5; }
+.fact-warn { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; }
+.fact-warn svg { color: var(--skip); margin-top: 1px; flex: none; }
+.fact-warn b { color: var(--skip); }
+
+/* Review card: reviewer, source, then the quote. No stars, no side bar. */
+.review { margin: 2px 0; padding: 12px; display: flex; flex-direction: column; gap: 8px; border-radius: var(--r-photo); background: var(--chip); }
+.review-head { display: flex; align-items: center; gap: 10px; }
+.review-badge { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--teal-deep); color: var(--on-teal); font: 800 16px/1 var(--font-head); }
+.review-who { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.review-name { font-size: 14px; font-weight: 800; color: var(--ink); overflow-wrap: anywhere; }
+.review-source { font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.review-quote { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.4; color: var(--red-ink); }
+.review-quote a { color: inherit; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
+
+.take { font-size: 14.5px; }
+.take b { font-weight: 850; color: var(--coconut-text); }
+.approved { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.approved-stamp { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 2px dashed var(--tea); border-radius: var(--r-stamp); color: var(--tea); font-size: var(--fs-sm); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; transform: rotate(-3deg); }
+.approved-note { font-size: var(--fs-sm); color: var(--muted); }
+.gr { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 14px; font-weight: 800; color: var(--coconut-text); text-decoration: none; }
+.gr:hover { text-decoration: underline; text-underline-offset: 3px; }
+.gr:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; border-radius: 4px; }
+
+/* days */
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile { all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; min-height: 168px; padding: 16px; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow-card); transition: transform var(--dur-fast) var(--ease), background var(--dur) var(--ease); position: relative; overflow: hidden; }
+.tile-big { font-family: var(--font-head); font-size: 68px; font-weight: 800; line-height: .85; color: var(--ink); margin-bottom: auto; }
+.tile-big svg { color: var(--red-ink); }
+.tile-big .pm { display: inline-flex; gap: 2px; padding: 10px 0; }
+.tile b { font-family: var(--font-head); font-size: 20px; font-weight: 800; text-transform: uppercase; }
+.tile-hint { font-size: 12.5px; color: var(--muted); }
+.tile[aria-pressed="true"] { background: var(--red-deep); color: var(--on-red); }
+.tile[aria-pressed="true"] .tile-big, .tile[aria-pressed="true"] .tile-big svg, .tile[aria-pressed="true"] .tile-hint { color: var(--on-red); }
+.tile:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
+/* pace */
+.paces { display: flex; flex-direction: column; gap: 10px; }
+.pace { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow-card); transition: transform var(--dur-fast) var(--ease); }
+.pace-art { width: 72px; height: 72px; border-radius: var(--r-photo); background: var(--paper-deep); display: grid; place-items: center; flex: none; }
+.pace-art svg { width: 56px; height: 56px; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.pa-route { stroke: var(--red); stroke-width: 3; }
+.pa-dot { fill: var(--red-deep); stroke: none; }
+.pa-sun { fill: var(--red); stroke: none; }
+.pa-ray { stroke: var(--red); stroke-width: 2.5; }
+.pa-trunk { stroke: var(--muted); stroke-width: 3; }
+.pa-leaf { stroke: var(--teal-deep); stroke-width: 3; }
+.pa-hammock { stroke: var(--red-deep); stroke-width: 3; }
+.pa-wave { stroke: var(--teal-deep); stroke-width: 2.5; }
+.pace-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pace-txt b { font-family: var(--font-head); font-size: 22px; font-weight: 800; text-transform: uppercase; line-height: 1; }
+.pace-txt span { color: var(--muted); font-size: 13.5px; }
+.pace[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--red), var(--shadow-card); }
+.pace:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
