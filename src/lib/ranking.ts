@@ -13,10 +13,65 @@ export function removeId(r: Ranking, id: string): void {
   for (const t of TIERS) r[t] = r[t].map(l => l.filter(x => x !== id)).filter(l => l.length > 0);
 }
 
-/** Before the head to heads a tier is one unordered spot, so every item in it scores the same. */
+/** Swiping a card adds it to the end of its tier as its own spot (in-tier order is the person's to drag). */
 export function setTier(r: Ranking, id: string, tier: Tier): void {
   removeId(r, id);
-  r[tier] = [[...r[tier].flat(), id]];
+  r[tier] = [...r[tier].flat().map(x => [x]), [id]];
+}
+
+/** Puts id at flat position `index` of `tier` (counted without id). Landing inside a draw splits it in two. */
+export function placeId(r: Ranking, id: string, tier: Tier, index: number): void {
+  removeId(r, id);
+  const levels = r[tier];
+  let before = 0;
+  for (let i = 0; i < levels.length; i++) {
+    const n = levels[i].length;
+    if (index <= before) { levels.splice(i, 0, [id]); return; }
+    if (index < before + n) {
+      const cut = index - before;
+      levels.splice(i, 1, levels[i].slice(0, cut), [id], levels[i].slice(cut));
+      return;
+    }
+    before += n;
+  }
+  levels.push([id]);
+}
+
+/** Before the head to heads there are no draws: every item is its own spot, in its current order. */
+export function withoutDraws(r: Ranking): Ranking {
+  const out = emptyRanking();
+  for (const t of TIERS) out[t] = r[t].flat().map(id => [id]);
+  return out;
+}
+
+export function isDrawn(r: Ranking, id: string): boolean {
+  const t = tierOf(r, id);
+  const lvl = t && r[t].find(l => l.includes(id));
+  return !!lvl && lvl.indexOf(id) > 0;
+}
+
+/** Whether id can draw with the row above it: it has one, and the joined spot would hold at most MAX_TIE. */
+export function canDraw(r: Ranking, id: string): boolean {
+  const t = tierOf(r, id);
+  if (!t) return false;
+  const i = r[t].findIndex(l => l.includes(id));
+  if (isDrawn(r, id)) return true;
+  return i > 0 && r[t][i - 1].length + r[t][i].length <= MAX_TIE;
+}
+
+/** Draw with the row above (joins its spot), or, if already drawn, split off from it. */
+export function toggleDraw(r: Ranking, id: string): void {
+  if (!canDraw(r, id)) return;
+  const t = tierOf(r, id)!;
+  const levels = r[t];
+  const i = levels.findIndex(l => l.includes(id));
+  const lvl = levels[i];
+  if (isDrawn(r, id)) {
+    const cut = lvl.indexOf(id);
+    levels.splice(i, 1, lvl.slice(0, cut), lvl.slice(cut));
+  } else {
+    levels.splice(i - 1, 2, [...levels[i - 1], ...lvl]);
+  }
 }
 
 /**
@@ -29,28 +84,6 @@ export function finalListFrom(r: Ranking, knocked: string[]): Ranking {
   for (const t of TIERS) out[t] = r[t].flat().filter(id => !(t === 'must' && down.includes(id))).map(id => [id]);
   out.keen.push(...down.map(id => [id]));
   return out;
-}
-
-export function move(r: Ranking, id: string, dir: -1 | 1): void {
-  const t = tierOf(r, id);
-  if (!t) return;
-  const levels = r[t];
-  const i = levels.findIndex(l => l.includes(id));
-  const lvl = levels[i];
-  if (lvl.length > 1) {
-    lvl.splice(lvl.indexOf(id), 1);
-    levels.splice(dir === -1 ? i : i + 1, 0, [id]);
-    return;
-  }
-  const j = i + dir;
-  if (j < 0 || j >= levels.length) return;
-  if (levels[j].length < MAX_TIE) {
-    levels[j].push(id);
-    levels.splice(i, 1);
-  } else {
-    levels[i] = levels[j];
-    levels[j] = lvl;
-  }
 }
 
 export function labels(r: Ranking): Record<string, string> {

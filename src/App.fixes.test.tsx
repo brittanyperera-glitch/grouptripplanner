@@ -95,14 +95,14 @@ describe('R4 lock while editing picks', () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(await screen.findByRole('button', { name: /edit my ratings/i }));
-    expect(await screen.findByLabelText('Change tier for Gamma Beach')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /^Gamma Beach,/ })).toBeInTheDocument();
     const before = localStorage.getItem('tp:resp:Alex');
 
     seed(row('Saulie', { ...DONE, ranking }));
     act(() => { window.dispatchEvent(new StorageEvent('storage', { key: 'tp:resp:Saulie' })); });
 
     expect(await screen.findByText(/ratings are locked/i)).toBeInTheDocument();
-    expect(screen.queryByLabelText('Change tier for Gamma Beach')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Gamma Beach,/ })).toBeNull();
     expect(localStorage.getItem('tp:resp:Alex')).toBe(before);
   });
 });

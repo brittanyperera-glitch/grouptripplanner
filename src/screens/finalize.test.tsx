@@ -37,10 +37,21 @@ describe('Finalize your list', () => {
     const list = await screen.findByRole('region', { name: 'Finalize your list' });
     expect(Array.from(list.querySelectorAll('.nm')).map(n => n.textContent)).toEqual([A.name, C.name, B.name]);
     expect(within(list).getByText('Lost a head to head')).toBeInTheDocument();
-    await user.click(within(list).getByRole('button', { name: `Move ${B.name} up` }));
+    expect(within(list).queryByRole('button', { name: /^Move / })).toBeNull();
+    (within(list).getByRole('button', { name: new RegExp(`^${B.name},`) })).focus();
+    await user.keyboard(' {ArrowUp} ');
+    await user.click(screen.getByRole('button', { name: 'Save my list' }));
+    await waitFor(() => expect(saved('Alex').final).toEqual({ ...emptyRanking(), must: [[A.id]], keen: [[B.id], [C.id]] }));
+    expect(saved('Alex').ranking).toEqual(resp('Alex').ranking);
+  });
+  it('a draw can still be made on Finalize, and saved', async () => {
+    const user = userEvent.setup();
+    show(group());
+    const list = await screen.findByRole('region', { name: 'Finalize your list' });
+    await user.click(within(list).getByRole('button', { name: `Draw ${B.name} with the row above` }));
+    expect(Array.from(list.querySelectorAll('.rk')).map(n => n.textContent)).toEqual(['1', '2=', '2=']);
     await user.click(screen.getByRole('button', { name: 'Save my list' }));
     await waitFor(() => expect(saved('Alex').final).toEqual({ ...emptyRanking(), must: [[A.id]], keen: [[C.id, B.id]] }));
-    expect(saved('Alex').ranking).toEqual(resp('Alex').ranking);
   });
   it('after saving shows how many have finalized and the plan stays provisional until all five have', async () => {
     localStorage.setItem('tp:resp:Alex', JSON.stringify(resp('Alex', { final: { ...emptyRanking(), must: [[A.id]] } })));

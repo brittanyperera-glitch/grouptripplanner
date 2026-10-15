@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocalStore } from './store/local';
 import { emptyRanking, PEOPLE, type Person, type Response } from './types';
+import { score } from './lib/ranking';
 import App from './App';
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
@@ -44,7 +45,7 @@ async function toRate(user: ReturnType<typeof userEvent.setup>) {
 
 describe('rating flow', () => {
   // Brittany 2026-10-15: before the head to heads people only swipe tiers and submit.
-  it('name, days, pace, then swipes with no compare, then a picks screen with no ranks or moves', async () => {
+  it('name, days, pace, then swipes with no compare, then a picks screen you rank by dragging, with no arrows or drop-downs', async () => {
     const user = userEvent.setup();
     render(<App />);
     await toRate(user);
@@ -54,12 +55,13 @@ describe('rating flow', () => {
     await user.click(await screen.findByRole('button', { name: 'Keen' }));
 
     const list = await screen.findByRole('region', { name: 'Your picks' });
-    expect(list.querySelectorAll('.rk')).toHaveLength(0);
+    expect(Array.from(list.querySelectorAll('.rk')).map(n => n.textContent)).toEqual(['1', '2', '3']);
     expect(within(list).queryByRole('button', { name: /^Move / })).toBeNull();
+    expect(within(list).queryByRole('combobox')).toBeNull();
     const names = Array.from(list.querySelectorAll('.nm')).map(n => n.textContent);
     expect(names).toEqual(['Alpha Rock', 'Beta Falls', 'Gamma Beach']);
     expect(screen.queryByText(/Your ranking/)).toBeNull();
-    await waitFor(() => expect(savedAlex().ranking.must).toEqual([['a', 'b']]));
+    await waitFor(() => expect(savedAlex().ranking.must).toEqual([['a'], ['b']]));
   });
 
   it('saves every change through the store', async () => {
@@ -104,14 +106,14 @@ describe('rating flow', () => {
 });
 
 describe('no compares before the head to heads', () => {
-  it('a fourth Must joins the same unordered spot', async () => {
+  it('a fourth Must goes to the end of the Musts as its own place, and an old shared spot is split', async () => {
     cat.items = [...THREE, mk('d', 'Delta Hill', 'South coast')];
     seed(row('Alex', { ranking: { ...emptyRanking(), must: [['a', 'b', 'c']] }, rated: ['a', 'b', 'c'] }));
     localStorage.setItem('tp:me', 'Alex');
     const user = userEvent.setup();
     render(<App />);
     await user.click(await screen.findByRole('button', { name: 'Must' }));
-    await waitFor(() => expect(savedAlex().ranking.must).toEqual([['a', 'b', 'c', 'd']]));
+    await waitFor(() => expect(savedAlex().ranking.must).toEqual([['a'], ['b'], ['c'], ['d']]));
     expect(screen.queryByRole('button', { name: /this one/i })).toBeNull();
   });
 });
@@ -333,12 +335,23 @@ describe('picks screen', () => {
     localStorage.setItem('tp:me', 'Alex');
   };
 
-  it('changing tier joins that tier without a compare', async () => {
+  it('moving a row up past the top of its tier joins the tier above at the end, without a compare', async () => {
     ready();
     const user = userEvent.setup();
     render(<App />);
-    await user.selectOptions(await screen.findByLabelText('Change tier for Gamma Beach'), 'must');
-    await waitFor(() => expect(savedAlex().ranking.must).toEqual([['a', 'b', 'c']]));
+    (await screen.findByRole('button', { name: /^Gamma Beach,/ })).focus();
+    await user.keyboard(' {ArrowUp} ');
+    await waitFor(() => expect(savedAlex().ranking).toEqual({ ...emptyRanking(), must: [['a'], ['b'], ['c']] }));
     expect(screen.queryByRole('button', { name: /this one/i })).toBeNull();
+  });
+
+  it('ranking inside a tier saves the new order and the score bonus follows it', async () => {
+    ready();
+    const user = userEvent.setup();
+    render(<App />);
+    (await screen.findByRole('button', { name: /^Beta Falls,/ })).focus();
+    await user.keyboard(' {ArrowUp} ');
+    await waitFor(() => expect(savedAlex().ranking.must).toEqual([['b'], ['a']]));
+    expect(score(savedAlex().ranking, 'b')).toBeGreaterThan(score(savedAlex().ranking, 'a'));
   });
 });

@@ -125,12 +125,12 @@ function Flow({ me, say }: { me: Person; say: Say }) {
     else commit(r, item.id);
   };
 
-  const onRetier = (id: string, tier: Tier) => {
-    if (locked || tierOf(draft.ranking, id) === tier) return;
-    const r = structuredClone(draft.ranking);
-    setTier(r, id, tier);
-    say(pickQuip(copy.quips.tier[tier]), tier);
-    save({ ranking: r });
+  // A drag, drop or keyboard move on Your picks: the whole ranking arrives, with the id that moved.
+  const onReorder = (next: Ranking, id: string) => {
+    if (locked) return;
+    const tier = tierOf(next, id);
+    if (tier && tier !== tierOf(draft.ranking, id)) say(pickQuip(copy.quips.tier[tier]), tier);
+    save({ ranking: next });
   };
 
   const submit = () => {
@@ -155,8 +155,8 @@ function Flow({ me, say }: { me: Person; say: Say }) {
     const total = unrated.length + draft.rated.filter(id => byId[id]).length;
     content = <Rate item={unrated[0]} next={unrated[1]} n={total - unrated.length + 1} total={total} copy={copy} onTier={t => pickTier(unrated[0], t)} />;
   } else if (shown === 'rate') {
-    content = <Rerank ranking={draft.ranking} byId={byId} onRetier={onRetier} onSubmit={submit}
-      title="Your picks" kicker="All rated" sub="Order inside a tier does not matter. Change any tier, then submit." cta="Done, submit" />;
+    content = <Rerank ranking={draft.ranking} byId={byId} onChange={onReorder} onSubmit={submit}
+      title="Your picks" kicker="All rated" sub="Drag a row to rank it inside its tier, or into another tier to change it. Then submit." cta="Done, submit" />;
   } else {
     const Panel = PANELS[tab];
     content = (
