@@ -648,8 +648,8 @@ const better = (a: Eval, b: Eval) => {
 
 const POLISH = 3;
 // A set's other orders (direction, Colombo first or last) are tried best-scoring sets first, for up
-// to half as many evaluations as the sets' cheapest orders took: a compute budget. Measured on 726
-// test plans it keeps 9 in 10 of the extra Musts that trying every order finds, at the old speed.
+// to half as many evaluations as the sets' cheapest orders took: a compute budget that keeps the old
+// speed. On 720 test plans, trying every order instead fitted one more Must in only 4.
 const ORDER_BUDGET = 0.5;
 
 function search(ctx: Ctx, forceIn: Set<string>): Eval | null {
