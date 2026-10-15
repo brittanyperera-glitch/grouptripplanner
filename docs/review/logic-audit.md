@@ -1,0 +1,73 @@
+# Planner and group logic audit (2026-10-15)
+
+Scope: `src/lib/ranking.ts`, `planner.ts`, `paths.ts`, `group.ts`, the live catalogue (33 items) and `legs.json`. Every finding below was reproduced with a seeded input; the throwaway sweep files that produced the numbers were deleted before commit. "Sweep" means 40 seeded people (about 15% Must, 30% Keen, 30% Meh, 25% Skip) at 3 paces and 9 or 14 days, plus all-Keen plans: 249 personal plans on the live catalogue. "Battery" means 720 personal plans (both catalogues, 7, 9 and 14 days, 3 paces).
+
+## Decisions for Brittany
+
+| # | Question | My recommendation | Trade-off |
+|---|---|---|---|
+| D1 | Should the landing day ever hold a 7.5 hour drive (airport to Jaffna)? | No: if the drive from the airport is longer than the landing half day, sleep near the airport and drive the next morning. That is what the plan's own day 1 rule (half a day) already says. | Trips that go north first lose a day of activities. Since the route order fix (F2) the planner puts Jaffna first more often (10 to 40 of 249 sweep plans), because the long drive currently costs it nothing. |
+| D2 | Should there be a limit on driving per day, by pace? | Yes for balanced and slow: no sunrise start the morning after a 6 hour drive day, and no two 4 hour drive days in a row. | Fewer things fit, mostly for trips that include the north. |
+| D3 | Should every plan that visits the hill country keep a spare half day for rain? | Yes: keep one free half day in Ella or Nuwara Eliya, as the design notes say December needs. | About one activity fewer in 146 of the 226 hill country sweep plans, which have no slack today. |
+| D4 | Should each person's say be capped, so marking lots of things Must cannot outweigh someone who marked few? | Yes: scale each person's ratings so everyone has the same total weight. | Someone who loves everything gets less pull per item; today one person with 12 Musts got 10 of them in, another with 2 got 1. |
+| D5 | Should everyone be guaranteed at least one vote on one of their own Musts? | Yes: if none of a person's Musts is in the plan or in a question, their top one gets a question even past the cap of 5. | Sometimes a sixth question. Today 2 of 150 seeded people have Musts, none in the plan and no question about any of them. |
+| D6 | Should the item questions wait until "North or South?" is settled? | Yes: ask "North or South?" alone first, then the item questions. | Two voting rounds instead of one. Today both appear together in every seeded group, and an item question's "you would lose" side can change once the region is decided. |
+| D7 | Should a single Skip block an item? | No, keep Skip as a strong minus, but show who skipped it on the item. | A group trip means sometimes doing a thing one person skipped. |
+| D8 | Can you look up the Weligama to Colombo drive time in Google Maps? | Yes please, one lookup. We have no measured leg, so the planner routes it through the airport (3 h 8 min); the expressway is likely about 2 h (Colombo to Galle is 1 h 23, research/research_transport.md line 17). | None; it only makes "Colombo at the end" routes fairer. |
+
+## Findings
+
+Most severe first. "Fixed" rows name the commit; the red line is the failing assertion seen before the fix.
+
+| id | severity | lens | finding | evidence: input and output | fix | needs product decision? |
+|---|---|---|---|---|---|---|
+| F1 | High | timing | A drive could follow an afternoon activity, so the group drove after dark and an 18:30 evening item landed after a 3 h drive that started at dusk. Kaudulla and Hurulu close at 18:00 (research/google_listings.md lines 44 and 45). | Live catalogue, all Keen, 14 days, pace 0: day 5 = elephant safari (afternoon), drive Sigiriya to Kandy 2.97 h, Temple of the Tooth puja. 81 of 249 sweep plans had a drive after an afternoon item. | Fixed in 0b8f0e0: an afternoon activity ends the day's driving, like sunset. Red: `AssertionError: day 5: Drive from Sigiriya to Kandy: expected true to be false`. After: 0 of 249. | No |
+| F2 | High | optimisation | Each set of areas was tried in its cheapest-travel order only (amendment B.10 assumed direction and Colombo's position change only travel). They also decide the half arrival day, the departure day and sunrise breaks. | Musts rekawa, pettah, surf, galleface, 5 days, balanced: planner put Colombo first and dropped Rekawa; Colombo last fits all four. Trying every order on 540 sweep plans: 204 score higher (mean +3.8), 31 fit one more Must. | Fixed in 4647630 and 2dd93b0: other orders are tried for the best sets within a compute budget that keeps the old speed (trying every order would fit one more Must in only 4 more of 720 battery plans). Red: `AssertionError: expected [ 'rekawa' ] to deeply equal []`. | No |
+| F3 | High | optimisation | The scheduler packs an area's activities strictly in slot order, so a sunrise item right after the drive in closed the arrival day and its afternoon stayed empty while a safari or sunset spot waited for a later day. | All Keen, 14 days, pace 0: day 2 = drive Colombo to Sigiriya then 6.7 h spare, elephants on day 5; day 8 = the train then 8.3 h spare, Nine Arch Bridge two days later. | Fixed in d85aa50 and ba133dd: before a daytime activity closes the day, later any, afternoon and sunset activities of the same area that fit fill it. Red: `AssertionError: expected [ 'polonnaruwa' ] to deeply equal []` (beachday, kottu, coconut, pettah, polonnaruwa in 6 days). On the battery: 570 of 720 score higher (mean +4.0), 28 fit one more Must, 3 fit one fewer (search misses: the new planner can hold the old set), 18 score slightly lower. | No |
+| F4 | Medium | choosing | The cap of 5 contested items was applied before the walk, so north items behind an open "North or South?" took places and were then skipped. | Seeded group 3: 14 contested items, 2 item questions. 6 of 150 seeded people had Musts with none in the plan. | Fixed in 9e76424: the cap counts questions asked. Red: `AssertionError: seed 3: expected 2 to be 5`. After: 2 of 150 people (see D5). | No |
+| F5 | Medium | choosing | "With 14 days you'd also get" came from a fresh 14-day plan that could drop items the group plan already had, so the list was not true as a whole. | 5 of 30 seeded groups: the 14-day plan dropped Udawalawe, the train, Dambulla or Coconut Tree Hill from the group plan. | Fixed in 74032f2: the 14-day plan keeps the group plan's items. Red: `AssertionError: seed 1: expected true to be undefined`. | No |
+| F6 | Medium | timing | Landing day can hold a drive longer than its half-day capacity (day 1 rule B.4): the first entry is never checked. | North Musts, 9 days, balanced: day 1 = drive from the airport to Jaffna 7.43 h. 40 of 249 sweep plans after F2 (10 before). | Not changed; see D1. | Yes (D1) |
+| F7 | Medium | timing | No limit on driving per day. | 6 h or more of driving in a day: 157 of 249 sweep plans (mostly north trips: Colombo to Jaffna 7.8 h, Jaffna to Kandy 8 h). Two 4 h drive days in a row: 41. Sunrise start after a 6 h drive day: 19. Pack-it-in days whose last drive ends about 18:45: 3. | Not changed; see D2. | Yes (D2) |
+| F8 | Medium | timing | Rain slack only comes from spare days, so a full plan has none, while the design notes say December hill country needs it. | 146 of 226 sweep plans that visit Nuwara Eliya or Ella have no free or rain-slack day there. | Not changed; see D3. | Yes (D3) |
+| F9 | Medium | fairness | Group scores add everyone's ratings with no cap per person, so rating many things Must buys more pull. | Brittany 12 Musts and Skip on the rest, Alex 2 Musts, others all Meh: 10 of Brittany's 12 in the plan, 1 of Alex's 2. | Not changed; see D4. | Yes (D4) |
+| F10 | Medium | fairness | A person whose Musts all sit below others' items in group score can get no question at all. | After F4: 2 of 150 seeded people (for example seed 20, Brittany, Must Diyaluma: 5 item questions on other things). | Not changed; see D5. | Yes (D5) |
+| F11 | Low | choosing | Item questions are shown while "North or South?" is still open, and several open questions name the same item on their losing side. | Every one of 30 seeded groups. Seed 1: Galle Face on the losing side of the region question and three item questions at once. | Not changed; see D6. | Yes (D6) |
+| F12 | Low | choosing | Skip is minus 3, never a veto. | 4 Keens and 1 Skip = +13, so the item goes in. | Not changed; see D7. | Yes (D7) |
+| F13 | Low | data | No measured Weligama to Colombo leg, so "Colombo last" routes after the south coast go via the airport (2.33 + 0.8 h). | `legs.json` has Weligama to AIR and AIR to Colombo only. | Not changed: needs a measured Google Maps time (D8). | Data only (D8) |
+| F14 | Low | robustness | A stored trip length under 2 days crashed the plan worker. | `personPlan` with days 1: `TypeError: Cannot read properties of null (reading 'chosen')`. | Fixed in 204a551: lengths are clamped to the 5 to 21 the Days screen offers. | No |
+| F15 | Low | timing | An area with no chosen item can appear as an overnight stop (Tissa between Ella and Weligama), which splits a 3.25 h drive into 2.1 h and 1.9 h. | All Keen 14 days: day 10 labelled Wild south with no Wild south activity. | Not changed: it helps the next morning. The day screen may want to say "overnight stop". | No (UI wording) |
+| F16 | Low | timing | One evening item longer than the 3 h evening budget is allowed (the budget only limits a second one). | Rekawa turtle watch with its round trip, 4.96 h, after a full beach day. | Not changed: a turtle watch is a whole evening by nature. | No |
+
+## Snapshot changes (planner-snapshot.json)
+
+Each fix that moved the reference plans, old score to new score. No case scores lower after F2 and F3; the F1 drops are the cost of not driving after dark (each of those 7 old plans had a drive after an afternoon item).
+
+| case | F1 (0b8f0e0) | F2 (4647630) | F3 (d85aa50) |
+|---|---|---|---|
+| everything must 9d | | 190.0 to 200.0 | 200.0 to 210.0 |
+| all keen 5d pace 0 | | | 56 to 60 |
+| all keen 9d pace 0 | | | 88 to 96 |
+| all keen 14d pace 0 | 108 to 108 | 108 to 108 | 108 to 120 |
+| all keen 21d pace 0 | 136 to 132 | 132 to 136 | 136 to 148 |
+| all keen 5d pace 1 | | 44 to 48 | 48 to 48 |
+| all keen 9d pace 1 | | 76 to 80 | 80 to 84 |
+| all keen 14d pace 1 | 104 to 100 | 100 to 104 | 104 to 116 |
+| all keen 21d pace 1 | 132 to 128 | 128 to 132 | 132 to 140 |
+| all keen 5d / 9d / 14d / 21d pace 2 | | | 32 to 32, 64 to 68, 92 to 96, 116 to 124 |
+| mixed scores 14d pace 0 | 123 to 120 | 120 to 123 | 123 to 132 |
+| group 2 north 3 south 9d | | 212.6 to 226.3 | 226.3 to 245.8 |
+| group 2 north 3 south 14d | 301.0 to 295.4 | 295.4 to 303.9 | 303.9 to 331.7 |
+| group forceIn jaffna 9d | | 181.8 to 214.9 | 214.9 to 228.4 |
+| group forceIn jaffna forceOut galle 9d | 182.2 to 180.9 | 180.9 to 202.7 | 202.7 to 212.3 |
+| group forceOut galle 9d | | 198.2 to 209.1 | 209.1 to 227.3 |
+
+All fixes together against the pre-audit planner, on the 720-plan battery: 91 plans fit one more Must (1 fits one fewer), 566 score higher (mean +5.7), 6 score lower. F3 alone shortened mustFitDays in 16 of the sets checked (every sixth battery plan) and lengthened none.
+
+## What is fine
+
+- Ranking: the in-tier bonus (0 to 0.9) never lifts a Keen above a Must for one person; five people's bonuses can add up to 4.5, which only reorders items within the same mix of tiers.
+- Personal plans keep Musts first, and mustFitDays' binary search matches the linear scan on every tested set.
+- Item choice is close to optimal for a given route: on 24 small cases checked against every subset, 21 match exactly and the worst gap is 1.3 points.
+- The train never runs too late for the 14:30 departure, no sunset item ends after dusk, and every plan ends with check-in, across all 249 sweep plans.
+- Empty or degenerate input (nobody rated, everyone Skips, one person rated, empty catalogue, 21 or 30 days) does not crash; the same input gives the same plan.
+- Speed: on the planner speed protocol (lowest CPU time of 10 runs, machine busy with other jobs), the all-Keen 14-day plan takes 47 ms against 53 ms before the audit, and mustFitDays 79 to 97 ms against 80 to 86 ms. A realistic five-person group took about 130 ms in Node before the fixes.
