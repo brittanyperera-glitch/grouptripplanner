@@ -108,7 +108,8 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
 
   const final = knockouts.length ? null : P;
   const kept = new Set((final ?? baseP).chosen);
-  const extras = (days >= EXTRAS_DAYS ? [] : run(new Set(), new Set(), EXTRAS_DAYS).chosen)
+  // The plan's own items stay in, so "you'd also get" holds for the whole list at once.
+  const extras = (days >= EXTRAS_DAYS ? [] : run(kept, new Set(), EXTRAS_DAYS).chosen)
     .filter(id => !kept.has(id))
     .map(id => ({ id, who: rs.flatMap(r => { const t = tierOf(r.ranking, id); return t === 'must' || t === 'keen' ? [{ name: r.name, tier: t }] : []; }) }))
     .filter(e => e.who.length > 0)

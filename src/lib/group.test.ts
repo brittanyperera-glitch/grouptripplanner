@@ -1,8 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import catalogue from './__fixtures__/catalogue-46.json'; import legs from '../data/legs.json';
 import { groupResult, personPlan } from './group';
-import { emptyRanking, type AppState, type Item, type Leg, type Person, type Response } from '../types';
+import liveCatalogue from '../data/catalogue.json';
+import { plan } from './planner';
+import { score } from './ranking';
+import { PEOPLE, emptyRanking, type AppState, type Item, type Leg, type Person, type Response, type Tier } from '../types';
 const items = catalogue.items as Item[]; const L = legs as Leg[];
+// Five seeded people rating every item: about 15% Must, 30% Keen, 30% Meh, 25% Skip.
+const seeded = (its: Item[], seed: number): AppState => {
+  let x = seed * 7919;
+  const rand = () => { x = (x * 1103515245 + 12345) % 2147483648; return x / 2147483648; };
+  const responses: AppState['responses'] = {};
+  for (const name of PEOPLE) {
+    const r = emptyRanking();
+    for (const i of its) { const u = rand(); const t: Tier = u < 0.15 ? 'must' : u < 0.45 ? 'keen' : u < 0.75 ? 'meh' : 'skip'; r[t].push([i.id]); }
+    responses[name] = { name, days: 9, flex: false, pace: 1, ranking: r, rated: its.map(i => i.id), submitted: true, updatedAt: '' };
+  }
+  return { responses, suggestions: [], votes: [] };
+};
 const resp = (name: Person, days: number | null, flex: boolean, must: string[], keen: string[] = []): Response => {
   const r = emptyRanking(); r.must = must.map(m => [m]); r.keen = keen.map(k => [k]);
   return { name, days, flex, pace: 1, ranking: r, rated: [...must, ...keen], submitted: true, updatedAt: '' };
@@ -88,6 +103,18 @@ describe('group', () => {
     expect(g14.days).toBe(14); expect(g14.extras).toEqual([]);
     const g9 = groupResult(base(), items, L);
     expect(g9.days).toBe(9); expect(g9.extras.length).toBeGreaterThan(0);
+  });
+  // "With 14 days you'd also get..." means the plan plus every extra, in one 14-day trip.
+  it('extras all fit alongside the plan in 14 days', () => {
+    const live = liveCatalogue.items as Item[];
+    for (let seed = 1; seed <= 12; seed++) {
+      const s = seeded(live, seed);
+      const g = groupResult(s, live, L);
+      const kept = (g.final ?? g.base)!.chosen;
+      const scores = Object.fromEntries(live.map(i => [i.id, Object.values(s.responses).reduce((n, r) => n + score(r!.ranking, i.id), 0)]));
+      const q = plan({ items: live, scores, days: 14, pace: g.pace, legs: L, forceIn: [...kept, ...g.extras.map(e => e.id)] });
+      expect(q.forceFailed, `seed ${seed}`).toBeUndefined();
+    }
   });
   it('group plan never claims it does not fit', () => {
     const g = groupResult(base(), items, L);
