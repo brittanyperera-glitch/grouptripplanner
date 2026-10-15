@@ -8,6 +8,12 @@ type Section = { id: string; label: string; intro?: string; entries?: Entry[]; p
 
 const SECTIONS = guide.sections as Section[];
 
+/** "Elawolu roti (roti parcels...)": the name before the bracket is bold (Brittany 2026-10-15), the rest stays as written. */
+function Named({ text }: { text: string }) {
+  const m = /^([^(]+?)(\s*\(.*)$/s.exec(text);
+  return m ? <><b>{m[1]}</b>{m[2]}</> : <b>{text}</b>;
+}
+
 export default function Guide() {
   const [id, setId] = useState(SECTIONS[0].id);
   const section = SECTIONS.find(s => s.id === id) ?? SECTIONS[0];
@@ -40,7 +46,7 @@ export default function Guide() {
             <article className="guide-entry" key={e.title ?? i}>
               {e.title && <h3><span className="guide-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{e.title}</h3>}
               {e.body && <p>{e.body}</p>}
-              {e.list && <ul>{e.list.map(l => <li key={l}>{l}</li>)}</ul>}
+              {e.list && <ul>{e.list.map(l => <li key={l}><Named text={l} /></li>)}</ul>}
               {e.after && <p>{e.after}</p>}
             </article>
           ))
