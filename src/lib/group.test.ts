@@ -104,6 +104,17 @@ describe('group', () => {
     const g9 = groupResult(base(), items, L);
     expect(g9.days).toBe(9); expect(g9.extras.length).toBeGreaterThan(0);
   });
+  // The 5-question cap counts questions asked: north items behind the open "North or South?" fork
+  // used to take places in the top 5 and then be skipped, leaving 2 questions for 14 contested items.
+  it('asks up to 5 item questions however many contested items sit behind the region fork', () => {
+    const live = liveCatalogue.items as Item[];
+    for (const seed of [3, 5]) {
+      const g = groupResult(seeded(live, seed), live, L);
+      expect(g.knockouts.some(k => k.forkId === 'region:north'), `seed ${seed}`).toBe(true);
+      expect(g.knockouts.filter(k => k.forkId.startsWith('ko:')).length, `seed ${seed}`).toBe(5);
+    }
+    for (let seed = 1; seed <= 12; seed++) expect(groupResult(seeded(live, seed), live, L).knockouts.filter(k => k.forkId.startsWith('ko:')).length).toBeLessThanOrEqual(5);
+  });
   // "With 14 days you'd also get..." means the plan plus every extra, in one 14-day trip.
   it('extras all fit alongside the plan in 14 days', () => {
     const live = liveCatalogue.items as Item[];

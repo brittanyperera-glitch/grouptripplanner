@@ -43,8 +43,7 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
   const rated = (id: string, t: 'must' | 'keen') => rs.filter(r => tierOf(r.ranking, id) === t).length;
   const contested = ids
     .filter(id => !baseP.chosen.includes(id) && (rated(id, 'must') >= 1 || rated(id, 'keen') >= 2))
-    .sort((x, y) => scores[y] - scores[x] || (x < y ? -1 : 1))
-    .slice(0, MAX_CONTESTED);
+    .sort((x, y) => scores[y] - scores[x] || (x < y ? -1 : 1));
 
   const knockouts: Knockout[] = [];
   const results: GroupResult['results'] = [];
@@ -84,7 +83,11 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
     }
   }
 
+  // At most MAX_CONTESTED item questions. Items settled without one (north items behind the region
+  // question, items that fit for free or ride on another question) do not use up a place.
+  let asked = 0;
   for (const c of contested) {
+    if (asked >= MAX_CONTESTED) break;
     if (skipNorth && northSet.has(c)) continue;
     if (P.chosen.includes(c)) continue;
     if (covered.has(c)) continue;
@@ -97,6 +100,7 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
     if (a.some(id => covered.has(id))) continue; // overlaps an open fork: it rides on that one
     // Keyed on c alone: a vote for 'a' means "add c", which stays true when b shifts after an earlier result.
     const forkId = `ko:${c}`;
+    asked++;
     const latest = new Map<Person, 'a' | 'b'>();
     for (const v of state.votes) if (v.forkId === forkId) latest.set(v.name, v.choice);
     const who = (side: 'a' | 'b') => PEOPLE.filter(p => latest.get(p) === side);
