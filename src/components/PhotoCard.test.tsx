@@ -33,6 +33,7 @@ describe('photo credit', () => {
     expect(creditName('Bergentroll, CC0')).toBe('Bergentroll');
     expect(creditName('A.Savin, FAL')).toBe('A.Savin');
     expect(creditName('Pol van den Scheetek…, CC BY 3.0')).toBe('Pol van den Scheetek…');
+    expect(creditName('Vis M, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)')).toBe('Vis M');
     expect(creditName('Some Person')).toBe('Some Person');
   });
 });

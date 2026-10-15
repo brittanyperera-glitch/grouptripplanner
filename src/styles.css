@@ -113,7 +113,9 @@ h1.big { margin: 0; }
 .credit-i { all: unset; box-sizing: border-box; cursor: pointer; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: rgba(0, 0, 0, .55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35); color: #fff; font: italic 800 14px/1 Georgia, serif; }
 .credit-i:focus-visible { outline: 2px solid #FFC15E; outline-offset: 2px; }
 .credit-pop { position: absolute; right: 36px; top: 0; width: max-content; max-width: 220px; padding: 6px 10px; border-radius: 10px; background: rgba(11, 13, 16, .82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .2); color: #fff; font-size: 12px; font-weight: 650; line-height: 1.3; }
-.intro-cta { margin-top: 10px; align-self: stretch; }
+.intro-cta, .select .play { flex: none; align-self: stretch; }
+.intro-cta { margin-top: 10px; }
+.select .play { margin-top: auto; }
 .select { padding: 14px 16px 24px; min-height: 100dvh; display: flex; flex-direction: column; gap: 12px; --ink: #F6F2EC; --muted: rgba(246, 242, 236, .78); }
 .select-head { padding: 0 4px; }
 .select-head .sub { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
@@ -123,7 +125,7 @@ h1.big { margin: 0; }
 .char { all: unset; box-sizing: border-box; flex: 0 0 62%; scroll-snap-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0 12px; border-radius: 24px; opacity: .5; transform: scale(.82); transition: opacity 240ms, transform 300ms var(--ease-spring, ease); }
 .char.on { opacity: 1; transform: none; background: radial-gradient(circle at 50% 80%, rgba(255, 122, 26, .22), transparent 70%); box-shadow: inset 0 0 0 2px rgba(255, 193, 94, .5); }
 .char:focus-visible { outline: 2px solid #FFC15E; outline-offset: 2px; }
-.char .avatar-art { display: block; height: clamp(150px, 30dvh, 250px); width: auto; }
+.char .avatar-art { display: block; height: clamp(140px, 26dvh, 250px); width: auto; }
 .char-name { font-size: 14px; font-weight: 900; font-stretch: 115%; text-transform: uppercase; letter-spacing: .03em; color: #F6F2EC; }
 .nav { all: unset; box-sizing: border-box; cursor: pointer; position: absolute; z-index: 2; top: 38%; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: rgba(0, 0, 0, .55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3); color: #fff; }
 .nav.prev { left: 8px; }

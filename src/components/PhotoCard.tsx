@@ -8,7 +8,7 @@ const AREA_COLOR: Record<Area, string> = {
 };
 
 /** Photographer only: the trailing licence note ("CC BY-SA 4.0", "CC0", "FAL") is dropped. */
-export const creditName = (credit: string) => credit.replace(/,\s*(CC[\w .-]*|FAL|public domain)\s*$/i, '').trim();
+export const creditName = (credit: string) => credit.replace(/,\s*(CC[\w .-]*|FAL|public domain|private-use only.*)\s*$/i, '').trim();
 
 export function CreditButton({ credit }: { credit: string }) {
   const [open, setOpen] = useState(false);
