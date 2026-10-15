@@ -14,7 +14,7 @@ for (const height of [844, 667]) {
       if (n !== 'Brittany') await page.getByRole('button', { name: 'Next character' }).click();
       await page.waitForTimeout(700);
       m[n] = await page.evaluate((n) => {
-        const tile = Array.from(document.querySelectorAll('.char')).find(c => c.textContent?.includes(n))!;
+        const tile = document.querySelector(`.char[aria-label="${n}"]`)!;
         const t = tile.getBoundingClientRect();
         const img = tile.querySelector('image')!.getBoundingClientRect();
         const svg = tile.querySelector('svg')!.getBoundingClientRect();

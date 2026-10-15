@@ -6,9 +6,10 @@ export default defineConfig({
   timeout: 120_000,
   use: { baseURL: 'http://localhost:5199', channel: 'chrome', headless: true, actionTimeout: 10_000 },
   webServer: {
-    command: 'npx vite preview --port 5199 --strictPort',
+    // Build first: preview alone serves whatever dist/ was last built, so the specs would test a stale app.
+    command: 'npx vite build && npx vite preview --port 5199 --strictPort',
     port: 5199,
     reuseExistingServer: false,
-    timeout: 60_000,
+    timeout: 180_000,
   },
 });
