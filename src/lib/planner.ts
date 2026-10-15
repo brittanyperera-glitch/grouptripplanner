@@ -21,7 +21,27 @@ interface Tmpl {
 interface Cand extends Tmpl { cap: number; tmpl: Tmpl }
 
 // dark: a sunset, evening or late activity has happened, so no more driving today.
-interface WorkDay { area: Area | null; entries: DayEntry[]; used: number; cap: number; closed: boolean; dark?: boolean }
+interface WorkDay {
+  area: Area | null; entries: DayEntry[]; used: number; cap: number; closed: boolean; dark?: boolean;
+  slots?: SlotUse; // activities so far per slot, for the fixed-time rule
+}
+
+// Fixed-time slots hold one activity per day. Morning and afternoon hold a second short one only
+// if both fit that part of the day, in on-site hours (Brittany, 2026-10-15). 'any' is unconstrained.
+const ONE_PER_DAY: Slot[] = ['sunrise', 'sunset', 'evening', 'late'];
+const WINDOW: Partial<Record<Slot, number>> = { morning: 4.5, afternoon: 5 };
+type SlotUse = Partial<Record<Slot, { n: number; site: number }>>;
+const slotFull = (use: SlotUse, slot: Slot, site: number) => {
+  const u = use[slot];
+  if (!u) return false;
+  if (ONE_PER_DAY.includes(slot)) return true;
+  const win = WINDOW[slot];
+  return win !== undefined && (u.n >= 2 || u.site + site > win + EPS);
+};
+const useSlot = (use: SlotUse, slot: Slot, site: number) => {
+  const u = (use[slot] ??= { n: 0, site: 0 });
+  u.n++; u.site += site;
+};
 
 interface Ctx {
   input: PlanInput; H: number; budget: number; d: Dist; score: (id: string) => number;
@@ -181,10 +201,19 @@ function geometry(d: Dist, eligible: Area[], trainOpts: boolean[], wsHubs: Hub[]
 
 type Opt = { id: string; w: number; v: number; k: number }
 /** Per-candidate data, in two parts so a candidate pruned by its bound skips the costly half. */
-interface Prep { reserved: number; opts: Opt[]; forcedScore: number; byRatio: Opt[]; forced: Uint8Array }
+// core: the options the knapsack sees. A second fixed-time item for the same slot in the same area
+// needs a day of its own, which hours cannot express, so only the best one per (area, slot) is in
+// core; the others can still come back in evaluate()'s add-back pass when a day is free.
+interface Prep { reserved: number; opts: Opt[]; core: Opt[]; forcedScore: number; byRatio: Opt[]; forced: Uint8Array }
 // Schedule entries packed for the fit test, which runs many times per candidate.
 const MOVE = 1, SUNRISE = 2, MORNING = 4, NIGHT = 8;
-interface Steps { hours: Float64Array; at: Int32Array; flags: Uint8Array; fd: number }
+interface Steps { hours: Float64Array; site: Float64Array; slot: Int8Array; at: Int32Array; flags: Uint8Array; fd: number }
+const SLOTS = Object.keys(SLOT_ORDER) as Slot[];
+// slotFull() by slot index, for the packed fit test; slots with no window (any) are never full.
+const SLOT_ONE = SLOTS.map(sl => ONE_PER_DAY.includes(sl));
+const SLOT_WIN = SLOTS.map(sl => WINDOW[sl] ?? Infinity);
+// Scratch counters for minDays, which runs thousands of times per plan and is not re-entrant.
+const slotN = new Int32Array(SLOTS.length), slotSite = new Float64Array(SLOTS.length);
 
 function prep(ctx: Ctx, c: Cand): Prep {
   return (c.tmpl.prep ??= buildPrep(ctx, c));
@@ -201,7 +230,15 @@ function buildPrep(ctx: Ctx, c: Cand): Prep {
     if (forced[k]) { reserved += q(weightOf(i, c.wsHub, d)); forcedScore += v; } else if (v > 0) opts.push({ id: i.id, w: q(weightOf(i, c.wsHub, d)), v, k });
   }
   const byRatio = opts.filter(o => o.w > 0).sort((a, b) => b.v / b.w - a.v / a.w);
-  return { reserved, opts, forcedScore, byRatio, forced };
+  const taken = new Set(c.forced.filter(i => ONE_PER_DAY.includes(i.slot)).map(i => `${i.area}|${i.slot}`));
+  const slotKey = (o: Opt) => { const i = c.pool.find(x => x.id === o.id)!; return ONE_PER_DAY.includes(i.slot) ? `${i.area}|${i.slot}` : null; };
+  const extra = new Set<string>();
+  for (const o of [...opts].sort((a, b) => b.v / Math.max(1, b.w) - a.v / Math.max(1, a.w) || (a.id < b.id ? -1 : 1))) {
+    const key = slotKey(o);
+    if (key === null) continue;
+    if (taken.has(key)) extra.add(o.id); else taken.add(key);
+  }
+  return { reserved, opts, core: opts.filter(o => !extra.has(o.id)), forcedScore, byRatio, forced };
 }
 
 /**
@@ -211,9 +248,10 @@ function buildPrep(ctx: Ctx, c: Cand): Prep {
 function layout(ctx: Ctx, c: Cand): Steps {
   const { d, idx, itemsTag, input: { items } } = ctx;
   if (c.geo.steps?.tag === itemsTag) return c.geo.steps.steps;
-  const hours: number[] = [], at: number[] = [], flags: number[] = [];
+  const hours: number[] = [], site: number[] = [], slot: number[] = [], at: number[] = [], flags: number[] = [];
   const slotFlags = (slot?: Slot) => (slot === 'sunrise' ? SUNRISE : slot === 'morning' ? MORNING : 0);
-  const push = (h: number, k: number, f: number) => { hours.push(h); at.push(k); flags.push(f); };
+  // slot is -1 for arrivals: only activities count towards the fixed-time rule.
+  const push = (h: number, k: number, f: number, it?: Item) => { hours.push(h); at.push(k); flags.push(f); site.push(it?.hours ?? 0); slot.push(it ? SLOTS.indexOf(it.slot) : -1); };
   const train = items.find(i => i.id === TRAIN);
   let prevHub: Hub = 'AIR', prevArea: Area | null = null;
   for (const area of c.order) {
@@ -224,10 +262,10 @@ function layout(ctx: Ctx, c: Cand): Steps {
     items
       .filter(i => i.area === area && !(c.train && i.id === TRAIN))
       .sort((a, b) => SLOT_ORDER[a.slot] - SLOT_ORDER[b.slot] || (a.id < b.id ? -1 : 1))
-      .forEach(i => push(weightOf(i, c.wsHub, d), idx.get(i.id)!, slotFlags(i.slot) | (NIGHT_SLOTS.includes(i.slot) ? NIGHT : 0)));
+      .forEach(i => push(weightOf(i, c.wsHub, d), idx.get(i.id)!, slotFlags(i.slot) | (NIGHT_SLOTS.includes(i.slot) ? NIGHT : 0), i));
     prevHub = hub; prevArea = area;
   }
-  const steps: Steps = { hours: Float64Array.from(hours), at: Int32Array.from(at), flags: Uint8Array.from(flags), fd: d(c.route[c.route.length - 2], 'AIR') };
+  const steps: Steps = { hours: Float64Array.from(hours), site: Float64Array.from(site), slot: Int8Array.from(slot), at: Int32Array.from(at), flags: Uint8Array.from(flags), fd: d(c.route[c.route.length - 2], 'AIR') };
   c.geo.steps = { tag: itemsTag, steps };
   return steps;
 }
@@ -235,7 +273,7 @@ function layout(ctx: Ctx, c: Cand): Steps {
 /** Marks the chosen items: every forced one plus the knapsack's picks at capacity x. */
 function choose(p: Prep, knap: Knapsack, x: number): Uint8Array {
   const on = Uint8Array.from(p.forced);
-  for (const j of knap.pick(x)) on[p.opts[j].k] = 1;
+  for (const j of knap.pick(x)) on[p.core[j].k] = 1;
   return on;
 }
 
@@ -252,9 +290,11 @@ function schedule(ctx: Ctx, c: Cand, chosen: Item[]): WorkDay[] {
       else if (cur.dark && (e.kind === 'drive' || e.kind === 'train')) newDay(); // no night drives on hill roads
       else if (slot === 'sunrise') newDay(); // one sunrise per day, never after another entry (B.5)
       else if (slot === 'morning' && cur.used > 3 + EPS) newDay();
+      else if (e.kind === 'activity' && slot && slotFull(cur.slots ?? {}, slot, e.onSite!)) newDay(); // one per fixed-time slot
       else if (e.hours > cur.cap - cur.used + EPS) newDay();
     }
     cur.entries.push(e); cur.used += e.hours;
+    if (e.kind === 'activity' && slot) useSlot((cur.slots ??= {}), slot, e.onSite!);
     if (e.hours > H + EPS) cur.closed = true; // a long entry owns its whole day (B.3)
     if (e.kind === 'activity' && slot && NIGHT_SLOTS.includes(slot)) cur.dark = true;
   };
@@ -359,16 +399,19 @@ function fractionalBound(c: Cand, p: Prep): number {
  */
 function minDays(ctx: Ctx, steps: Steps, on: Uint8Array, stop = Infinity): number {
   const { H } = ctx;
-  const { hours: hs, at, flags, fd } = steps;
+  const { hours: hs, at, flags, fd, slot: sl, site } = steps;
   let n = 1, count = 0, used = 0, cap = H / 2, closed = false, dark = false;
+  const nUse = slotN, siteUse = slotSite;
+  nUse.fill(0); siteUse.fill(0);
   for (let s = 0; s < hs.length; s++) {
     if (at[s] >= 0 && !on[at[s]]) continue;
-    const hours = hs[s], f = flags[s];
+    const hours = hs[s], f = flags[s], k = sl[s];
     if (count > 0) {
-      const fresh = hours > H + EPS || closed || (dark && (f & MOVE) !== 0) || (f & SUNRISE) !== 0 || ((f & MORNING) !== 0 && used > 3 + EPS) || hours > cap - used + EPS;
-      if (fresh) { if (++n > stop) return n; count = 0; used = 0; cap = H; closed = false; dark = false; }
+      const fresh = hours > H + EPS || closed || (dark && (f & MOVE) !== 0) || (f & SUNRISE) !== 0 || ((f & MORNING) !== 0 && used > 3 + EPS) || (k >= 0 && nUse[k] > 0 && (SLOT_ONE[k] || (SLOT_WIN[k] < Infinity && (nUse[k] >= 2 || siteUse[k] + site[s] > SLOT_WIN[k] + EPS)))) || hours > cap - used + EPS;
+      if (fresh) { if (++n > stop) return n; count = 0; used = 0; cap = H; closed = false; dark = false; nUse.fill(0); siteUse.fill(0); }
     }
     count++; used += hours;
+    if (k >= 0) { nUse[k]++; siteUse[k] += site[s]; }
     if (hours > H + EPS) closed = true;
     if (f & NIGHT) dark = true;
   }
@@ -388,9 +431,7 @@ function evaluate(ctx: Ctx, c: Cand, p: Prep, bar: Eval | null): Eval | null {
   const N = ctx.input.days;
   const { pool } = c;
   const top = Math.max(0, c.cap - p.reserved);
-  const knap = new Knapsack(p.opts, top);
-  // Every set considered below stays within `top` hours, so value(top) bounds them all.
-  if (bar && beaten(c, p.forcedScore + knap.value(top), bar)) return null;
+  const knap = new Knapsack(p.core, top);
   const steps = layout(ctx, c);
   const over = (x: number) => minDays(ctx, steps, choose(p, knap, x)) - N;
   let x = top, hi = -1;

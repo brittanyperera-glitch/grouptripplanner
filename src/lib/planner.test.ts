@@ -187,6 +187,34 @@ describe('plan output matches the reference snapshot', () => {
   });
 });
 
+describe('fixed-time slots', () => {
+  const all = items.map(i => i.id);
+  const plans = [
+    ...([0, 1] as Pace[]).flatMap(pace => [9, 14].map(days => [`all Keen ${days}d pace ${pace}`, plan({ items, scores: sc(all, 4), days, pace, legs: L })] as const)),
+    ['all Must 9d', plan({ items, scores: sc(all), days: 9, pace: 1, legs: L, mustIds: all })] as const,
+  ];
+  it.each(plans)('%s: one sunrise, sunset, evening and late activity per day; two short mornings or afternoons at most', (_, p) => {
+    for (const day of p.days) {
+      const acts = day.entries.filter(e => e.kind === 'activity').map(e => byId.get(e.itemId!)!);
+      const of = (slot: string) => acts.filter(i => i.slot === slot);
+      for (const slot of ['sunrise', 'sunset', 'evening', 'late']) expect(of(slot).length, `day ${day.n} ${slot}`).toBeLessThanOrEqual(1);
+      for (const [slot, window] of [['morning', 4.5], ['afternoon', 5]] as const) {
+        const xs = of(slot);
+        expect(xs.length, `day ${day.n} ${slot}`).toBeLessThanOrEqual(2);
+        // A single long item may fill its part of the day; a second one must fit the window with it.
+        if (xs.length === 2) expect(xs[0].hours + xs[1].hours, `day ${day.n} ${slot} hours`).toBeLessThanOrEqual(window);
+      }
+    }
+  });
+  // Colombo is always the arrival day, capped at half a day, so pettah (3 h) + crab (2 h) never
+  // fit there; bawa (1 h) + crab is the same morning-plus-dinner shape within the hours.
+  it('a morning and an evening activity share a day when the hours allow', () => {
+    const p = plan({ items, scores: sc(['sigiriya', 'bawa', 'crab']), days: 9, pace: 1, legs: L });
+    const day = p.days.find(d => d.entries.some(e => e.itemId === 'bawa'))!;
+    expect(day.entries.some(e => e.itemId === 'crab')).toBe(true);
+  });
+});
+
 describe('planner caches', () => {
   it('plans the same when the items arrive as a fresh copy, as from a worker', () => {
     const scores = sc(['sigiriya', 'galle', 'yala', 'jaffna', 'trinco']);
@@ -204,23 +232,31 @@ describe('planner speed at 10 areas', () => {
   // CPU time of this test file's process (vitest runs each file in its own fork): the full suite
   // runs files in parallel, so wall time there measures contention as much as the planner.
   const cpuMs = (fn: () => unknown) => { const t = process.cpuUsage(); fn(); const u = process.cpuUsage(t); return (u.user + u.system) / 1000; };
-  // Scores nudged by 1e-7 so the plan() memo cannot answer from an earlier test.
+  // Each test warms up on the same inputs first: the app's worker is warm after its first plan, so
+  // cold JIT time is not what these bound. The warm-up scores differ by 1e-7 so neither the plan()
+  // memo nor its candidate cache can answer the timed call.
+  const nudged = (scores: Record<string, number>, by: number) => Object.fromEntries(Object.entries(scores).map(([k, v]) => [k, v + by]));
   it('plans the everything-Keen 14-day trip in under 60 ms', () => {
-    const s = Object.fromEntries(items.map(i => [i.id, 4 + 1e-7]));
-    expect(cpuMs(() => plan({ items, scores: s, days: 14, pace: 1, legs: L }))).toBeLessThan(60);
+    const s = sc(items.map(i => i.id), 4);
+    plan({ items, scores: nudged(s, 1e-7), days: 14, pace: 1, legs: L });
+    expect(cpuMs(() => plan({ items, scores: nudged(s, 2e-7), days: 14, pace: 1, legs: L }))).toBeLessThan(60);
   });
   it('finds mustFitDays in under 200 ms', () => {
     const must = ['jaffna', 'delft', 'trinco', 'sigiriya', 'yala', 'galle'];
-    const scores = { ...sc(items.map(i => i.id), 1 + 1e-7), ...sc(must, 10) };
-    expect(cpuMs(() => mustFitDays({ items, scores, pace: 1, legs: L, mustIds: must }))).toBeLessThan(200);
+    const scores = { ...sc(items.map(i => i.id), 1), ...sc(must, 10) };
+    mustFitDays({ items, scores: nudged(scores, 1e-7), pace: 1, legs: L, mustIds: must });
+    expect(cpuMs(() => mustFitDays({ items, scores: nudged(scores, 2e-7), pace: 1, legs: L, mustIds: must }))).toBeLessThan(200);
   });
   it('builds the 2-north / 3-south group result in under 400 ms', () => {
-    const mk = (name: Person, must: string[]): Response => {
-      const r = emptyRanking(); r.must = must.map(m => [m]); r.meh = items.filter(i => !must.includes(i.id)).map(i => [i.id]);
+    const mk = (name: Person, must: string[], meh: string[]): Response => {
+      const r = emptyRanking(); r.must = must.map(m => [m]); r.meh = meh.filter(id => !must.includes(id)).map(id => [id]);
       return { name, days: 9, flex: false, pace: 1, ranking: r, rated: items.map(i => i.id), submitted: true, updatedAt: '' };
     };
     const N = ['jaffna', 'delft', 'trinco'], S = ['sigiriya', 'yala', 'galle'];
-    const state: AppState = { responses: { Brittany: mk('Brittany', N), Alex: mk('Alex', N), Antek: mk('Antek', S), Lazza: mk('Lazza', S), Saulie: mk('Saulie', S) }, suggestions: [], votes: [] };
-    expect(cpuMs(() => groupResult(state, items, L))).toBeLessThan(400);
+    const state = (meh: string[]): AppState => ({ responses: { Brittany: mk('Brittany', N, meh), Alex: mk('Alex', N, meh), Antek: mk('Antek', S, meh), Lazza: mk('Lazza', S, meh), Saulie: mk('Saulie', S, meh) }, suggestions: [], votes: [] });
+    const ids = items.map(i => i.id);
+    // Warm-up with the Meh order reversed: same shape of work, different scores, so no cache hits.
+    groupResult(state([...ids].reverse()), items, L);
+    expect(cpuMs(() => groupResult(state(ids), items, L))).toBeLessThan(400);
   });
 });
