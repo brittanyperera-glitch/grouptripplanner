@@ -59,6 +59,7 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
     if (n === 0) break;
     for (const who of ['Brittany', 'Alex', 'Lazza']) {
       if (who !== 'Brittany') {
+        await page.getByRole('button', { name: 'Menu' }).click();
         await page.getByRole('button', { name: 'Not you?' }).click();
         await page.getByRole('button', { name: 'Choose your character' }).click();
         await page.getByRole('button', { name: who, exact: true }).click();
@@ -67,6 +68,7 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
       const f = page.getByRole('group', { name: /^Knockout:/ });
       for (let i = 0; i < await f.count(); i++) await f.nth(i).locator('button.pick').first().click();
     }
+    await page.getByRole('button', { name: 'Menu' }).click();
     await page.getByRole('button', { name: 'Not you?' }).click();
     await page.getByRole('button', { name: 'Choose your character' }).click();
     await page.getByRole('button', { name: 'Brittany', exact: true }).click();

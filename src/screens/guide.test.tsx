@@ -28,7 +28,7 @@ describe('Guide access', () => {
   it('is not offered before I submit: no tab, no button', async () => {
     seed(row('Alex', { rated: [] }));
     render(<App />);
-    await screen.findByRole('button', { name: 'Not you?' });
+    await screen.findByRole('button', { name: 'Menu' });
     expect(screen.queryByRole('tab', { name: 'Guide' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open the guide' })).toBeNull();
   });

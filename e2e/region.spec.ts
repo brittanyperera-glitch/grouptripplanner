@@ -26,6 +26,7 @@ test('one North or South question, settled by three votes', async ({ page }) => 
   await page.waitForTimeout(600);
   await shot(page, 'region-open');
   for (const who of ['Antek', 'Lazza', 'Saulie']) {
+    await page.getByRole('button', { name: 'Menu' }).click();
     await page.getByRole('button', { name: 'Not you?' }).click();
     await page.getByRole('button', { name: 'Choose your character' }).click();
     await page.getByRole('button', { name: who, exact: true }).click();

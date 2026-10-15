@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyRanking, type Person, type Response } from './types';
 import { readFileSync } from 'node:fs';
 import App from './App';
+import { openMenu } from './__fixtures__/menu';
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const copy = vi.hoisted(() => ({
@@ -67,6 +68,8 @@ describe('how-to step', () => {
     localStorage.setItem('tp:me', 'Alex');
     const user = userEvent.setup();
     render(<App />);
+    await screen.findByRole('button', { name: 'Menu' });
+    openMenu();
     await user.click(await screen.findByRole('button', { name: 'Change days or pace' }));
     await user.click(await screen.findByRole('button', { name: /^9 days/ }));
     await user.click(await screen.findByRole('button', { name: /^Balanced/ }));
@@ -79,6 +82,8 @@ describe('how-to step', () => {
     localStorage.setItem('tp:me', 'Alex');
     const user = userEvent.setup();
     render(<App />);
+    await screen.findByRole('button', { name: 'Menu' });
+    openMenu();
     await user.click(await screen.findByRole('button', { name: 'Change days or pace' }));
     await user.click(await screen.findByRole('button', { name: /^9 days/ }));
     await user.click(await screen.findByRole('button', { name: /^Balanced/ }));

@@ -4,6 +4,7 @@ import { LocalStore } from './store/local';
 import { ServerLike } from './store/__fixtures__/serverLike';
 import { emptyRanking, type Person, type Response } from './types';
 import App from './App';
+import { openMenu } from './__fixtures__/menu';
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const copy = vi.hoisted(() => ({
@@ -40,6 +41,7 @@ describe('Start over', () => {
     render(<App store={store} />);
     expect(await screen.findByRole('tab', { name: 'My trip' })).toBeInTheDocument();
 
+    openMenu();
     fireEvent.click(screen.getByRole('button', { name: 'Start over' }));
     expect(screen.getByRole('button', { name: 'Tap again to start over' })).toBeInTheDocument();
     expect((await store.load()).responses.Alex?.submitted).toBe(true);
@@ -62,10 +64,12 @@ describe('Start over', () => {
     render(<App store={new LocalStore()} />);
     await screen.findByRole('tab', { name: 'My trip' });
     vi.useFakeTimers();
+    openMenu();
     fireEvent.click(screen.getByRole('button', { name: 'Start over' }));
     act(() => { vi.advanceTimersByTime(4100); });
     expect(screen.getByRole('button', { name: 'Start over' })).toBeInTheDocument();
     vi.useRealTimers();
+    openMenu();
     fireEvent.click(screen.getByRole('button', { name: 'Start over' }));
     expect(screen.getByRole('tab', { name: 'My trip' })).toBeInTheDocument();
   });
@@ -76,6 +80,7 @@ describe('Start over', () => {
     localStorage.setItem('tp:me', 'Alex');
     render(<App store={store} />);
     await screen.findByRole('tab', { name: 'My trip' });
+    openMenu();
     fireEvent.click(screen.getByRole('button', { name: 'Start over' }));
     fireEvent.click(screen.getByRole('button', { name: 'Tap again to start over' }));
     expect(await screen.findByRole('button', { name: /^9 days/ })).toBeInTheDocument();
@@ -89,6 +94,7 @@ describe('Start over', () => {
     localStorage.setItem('tp:me', 'Alex');
     render(<App store={new LocalStore()} />);
     await screen.findByRole('button', { name: /^9 days/ });
+    openMenu();
     expect(screen.getByRole('button', { name: 'Start over' })).toBeInTheDocument();
   });
 });

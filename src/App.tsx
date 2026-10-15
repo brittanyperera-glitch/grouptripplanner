@@ -96,23 +96,41 @@ const blank = (name: Person): Response => ({
 const START_OVER_ARMED_MS = 4000;
 
 /**
- * Not you? and Start over. Start over takes two taps: the first arms it for a few seconds (no browser
- * dialog). While armed, Not you? steps aside so the longer label fits; the button keeps its DOM node and focus.
+ * The header's one Menu: Change days or pace (while rating), Not you? and Start over, so the header stays one row
+ * on a phone (Brittany 2026-10-15). Start over takes two taps; the first arms it for a few seconds, no browser dialog.
  */
-function WhoActions({ onNotYou, onStartOver }: { onNotYou(): void; onStartOver(): void }) {
+function HeaderMenu({ onChange, onNotYou, onStartOver }: { onChange?(): void; onNotYou(): void; onStartOver(): void }) {
+  const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!armed) return;
     const t = setTimeout(() => setArmed(false), START_OVER_ARMED_MS);
     return () => clearTimeout(t);
   }, [armed]);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => { setOpen(false); setArmed(false); };
+    const away = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) close(); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('pointerdown', away);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('pointerdown', away); document.removeEventListener('keydown', esc); };
+  }, [open]);
+  const pick = (act: () => void) => () => { setOpen(false); setArmed(false); act(); };
   return (
-    <>
-      {!armed && <button className="link" onClick={onNotYou}>Not you?</button>}
-      <button className={`link${armed ? ' armed' : ''}`} onClick={() => (armed ? onStartOver() : setArmed(true))}>
-        {armed ? 'Tap again to start over' : 'Start over'}
-      </button>
-    </>
+    <div className="hmenu" ref={box}>
+      <button className="link" aria-haspopup="true" aria-expanded={open} onClick={() => { setOpen(o => !o); setArmed(false); }}>Menu</button>
+      {open && (
+        <div className="hmenu-list" role="group" aria-label="Menu">
+          {onChange && <button onClick={pick(onChange)}>Change days or pace</button>}
+          <button onClick={pick(onNotYou)}>Not you?</button>
+          <button className={armed ? 'armed' : undefined} onClick={armed ? pick(onStartOver) : () => setArmed(true)}>
+            {armed ? 'Tap again to start over' : 'Start over'}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -227,7 +245,6 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
     );
   }
 
-  const where = shown === 'rate' ? changeLink : { days: 'Days', pace: 'Pace', howto: '', rate: '', tabs: '' }[shown];
   const enter = cssEnter() ? lastNav() : null;
   const screenKey = shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
   useLayoutEffect(() => {
@@ -240,9 +257,8 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
         <span className="who">
           <Avatar name={me} size={30} />
           <b>{me}</b>
-          <WhoActions onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} />
         </span>
-        <span className="where">{where}</span>
+        <HeaderMenu onChange={shown === 'rate' ? changeDays : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} />
       </header>
       <div className={`screen${enter ? ` enter-${enter}` : ''}`} key={screenKey}>{content}</div>
       {shown === 'tabs' && (

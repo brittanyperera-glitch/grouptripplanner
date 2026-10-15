@@ -101,6 +101,7 @@ test('Finalize: drag reorders, = makes a draw shown as a shared rank on joined r
   await page.reload();
   await page.getByRole('tab', { name: 'Group' }).click();
   for (const who of ['Antek', 'Lazza', 'Saulie']) {
+    await page.getByRole('button', { name: 'Menu' }).click();
     await page.getByRole('button', { name: 'Not you?' }).click();
     await page.getByRole('button', { name: 'Choose your character' }).click();
     await page.getByRole('button', { name: who, exact: true }).click();

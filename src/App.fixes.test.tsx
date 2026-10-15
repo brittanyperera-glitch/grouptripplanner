@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocalStore } from './store/local';
 import { emptyRanking, PEOPLE, type Person, type Response } from './types';
 import App from './App';
+import { openMenu } from './__fixtures__/menu';
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 vi.mock('./data/catalogue.json', () => ({ default: cat }));
@@ -58,6 +59,7 @@ describe('R3 change days or pace', () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText('2 of 3');
+    openMenu();
     await user.click(screen.getByRole('button', { name: 'Change days or pace' }));
     await user.click(await screen.findByRole('button', { name: /^14 days/ }));
     await user.click(await screen.findByRole('button', { name: /^Slow/ }));
