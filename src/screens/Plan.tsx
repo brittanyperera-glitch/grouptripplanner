@@ -7,7 +7,7 @@ import type { GroupResult } from '../types';
 import { DayRows } from './MyTrip';
 
 export default function Plan({ group }: { group: GroupResult }) {
-  const { state, items } = useApp();
+  const { state, items, legs } = useApp();
   const plan = group.final ?? group.base;
   if (!plan) return null;
   const chosen = items.filter(i => plan.chosen.includes(i.id));
@@ -23,7 +23,7 @@ export default function Plan({ group }: { group: GroupResult }) {
             : `Provisional until all five finalize their lists (${group.finalized.length} of 5 done)`}
       </div>
       <RouteMap route={plan.route} />
-      <DayRows plan={plan} items={items} skippedBy={id => PEOPLE.filter(p => { const r = state.responses[p]; return !!r && tierOf(r.ranking, id) === 'skip'; })} />
+      <DayRows plan={plan} items={items} legs={legs} skippedBy={id => PEOPLE.filter(p => { const r = state.responses[p]; return !!r && tierOf(r.ranking, id) === 'skip'; })} />
       {book.length > 0 && (
         <div className="card-list">
           <div className="tierhead"><IconBook size={16} />Book before you go</div>
