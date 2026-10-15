@@ -1,0 +1,44 @@
+/* How-to: typed instructions and a four-swipe practice round. Tokens only; see docs/theme-postcard.md. */
+.hw { gap: 12px; }
+.hw-top { display: flex; justify-content: flex-end; }
+.hw-lines { display: flex; flex-direction: column; gap: 10px; }
+.hw-lines p { margin: 0; font-size: 16px; line-height: 1.35; color: var(--ink); text-wrap: pretty; }
+.hw-lines p:first-child { font: 800 30px/.98 var(--font-head); text-transform: uppercase; text-wrap: balance; }
+.hw-rest { visibility: hidden; }
+.hw-rank p:first-child { font: 600 18px/1.35 var(--font-body); text-transform: none; }
+.hw-rank { gap: 14px; margin-top: 8px; }
+
+.hw-practice { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+.hw-step { margin: 0; font-size: 14px; font-weight: 700; color: var(--muted); letter-spacing: .02em; }
+.hw-card {
+  position: relative; box-sizing: border-box; min-height: 190px; padding: 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: var(--white); border-radius: var(--r-card); box-shadow: var(--shadow-2);
+  touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none;
+  transition: transform var(--dur-slow) var(--ease);
+}
+.hw-card.dragging { cursor: grabbing; transition: none; }
+.hw-word { font: 800 clamp(64px, 22vw, 96px)/.9 var(--font-head); letter-spacing: .04em; text-transform: uppercase; }
+.hw-word.must { color: var(--red-deep); }
+.hw-word.keen { color: var(--card-teal); }
+.hw-word.meh { color: var(--card-muted); }
+.hw-word.skip { color: var(--card-ink); }
+.hw-arrow { display: inline-flex; color: var(--card-muted); }
+.hw-nudge { min-height: 20px; font-size: 14px; font-weight: 700; color: var(--red-ink); }
+
+.hw-tiers { margin: 0 -20px; }
+.t.target { box-shadow: 0 0 0 3px var(--coconut); }
+
+/* The card leans toward the swipe it is asking for; the arrow nudges the same way. */
+@keyframes hw-lean-left { 0%, 100% { transform: none; } 50% { transform: translate(-34px, 0) rotate(-3deg); } }
+@keyframes hw-lean-right { 0%, 100% { transform: none; } 50% { transform: translate(34px, 0) rotate(3deg); } }
+@keyframes hw-lean-up { 0%, 100% { transform: none; } 50% { transform: translate(0, -26px); } }
+@keyframes hw-lean-down { 0%, 100% { transform: none; } 50% { transform: translate(0, 26px); } }
+@keyframes hw-bump { 0%, 100% { translate: 0; } 25% { translate: -6px; } 75% { translate: 6px; } }
+@media (prefers-reduced-motion: no-preference) {
+  .hw-card.anim:not(.dragging).dir-skip { animation: hw-lean-left var(--dur-slow) var(--ease-in-out) infinite alternate; }
+  .hw-card.anim:not(.dragging).dir-must { animation: hw-lean-right var(--dur-slow) var(--ease-in-out) infinite alternate; }
+  .hw-card.anim:not(.dragging).dir-keen { animation: hw-lean-up var(--dur-slow) var(--ease-in-out) infinite alternate; }
+  .hw-card.anim:not(.dragging).dir-meh { animation: hw-lean-down var(--dur-slow) var(--ease-in-out) infinite alternate; }
+  .hw-card.nudged .hw-word { animation: hw-bump var(--dur) var(--ease); }
+}

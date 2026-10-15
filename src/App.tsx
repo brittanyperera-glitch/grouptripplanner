@@ -26,6 +26,9 @@ import Rate from './screens/Rate';
 import Rerank from './screens/Rerank';
 import Suggest from './screens/Suggest';
 import Waiting from './screens/Waiting';
+import HowTo, { howtoWanted, markHowtoSeen } from './screens/HowTo';
+import type { HowToCopy } from './screens/HowTo';
+import copyData from './content/copy.json';
 import { AppProvider, ME_KEY, pickQuip, useApp } from './state';
 import { connectionMissingNow } from './store';
 import { clearLocalProgress } from './store/fresh';
@@ -34,7 +37,8 @@ import { useGroupResult, usePersonPlan } from './workers/usePlan';
 import { AREAS, emptyRanking, PEOPLE } from './types';
 import type { Item, Pace as PaceT, Person, Ranking, Response, Store, Tier } from './types';
 
-type Step = 'days' | 'pace' | 'rate' | 'tabs';
+type Step = 'days' | 'pace' | 'howto' | 'rate' | 'tabs';
+const howtoCopy = () => (copyData as unknown as { howto?: HowToCopy }).howto;
 type Tab = 'My trip' | 'Group' | 'Everyone' | 'Suggest' | 'Guide';
 // The tab bar only renders once I have submitted, so Guide is never offered before that.
 const TABS: Tab[] = ['My trip', 'Group', 'Everyone', 'Suggest', 'Guide'];
@@ -193,8 +197,12 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
   } else if (shown === 'pace') {
     content = <Pace pace={draft.pace} onBack={() => navigate('back', () => setStep('days'))} onPick={(p: PaceT) => {
       save({ pace: p });
-      navigate('fwd', () => { setEditing(false); setStep(draft.submitted ? 'tabs' : 'rate'); });
+      const intro = howtoWanted(howtoCopy(), { editing, submitted: draft.submitted, rated: draft.rated.length });
+      navigate('fwd', () => { setEditing(false); setStep(draft.submitted ? 'tabs' : intro ? 'howto' : 'rate'); });
     }} />;
+  } else if (shown === 'howto' && howtoCopy()) {
+    const leave = () => { markHowtoSeen(); navigate('fwd', () => setStep('rate')); };
+    content = <HowTo copy={howtoCopy() as HowToCopy} onDone={leave} onSkip={leave} />;
   } else if (shown === 'rate' && unrated.length > 0) {
     const total = unrated.length + draft.rated.filter(id => byId[id]).length;
     content = <Rate item={unrated[0]} next={unrated[1]} n={total - unrated.length + 1} total={total} copy={copy} onTier={t => pickTier(unrated[0], t)} />;
@@ -219,7 +227,7 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
     );
   }
 
-  const where = shown === 'rate' ? changeLink : { days: 'Days', pace: 'Pace', rate: '', tabs: '' }[shown];
+  const where = shown === 'rate' ? changeLink : { days: 'Days', pace: 'Pace', howto: '', rate: '', tabs: '' }[shown];
   const enter = cssEnter() ? lastNav() : null;
   const screenKey = shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
   useLayoutEffect(() => {

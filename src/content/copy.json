@@ -1,6 +1,27 @@
 {
   "welcome": "The Homecoming.",
   "welcomeSub": "Britt's solution to group chat debates",
+  "howto": {
+    "intro": [
+      "You're about to see a series of some serious Sri Lanka classics.",
+      "Every one gets a vote. Swipe the card or tap the buttons.",
+      "Quick practice first. None of this counts."
+    ],
+    "practice": {
+      "skip": { "word": "Skip", "line": "Not for me. Swipe left." },
+      "meh": { "word": "Meh", "line": "Take it or leave it. Swipe down." },
+      "keen": { "word": "Keen", "line": "Sounds good. Swipe up." },
+      "must": { "word": "Must", "line": "Can't miss it. Swipe right." }
+    },
+    "nudge": "Other way, mate.",
+    "ranking": [
+      "Must beats Keen beats Meh. Skips are out.",
+      "On Your picks, drag to order each pile. Order counts.",
+      "Later the group goes head to head, then you finalise. A few places can share a spot."
+    ],
+    "go": "Let's go",
+    "skipTutorial": "Skip the tutorial"
+  },
   "quips": {
     "name": {
       "Alex": "solo wolf joins the team - what's left on your list?",

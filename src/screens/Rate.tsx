@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { CSSProperties, PointerEvent as RPointerEvent, ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { IconClock, IconDown, IconExternal, IconLeft, IconPin, IconRight, IconSun, IconThumb, IconTicket, IconUp, IconWarn } from '../components/Icons';
 import { buzz, motion, MOTION } from '../components/motion';
 import { Cover } from '../components/PhotoCard';
 import TukTuk from '../components/TukTuk';
 import type { Copy } from '../state';
 import type { Item, Tier } from '../types';
+import { FLING, tierFor, useSwipe } from './useSwipe';
 import './Rate.css';
 
 const LABEL: Record<Tier, string> = { must: 'Must', keen: 'Keen', meh: 'Meh', skip: 'Skip' };
@@ -14,8 +15,7 @@ const ORDER: Tier[] = ['skip', 'meh', 'keen', 'must'];
 const ARROW: Record<Tier, ReactNode> = { must: <IconRight size={16} />, keen: <IconUp size={16} />, meh: <IconDown size={16} />, skip: <IconLeft size={16} /> };
 const KEYS: Record<string, Tier> = { ArrowRight: 'must', ArrowUp: 'keen', ArrowDown: 'meh', ArrowLeft: 'skip' };
 
-// A drag this far along one axis rates the card; a quick flick counts from FLICK_MIN at FLICK_SPEED px/ms.
-export const FLING = 100;
+export { FLING, tierFor };
 // One-time nudge of the first card in each direction, so a new player sees what the swipes do.
 const DEMO_KEY = 'tp:swipe-demo';
 const DEMO_ORDER: Tier[] = ['must', 'keen', 'skip', 'meh'];
@@ -23,13 +23,6 @@ const DEMO_STEP = 650;
 const DEMO_PX = 44;
 const DEMO_DIR: Record<Tier, [number, number]> = { must: [1, 0], keen: [0, -1], skip: [-1, 0], meh: [0, 1] };
 const demoSeen = () => { try { return localStorage.getItem(DEMO_KEY) !== null; } catch { return true; } };
-const FLICK_MIN = 40;
-const FLICK_SPEED = 0.5;
-
-export function tierFor(dx: number, dy: number): Tier {
-  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? 'must' : 'skip';
-  return dy < 0 ? 'keen' : 'meh';
-}
 
 export function factPills(item: Item): [ReactNode, string][] {
   const out: [ReactNode, string][] = [[<IconClock size={14} />, `${item.hours} h`]];
@@ -60,17 +53,13 @@ function Palm() {
   );
 }
 
-interface Drag { dx: number; dy: number }
 interface Ghost { item: Item; tier: Tier; dx: number; dy: number; k: number }
 
 export default function Rate({ item, next, n, total, copy, onTier }: {
   item: Item; next?: Item; n: number; total: number; copy: Copy; onTier: (t: Tier) => void;
 }) {
   const extra = copy.items[item.id] ?? {};
-  const [drag, setDrag] = useState<Drag | null>(null);
   const [ghost, setGhost] = useState<Ghost | null>(null);
-  const start = useRef<{ x: number; y: number; id: number } | null>(null);
-  const last = useRef<{ x: number; y: number; t: number; vx: number; vy: number } | null>(null);
 
   const [playDemo] = useState(() => n === 1 && motion() === 'full' && !demoSeen());
   const [demo, setDemo] = useState<number | null>(playDemo ? 0 : null);
@@ -86,15 +75,17 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
     return () => clearInterval(t);
   }, [playDemo]);
 
+  const swipe = useSwipe((tier, dx, dy) => commit(tier, dx, dy), () => { demoOn.current = false; setDemo(null); });
+  const { drag, reset } = swipe;
+
   const commit = useCallback((tier: Tier, dx = 0, dy = 0) => {
     demoOn.current = false;
     setDemo(null);
     buzz(tier);
-    start.current = null;
-    setDrag(null);
+    reset();
     setGhost({ item, tier, dx, dy, k: Date.now() });
     onTier(tier);
-  }, [item, onTier]);
+  }, [item, onTier, reset]);
 
   useEffect(() => {
     if (!ghost) return;
@@ -114,40 +105,6 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [commit]);
-
-  const down = (e: RPointerEvent<HTMLDivElement>) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if ((e.target as HTMLElement).closest('a, button')) return;
-    demoOn.current = false;
-    setDemo(null);
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-    start.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
-    last.current = { x: e.clientX, y: e.clientY, t: e.timeStamp, vx: 0, vy: 0 };
-    setDrag({ dx: 0, dy: 0 });
-  };
-  const moveTo = (e: RPointerEvent<HTMLDivElement>) => {
-    const s = start.current;
-    if (!s || e.pointerId !== s.id) return;
-    const l = last.current;
-    if (l) {
-      const dt = e.timeStamp - l.t;
-      last.current = dt > 0 ? { x: e.clientX, y: e.clientY, t: e.timeStamp, vx: (e.clientX - l.x) / dt, vy: (e.clientY - l.y) / dt } : { ...l, x: e.clientX, y: e.clientY };
-    }
-    setDrag({ dx: e.clientX - s.x, dy: e.clientY - s.y });
-  };
-  const up = (e: RPointerEvent<HTMLDivElement>) => {
-    const s = start.current;
-    if (!s || e.pointerId !== s.id) return;
-    const dx = e.clientX - s.x;
-    const dy = e.clientY - s.y;
-    const tier = tierFor(dx, dy);
-    const horizontal = tier === 'must' || tier === 'skip';
-    const dist = Math.abs(horizontal ? dx : dy);
-    const speed = Math.abs(horizontal ? last.current?.vx ?? 0 : last.current?.vy ?? 0);
-    if (dist >= FLING || (dist >= FLICK_MIN && speed >= FLICK_SPEED)) commit(tier, dx, dy);
-    else { start.current = null; setDrag(null); }
-  };
-  const cancel = () => { start.current = null; setDrag(null); };
 
   const dragLead = drag && (drag.dx !== 0 || drag.dy !== 0) ? tierFor(drag.dx, drag.dy) : null;
   const demoTier = demo !== null ? DEMO_ORDER[demo] : null;
@@ -182,7 +139,7 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
             </div>
           )}
           <div key={item.id} className={`card${drag ? ' dragging' : ''}`} style={{ viewTransitionName: vtName(item.id), ...cardStyle }}
-            onPointerDown={down} onPointerMove={moveTo} onPointerUp={up} onPointerCancel={cancel}>
+            {...swipe.bind}>
             <Cover item={item} className="photo" named={false} credit>
               <div className="scrim" />
               <span className="area-tag stamp-label solid"><IconPin size={13} />{item.category ? `${item.area} · ${item.category}` : item.area}</span>
