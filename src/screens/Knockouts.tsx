@@ -1,9 +1,11 @@
 import { IconCheck } from '../components/Icons';
 import { Cover } from '../components/PhotoCard';
+import { VOTES_TO_RESOLVE } from '../lib/group';
 import { score, tierOf } from '../lib/ranking';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
 import type { GroupResult, Item, Knockout } from '../types';
+import GenreVote, { genreOf } from './GenreVote';
 
 const SHOWN_NAMES = 2;
 const REGION_FORK = 'region:north';
@@ -87,30 +89,55 @@ export default function Knockouts({ group }: { group: GroupResult }) {
   const regionResult = group.results.find(r => r.forkId === REGION_FORK);
   const regionLine = (r: typeof group.results[number]) => `${r.winner === 'a' ? 'North' : 'South'} beat ${r.winner === 'a' ? 'South' : 'North'}`;
   const placesOpen = group.knockouts.some(k => k.forkId !== REGION_FORK);
+  // "Safari: kept Yala leopard safari, dropped Udawalawe elephants and Transit Home"
+  const genreLine = (r: typeof group.results[number]) => {
+    const label = genreOf(r.forkId.slice('genre:'.length).split('#')[0])?.label ?? 'Same type';
+    const parts = [r.a.length ? `kept ${r.a.map(nameOf).join(', ')}` : '', r.b.length ? `dropped ${r.b.map(nameOf).join(', ')}` : ''].filter(Boolean);
+    return `${label}: ${parts.join(', ')}`;
+  };
   const decided = group.results.filter(r => !(placesOpen && r === regionResult));
+  const isItem = (r: typeof group.results[number]) => r.forkId !== REGION_FORK && !r.forkId.startsWith('genre:');
+  // Once I have voted on every open question, say what we are waiting for: the votes that settle the leading one
+  // (Brittany 2026-10-15: "say waiting on votes to move onto next knockout").
+  // A keep vote needs every place settled, so the place furthest from three decides it.
+  const mine = (k: Knockout) => !!me && (k.votes.a.includes(me) || k.votes.b.includes(me));
+  const short = (n: number) => VOTES_TO_RESOLVE - n;
+  const need = (k: Knockout) => (k.genre
+    ? Math.max(...k.a.map(id => { const t = k.genre!.tally[id]; return short(Math.max(t?.keep.length ?? 0, t?.drop.length ?? 0)); }))
+    : short(Math.max(k.votes.a.length, k.votes.b.length)));
+  const waiting = group.knockouts.length > 0 && group.knockouts.every(mine)
+    ? Math.min(...group.knockouts.map(need))
+    : null;
 
   return (
     <section className="body" aria-label="Knockouts">
       {group.knockouts.length > 0 && <div className="kicker">Group knockouts</div>}
       {group.knockouts.length > 0 && <div className="big display">Vote on these</div>}
-      {group.knockouts.length > 0 && <div className="sub">Three votes settle each one.</div>}
+      {waiting !== null
+        ? <div className="ko-wait" role="status">Waiting on votes to move onto the next knockout ({waiting} more needed).</div>
+        : group.knockouts.length > 0 && (
+          <div className="sub">
+            Three votes settle each one.
+            {group.knockouts.some(k => k.forkId === REGION_FORK) && ' Head to heads on places come once North or South is settled.'}
+          </div>
+        )}
       {placesOpen && regionResult && <div className="tierhead"><IconCheck size={16} />{regionLine(regionResult)}</div>}
-      {group.knockouts.map(k => k.forkId === REGION_FORK ? region(k) : (
+      {group.knockouts.map(k => k.forkId === REGION_FORK ? region(k) : k.genre ? <GenreVote key={k.forkId} k={{ ...k, genre: k.genre }} /> : (
         <div key={k.forkId} role="group" aria-label={`Knockout: ${names(k.a)} or ${names(k.b)}`} className="ko">
           <div className="vs2 face">{side(k, 'a')}{side(k, 'b')}<span className="vs" aria-hidden="true">VS</span></div>
           {tally(k)}
         </div>
       ))}
-      {group.knockouts.some(k => k.forkId === REGION_FORK) && <div className="sub">Head to heads on places come once North or South is settled.</div>}
       {decided.length > 0 && (
         <div>
           <div className="tierhead"><IconCheck size={16} />Decided</div>
           {decided.map(r => (
             <div key={r.forkId} className="decided">
               {r.forkId === REGION_FORK && regionLine(r)}
-              {r.forkId !== REGION_FORK && r.winner === 'a' && `${names(r.a)} beat ${names(r.b)}`}
-              {r.forkId !== REGION_FORK && r.winner === 'b' && `${names(r.b)} beat ${names(r.a)}`}
-              {r.forkId !== REGION_FORK && r.winner === 'displaced' && `${names(r.a)} dropped out after an earlier result`}
+              {r.forkId.startsWith('genre:') && genreLine(r)}
+              {isItem(r) && r.winner === 'a' && `${names(r.a)} beat ${names(r.b)}`}
+              {isItem(r) && r.winner === 'b' && `${names(r.b)} beat ${names(r.a)}`}
+              {isItem(r) && r.winner === 'displaced' && `${names(r.a)} dropped out after an earlier result`}
             </div>
           ))}
         </div>

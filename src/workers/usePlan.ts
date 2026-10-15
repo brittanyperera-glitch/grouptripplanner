@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import genresJson from '../data/genres.json';
 import { groupResult, personPlan } from '../lib/group';
-import type { AppState, GroupResult, Item, Leg, Plan, Response } from '../types';
+import type { AppState, Genre, GroupResult, Item, Leg, Plan, Response } from '../types';
+
+const GENRES = genresJson.genres as Genre[];
 
 export type PersonPlan = Plan & { mustFit: number | null };
 export type PlanRequest =
   | { id: number; kind: 'person'; payload: { resp: Response; items: Item[]; legs: Leg[] } }
-  | { id: number; kind: 'group'; payload: { state: AppState; items: Item[]; legs: Leg[] } };
+  | { id: number; kind: 'group'; payload: { state: AppState; items: Item[]; legs: Leg[]; genres: Genre[] } };
 
 interface Out<T> { data: T | null; loading: boolean }
 
@@ -47,6 +50,6 @@ export function usePersonPlan(resp: Response | undefined, items: Item[], legs: L
 }
 
 export function useGroupResult(state: AppState, items: Item[], legs: Leg[]): Out<GroupResult> {
-  const payload = useMemo(() => ({ state, items, legs }), [state, items, legs]);
-  return useCompute<GroupResult, typeof payload>('group', payload, p => groupResult(p.state, p.items, p.legs));
+  const payload = useMemo(() => ({ state, items, legs, genres: GENRES }), [state, items, legs]);
+  return useCompute<GroupResult, typeof payload>('group', payload, p => groupResult(p.state, p.items, p.legs, p.genres));
 }

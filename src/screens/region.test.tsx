@@ -54,6 +54,18 @@ describe('region knockout card', () => {
     render(<AppProvider store={new SpyStore()}><Knockouts group={group()} /></AppProvider>);
     expect(await screen.findByText(/Head to heads on places come once North or South is settled/)).toBeInTheDocument();
   });
+  // Brittany 2026-10-15: "say waiting on votes to move onto next knockout".
+  it('once I have voted, says it is waiting on votes and how many more are needed', async () => {
+    localStorage.setItem('tp:me', 'Brittany');
+    render(<AppProvider store={new SpyStore()}><Knockouts group={group()} /></AppProvider>);
+    expect(await screen.findByRole('status')).toHaveTextContent('Waiting on votes to move onto the next knockout (2 more needed).');
+  });
+  it('does not say it is waiting before I have voted', async () => {
+    localStorage.setItem('tp:me', 'Alex');
+    render(<AppProvider store={new SpyStore()}><Knockouts group={group()} /></AppProvider>);
+    await screen.findByRole('group', { name: /North or South\?/ });
+    expect(screen.queryByText(/Waiting on votes/)).toBeNull();
+  });
   it('shows the region result above the place head to heads that follow it', async () => {
     const g = group({
       knockouts: [{ forkId: 'ko:galle', a: ['galle'], b: ['horton'], votes: { a: [], b: [] } }],

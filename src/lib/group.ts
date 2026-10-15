@@ -1,8 +1,8 @@
-import { PEOPLE, type AppState, type GroupResult, type Item, type Knockout, type Leg, type Pace, type Person, type Plan, type Response } from '../types';
+import { PEOPLE, type AppState, type Genre, type GroupResult, type Item, type Knockout, type Leg, type Pace, type Person, type Plan, type Response } from '../types';
 import { mustFitDays, plan } from './planner';
 import { KNOCKED_MUST, score, scoresFor, tierOf } from './ranking';
 
-const VOTES_TO_RESOLVE = 3; // majority of 5
+export const VOTES_TO_RESOLVE = 3; // majority of 5
 const MAX_CONTESTED = 5;
 const EXTRAS_DAYS = 14;
 const NORTH_AREAS = new Set<string>(['North', 'East coast']);
@@ -28,7 +28,8 @@ function medianPace(paces: Pace[]): Pace {
   return Math.round((s[Math.floor((s.length - 1) / 2)] + s[Math.floor(s.length / 2)]) / 2) as Pace;
 }
 
-export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupResult {
+// genres: src/data/genres.json in the app; none means no same-type keep vote.
+export function groupResult(state: AppState, items: Item[], legs: Leg[], genres: Genre[] = []): GroupResult {
   const rs = PEOPLE.map(p => state.responses[p]).filter((r): r is Response => !!r);
   const open = PEOPLE.every(p => state.responses[p]?.submitted);
   const days = rs.length ? Math.min(...rs.map(daysOf)) : 9;
@@ -130,6 +131,66 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
     else { knockouts.push({ forkId, a, b, votes }); a.forEach(id => covered.add(id)); }
   }
 
+  // Same-type keep vote (Brittany 2026-10-15): once the head to heads are done, two or more places of one
+  // genre in the plan get one question. Each person ticks keep or skip per place (stored per place,
+  // `genre:<id>:<item>`); a place is decided at 3 of either, or by majority (ties keep) once all five
+  // ticked it. Kept places are forced in, dropped ones out so the planner refills the time. A resolved
+  // genre that still has an undecided duplicate after a refill gets a second question (`genre:<id>#2`).
+  // Only pairs someone wants open a question (Brittany 2026-10-16): two or more places of the type in the
+  // plan rated Must or Keen by anyone, and one of them still to ask. Unwanted ones in the plan are listed
+  // with them. A trip all five have finalized is never reopened, though votes already settled still count.
+  const genreDropped = new Set<string>();
+  const wanted = (id: string) => rated(id, 'must') + rated(id, 'keen') >= 1;
+  const allFinal = rs.length === PEOPLE.length && rs.every(r => r.final);
+  if (!knockouts.length && genres.length) {
+    // Head to head winners are never re-asked; nor is a place decided by an earlier keep vote.
+    const settledIn = new Set(results.flatMap(r => (r.forkId.startsWith('ko:') && r.winner === 'a' ? [r.a[0]] : [])));
+    const rounds = new Map<string, number>(); // keep votes resolved per genre
+    const tallyOf = (gid: string, id: string) => {
+      const latest = new Map<Person, 'a' | 'b'>();
+      for (const v of state.votes) if (v.forkId === `genre:${gid}:${id}`) latest.set(v.name, v.choice);
+      return { keep: PEOPLE.filter(p => latest.get(p) === 'a'), drop: PEOPLE.filter(p => latest.get(p) === 'b') };
+    };
+    for (let settled = true; settled;) {
+      settled = false;
+      const open: Knockout[] = [];
+      const claimed = new Set<string>(); // one open question per place, as with `covered` above
+      for (const g of genres) {
+        const inPlan = g.items.filter(id => P.chosen.includes(id));
+        const ask = inPlan.filter(id => !settledIn.has(id)).sort(byScore);
+        if (inPlan.filter(wanted).length < 2 || !ask.some(wanted) || ask.some(id => claimed.has(id))) continue;
+        const already = inPlan.filter(id => settledIn.has(id)).sort(byScore);
+        const n = rounds.get(g.id) ?? 0, forkId = n ? `genre:${g.id}#${n + 1}` : `genre:${g.id}`;
+        const tally = Object.fromEntries(ask.map(id => [id, tallyOf(g.id, id)]));
+        const verdict = (id: string) => {
+          const { keep, drop } = tally[id];
+          if (keep.length >= VOTES_TO_RESOLVE) return 'keep';
+          if (drop.length >= VOTES_TO_RESOLVE) return 'drop';
+          return keep.length + drop.length === PEOPLE.length ? (keep.length >= drop.length ? 'keep' : 'drop') : null;
+        };
+        if (ask.some(id => verdict(id) === null)) {
+          if (allFinal) continue;
+          const voters = PEOPLE.filter(p => ask.every(id => tally[id].keep.includes(p) || tally[id].drop.includes(p)));
+          open.push({ forkId, a: ask, b: already, votes: { a: voters, b: [] }, genre: { id: g.id, tally } });
+          ask.forEach(id => claimed.add(id));
+          continue;
+        }
+        let keep = ask.filter(id => verdict(id) === 'keep');
+        // Never drop the whole type: the most-kept place stays (ask is already in group score order).
+        if (!keep.length && !already.length) keep = [[...ask].sort((x, y) => tally[y].keep.length - tally[x].keep.length)[0]];
+        const drop = ask.filter(id => !keep.includes(id));
+        keep.forEach(id => { settledIn.add(id); F.add(id); });
+        drop.forEach(id => { F.delete(id); O.add(id); genreDropped.add(id); });
+        results.push({ forkId, a: keep, b: drop, winner: 'a' });
+        rounds.set(g.id, n + 1);
+        if (drop.length) P = run(F, O);
+        settled = true;
+        break; // the plan changed: look at every genre again
+      }
+      if (!settled) knockouts.push(...open);
+    }
+  }
+
   // Must floor (Brittany 2026-10-15): once nothing is open, anyone with none of their Musts in (from
   // their saved Finalize list, else as submitted) gets the one that costs the group least, never one
   // that lost a head to head or sits in the losing region. Two passes, so a place forced in for one
@@ -162,7 +223,8 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[]): GroupR
   const final = knockouts.length ? null : P;
   const kept = new Set((final ?? baseP).chosen);
   // The plan's own items stay in, so "you'd also get" holds for the whole list at once.
-  const extras = (days >= EXTRAS_DAYS ? [] : run(kept, new Set(), EXTRAS_DAYS).chosen)
+  // A place the group skipped in a keep vote is not offered back as an extra.
+  const extras = (days >= EXTRAS_DAYS ? [] : run(kept, genreDropped, EXTRAS_DAYS).chosen)
     .filter(id => !kept.has(id))
     .map(id => ({ id, who: rs.flatMap(r => { const t = tierOf(r.ranking, id); return t === 'must' || t === 'keen' ? [{ name: r.name, tier: t }] : []; }) }))
     .filter(e => e.who.length > 0)

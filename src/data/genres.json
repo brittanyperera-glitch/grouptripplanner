@@ -1,0 +1,14 @@
+{
+  "genres": [
+    { "id": "safari", "label": "Safari", "one": "safari", "many": "safaris", "items": ["elephants", "yala", "udawalawe"] },
+    { "id": "ancient", "label": "Ancient city", "one": "ancient city", "many": "ancient cities", "items": ["polonnaruwa", "anuradhapura"] },
+    { "id": "longhike", "label": "Long hike", "one": "long hike", "many": "long hikes", "items": ["knuckles", "horton"] },
+    { "id": "viewpoint", "label": "Viewpoint climb", "one": "viewpoint climb", "many": "viewpoint climbs", "items": ["pidurangala", "ellarock"] },
+    { "id": "temple", "label": "Temple", "one": "temple", "many": "temples", "items": ["dambulla", "tooth", "nainativu", "aukana"] },
+    { "id": "beach", "label": "Beach day", "one": "beach day", "many": "beach days", "items": ["hiriketiya", "junglebeach", "beachday", "coconut"] },
+    { "id": "surf", "label": "Surf", "one": "surf spot", "many": "surf spots", "items": ["surf", "hiriketiya"] },
+    { "id": "sunset", "label": "Sunset spot", "one": "sunset spot", "many": "sunset spots", "items": ["galleface", "galle", "rooftop"] },
+    { "id": "jaffnaisland", "label": "Jaffna island trip", "one": "Jaffna island trip", "many": "Jaffna island trips", "items": ["delft", "nainativu"] },
+    { "id": "trainviews", "label": "Train views", "one": "train view", "many": "train views", "items": ["train", "ninearch"] }
+  ]
+}

@@ -58,7 +58,14 @@ export interface Store {
   loadLog(): Promise<ChoiceEntry[]>;
 }
 // a = contested item first, then anything else forcing it in adds; b = items it would displace
-export interface Knockout { forkId: string; a: string[]; b: string[]; votes: { a: Person[]; b: Person[] } }
+export interface Knockout {
+  forkId: string; a: string[]; b: string[]; votes: { a: Person[]; b: Person[] };
+  // A same-type keep vote: a = the places to tick, b = places of that type already in for good,
+  // votes.a = everyone who has ticked every place in a. One stored vote per place: 'a' keep, 'b' drop.
+  genre?: { id: string; tally: Record<string, { keep: Person[]; drop: Person[] }> };
+}
+// A finer type than Category, for spotting two of the same kind on the group shortlist (src/data/genres.json).
+export interface Genre { id: string; label: string; one: string; many: string; items: string[] }
 export interface GroupResult {
   open: boolean; days: number; pace: Pace; base: Plan | null; knockouts: Knockout[];
   results: { forkId: string; a: string[]; b: string[]; winner: 'a' | 'b' | 'displaced' }[]; final: Plan | null;
