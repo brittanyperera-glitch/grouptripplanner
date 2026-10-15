@@ -21,6 +21,12 @@ export const LOOKS: Record<Person, Look> = {
   Saulie: { height: 191, build: 1, skin: '#F0CDB0', hair: '#9C6B42', hairStyle: 'short-light', top: '#F4F1EA', legs: 'straight', denim: '#3E5F94', shoes: 'af1', glasses: true, bg: ['#B07CFF', '#FF4D6D'] },
 };
 
+// Friends whose generated full-body PNG is in public/img/players/<lowercase name>.png. Add a name here once
+// the file is committed; a static list means no request is made to probe for a missing file.
+export const IMAGE_AVATARS: ReadonlySet<Person> = new Set<Person>([]);
+// Top of the SVG figure's head above the feet at 200 cm, in grid units; the PNG is fitted to the same height.
+const FIGURE_H = 211;
+
 const HEAD_SCALE = 1.3;
 const BODY_WIDEN = 1.2;
 // Same frame for everyone so a row of tiles shows their real height differences.
@@ -126,7 +132,7 @@ function head(l: Look): ReactNode {
  * A friend as a flat character. `crop="bust"` frames head and shoulders for small uses such as the header.
  * Decorative: the control beside it carries the name.
  */
-export default function Avatar({ name, size = 80, crop = 'bust', bob = false }: { name: Person; size?: number; crop?: 'bust' | 'full'; bob?: boolean }) {
+export default function Avatar({ name, size = 80, crop = 'bust', bob = false, image = IMAGE_AVATARS.has(name) }: { name: Person; size?: number; crop?: 'bust' | 'full'; bob?: boolean; image?: boolean }) {
   const l = LOOKS[name] ?? LOOKS.Saulie;
   const s = l.height / 200;
   const id = `av-${name}-${crop}`;
@@ -151,8 +157,14 @@ export default function Avatar({ name, size = 80, crop = 'bust', bob = false }: 
       {bust && <rect x="16" y={headY - 30} width="72" height="72" rx="18" fill={`url(#${id}-bg)`} />}
       <g className={bob ? 'bob' : undefined}>
         <ellipse cx="54" cy="208" rx="26" ry="4" fill="rgba(0,0,0,.28)" />
-        <g transform={bodyT}>{body(l, id)}{shoes(l)}</g>
-        <g transform={headT}>{head(l)}</g>
+        {image ? (
+          <image href={`/img/players/${name.toLowerCase()}.png`} x="10" width="84" y={(214 - FIGURE_H * s).toFixed(1)} height={(FIGURE_H * s).toFixed(1)} preserveAspectRatio="xMidYMax meet" />
+        ) : (
+          <>
+            <g transform={bodyT}>{body(l, id)}{shoes(l)}</g>
+            <g transform={headT}>{head(l)}</g>
+          </>
+        )}
       </g>
     </svg>
   );

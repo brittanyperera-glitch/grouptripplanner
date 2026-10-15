@@ -47,3 +47,20 @@ describe('full-body avatars', () => {
     expect(h.Antek).toBeLessThan(h.Alex);
   });
 });
+
+describe('image avatars', () => {
+  it('uses public/img/players/<name>.png when switched on, scaled from the feet, and the SVG figure otherwise', () => {
+    const on = render(<Avatar name="Alex" crop="full" size={200} image />).container.querySelector('svg') as SVGSVGElement;
+    const img = on.querySelector('image')!;
+    expect(img.getAttribute('href')).toBe('/img/players/alex.png');
+    expect(img.getAttribute('preserveAspectRatio')).toBe('xMidYMax meet');
+    expect(on.querySelector('g[transform]')).toBeNull();
+    expect(Number(img.getAttribute('y')) + Number(img.getAttribute('height'))).toBeCloseTo(214, 0);
+    const tall = Number(img.getAttribute('height'));
+    const short = Number(render(<Avatar name="Brittany" crop="full" size={200} image />).container.querySelector('image')!.getAttribute('height'));
+    expect(tall).toBeGreaterThan(short);
+    const off = draw('Alex');
+    expect(off.querySelector('image')).toBeNull();
+    expect(off.querySelector('g[transform]')).not.toBeNull();
+  });
+});
