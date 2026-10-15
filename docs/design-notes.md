@@ -118,3 +118,4 @@ Clickable mockup of Section 1: `docs/mockups/section1-flow.html` (photos and cre
 - Quips (Brittany 2026-10-15, "less frequent"): first Must and first Skip always; after that at most one quip every 5 cards; no quips on Your picks drags (src/components/quipRate.ts).
 - Header (Brittany 2026-10-15): the name in the top app bar uses the same heading style as the place names on the swipe cards.
 - Ground colour (Brittany 2026-10-15): page background is the dark green (Postcard ink green #1e2a26 family) with light paper text on it; cards stay light paper with ink text. Accents adjusted to keep contrast on both.
+- Front page (Brittany 2026-10-15): the opening also takes the Postcard theme (supersedes "Homecoming opening stays"): keep the full-bleed photo slideshow and copy; Postcard heading face, stamp kicker, green-tinted scrim, Postcard button, green desktop margins.
