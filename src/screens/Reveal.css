@@ -60,6 +60,7 @@
 .rv-actions { flex: none; display: flex; justify-content: center; padding: 14px 0 16px; position: relative; z-index: 2; }
 .rv-btn { all: unset; box-sizing: border-box; cursor: pointer; min-width: 220px; padding: 14px 24px; text-align: center; border-radius: var(--r-btn); background: var(--red-deep); color: var(--on-red); box-shadow: var(--shadow-btn); font: 800 22px/1 var(--font-head); letter-spacing: .04em; text-transform: uppercase; }
 .rv-btn:active { transform: scale(.97); }
+.rv-guide { display: block; width: 100%; margin: 4px 0 8px; }
 
 /* Mission complete, and the motion-off page (docs/mockups/theme-postcard/C-itinerary.dc.html). */
 .rv-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0 -16px; padding: 0 16px 24px; position: relative; z-index: 2; }

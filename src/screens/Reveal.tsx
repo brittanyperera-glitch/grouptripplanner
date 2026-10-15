@@ -3,6 +3,7 @@ import './Reveal.css';
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import Avatar from '../components/Avatar';
+import { useOpenGuide } from '../components/GuideNav';
 import { COAST, hubLabel, hubName, hubXY, px } from '../components/Map';
 import { motion } from '../components/motion';
 import { buildLegs, legD, tukHeight, tukTransform, useLegDrive, type Pt } from '../components/routeDrive';
@@ -269,6 +270,8 @@ function DayRow({ d }: { d: DayLine }) {
 function MissionComplete({ plan, items, legs, animate, voice, crew, onDone }: { plan: Plan; items: Item[]; legs: Leg[]; animate: boolean; voice: Voice; crew: Person[]; onDone: () => void }) {
   const byId = useMemo(() => new Map(items.map(i => [i.id, i])), [items]);
   const days = useMemo(() => dayLine(plan, byId, legs), [plan, byId, legs]);
+  // Switching to the Guide tab unmounts this tab and the reveal with it (Brittany 2026-10-15: the guide needs a way in here).
+  const openGuide = useOpenGuide();
   return (
     <section className="rv-done" aria-label={voice.doneLabel} data-animate={animate} data-solo={crew.length === 1}>
       <header className="rv-done-head">
@@ -289,6 +292,7 @@ function MissionComplete({ plan, items, legs, animate, voice, crew, onDone }: { 
         </div>
       </header>
       <p className="rv-done-tag">{voice.doneTag}</p>
+      {openGuide && <button type="button" className="rv-btn rv-guide" onClick={openGuide}>See Britt's guide</button>}
       <h3 className="rv-done-h">The route</h3>
       <ol className="rv-itin route" aria-label="Itinerary">
         {days.map(d => <DayRow key={d.n} d={d} />)}
@@ -306,7 +310,6 @@ function MissionComplete({ plan, items, legs, animate, voice, crew, onDone }: { 
         })}
       </ul>
       <button type="button" className="rv-btn" onClick={onDone}>{voice.button}</button>
-      <div className="rv-foot stamp-label red">No refunds. Only memories.</div>
       <div className="rv-foot-line">{voice.foot}</div>
     </section>
   );
