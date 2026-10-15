@@ -25,6 +25,7 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
   welcome: string; welcomeSub?: string; covers?: Item[]; players?: Players; onPick: (p: Person) => void;
 }) {
   const [still] = useState(() => motion() !== 'full');
+  const bobOk = !still;
   const [open, setOpen] = useState(still);
   const [slide, setSlide] = useState(() => (still ? 0 : Math.floor(Math.random() * 6)));
   const [broken, setBroken] = useState<Set<string>>(new Set());
@@ -106,34 +107,34 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
             {PEOPLE.map((n, i) => (
               <button key={n} className={`player${chosen === n ? ' on' : ''}`} aria-pressed={chosen === n} onClick={() => tap(n)}
                 style={{ animationDelay: `${i * 60}ms` }}>
-                <Avatar name={n} size={68} />
+                <Avatar name={n} crop="full" size={150} bob={chosen === n && bobOk} />
                 <span className="player-name">{n}</span>
               </button>
             ))}
           </div>
           {chosen && (
             <div className="player-card" key={chosen}>
-              <div className="pc-top">
-                <Avatar name={chosen} size={60} />
+              <div className="pc-figure"><Avatar name={chosen} crop="full" size={214} bob={bobOk} /></div>
+              <div className="pc-body">
                 <div className="pc-id">
                   <span className="pc-name">{chosen}</span>
                   {card?.title && <span className="pc-title">{card.title}</span>}
                 </div>
+                {stats.length > 0 && (
+                  <div className="stats">
+                    {stats.map((st, i) => (
+                      <div key={st.label} className="stat">
+                        <span className="stat-label">{st.label}</span>
+                        {/* Joke stats can go past 10 ("ego 11", "president 100"): the bar fills, then breaks the scale. */}
+                        <span className={`bar${st.value > 10 ? ' over' : ''}`} role="meter" aria-label={st.label} aria-valuemin={0} aria-valuemax={10} aria-valuenow={Math.min(10, st.value)} aria-valuetext={String(st.value)}>
+                          <span style={{ '--v': Math.min(10, st.value) / 10, '--i': i } as CSSProperties} />
+                        </span>
+                        <span className="stat-val">{st.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              {stats.length > 0 && (
-                <div className="stats">
-                  {stats.map((st, i) => (
-                    <div key={st.label} className="stat">
-                      <span className="stat-label">{st.label}</span>
-                      {/* Joke stats can go past 10 ("ego 11", "president 100"): the bar fills, then breaks the scale. */}
-                      <span className={`bar${st.value > 10 ? ' over' : ''}`} role="meter" aria-label={st.label} aria-valuemin={0} aria-valuemax={10} aria-valuenow={Math.min(10, st.value)} aria-valuetext={String(st.value)}>
-                        <span style={{ '--v': Math.min(10, st.value) / 10, '--i': i } as CSSProperties} />
-                      </span>
-                      <span className="stat-val">{st.value}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
               <button className="cta play" onClick={() => go(chosen)}>Play as {chosen}</button>
             </div>
           )}

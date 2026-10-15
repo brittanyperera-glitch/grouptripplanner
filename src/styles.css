@@ -121,16 +121,22 @@ h1.big { margin: 0; }
 .select-head .sub { margin: 6px 0 0; color: var(--muted); }
 .choose { margin: 0; font-size: 30px; font-weight: 900; font-stretch: 125%; text-transform: uppercase; letter-spacing: -.01em; line-height: .95; background: linear-gradient(90deg, #FFC15E, #FF7A1A 55%, #FF6B8A); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .roster { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
-.player { all: unset; box-sizing: border-box; grid-column: span 2; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 4px 10px; border-radius: 20px; background: linear-gradient(180deg, #1C1F27, #13151B); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .08); transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease); }
+.player { all: unset; box-sizing: border-box; grid-column: span 2; cursor: pointer; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; padding: 10px 4px 10px; border-radius: 20px; background: linear-gradient(180deg, #1C1F27, #13151B); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .08); transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease); }
 .player:nth-child(4) { grid-column: 2 / span 2; }
 .player:nth-child(5) { grid-column: 4 / span 2; }
-.player .avatar-art { border-radius: 18px; }
+.player .avatar-art { display: block; margin-top: -2px; }
+.player::before { content: ""; position: absolute; left: 12%; right: 12%; bottom: 30px; height: 18px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 193, 94, .28), transparent); }
+.player.on::before { background: radial-gradient(closest-side, rgba(255, 122, 26, .6), transparent); }
 .player-name { font-size: 14px; font-weight: 900; font-stretch: 115%; text-transform: uppercase; letter-spacing: .03em; color: #F6F2EC; }
 .player:hover, .player:focus-visible { outline: none; box-shadow: inset 0 0 0 2px #FFC15E, 0 0 24px rgba(255, 193, 94, .3); transform: translateY(-2px); }
 .player.on { box-shadow: inset 0 0 0 3px #FF7A1A, 0 0 0 4px rgba(255, 122, 26, .22), 0 0 34px rgba(255, 122, 26, .45); }
-.player-card { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 24px; background: linear-gradient(160deg, #1F222B, #121419); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1), var(--shadow-2); }
-.pc-top { display: flex; align-items: center; gap: 14px; }
-.pc-top .avatar-art { border-radius: 16px; }
+.player-card { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 14px; align-items: end; padding: 14px 16px 16px; border-radius: 24px; background: radial-gradient(circle at 18% 85%, rgba(255, 122, 26, .28), transparent 45%), linear-gradient(160deg, #1F222B, #121419); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .1), var(--shadow-2); }
+.pc-figure { width: 95px; display: flex; justify-content: center; }
+.pc-body { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding-bottom: 6px; }
+.player-card .play { grid-column: 1 / -1; }
+.pc-body .stat { grid-template-columns: minmax(0, 1fr) 26px; row-gap: 4px; }
+.pc-body .stat-label { grid-column: 1 / -1; }
+.bob { transform-box: fill-box; transform-origin: 50% 100%; }
 .pc-id { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .pc-name { font-size: 30px; font-weight: 900; font-stretch: 125%; text-transform: uppercase; line-height: .95; letter-spacing: -.02em; color: #fff; }
 .pc-title { font-size: 12.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #FFC88F; }
@@ -222,6 +228,7 @@ h1.big { margin: 0; }
 .gr:hover { text-decoration: underline; text-underline-offset: 3px; }
 .gr:focus-visible { outline: 2px solid var(--coconut); outline-offset: 3px; border-radius: 4px; }
 .tiers { position: sticky; bottom: 12px; z-index: 20; margin: 0 12px 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 7px; border-radius: 26px; background: var(--glass); backdrop-filter: blur(var(--blur)) saturate(1.4); -webkit-backdrop-filter: blur(var(--blur)) saturate(1.4); box-shadow: var(--shadow-2), inset 0 0 0 1px var(--glass-line); }
+.tiers::before { content: ""; position: absolute; left: -12px; right: -12px; bottom: 100%; height: 28px; background: linear-gradient(rgba(0, 0, 0, 0), var(--surface)); pointer-events: none; }
 .t { all: unset; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 8px 0 9px; border-radius: 20px; font-weight: 850; font-size: 14.5px; transition: transform var(--dur-fast) var(--ease), filter var(--dur-fast); }
 .t:hover { filter: brightness(1.08); }
 .t:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -415,6 +422,7 @@ h1.big { margin: 0; }
   .select { animation: sheet-up 480ms var(--ease) backwards; }
   .player { animation: rise 420ms var(--ease) backwards; }
   .player.on { animation: glow 1.2s ease-in-out infinite; }
+  .bob { animation: idle-bob 1.4s ease-in-out infinite; }
   .player-card { animation: sheet-up 320ms var(--ease) backwards; }
   .bar > span { animation: bar-fill 700ms var(--ease) calc(var(--i) * 120ms + 150ms) backwards; }
   .flash { animation: flash-in 900ms var(--ease) both; }
@@ -466,6 +474,7 @@ h1.big { margin: 0; }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
 @keyframes sheet-up { from { opacity: 0; transform: translateY(60px); } }
 @keyframes glow { 0%, 100% { box-shadow: inset 0 0 0 3px #FF7A1A, 0 0 0 4px rgba(255, 122, 26, .22), 0 0 24px rgba(255, 122, 26, .35); } 50% { box-shadow: inset 0 0 0 3px #FFC15E, 0 0 0 7px rgba(255, 122, 26, .16), 0 0 44px rgba(255, 122, 26, .6); } }
+@keyframes idle-bob { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-3px) scaleY(1.01); } }
 @keyframes bar-fill { from { width: 0; } }
 @keyframes flash-in { 0% { opacity: 0; } 12% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes shake { 0%, 100% { transform: none; } 20% { transform: translate(-8px, 3px); } 40% { transform: translate(7px, -4px); } 60% { transform: translate(-5px, 2px); } 80% { transform: translate(3px, -1px); } }
