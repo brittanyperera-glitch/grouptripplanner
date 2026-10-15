@@ -92,3 +92,8 @@ D1 to D4: no change, as decided. "Sweep" below means 120 seeded groups (live cat
 - One existing test encoded the rule this replaces: "asks item questions for the south while the region fork holds the north items back" expected place questions beside an open region question. It now asks the region question alone, then checks the same 5-question cap once South wins.
 - Red before the change: `AssertionError: expected [ 'region:north', …(4) ] to deeply equal [ 'region:north' ]`; on the screen, `Unable to find an element with the text: /Head to heads on places come once North or South is settled/` and `AssertionError: expected +0 to be truthy` (region result after the place card).
 - Sweep, before D5 and D6, then after both: questions on the first screen 585 then 120 (4.9 then 1 per group, every seeded group has a region question); questions per group in all 7.1 then 6.8; voting rounds per group 2.3 then 3.2; a knocked-down item came back in 21 of 120 groups (35 items).
+
+### D7: who skipped
+
+- Skip is unchanged (minus 3, no veto). Each activity in the group plan (Group tab, "The trip") now carries a muted line naming everyone who rated it Skip, for example "Skipped by Alex and Lazza". My trip does not show it, and the trailer is left as it is. Code: `skippedBy` on `DayRows` in `src/screens/MyTrip.tsx`, filled by `src/screens/Plan.tsx`.
+- Red before the change: `Unable to find an element with the text: Skipped by Alex and Lazza`.

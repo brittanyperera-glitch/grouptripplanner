@@ -19,8 +19,11 @@ function entryText(e: DayEntry): string {
 
 const ICON = { drive: IconCar, train: IconTrain, free: IconSun, activity: IconPin } as const;
 
+const andList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
+
 // One card per day. The header strip is the day's first activity photo when we have one.
-export function DayRows({ plan, items = [] }: { plan: Plan; items?: Item[] }) {
+// skippedBy is for the group plan only (D7): a Skip is a strong minus, not a veto, so it is named.
+export function DayRows({ plan, items = [], skippedBy }: { plan: Plan; items?: Item[]; skippedBy?: (id: string) => string[] }) {
   const byId = new Map(items.map(i => [i.id, i]));
   return (
     <div role="list" aria-label="Days" className="days">
@@ -41,6 +44,7 @@ export function DayRows({ plan, items = [] }: { plan: Plan; items?: Item[] }) {
             <span className="timeline">
               {d.entries.map((e, i) => {
                 const Icon = ICON[e.kind];
+                const skipped = e.kind === 'activity' && e.itemId && skippedBy ? skippedBy(e.itemId) : [];
                 return (
                   <span key={i} className={`entry ${e.kind}`}>
                     <span className="dot" aria-hidden="true"><Icon size={13} /></span>
@@ -49,6 +53,7 @@ export function DayRows({ plan, items = [] }: { plan: Plan; items?: Item[] }) {
                       {e.kind === 'activity' && (e.roundTrip ?? 0) >= MIN_ROUND_TRIP && (
                         <small>plus about {hrs(e.roundTrip ?? 0)} h there and back</small>
                       )}
+                      {skipped.length > 0 && <small>Skipped by {andList(skipped)}</small>}
                     </span>
                   </span>
                 );

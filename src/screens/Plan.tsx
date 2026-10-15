@@ -1,11 +1,13 @@
 import { IconBook, IconWarn } from '../components/Icons';
 import RouteMap from '../components/Map';
 import { useApp } from '../state';
+import { tierOf } from '../lib/ranking';
+import { PEOPLE } from '../types';
 import type { GroupResult } from '../types';
 import { DayRows } from './MyTrip';
 
 export default function Plan({ group }: { group: GroupResult }) {
-  const { items } = useApp();
+  const { state, items } = useApp();
   const plan = group.final ?? group.base;
   if (!plan) return null;
   const chosen = items.filter(i => plan.chosen.includes(i.id));
@@ -19,7 +21,7 @@ export default function Plan({ group }: { group: GroupResult }) {
         {group.final ? `${plan.days.length} days, about ${plan.travelHours.toFixed(1)} h driving` : 'Provisional until the knockouts are done'}
       </div>
       <RouteMap route={plan.route} />
-      <DayRows plan={plan} items={items} />
+      <DayRows plan={plan} items={items} skippedBy={id => PEOPLE.filter(p => { const r = state.responses[p]; return !!r && tierOf(r.ranking, id) === 'skip'; })} />
       {book.length > 0 && (
         <div className="card-list">
           <div className="tierhead"><IconBook size={16} />Book before you go</div>
