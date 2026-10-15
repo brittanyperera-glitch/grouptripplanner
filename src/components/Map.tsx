@@ -36,8 +36,12 @@ const pts = (list: [number, number][]) => list.map(([a, o]) => px(a, o).map(n =>
 
 const TUK_W = 30, TUK_H = tukHeight(TUK_W);
 const PAUSE_MS = 450; // the tuk-tuk's beat at each stop on My trip
-// Above the stop's dot, or below it where the name sits on top or the top edge is too close.
-const parkDy = (h: Hub) => (HUB[h].side === 't' || hubXY(h)[1] - 5 - TUK_H < 12 ? TUK_H + 6 : -5);
+// Where the tuk-tuk's wheels sit relative to a stop's dot: beside it on the side away from the stop's name,
+// or below it when the name is on top.
+const parkOff = (h: Hub): [number, number] => {
+  const { side } = HUB[h];
+  return side === 't' ? [0, TUK_H + 6] : [(side === 'l' ? 1 : -1) * (TUK_W / 2 + 7), 7];
+};
 type Drive = 'idle' | 'done' | { k: number; moving: boolean };
 
 // Schematic island with the route drawn over it. `route` starts and ends at AIR.
@@ -63,7 +67,7 @@ export default function RouteMap({ route, drive = false }: { route: Hub[]; drive
   }, [animate, at, legs]);
 
   const run = animate && typeof at === 'object' ? at : null;
-  useLegDrive(!!run?.moving, run ? legs[run.k] : undefined, run ? parkDy(route[run.k]) : 0, run ? parkDy(route[run.k + 1]) : 0, TUK_W, tukRef, lineRef);
+  useLegDrive(!!run?.moving, run ? legs[run.k] : undefined, parkOff(run ? route[run.k] : 'AIR'), parkOff(run ? route[run.k + 1] : 'AIR'), TUK_W, tukRef, lineRef);
   const drawn = run ? (run.moving ? run.k : run.k + 1) : legs.length;
   const shown = run ? new Set(route.slice(0, drawn + 1)) : null;
   const tukHub = run ? route[run.moving ? run.k : run.k + 1] : 'AIR';
@@ -118,7 +122,7 @@ export default function RouteMap({ route, drive = false }: { route: Hub[]; drive
           );
         })}
         {animate && at !== 'idle' && (
-          <g ref={tukRef} transform={tukTransform(hx, hy + parkDy(tukHub), tukLeg.b[0] < tukLeg.a[0], TUK_W)}>
+          <g ref={tukRef} transform={tukTransform(hx + parkOff(tukHub)[0], hy + parkOff(tukHub)[1], tukLeg.b[0] < tukLeg.a[0], TUK_W)}>
             <TukTuk width={TUK_W} driving={!!run?.moving} idle={!!run && !run.moving} />
           </g>
         )}

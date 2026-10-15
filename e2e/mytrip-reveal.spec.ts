@@ -77,6 +77,13 @@ for (const [w, h] of [[390, 844], [390, 667], [1280, 800]] as const) {
     await expect(map).toHaveAttribute('data-drive', 'done', { timeout: 20000 });
     await expect(tuk).toHaveAttribute('data-driving', 'false');
     await expect(map.locator('polyline')).toHaveCount(2);
+    // Parked at the airport, the tuk-tuk keeps off every stop name.
+    const parked = await page.evaluate(() => {
+      const box = (e: Element) => { const r = e.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height, text: e.textContent }; };
+      const svg = document.querySelector('[aria-label="My trip"] .map svg')!;
+      return { tuk: box(svg.querySelector('[data-tuktuk]')!), labels: [...svg.querySelectorAll('text')].filter(t => !t.closest('[data-tuktuk]')).map(box) };
+    });
+    expect(parked.labels.filter(l => hits(l, parked.tuk)).map(l => l.text), 'parked tuk-tuk covers a stop name').toEqual([]);
     if (big && SHOTS) await page.screenshot({ path: `${SHOTS}/5-mytrip-done.png` });
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
 

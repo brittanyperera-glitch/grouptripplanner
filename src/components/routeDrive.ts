@@ -33,11 +33,12 @@ export function tukTransform(x: number, y: number, left: boolean, w: number) {
 export const tukHeight = (w: number) => (w * 60) / 72;
 
 /**
- * While `on`, drives `leg` over leg.ms: the tuk-tuk group follows the curve (its wheels lifted by dy0 at the start,
- * dy1 at the end) and the line group's --o goes 1 to 0, for paths using stroke-dashoffset: var(--o).
+ * While `on`, drives `leg` over leg.ms: the tuk-tuk group follows the curve (its wheels offset by `from` at the start,
+ * `to` at the end) and the line group's --o goes 1 to 0, for paths using stroke-dashoffset: var(--o).
  */
-export function useLegDrive(on: boolean, leg: Leg | undefined, dy0: number, dy1: number, w: number,
+export function useLegDrive(on: boolean, leg: Leg | undefined, from: Pt, to: Pt, w: number,
   tukRef: RefObject<SVGGElement>, lineRef: RefObject<SVGGElement>) {
+  const [fx, fy] = from, [tx, ty] = to;
   useEffect(() => {
     if (!on || !leg || typeof requestAnimationFrame !== 'function') return;
     const left = leg.b[0] < leg.a[0];
@@ -46,11 +47,11 @@ export function useLegDrive(on: boolean, leg: Leg | undefined, dy0: number, dy1:
     const step = (now: number) => {
       const t = Math.min(1, (now - t0) / leg.ms), e = ease(t);
       const [x, y] = bez(leg, e);
-      tukRef.current?.setAttribute('transform', tukTransform(x, y + dy0 + (dy1 - dy0) * e, left, w));
+      tukRef.current?.setAttribute('transform', tukTransform(x + fx + (tx - fx) * e, y + fy + (ty - fy) * e, left, w));
       lineRef.current?.style.setProperty('--o', String(1 - e));
       if (t < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [on, leg, dy0, dy1, w, tukRef, lineRef]);
+  }, [on, leg, fx, fy, tx, ty, w, tukRef, lineRef]);
 }

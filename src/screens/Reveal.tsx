@@ -299,7 +299,7 @@ export function Reveal({ plan, cards = NO_CARDS, who, onClose }: { plan: Plan; c
   }, [stage, k, home, animate]);
 
   // Drive: the leg's line and the tuk-tuk move together, frame by frame.
-  useLegDrive(stage === 'drive', legs[k], parkDy(path[k]), parkDy(path[k + 1] ?? 'AIR'), TUK_W, tukRef, legRef);
+  useLegDrive(stage === 'drive', legs[k], [0, parkDy(path[k])], [0, parkDy(path[k + 1] ?? 'AIR')], TUK_W, tukRef, legRef);
 
   const skip = () => setStage('complete');
   const nextStop = () => { if (stage === 'stop' && !home) { setK(k + 1); setStage('drive'); } };
