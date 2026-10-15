@@ -57,8 +57,8 @@ function Palm() {
 
 interface Ghost { item: Item; tier: Tier; dx: number; dy: number; k: number }
 
-export default function Rate({ item, next, n, total, copy, onTier }: {
-  item: Item; next?: Item; n: number; total: number; copy: Copy; onTier: (t: Tier) => void;
+export default function Rate({ item, next, n, total, copy, onTier, onUndo }: {
+  item: Item; next?: Item; n: number; total: number; copy: Copy; onTier: (t: Tier) => void; onUndo?: () => void;
 }) {
   const extra = copy.items[item.id] ?? {};
   const [ghost, setGhost] = useState<Ghost | null>(null);
@@ -139,7 +139,10 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
   return (
     <>
       <div className="body flush rate">
-        <div className="rate-meta"><span className="count">{n} of {total}</span></div>
+        <div className="rate-meta">
+          {onUndo && <button type="button" className="link rate-undo" onClick={onUndo}><IconLeft size={13} />Undo</button>}
+          <span className="count">{n} of {total}</span>
+        </div>
         <div className="road" role="progressbar" aria-label="Places rated" aria-valuemin={0} aria-valuemax={total} aria-valuenow={n - 1}>
           <span className="road-line" aria-hidden="true" />
           <span className="tuktuk" aria-hidden="true" style={{ '--p': (n - 1) / Math.max(1, total) } as CSSProperties}><TukTuk width={34} idle /></span>

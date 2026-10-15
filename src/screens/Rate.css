@@ -2,7 +2,8 @@
 
 /* rating */
 .rate { flex: 1; --photo-h: clamp(240px, 40dvh, 340px); }
-.rate-meta { display: flex; justify-content: flex-end; margin: 10px 20px 0; }
+.rate-meta { display: flex; justify-content: flex-end; align-items: center; margin: 10px 20px 0; }
+.rate-undo { display: inline-flex; align-items: center; gap: 3px; margin-right: auto; }
 /* Sits just above the sticky vote buttons, centred, until the card's bottom has been seen. */
 .rate-more { all: unset; position: absolute; left: 50%; bottom: calc(100% + 8px); z-index: 1; display: inline-flex; align-items: center; gap: 4px; padding: 7px 14px; border-radius: var(--r-pill); background: var(--ink); color: var(--paper); font-size: var(--fs-sm); font-weight: 800; cursor: pointer; box-shadow: var(--shadow-btn); transform: translateX(-50%); animation: rate-more-bob var(--dur-slow) var(--ease-in-out) infinite alternate; }
 .rate-more:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }

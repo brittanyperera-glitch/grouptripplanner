@@ -8,7 +8,7 @@ import { cssEnter, lastNav, navigate } from './components/motion';
 import QuipBurst from './components/QuipBurst';
 import type { QuipKind } from './components/QuipBurst';
 import { QuipGate } from './components/quipRate';
-import { setTier } from './lib/ranking';
+import { removeId, setTier } from './lib/ranking';
 import Days from './screens/Days';
 import Everyone from './screens/Everyone';
 import Extras from './screens/Extras';
@@ -172,9 +172,11 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
   }, [store, me]);
 
   const byId = Object.fromEntries(items.map(i => [i.id, i])) as Record<string, Item>;
+  // A card brought back by Undo goes first, whatever its area.
+  const [undone, setUndone] = useState<string | null>(null);
   const unrated = items
     .filter(i => !draft.rated.includes(i.id))
-    .sort((a, b) => AREAS.indexOf(a.area) - AREAS.indexOf(b.area));
+    .sort((a, b) => Number(b.id === undone) - Number(a.id === undone) || AREAS.indexOf(a.area) - AREAS.indexOf(b.area));
   const locked = PEOPLE.every(p => (p === me ? draft.submitted : state.responses[p]?.submitted));
   const shown: Step = locked ? 'tabs' : step;
 
@@ -192,6 +194,16 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
     if (quipGate.current.next(tier)) say(pickQuip(copy.quips.tier[tier]), tier);
     if (unrated.length === 1) navigate('fwd', () => commit(r, item.id));
     else commit(r, item.id);
+  };
+
+  // Undo the last vote (Brittany 2026-10-15: "need to be able to go back if you click wrong"). Repeats walk further back.
+  const lastRated = [...draft.rated].reverse().find(id => byId[id]);
+  const undo = () => {
+    if (locked || !lastRated) return;
+    const r = structuredClone(draft.ranking);
+    removeId(r, lastRated);
+    setUndone(lastRated);
+    save({ ranking: r, rated: draft.rated.filter(id => id !== lastRated) });
   };
 
   // A drag, drop or keyboard move on Your picks: the whole ranking arrives. No quips here (Brittany: less frequent).
@@ -223,7 +235,7 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
     content = <HowTo copy={howtoCopy() as HowToCopy} onDone={leave} onSkip={leave} />;
   } else if (shown === 'rate' && unrated.length > 0) {
     const total = unrated.length + draft.rated.filter(id => byId[id]).length;
-    content = <Rate item={unrated[0]} next={unrated[1]} n={total - unrated.length + 1} total={total} copy={copy} onTier={t => pickTier(unrated[0], t)} />;
+    content = <Rate item={unrated[0]} next={unrated[1]} n={total - unrated.length + 1} total={total} copy={copy} onTier={t => pickTier(unrated[0], t)} onUndo={lastRated ? undo : undefined} />;
   } else if (shown === 'rate') {
     content = <Rerank ranking={draft.ranking} byId={byId} onChange={onReorder} onSubmit={submit}
       title="Your picks" kicker="All rated" sub="Drag a row to rank it inside its tier, or into another tier to change it. Then submit." cta="Done, submit" />;
