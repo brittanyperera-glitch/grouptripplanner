@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as RPointerEvent, ReactNode } from 'react';
 import { IconClock, IconDown, IconExternal, IconLeft, IconPin, IconRight, IconSun, IconTicket, IconUp, IconWarn } from '../components/Icons';
+import { buzz, motion } from '../components/motion';
 import { Cover } from '../components/PhotoCard';
 import type { Copy } from '../state';
 import type { Item, Tier } from '../types';
@@ -13,6 +14,13 @@ const KEYS: Record<string, Tier> = { ArrowRight: 'must', ArrowUp: 'keen', ArrowD
 
 // A drag this far along one axis rates the card; a quick flick counts from FLICK_MIN at FLICK_SPEED px/ms.
 export const FLING = 100;
+// One-time nudge of the first card in each direction, so a new player sees what the swipes do.
+const DEMO_KEY = 'tp:swipe-demo';
+const DEMO_ORDER: Tier[] = ['must', 'keen', 'skip', 'meh'];
+const DEMO_STEP = 650;
+const DEMO_PX = 44;
+const DEMO_DIR: Record<Tier, [number, number]> = { must: [1, 0], keen: [0, -1], skip: [-1, 0], meh: [0, 1] };
+const demoSeen = () => { try { return localStorage.getItem(DEMO_KEY) !== null; } catch { return true; } };
 const FLICK_MIN = 40;
 const FLICK_SPEED = 0.5;
 
@@ -73,7 +81,24 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
   const last = useRef<{ x: number; y: number; t: number; vx: number; vy: number } | null>(null);
 
+  const [playDemo] = useState(() => n === 1 && motion() === 'full' && !demoSeen());
+  const [demo, setDemo] = useState<number | null>(playDemo ? 0 : null);
+  const demoOn = useRef(playDemo);
+  useEffect(() => {
+    if (!playDemo) return;
+    try { localStorage.setItem(DEMO_KEY, '1'); } catch { /* storage unavailable: the demo may replay */ }
+    let i = 0;
+    const t = setInterval(() => {
+      i += 1;
+      if (!demoOn.current || i >= DEMO_ORDER.length) { clearInterval(t); demoOn.current = false; setDemo(null); } else setDemo(i);
+    }, DEMO_STEP);
+    return () => clearInterval(t);
+  }, [playDemo]);
+
   const commit = useCallback((tier: Tier, dx = 0, dy = 0) => {
+    demoOn.current = false;
+    setDemo(null);
+    buzz(tier);
     start.current = null;
     setDrag(null);
     setGhost({ item, tier, dx, dy, k: Date.now() });
@@ -102,6 +127,8 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
   const down = (e: RPointerEvent<HTMLDivElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     if ((e.target as HTMLElement).closest('a, button')) return;
+    demoOn.current = false;
+    setDemo(null);
     e.currentTarget.setPointerCapture?.(e.pointerId);
     start.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
     last.current = { x: e.clientX, y: e.clientY, t: e.timeStamp, vx: 0, vy: 0 };
@@ -131,11 +158,14 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
   };
   const cancel = () => { start.current = null; setDrag(null); };
 
-  const lead = drag && (drag.dx !== 0 || drag.dy !== 0) ? tierFor(drag.dx, drag.dy) : null;
-  const leadAmount = drag && lead ? Math.min(1, Math.abs(lead === 'must' || lead === 'skip' ? drag.dx : drag.dy) / FLING) : 0;
+  const dragLead = drag && (drag.dx !== 0 || drag.dy !== 0) ? tierFor(drag.dx, drag.dy) : null;
+  const demoTier = demo !== null ? DEMO_ORDER[demo] : null;
+  const lead = dragLead ?? demoTier;
+  const leadAmount = drag && dragLead ? Math.min(1, Math.abs(dragLead === 'must' || dragLead === 'skip' ? drag.dx : drag.dy) / FLING) : demoTier ? 0.9 : 0;
+  const [ddx, ddy] = demoTier ? DEMO_DIR[demoTier] : [0, 0];
   const cardStyle: CSSProperties | undefined = drag
     ? { transform: `translate(${drag.dx}px, ${drag.dy}px) rotate(${drag.dx * 0.05}deg)` }
-    : undefined;
+    : demoTier ? { transform: `translate(${ddx * DEMO_PX}px, ${ddy * DEMO_PX}px) rotate(${ddx * 2}deg)` } : undefined;
   const [quote, cite] = extra.review ? splitReview(extra.review) : ['', null];
 
   return (

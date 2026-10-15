@@ -29,5 +29,11 @@ export function navigate(dir: Nav, update: () => void) {
   void vt.finished.finally(() => { if (root.dataset.nav === dir) delete root.dataset.nav; });
 }
 
+/** Haptic tick on a swipe: longer pattern on Must. No-op without navigator.vibrate (iOS Safari) or when motion is off. */
+export function buzz(tier: 'must' | 'keen' | 'meh' | 'skip') {
+  if (motion() !== 'full' || typeof navigator.vibrate !== 'function') return;
+  navigator.vibrate(tier === 'must' ? [30, 40, 60] : 15);
+}
+
 /** True when the CSS fallback should animate a freshly mounted screen. */
 export const cssEnter = () => motion() === 'full' && !(document as VTDoc).startViewTransition;
