@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import guide from '../content/guide.json';
 import Avatar from '../components/Avatar';
+import PhrasePanel, { type Phrase } from './PhraseCards';
 
 type Entry = { title?: string; body?: string; list?: string[]; after?: string };
-type Phrase = { english: string; sinhala: string; say: string };
 type Section = { id: string; label: string; intro?: string; entries?: Entry[]; phrases?: Phrase[] };
 
 const SECTIONS = guide.sections as Section[];
@@ -32,15 +32,7 @@ export default function Guide() {
         <h2 className="big guide-title">{section.label}</h2>
         {section.intro && <p className="guide-intro">{section.intro}</p>}
         {section.phrases ? (
-          <ul className="guide-phrases">
-            {section.phrases.map(p => (
-              <li key={p.english}>
-                <span className="gp-en">{p.english}</span>
-                <span className="gp-si">{p.sinhala}</span>
-                <span className="gp-say">{p.say}</span>
-              </li>
-            ))}
-          </ul>
+          <PhrasePanel phrases={section.phrases} />
         ) : (
           section.entries?.map((e, i) => (
             <article className="guide-entry" key={e.title ?? i}>
