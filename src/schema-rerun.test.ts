@@ -18,6 +18,12 @@ describe('supabase/schema.sql can be re-run', () => {
     expect(sql.match(/--/g)).toBeNull();
   });
 
+  it('gates every anon policy on the trip password', () => {
+    const policies = [...sql.matchAll(/create policy [^;]+;/g)].map(m => m[0]);
+    expect(policies.length).toBeGreaterThan(0);
+    expect(policies.filter(p => !/public\.trip_ok\(\)/.test(p) || /\(true\)/.test(p))).toEqual([]);
+  });
+
   it('creates tables only if missing and never adds to the publication unguarded', () => {
     expect(sql.match(/create table (?!if not exists)/g)).toBeNull();
     expect(sql.match(/^alter publication .* add table/gm)).toBeNull();
