@@ -43,6 +43,18 @@ for (const scheme of ['dark', 'light'] as const) {
     await page.waitForTimeout(600);
     await shot(page, `guide-food-${scheme}`);
 
+    // All six section chips are on screen without scrolling, at 390 and 360 px.
+    for (const w of [390, 360]) {
+      await page.setViewportSize({ width: w, height: 844 });
+      const chips = await page.evaluate(() => Array.from(document.querySelectorAll('.guide-chips button')).map(b => { const r = b.getBoundingClientRect(); return { l: r.left, r: r.right }; }));
+      expect(chips).toHaveLength(6);
+      for (const c of chips) {
+        expect(c.l).toBeGreaterThanOrEqual(0);
+        expect(c.r).toBeLessThanOrEqual(w);
+      }
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+
     await page.getByRole('button', { name: 'Phrases' }).click();
     await expect(page.getByRole('region', { name: 'Phrases' })).toBeVisible();
     await shot(page, `guide-phrases-${scheme}`);

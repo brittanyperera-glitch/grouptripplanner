@@ -53,6 +53,11 @@ describe('guide.json mirrors docs/guide', () => {
     });
   }
 
+  it('shows nothing the md has dropped', () => {
+    const inMd = new Set([...expected('food.md'), ...expected('packing-and-phrases.md')]);
+    expect([...shown].filter(t => !inMd.has(t))).toEqual([]);
+  });
+
   it('has the six sections in order', () => {
     expect(sections.map(s => s.id)).toEqual(['Food', 'Fruit', 'Desserts', 'Beaches', 'Packing', 'Phrases']);
   });
