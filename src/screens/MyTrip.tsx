@@ -36,7 +36,7 @@ export function DayRows({ plan, items = [] }: { plan: Plan; items?: Item[] }) {
         return (
           <div key={d.n} className="day" role="listitem">
             {first
-              ? <Cover item={first} className="strip scene" named={false}><span className="scrim" />{head}</Cover>
+              ? <Cover item={first} className="strip scene" named={false} credit><span className="scrim" />{head}</Cover>
               : <div className="strip scene plain">{head}</div>}
             <span className="timeline">
               {d.entries.map((e, i) => {

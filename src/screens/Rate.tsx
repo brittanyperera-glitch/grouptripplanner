@@ -161,7 +161,7 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
           )}
           <div key={item.id} className={`card scene${drag ? ' dragging' : ''}`} style={{ viewTransitionName: vtName(item.id), ...cardStyle }}
             onPointerDown={down} onPointerMove={moveTo} onPointerUp={up} onPointerCancel={cancel}>
-            <Cover item={item} className="photo" named={false}>
+            <Cover item={item} className="photo" named={false} credit>
               <div className="scrim" />
               <span className="count">{n} of {total}</span>
               {(['must', 'keen', 'meh', 'skip'] as Tier[]).map(t => (
@@ -171,7 +171,6 @@ export default function Rate({ item, next, n, total, copy, onTier }: {
                 <span className="area-tag"><IconPin size={13} />{item.area}</span>
                 <h2 className="title">{item.name}</h2>
               </div>
-              {item.credit && <span className="credit">Photo: {item.credit}</span>}
             </Cover>
           </div>
         </div>

@@ -132,8 +132,10 @@ describe('rating card', () => {
     await screen.findByRole('button', { name: 'Must' });
   }
 
-  it('shows credit, facts, and a Google Maps link with no star rating', async () => {
+  it('hides the credit behind an i button, shows facts, and a Google Maps link with no star rating', async () => {
     await onCard(THREE);
+    expect(screen.queryByText(/Credit a/)).toBeNull();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Photo credit' }));
     expect(screen.getByText(/Credit a/)).toBeInTheDocument();
     // Facts are separate pills now (area on the photo, then time, fee and best time).
     expect(screen.getByText('Cultural Triangle')).toBeInTheDocument();
