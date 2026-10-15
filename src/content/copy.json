@@ -15,11 +15,134 @@
       "2": "great choice... or is it?"
     },
     "tier": {
-      "must": ["banger choice", "say less", "now we're talking", "locked in", "confident for someone who's never been", "it's decided"],
-      "keen": ["solid", "fair shout", "noted", "respectable", "keen bean"],
-      "meh": ["hmm interesting choice", "the fence is comfy", "nonchalant af", "pH-type answer", "hello, sir neutron"],
-      "skip": ["you sure?", "bold move", "brave", "cold", "SCRAPPED"]
+      "must": [
+        "banger choice",
+        "say less",
+        "now we're talking",
+        "locked in",
+        "confident for someone who's never been",
+        "it's decided"
+      ],
+      "keen": [
+        "solid",
+        "fair shout",
+        "noted",
+        "respectable",
+        "keen bean"
+      ],
+      "meh": [
+        "hmm interesting choice",
+        "the fence is comfy",
+        "nonchalant af",
+        "pH-type answer",
+        "hello, sir neutron"
+      ],
+      "skip": [
+        "you sure?",
+        "bold move",
+        "brave",
+        "cold",
+        "SCRAPPED"
+      ]
     }
   },
-  "items": {}
+  "items": {
+    "pettah": {
+      "review": "“Surprisingly, there are a lot of things you can buy here. Like a literal market” (Azhani Azizi, Google review)"
+    },
+    "galleface": {
+      "review": "“I visited Galle Face to watch the FIFA 2026 Final on the big screen.” (Yasantha B, Google review)"
+    },
+    "crab": {
+      "review": "“Asia's 50 Best Restaurants: The restaurant has been featured on the main list” (Google AI Overview)"
+    },
+    "rooftop": {
+      "review": "“you can see Colombo and BEYOND! I went around Ten times and every time it was fresh” (Shai Schwartz, Google review)"
+    },
+    "sigiriya": {
+      "review": "“Don't feed the monkeys. Watch your bag at all times. The monkeys will try to steal your snacks.” (Eric Lucrezia, Google review)",
+      "approved": true
+    },
+    "pidurangala": {
+      "review": "“Every Time I Climb Pidurangala, I Feel Something Different, Yet Somehow Familiar. The Climb May Leave You Tired, And The Final Part Can Be Challenging, But The Moment You Reach The Top And See That Incredible View, You Forget About Every Difficult Step.” (LoneWolf, Google review)",
+      "approved": true
+    },
+    "dambulla": {
+      "review": "“This magnificent UNESCO World Heritage Site is the largest and best-preserved cave temple complex in Sri Lanka, dating back more than 2,000 years.” (Balachandrarajan Lallitha, Google review)",
+      "approved": true
+    },
+    "polonnaruwa": {
+      "review": "“monumental archaeological ruins, intricate ancient architecture, and masterful stone sculptures.” (Vishwa Bahnu, Google review)",
+      "approved": true
+    },
+    "elephants": {
+      "review": "“We saw over 100 elephants, including a majestic tusker up close.” (Rajatha Lanka, Google review)"
+    },
+    "anuradhapura": {
+      "review": "“Best & Good Place ...” (Siridhamma Walasmulle, Google review)"
+    },
+    "tooth": {
+      "review": "“thick with the scent of lotus flowers and incense, and filled with the beautiful rhythms of traditional drumming.” (Brandon Phillips, Google review)",
+      "approved": true
+    },
+    "knuckles": {
+      "review": "“It was worth the hike. We had to hike for almost 45 mins to reach the view point from the entrance.” (Fathima Rukkaiya, Google review)"
+    },
+    "rafting": {
+      "review": "“I recently had the pleasure of going water rafting in Kithulgala with a fantastic group of colleagues, and it was an unforgettable experience!” (Antony Edwin Rojar, Google review)"
+    },
+    "train": {
+      "review": "“Thus, the journey isn't merely a means of transport, but an attraction in its own right.” (Brun066, TripAdvisor)",
+      "approved": true
+    },
+    "horton": {
+      "review": "“Parking available. They do not allow polythene and etc inside.” (Daham, Google review)"
+    },
+    "tea": {
+      "review": "“Tea is not a drink I have consumed regularly (I'm a coffee person)” (JuanClu, TripAdvisor)"
+    },
+    "ellarock": {
+      "review": "“Do not go off the main trail as you can get lost, we followed a small road off trail that led to nowhere” (Livia Gazpan, Google review)"
+    },
+    "ninearch": {
+      "review": "“Surrounded by lush green tea plantations, dense jungle, and misty mountains, the atmosphere here feels peaceful and magical.” (Chamindu, Google review)",
+      "approved": true
+    },
+    "yala": {
+      "review": "“I've had the chance to photograph incredible animals such as the Asian Elephant, Sloth Bear, Mugger Crocodile, and many species of birds.” (Nizam, Google review)"
+    },
+    "udawalawe": {
+      "review": "“We were trying to decide between Yala and Udawalawe and got steered here because some locals said we would have much more likelihood to see more. I think they were right!” (Google review)"
+    },
+    "surf": {
+      "review": "“gnarly” (Google review)"
+    },
+    "galle": {
+      "review": "“The blend of colonial architecture, ocean views, and vibrant local culture makes it a unique destination that offers much more than just a sightseeing experience. Walking through the narrow streets of the fort feels like stepping back in time.” (Mohamed Afras, Google review)"
+    },
+    "coconut": {
+      "review": "“Wasn't expecting this place to be so awesome” (Seevali, Google review)"
+    },
+    "hiriketiya": {
+      "review": "“calm water for swimming ... trees and shadow up to the sea ... you can relax all day in the sea front bar and cafe ... for surfing too ...” (Nikos, Google review)"
+    },
+    "junglebeach": {
+      "review": "“this secluded cove offers an intimate escape where the vibrant Sri Lankan rainforest literally meets the turquoise Indian Ocean.” (Ash, Google review)"
+    },
+    "jaffna": {
+      "review": "“Visiting This Sacred Place Was A Peaceful And Unforgettable Experience.” (LoneWolf, Google review)"
+    },
+    "delft": {
+      "review": "“these feral horses roam freely in the island's grassy plains.” (Samarakoon, Google review)"
+    },
+    "nainativu": {
+      "review": "“Nagadeepa is not just a destination, it's a blessing” (Lahiru Sohn, Google review)"
+    },
+    "rekawa": {
+      "review": "“I have never seen turtles laying eggs. This was a first for me.” (Bhanuka, Google review)"
+    },
+    "kottu": {
+      "approved": true
+    }
+  }
 }

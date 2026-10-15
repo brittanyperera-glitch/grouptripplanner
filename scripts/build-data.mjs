@@ -99,7 +99,7 @@ const items = cat.items.map((it) => {
 });
 
 // Sanity: 37 items, all hubs connected.
-if (items.length !== 46) throw new Error(`expected 46 items, got ${items.length}`);
+if (items.length !== 33) throw new Error(`expected 33 items, got ${items.length}`);
 const hubs = ['AIR', 'Colombo', 'Jaffna', 'Trincomalee', 'Sigiriya', 'Kandy', 'Kitulgala', 'Nuwara Eliya', 'Ella', 'Tissa', 'Udawalawe', 'Weligama'];
 const d = Object.fromEntries(hubs.map((a) => [a, Object.fromEntries(hubs.map((b) => [b, a === b ? 0 : Infinity]))]));
 for (const l of legs) { d[l.a][l.b] = Math.min(d[l.a][l.b], l.hours); d[l.b][l.a] = Math.min(d[l.b][l.a], l.hours); }

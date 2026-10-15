@@ -12,7 +12,7 @@ function friend(name: string, must: string[]) {
   const meh = rest.reduce<string[][]>((l, x, i) => (i % 3 ? l[l.length - 1].push(x) : l.push([x]), l), []);
   return { name, days: 9, flex: false, pace: 1, ranking: { must: must.map(m => [m]), keen: [], meh, skip: [] }, rated: ids, submitted: true, updatedAt: '2026-10-14T00:00:00Z' };
 }
-const NORTH = ['jaffna', 'delft', 'trinco'];
+const NORTH = ['jaffna', 'delft', 'nainativu'];
 const SOUTH = ['sigiriya', 'yala', 'galle'];
 const FRIENDS = [friend('Brittany', NORTH), friend('Alex', NORTH), friend('Antek', SOUTH), friend('Lazza', SOUTH), friend('Saulie', SOUTH)];
 

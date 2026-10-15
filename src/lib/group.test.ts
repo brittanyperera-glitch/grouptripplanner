@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import catalogue from '../data/catalogue.json'; import legs from '../data/legs.json';
+import catalogue from './__fixtures__/catalogue-46.json'; import legs from '../data/legs.json';
 import { groupResult, personPlan } from './group';
 import { emptyRanking, type AppState, type Item, type Leg, type Person, type Response } from '../types';
 const items = catalogue.items as Item[]; const L = legs as Leg[];

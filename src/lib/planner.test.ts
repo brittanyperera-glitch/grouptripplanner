@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import catalogue from '../data/catalogue.json';
+import catalogue from './__fixtures__/catalogue-46.json';
 import legs from '../data/legs.json';
 import { plan, mustFitDays } from './planner';
 import { groupResult } from './group';

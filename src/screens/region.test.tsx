@@ -1,11 +1,14 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import catalogue from '../data/catalogue.json';
+import catalogue from '../lib/__fixtures__/catalogue-46.json';
 import { LocalStore } from '../store/local';
 import { AppProvider } from '../state';
 import type { GroupResult, Item } from '../types';
 import Knockouts from './Knockouts';
+
+// The app reads src/data/catalogue.json, which Brittany's curation changes; this test pins the 46-place set.
+vi.mock('../data/catalogue.json', async () => ({ default: (await import('../lib/__fixtures__/catalogue-46.json')).default }));
 
 const ITEMS = (catalogue as unknown as { items: Item[] }).items;
 const byId = (id: string) => ITEMS.find(i => i.id === id)!;

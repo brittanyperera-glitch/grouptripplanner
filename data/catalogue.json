@@ -30,17 +30,6 @@
    }
   },
   {
-   "id": "foodtour",
-   "name": "Tuk-tuk street food tour",
-   "area": "Colombo",
-   "hours": 3,
-   "slot": "evening",
-   "fee": "about USD 31-41 pp",
-   "book": "a day ahead",
-   "photo": "foodtour",
-   "about": "Evening tuk-tuk loop through Colombo's street stalls: kottu, hoppers, isso wade and short eats."
-  },
-  {
    "id": "galleface",
    "name": "Galle Face Green at sunset",
    "area": "Colombo",
@@ -72,37 +61,6 @@
    }
   },
   {
-   "id": "gangaramaya",
-   "name": "Gangaramaya Temple",
-   "area": "Colombo",
-   "hours": 1,
-   "slot": "any",
-   "fee": "unverified",
-   "photo": "gangaramaya",
-   "about": "Lakeside temple complex crammed with statues, relics and odd curios.",
-   "google": {
-    "rating": "4.6",
-    "reviews": "14,055",
-    "url": "https://www.google.com/maps/search/Gangaramaya%20Temple,%20Colombo,%20Sri%20Lanka"
-   }
-  },
-  {
-   "id": "bawa",
-   "name": "Geoffrey Bawa's Number 11",
-   "area": "Colombo",
-   "hours": 1,
-   "slot": "fixed tour times",
-   "fee": "LKR 5,000",
-   "book": "guided tours only, weekdays 10:00, 14:00, 15:30",
-   "photo": "bawa",
-   "about": "Architect Geoffrey Bawa's own townhouse, seen on a guided tour.",
-   "google": {
-    "rating": "4.6",
-    "reviews": "585",
-    "url": "https://www.google.com/maps/search/Number%2011%20Geoffrey%20Bawa,%20Colombo,%20Sri%20Lanka"
-   }
-  },
-  {
    "id": "rooftop",
    "name": "Rooftop drinks or Lotus Tower",
    "area": "Colombo",
@@ -115,22 +73,6 @@
     "rating": "4.5",
     "reviews": "12,589",
     "url": "https://www.google.com/maps/search/Lotus%20Tower%20Colombo,%20Sri%20Lanka"
-   }
-  },
-  {
-   "id": "lavinia",
-   "name": "Mount Lavinia beach",
-   "area": "Colombo",
-   "hours": 2,
-   "slot": "afternoon",
-   "fee": "free",
-   "warn": "Rips and undertow, not one for swimming",
-   "photo": "lavinia",
-   "about": "Beach just south of Colombo with seafront restaurants, best at sunset.",
-   "google": {
-    "rating": "4.5",
-    "reviews": "4,514",
-    "url": "https://www.google.com/maps/search/Mount%20Lavinia%20Beach,%20Sri%20Lanka"
    }
   },
   {
@@ -245,16 +187,6 @@
    }
   },
   {
-   "id": "village",
-   "name": "Village tour and cooking lunch",
-   "area": "Cultural Triangle",
-   "hours": 3,
-   "slot": "any",
-   "fee": "about USD 15-30",
-   "photo": "village",
-   "about": "Village visit by cart and canoe, then a home-cooked rice and curry lunch."
-  },
-  {
    "id": "tooth",
    "name": "Temple of the Tooth, evening puja",
    "area": "Kandy and Knuckles",
@@ -363,21 +295,6 @@
    }
   },
   {
-   "id": "littleadams",
-   "name": "Little Adam's Peak",
-   "area": "Ella",
-   "hours": 2,
-   "slot": "sunrise",
-   "fee": "free",
-   "photo": "littleadams",
-   "about": "Easy summit walk above Ella's tea fields, great at sunrise.",
-   "google": {
-    "rating": "4.7",
-    "reviews": "1,282",
-    "url": "https://www.google.com/maps/search/Little%20Adam%27s%20Peak,%20Ella,%20Sri%20Lanka"
-   }
-  },
-  {
    "id": "ninearch",
    "name": "Nine Arch Bridge",
    "area": "Ella",
@@ -394,21 +311,6 @@
    }
   },
   {
-   "id": "zipline",
-   "name": "Flying Ravana zipline",
-   "area": "Ella",
-   "hours": 1,
-   "slot": "daytime",
-   "fee": "about USD 32-40",
-   "book": "a day ahead",
-   "about": "Ella's zipline park, half a kilometre over the jungle valley.",
-   "google": {
-    "rating": "4.7",
-    "reviews": "4,438",
-    "url": "https://www.google.com/maps/search/Flying%20Ravana%20zipline,%20Ella,%20Sri%20Lanka"
-   }
-  },
-  {
    "id": "diyaluma",
    "name": "Diyaluma Falls upper pools",
    "area": "Ella",
@@ -422,21 +324,6 @@
     "rating": "4.8",
     "reviews": "4,942",
     "url": "https://www.google.com/maps/search/Diyaluma%20Falls,%20Sri%20Lanka"
-   }
-  },
-  {
-   "id": "lipton",
-   "name": "Lipton's Seat",
-   "area": "Ella",
-   "hours": 3,
-   "slot": "sunrise",
-   "fee": "small",
-   "photo": "lipton",
-   "about": "Hilltop lookout where Thomas Lipton surveyed his tea estates.",
-   "google": {
-    "rating": "4.6",
-    "reviews": "5,674",
-    "url": "https://www.google.com/maps/search/Lipton%27s%20Seat,%20Haputale,%20Sri%20Lanka"
    }
   },
   {
@@ -484,23 +371,6 @@
     "rating": "4.4",
     "reviews": "1,068",
     "url": "https://www.google.com/maps/search/Weligama%20Beach,%20Sri%20Lanka"
-   }
-  },
-  {
-   "id": "whales",
-   "name": "Whale watching, responsible operator",
-   "area": "South coast",
-   "hours": 5,
-   "slot": "06:30",
-   "fee": "about USD 40-60",
-   "book": "1-2 days ahead",
-   "warn": "Most Mirissa boats run illegal swims; we use one with a good record. Seasickness common",
-   "photo": "whales",
-   "about": "Morning boat trip to see blue whales offshore.",
-   "google": {
-    "rating": "4.6",
-    "reviews": "953",
-    "url": "https://www.google.com/maps/search/Raja%20and%20the%20Whales,%20Mirissa,%20Sri%20Lanka"
    }
   },
   {
@@ -621,38 +491,6 @@
    }
   },
   {
-   "id": "trinco",
-   "name": "Trincomalee: Koneswaram temple and Fort Frederick",
-   "area": "East coast",
-   "hours": 2.5,
-   "slot": "morning",
-   "fee": "free or small donation",
-   "warn": "December is monsoon season on the east coast: expect rain. Cover shoulders and knees, shoes off",
-   "about": "Clifftop Hindu temple above the ocean, reached through a colonial fort with deer roaming inside.",
-   "photo": "trinco",
-   "google": {
-    "rating": "4.6",
-    "reviews": "6,033",
-    "url": "https://www.google.com/maps/search/Koneswaram+Temple+Trincomalee,+Sri+Lanka"
-   }
-  },
-  {
-   "id": "pigeon",
-   "name": "Pigeon Island snorkelling",
-   "area": "East coast",
-   "hours": 3,
-   "slot": "morning",
-   "fee": "park USD 25-48 plus boat LKR 3,000-5,000",
-   "warn": "A weather call in December: the Navy can stop boats in the monsoon. Don't touch the coral",
-   "about": "Boat from Nilaveli to a marine park with reef sharks, turtles and coral, when the sea allows.",
-   "photo": "pigeon",
-   "google": {
-    "rating": "3.8",
-    "reviews": "176",
-    "url": "https://www.google.com/maps/search/Pigeon+Island+National+Park,+Sri+Lanka"
-   }
-  },
-  {
    "id": "aukana",
    "name": "Aukana Buddha at dawn",
    "area": "Cultural Triangle",
@@ -666,38 +504,6 @@
     "rating": "4.8",
     "reviews": "2,187",
     "url": "https://www.google.com/maps/search/Avukana+Buddha+Statue,+Sri+Lanka"
-   }
-  },
-  {
-   "id": "buduruwagala",
-   "name": "Buduruwagala rock carvings",
-   "area": "Ella",
-   "hours": 1,
-   "slot": "morning",
-   "fee": "about USD 3",
-   "warn": "Modest dress",
-   "about": "Sri Lanka's tallest rock-carved standing Buddha, with six figures cut into the cliff beside a lake.",
-   "photo": "buduruwagala",
-   "google": {
-    "rating": "4.7",
-    "reviews": "1,318",
-    "url": "https://www.google.com/maps/search/Buduruwagala+Rock+Temple,+Sri+Lanka"
-   }
-  },
-  {
-   "id": "wewurukannala",
-   "name": "Wewurukannala giant Buddha",
-   "area": "South coast",
-   "hours": 1.5,
-   "slot": "late afternoon",
-   "fee": "small fee",
-   "warn": "Modest dress",
-   "about": "The island's biggest seated Buddha, 50 m tall, reached through a kitsch 'tunnel of hell'.",
-   "photo": "wewurukannala",
-   "google": {
-    "rating": "4.2",
-    "reviews": "2,178",
-    "url": "https://www.google.com/maps/search/Wewurukannala+Buduraja+Maha+Viharaya,+Sri+Lanka"
    }
   },
   {
