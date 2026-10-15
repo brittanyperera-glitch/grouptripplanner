@@ -43,7 +43,7 @@ for (const [w, h, route] of [[390, 844, 'south'], [390, 667, 'south'], [1280, 80
     const dlg = await openReveal(page, w, h, true, route);
     await expect(dlg).toHaveAttribute('data-stage', 'intro');
     await expect(dlg.getByText('THE PLAN IS IN.')).toBeVisible();
-    // The dark intro is never blank: HUD and title are fully in within the first second.
+    // The paper intro is never blank: HUD and title are fully in within the first second.
     await page.waitForTimeout(900);
     expect(await page.evaluate(() => ['.rv-title', '.rv-hud-line', '.rv-hud-line.gold'].map(q => getComputedStyle(document.querySelector(q)!).opacity))).toEqual(['1', '1', '1']);
     expect(await page.evaluate(() => getComputedStyle(document.querySelector('.rv-hud-line.gold')!).clipPath)).toMatch(/^(none|inset\(0(px|%)?( 0(px|%)?){0,3}\))$/);

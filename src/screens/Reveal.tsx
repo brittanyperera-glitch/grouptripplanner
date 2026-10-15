@@ -13,7 +13,7 @@ import { PEOPLE } from '../types';
 import type { GroupResult, Hub, Item, Person, Plan } from '../types';
 import Poster from './Poster';
 
-export const INTRO_MS = 3000; // dark HUD, title, then the island fades in
+export const INTRO_MS = 3000; // HUD stamps, title, then the island fades in
 export const HOLD_MS = 2500;  // each day card, unless Next stop is tapped
 const HOME_MS = 1400;         // back at the airport, before Mission Complete
 
@@ -104,8 +104,8 @@ function Bubble({ at, text, below }: { at: Pt; text: string; below: boolean }) {
   const tail = below ? `M${tx - 5} ${y + 0.5}L${tx} ${y - 7}L${tx + 5} ${y + 0.5}` : `M${tx - 5} ${y + h - 0.5}L${tx} ${y + h + 7}L${tx + 5} ${y + h - 0.5}`;
   return (
     <g className="rv-bubble" role="note" style={{ transformOrigin: `${tx}px ${below ? y : y + h}px` }}>
-      <rect x={x} y={y} width={w} height={h} rx="6" fill="#fff5d9" stroke="#25372b" strokeWidth="2" />
-      <path d={tail} fill="#fff5d9" stroke="#25372b" strokeWidth="2" strokeLinejoin="round" />
+      <rect x={x} y={y} width={w} height={h} rx="8" fill="#fff" stroke="#1e2a26" strokeWidth="1.5" />
+      <path d={tail} fill="#fff" stroke="#1e2a26" strokeWidth="2" strokeLinejoin="round" />
       <text x={x + w / 2} y={y + 15.4} textAnchor="middle" className="rv-bubble-text">{text}</text>
     </g>
   );
@@ -125,57 +125,57 @@ function Island({ uid }: { uid: string }) {
     <>
       <defs>
         <pattern id={`paper${uid}`} width="26" height="26" patternUnits="userSpaceOnUse">
-          <circle cx="3" cy="5" r=".7" fill="#25372b" opacity=".12" /><circle cx="17" cy="11" r=".5" fill="#25372b" opacity=".1" />
-          <circle cx="9" cy="21" r=".6" fill="#25372b" opacity=".1" /><path d="M20 20l4 1.5" stroke="#25372b" strokeWidth=".5" opacity=".1" />
+          <circle cx="3" cy="5" r=".7" fill="#1e2a26" opacity=".08" /><circle cx="17" cy="11" r=".5" fill="#1e2a26" opacity=".1" />
+          <circle cx="9" cy="21" r=".6" fill="#1e2a26" opacity=".1" /><path d="M20 20l4 1.5" stroke="#1e2a26" strokeWidth=".5" opacity=".1" />
         </pattern>
         <pattern id={`waves${uid}`} width="30" height="16" patternUnits="userSpaceOnUse">
-          <path d="M3 9q3.5-4 7 0t7 0" fill="none" stroke="#8ca978" strokeWidth="1.1" strokeLinecap="round" opacity=".55" />
+          <path d="M3 9q3.5-4 7 0t7 0" fill="none" stroke="#b9ab8c" strokeWidth="1.1" strokeLinecap="round" opacity=".75" />
         </pattern>
         <pattern id={`tea${uid}`} width="9" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-14)">
-          <path d="M0 4.5q4.5-3 9 0" fill="none" stroke="#3f6b45" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M0 4.5q4.5-3 9 0" fill="none" stroke="#86a56f" strokeWidth="1.5" strokeLinecap="round" />
         </pattern>
         <filter id={`rough${uid}`} x="-5%" y="-5%" width="110%" height="110%">
           <feTurbulence type="fractalNoise" baseFrequency=".06" numOctaves="2" seed="7" />
           <feDisplacementMap in="SourceGraphic" scale="1.8" />
         </filter>
       </defs>
-      <rect x={BG.x} y={BG.y} width={BG.w} height={BG.h} fill="#d6dfad" />
+      <rect x={BG.x} y={BG.y} width={BG.w} height={BG.h} fill="#ebe1cf" />
       <rect x={BG.x} y={BG.y} width={BG.w} height={BG.h} fill={`url(#waves${uid})`} />
-      <polygon points={ISLAND} fill="none" stroke="#eef2d2" strokeWidth="14" strokeLinejoin="round" opacity=".8" />
-      <polygon points={ISLAND} fill="#b9ce91" stroke="#25372b" strokeWidth="2.6" strokeLinejoin="round" filter={`url(#rough${uid})`} />
-      <path d={HIGHLANDS} fill="#8ca978" />
-      {[0.74, 0.5, 0.28].map(k => <path key={k} d={HIGHLANDS} transform={contour(k)} fill="none" stroke="#25372b" strokeWidth={1.1 / k} opacity=".28" />)}
+      <polygon points={ISLAND} fill="none" stroke="#f8f3e8" strokeWidth="14" strokeLinejoin="round" opacity=".9" />
+      <polygon points={ISLAND} fill="#cdd9b4" stroke="#1e2a26" strokeWidth="2" strokeLinejoin="round" filter={`url(#rough${uid})`} />
+      <path d={HIGHLANDS} fill="#b3c598" />
+      {[0.74, 0.5, 0.28].map(k => <path key={k} d={HIGHLANDS} transform={contour(k)} fill="none" stroke="#1e2a26" strokeWidth={1.1 / k} opacity=".28" />)}
       <ellipse cx="160" cy="366" rx="30" ry="16" transform="rotate(-12 160 366)" fill={`url(#tea${uid})`} />
       <ellipse cx="132" cy="300" rx="16" ry="9" transform="rotate(10 132 300)" fill={`url(#tea${uid})`} />
       {TREES.map(([x, y], i) => (
         <g key={i}>
-          <circle cx={x} cy={y} r="5" fill="#5d8a52" stroke="#25372b" strokeWidth=".9" />
-          <circle cx={x - 1.5} cy={y - 1.6} r="1.6" fill="#8fb878" />
+          <circle cx={x} cy={y} r="5" fill="#8fb07c" stroke="#1e2a26" strokeWidth=".9" />
+          <circle cx={x - 1.5} cy={y - 1.6} r="1.6" fill="#b3cfa0" />
         </g>
       ))}
       {/* Sigiriya rock, a stupa near Kandy, Adam's Peak, Galle lighthouse, a whale off Trinco, south coast surf. */}
-      <path d="M118 238l3-9q7-5 14 0l3 9z" fill="#b5744a" stroke="#25372b" strokeWidth="1.3" strokeLinejoin="round" />
-      <g transform="translate(110 322)" stroke="#25372b" strokeWidth="1.2">
-        <path d="M-7 4a7 7 0 0 1 14 0z" fill="#fff5d9" /><path d="M0-3v-6" /><rect x="-8" y="4" width="16" height="2.5" fill="#f4bc43" />
+      <path d="M118 238l3-9q7-5 14 0l3 9z" fill="#cf9a73" stroke="#1e2a26" strokeWidth="1.3" strokeLinejoin="round" />
+      <g transform="translate(110 322)" stroke="#1e2a26" strokeWidth="1.2">
+        <path d="M-7 4a7 7 0 0 1 14 0z" fill="#fff" /><path d="M0-3v-6" /><rect x="-8" y="4" width="16" height="2.5" fill="#1f6f6b" />
       </g>
       <g transform="translate(116 378)">
-        <path d="M-9 6L0-8 9 6z" fill="#8ca978" stroke="#25372b" strokeWidth="1.3" strokeLinejoin="round" /><path d="M-2.5-4L0-8 2.5-4z" fill="#fff5d9" />
+        <path d="M-9 6L0-8 9 6z" fill="#a9bd90" stroke="#1e2a26" strokeWidth="1.3" strokeLinejoin="round" /><path d="M-2.5-4L0-8 2.5-4z" fill="#fff" />
       </g>
-      <g transform="translate(56 446)" stroke="#25372b" strokeWidth="1.2">
-        <path d="M-3.5 9l1.5-15h4l1.5 15z" fill="#fff5d9" /><path d="M-2.6 -1h5.2M-3 4h6" stroke="#ef5939" strokeWidth="2" /><path d="M-2.5-6h5l-2.5-4z" fill="#ef5939" />
+      <g transform="translate(56 446)" stroke="#1e2a26" strokeWidth="1.2">
+        <path d="M-3.5 9l1.5-15h4l1.5 15z" fill="#fff" /><path d="M-2.6 -1h5.2M-3 4h6" stroke="#d6452c" strokeWidth="2" /><path d="M-2.5-6h5l-2.5-4z" fill="#d6452c" />
       </g>
-      <g transform="translate(252 112)" fill="none" stroke="#25372b" strokeWidth="1.5" strokeLinecap="round">
+      <g transform="translate(252 112)" fill="none" stroke="#1e2a26" strokeWidth="1.5" strokeLinecap="round">
         <path d="M-10 6q10-4 20 0" /><path d="M0 4q-1-6-6-9M0 4q1-6 6-9" />
       </g>
-      <path d="M150 482q6-8 12 0t12 0" fill="none" stroke="#25372b" strokeWidth="1.5" strokeLinecap="round" />
-      <g transform="translate(-34 452)" stroke="#25372b" strokeWidth="1.3">
-        <circle r="12" fill="#fff5d9" /><path d="M0-10L3 0 0 10-3 0z" fill="#ef5939" />
+      <path d="M150 482q6-8 12 0t12 0" fill="none" stroke="#1e2a26" strokeWidth="1.5" strokeLinecap="round" />
+      <g transform="translate(-34 452)" stroke="#1e2a26" strokeWidth="1.3">
+        <circle r="12" fill="#fff" /><path d="M0-10L3 0 0 10-3 0z" fill="#d6452c" />
         <text y="-15" textAnchor="middle" className="rv-tiny" stroke="none">N</text>
       </g>
       <g transform="translate(232 40) rotate(-8)">
-        <rect x="-62" y="-17" width="124" height="34" rx="3" fill="none" stroke="#ef5939" strokeWidth="2.4" />
+        <rect x="-62" y="-17" width="124" height="34" rx="4" fill="none" stroke="#d6452c" strokeWidth="1.5" strokeDasharray="4 3" />
         <text y="-2" textAnchor="middle" className="rv-stamp">SRI LANKA TOUR '26</text>
-        <text y="11" textAnchor="middle" className="rv-tiny" fill="#ef5939">ROUTE // LK-001</text>
+        <text y="11" textAnchor="middle" className="rv-tiny" fill="#b8381f">ROUTE // LK-001</text>
       </g>
       <rect x={BG.x} y={BG.y} width={BG.w} height={BG.h} fill={`url(#paper${uid})`} />
     </>
@@ -307,7 +307,7 @@ function MissionComplete({ plan, items, animate, voice, crew, onDone }: { plan: 
 }
 
 /**
- * Full-screen GTA-style route reveal: dark HUD intro, the island, the tuk-tuk drives stop to stop with a day card at each,
+ * Full-screen GTA-style route reveal on the Postcard paper: stamp-label HUD intro, the island, the tuk-tuk drives stop to stop with a day card at each,
  * then Mission Complete and the poster. With `who` it is that person's own plan: no compromise lines, just their selfie, no poster.
  */
 export function Reveal({ plan, cards = NO_CARDS, who, onClose }: { plan: Plan; cards?: Compromise[]; who?: Person; onClose: () => void }) {
@@ -373,15 +373,15 @@ export function Reveal({ plan, cards = NO_CARDS, who, onClose }: { plan: Plan; c
           <Island uid={uid} />
           <g filter={`url(#rough${uid})`}>
             {legs.slice(0, drawn).map((l, i) => (
-              <g key={i}>
-                <path d={legD(l)} className="rv-route-ink" />
-                <path d={legD(l)} className="rv-route" />
-              </g>
+              <path key={i} d={legD(l)} className="rv-route" />
             ))}
             {stage === 'drive' && legs[k] && (
               <g key={`leg${k}`} ref={legRef} className="rv-route-live" style={{ '--o': 1 } as CSSProperties}>
-                <path d={legD(legs[k])} className="rv-route-ink" pathLength={1} />
-                <path d={legD(legs[k])} className="rv-route" pathLength={1} />
+                {/* The dashed line is uncovered by a mask whose solid stroke is the part that draws on (it inherits --o from this group). */}
+                <mask id={`reveal${uid}${k}`} maskUnits="userSpaceOnUse" x={BG.x} y={BG.y} width={BG.w} height={BG.h}>
+                  <path d={legD(legs[k])} className="rv-reveal" pathLength={1} />
+                </mask>
+                <path d={legD(legs[k])} className="rv-route" mask={`url(#reveal${uid}${k})`} />
               </g>
             )}
           </g>
@@ -397,7 +397,7 @@ export function Reveal({ plan, cards = NO_CARDS, who, onClose }: { plan: Plan; c
               <g key={s.hub} className={`rv-stop${on ? ' on' : ''}`} data-hub={s.hub}>
                 {on && <circle cx={x} cy={y} r="13" className="rv-ring" />}
                 <circle cx={x} cy={y} r="6.5" className="rv-pin" />
-                <circle cx={x} cy={y} r="2.6" fill="#ef5939" />
+                <circle cx={x} cy={y} r="2.6" fill="#d6452c" />
                 <text x={l.x + (l.side === 'l' ? -3 : l.side === 'r' ? 3 : 0)} y={l.y + (l.side === 't' ? -3 : 1)} textAnchor={l.anchor} className="rv-label">{s.name.toUpperCase()}</text>              </g>
             );
           })}

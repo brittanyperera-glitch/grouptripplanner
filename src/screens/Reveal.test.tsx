@@ -83,7 +83,7 @@ describe('revealStops', () => {
 });
 
 describe('route reveal, motion on', () => {
-  it('opens dark on the HUD, then drives stop to stop: bubble, buzz and a day card at each, auto advancing', async () => {
+  it('opens on the paper with the stamp HUD, then drives stop to stop: bubble, buzz and a day card at each, auto advancing', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: false });
     fullMotion();
     const vibrate = vi.fn(() => true);

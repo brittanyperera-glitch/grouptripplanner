@@ -5,6 +5,7 @@ import { IconLeft, IconRight } from '../components/Icons';
 import { motion, navigate } from '../components/motion';
 import { CreditButton } from '../components/PhotoCard';
 import type { Copy } from '../state';
+import './Lockin.css';
 import { PEOPLE } from '../types';
 import type { Item, Person } from '../types';
 
@@ -207,9 +208,9 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
         </div>
       )}
       {flash && (
-        <div className="flash" role="dialog" aria-label={`${flash} selected`} onClick={() => finish(flash)}
+        <div className="flash lockin" role="dialog" aria-label={`${flash} selected`} onClick={() => finish(flash)}
           style={{ '--in': `${FLASH.in}ms`, '--hold': `${FLASH.hold}ms`, '--out': `${FLASH.out}ms` } as CSSProperties}>
-          <img className="flash-selfie" src={`/img/players/${flash.toLowerCase()}-selfie.png`} alt={`${flash} selfie`} />
+          <span className="flash-polaroid"><img className="flash-selfie" src={`/img/players/${flash.toLowerCase()}-selfie.png`} alt={`${flash} selfie`} /></span>
           <span className="flash-kicker">Character selected</span>
           <FlashName name={flash} />
         </div>

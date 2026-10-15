@@ -1,91 +1,69 @@
-/* Route reveal: GTA mission intro on an illustrated island. Palette and fonts from docs/reveal-brief.md. */
+/* Route reveal on the Postcard theme (docs/theme-postcard.md): paper ground, stamp labels, white cards, a thin red dashed route.
+   Intro, drive, day cards and Mission Complete share this one ground, so no stage cuts from dark to cream. */
 .rv {
-  --night: #141a16; --cream: #fff5d9; --gold: #f4bc43; --red: #ef5939; --route: #f15b3a; --ink: #25372b; --muted: #c2c9b4;
-  --hud: 'Space Mono', ui-monospace, monospace; --title: 'Barlow Condensed', Archivo, sans-serif;
   position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
   padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
-  background: radial-gradient(120% 80% at 50% 40%, #1d2620 0%, var(--night) 70%); color: var(--cream); font-family: var(--hud);
+  background: var(--paper); color: var(--ink); font-family: var(--font-body);
 }
-.rv::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .14) 0 1px, transparent 1px 3px); }
-.rv button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.rv button:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
 
-/* HUD */
+/* HUD: the game lines, set as stamp labels */
 .rv-hud { flex: none; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 12px 0 6px; position: relative; z-index: 2; }
-.rv-hud-line { font: 700 11px/1.45 var(--hud); letter-spacing: .03em; white-space: nowrap; }
-.rv-hud-line.gold { color: var(--gold); text-transform: uppercase; }
+.rv-hud > div:first-child { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.rv-hud-line { width: fit-content; padding: 3px 8px; border: var(--stamp-border) var(--line-strong); border-radius: var(--r-stamp); font: 700 10.5px/1.3 var(--font-body); letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; color: var(--muted); }
+.rv-hud-line.gold { border-color: var(--teal); color: var(--teal); }
 .rv-hud-btns { flex: none; display: flex; gap: 8px; }
-.rv-chip { all: unset; box-sizing: border-box; cursor: pointer; min-height: 34px; padding: 8px 12px; border: 1.5px solid rgba(255, 245, 217, .55); border-radius: 4px; font: 700 11px/1 var(--hud); letter-spacing: .1em; text-transform: uppercase; color: var(--cream); background: rgba(20, 26, 22, .7); }
+.rv-chip { all: unset; box-sizing: border-box; cursor: pointer; min-height: 34px; padding: 8px 12px; border: 1.5px solid var(--line-strong); border-radius: var(--r-stamp); background: var(--white); color: var(--ink); font: 700 11px/1 var(--font-body); letter-spacing: .12em; text-transform: uppercase; }
 .rv-close { position: absolute; top: calc(env(safe-area-inset-top) + 12px); right: 16px; z-index: 3; }
 
-/* Map */
+/* Map: light sage island on a paper sea, ink coast, red dashed route */
 .rv-stage { flex: 1 1 0; min-height: 190px; position: relative; display: flex; }
 .rv-stage, .rv-dock, .rv-actions { width: 100%; max-width: 560px; margin-inline: auto; }
-.rv-mapbox { flex: 1; min-width: 0; min-height: 0; display: flex; padding: 0 6px 6px 0; }
-.rv-paper { flex: 1; min-width: 0; box-sizing: border-box; border: 4px solid var(--gold); border-radius: 6px; background: #d6dfad; box-shadow: 6px 6px 0 #000; overflow: hidden; }
+.rv-mapbox { flex: 1; min-width: 0; min-height: 0; display: flex; }
+.rv-paper { flex: 1; min-width: 0; box-sizing: border-box; border-radius: var(--r-card); background: var(--paper-deep); box-shadow: var(--shadow-card); overflow: hidden; }
 .rv-paper svg { display: block; width: 100%; height: 100%; }
-.rv-route-ink { fill: none; stroke: var(--ink); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
-.rv-route { fill: none; stroke: var(--route); stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round; }
-.rv-route-live path { stroke-dasharray: 1 1; stroke-dashoffset: var(--o); }
-.rv-label { font: 800 14px/1 var(--title); letter-spacing: .04em; fill: var(--ink); stroke: var(--cream); stroke-width: 3.5px; stroke-linejoin: round; paint-order: stroke; }
-.rv-stop.on .rv-label { fill: var(--red); }
-.rv-pin { fill: var(--cream); stroke: var(--ink); stroke-width: 2.4; }
-.rv-ring { fill: none; stroke: var(--gold); stroke-width: 3; transform-box: fill-box; transform-origin: center; }
+.rv-route { fill: none; stroke: var(--red); stroke-width: 2.4; stroke-dasharray: 6 5; stroke-linecap: round; stroke-linejoin: round; }
+.rv-route-live .rv-reveal { fill: none; stroke: #fff; stroke-width: 10; stroke-dasharray: 1 1; stroke-dashoffset: var(--o); }
+.rv-label { font: 800 14px/1 var(--font-head); letter-spacing: .04em; fill: var(--ink); stroke: var(--paper); stroke-width: 3.5px; stroke-linejoin: round; paint-order: stroke; }
+.rv-stop.on .rv-label { fill: var(--red-ink); }
+.rv-pin { fill: var(--white); stroke: var(--ink); stroke-width: 2; }
+.rv-ring { fill: none; stroke: var(--red); stroke-width: 2.4; transform-box: fill-box; transform-origin: center; }
 .rv-air circle { fill: var(--ink); }
-.rv-air path { fill: none; stroke: var(--cream); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.rv-tiny { font: 700 8px/1 var(--hud); fill: var(--ink); }
-.rv-stamp { font: italic 900 13px/1 var(--title); letter-spacing: .06em; fill: var(--red); }
-.rv-bubble-text { font: 700 9.3px/1 var(--hud); fill: var(--ink); }
+.rv-air path { fill: none; stroke: var(--white); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.rv-tiny { font: 700 8px/1 var(--font-body); letter-spacing: .08em; fill: var(--ink); }
+.rv-stamp { font: 800 13px/1 var(--font-head); letter-spacing: .08em; fill: var(--red-ink); }
+.rv-bubble-text { font: 700 9.3px/1 var(--font-body); fill: var(--ink); }
 
 /* Intro */
 .rv-intro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; pointer-events: none; z-index: 1; }
-.rv-title { margin: 0; font: italic 900 clamp(48px, 15vw, 76px)/.9 var(--title); letter-spacing: .01em; color: var(--cream); -webkit-text-stroke: 2px #000; text-shadow: 4px 4px 0 var(--red), 7px 7px 0 #000; }
-.rv-title.still { font-size: clamp(40px, 12vw, 64px); text-align: center; margin: 4px 0 10px; }
-.rv-tagline { max-width: 300px; font: 700 11px/1.55 var(--hud); letter-spacing: .05em; color: var(--gold); }
+.rv-title { margin: 0; font: 800 clamp(48px, 15vw, 76px)/.9 var(--font-head); text-transform: uppercase; color: var(--ink); }
+.rv-title.still { font-size: clamp(40px, 12vw, 60px); text-align: center; margin: 4px 0 10px; }
+.rv-tagline { max-width: 300px; font: 700 10.5px/1.6 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--red-ink); }
 
 /* Dock: every card sits in one grid cell; only the active one is visible. */
 .rv-dock { flex: none; display: grid; margin-top: 12px; position: relative; z-index: 2; }
 .rv-dock > * { grid-area: 1 / 1; min-width: 0; }
 .rv-sizer { visibility: hidden; }
 .rv-slot { align-self: end; }
-.rv-status { align-self: center; text-align: center; }
-.rv-card { box-sizing: border-box; padding: 0 14px 12px; border: 3px solid #000; border-radius: 6px; background: var(--cream); color: var(--ink); box-shadow: 5px 5px 0 #000; transform: rotate(-.8deg); overflow-wrap: anywhere; }
-.rv-card-tag { margin: 0 -14px 8px; padding: 6px 14px; background: var(--ink); color: var(--gold); font: 700 11px/1.3 var(--hud); letter-spacing: .03em; }
-.rv-card h2 { margin: 0; font: italic 900 34px/.95 var(--title); text-transform: uppercase; color: var(--red); text-shadow: 2px 2px 0 var(--ink); }
-.rv-card-meta { margin: 5px 0 8px; font: 700 10px/1.3 var(--hud); letter-spacing: .04em; color: #56685a; }
-.rv-card-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font: 700 12.5px/1.35 var(--hud); }
+.rv-status { align-self: center; display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; }
+.rv-card { box-sizing: border-box; padding: 12px 14px 14px; border-radius: var(--r-card); background: var(--white); color: var(--ink); box-shadow: var(--shadow-card); overflow-wrap: anywhere; }
+.rv-card-tag { display: inline-block; margin: 0 0 8px; padding: 3px 8px; border: var(--stamp-border) var(--teal); border-radius: var(--r-stamp); color: var(--teal); font: 700 10.5px/1.3 var(--font-body); letter-spacing: .12em; }
+.rv-card h2 { margin: 0; font: 800 30px/.95 var(--font-head); text-transform: uppercase; color: var(--ink); }
+.rv-card-meta { margin: 5px 0 8px; font: 700 10.5px/1.3 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.rv-card-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font: 600 13.5px/1.4 var(--font-body); }
 .rv-card-items li { position: relative; padding-left: 16px; }
-.rv-card-items li::before { content: ''; position: absolute; left: 0; top: .42em; width: 8px; height: 8px; background: var(--red); border: 1.5px solid var(--ink); box-sizing: border-box; }
-.rv-card-empty { color: #56685a; }
-.rv-card-notes { list-style: none; margin: 9px 0 0; padding: 8px 0 0; border-top: 2px dashed var(--ink); display: flex; flex-direction: column; gap: 3px; font: 700 11px/1.4 var(--hud); color: #a8381f; }
+.rv-card-items li::before { content: ''; position: absolute; left: 0; top: .5em; width: 7px; height: 7px; border-radius: 50%; background: var(--red); }
+.rv-card-empty { color: var(--muted); }
+.rv-card-notes { list-style: none; margin: 9px 0 0; padding: 8px 0 0; border-top: var(--stamp-border) var(--red); display: flex; flex-direction: column; gap: 3px; font: 600 12.5px/1.4 var(--font-body); color: var(--red-ink); }
 .rv-card-notes li::before { content: '! '; }
 .rv-actions { flex: none; display: flex; justify-content: center; padding: 14px 0 16px; position: relative; z-index: 2; }
-.rv-btn { all: unset; box-sizing: border-box; cursor: pointer; min-width: 210px; padding: 12px 24px; text-align: center; border: 3px solid #000; border-radius: 6px; background: var(--gold); color: var(--night); box-shadow: 4px 4px 0 #000; font: italic 900 22px/1 var(--title); letter-spacing: .04em; text-transform: uppercase; }
-.rv-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
+.rv-btn { all: unset; box-sizing: border-box; cursor: pointer; min-width: 220px; padding: 14px 24px; text-align: center; border-radius: var(--r-btn); background: var(--red-deep); color: var(--on-red); box-shadow: var(--shadow-btn); font: 800 22px/1 var(--font-head); letter-spacing: .04em; text-transform: uppercase; }
+.rv-btn:active { transform: scale(.97); }
 
-/* Mission complete, and the motion-off page: the Postcard theme on paper (docs/mockups/theme-postcard/C-itinerary.dc.html). */
+/* Mission complete, and the motion-off page (docs/mockups/theme-postcard/C-itinerary.dc.html). */
 .rv-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0 -16px; padding: 0 16px 24px; position: relative; z-index: 2; }
 .rv-still-map { height: min(64vh, 540px); display: flex; }
 .rv-list { list-style: none; margin: 18px auto 8px; padding: 0; max-width: 560px; display: flex; flex-direction: column; gap: 16px; }
-/* .rv redefines --ink, --muted and --red for the night map; the paper page takes the app tokens back. */
-.rv[data-stage="complete"] { --ink: #1e2a26; --muted: #56615c; --red: #d6452c; background: var(--paper); color: var(--ink); font-family: var(--font-body); }
-.rv[data-stage="complete"]::after { display: none; }
-.rv[data-stage="complete"] button:focus-visible { outline-color: var(--red); }
-.rv[data-stage="complete"] .rv-hud-line { font: 700 10.5px/1.5 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-.rv[data-stage="complete"] .rv-hud-line.gold { color: var(--teal); }
-.rv[data-stage="complete"] .rv-chip { border: 1.5px solid var(--line-strong); border-radius: var(--r-stamp); background: var(--white); color: var(--ink); font: 700 11px/1 var(--font-body); letter-spacing: .12em; }
-.rv[data-stage="complete"] .rv-title.still { font: 800 clamp(40px, 12vw, 60px)/.9 var(--font-head); font-style: normal; text-transform: uppercase; color: var(--ink); -webkit-text-stroke: 0; text-shadow: none; }
-.rv[data-stage="complete"] .rv-paper { border: 0; border-radius: var(--r-card); box-shadow: var(--shadow-card); }
-.rv[data-stage="complete"] .rv-mapbox { padding: 0; }
-.rv[data-stage="complete"] .rv-card { border: 0; border-radius: var(--r-card); background: var(--white); box-shadow: var(--shadow-card); padding: 12px 14px 14px; transform: none; }
-.rv[data-stage="complete"] .rv-card-tag { display: inline-block; margin: 0 0 8px; padding: 3px 8px; border: var(--stamp-border) var(--teal); border-radius: var(--r-stamp); background: none; color: var(--teal); font: 700 10.5px/1.3 var(--font-body); letter-spacing: .12em; }
-.rv[data-stage="complete"] .rv-card h2 { font: 800 30px/.95 var(--font-head); font-style: normal; color: var(--ink); text-shadow: none; }
-.rv[data-stage="complete"] .rv-card-meta { font: 700 10.5px/1.3 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.rv[data-stage="complete"] .rv-card-items { font: 600 13.5px/1.4 var(--font-body); }
-.rv[data-stage="complete"] .rv-card-items li::before { width: 7px; height: 7px; border: 0; border-radius: 50%; background: var(--red); }
-.rv[data-stage="complete"] .rv-card-empty { color: var(--muted); }
-.rv[data-stage="complete"] .rv-card-notes { border-top: var(--stamp-border) var(--red); font: 600 12.5px/1.4 var(--font-body); color: var(--red-ink); }
-.rv[data-stage="complete"] .rv-btn { min-width: 220px; padding: 14px 24px; border: 0; border-radius: var(--r-btn); background: var(--red-deep); color: var(--on-red); box-shadow: var(--shadow-btn); font: 800 22px/1 var(--font-head); font-style: normal; }
-.rv[data-stage="complete"] .rv-btn:active { transform: scale(.97); box-shadow: var(--shadow-btn); }
 
 .rv-done { max-width: 560px; margin: 0 auto; padding: 12px 0 28px; display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
 .rv-done-head { display: flex; flex-direction: column; gap: 14px; }
@@ -142,8 +120,6 @@
   .rv[data-motion="full"] .rv-bubble { animation: rv-pop var(--dur) var(--ease) .12s both; }
   .rv[data-motion="full"] .rv-ring { animation: rv-pulse 2s var(--ease-in-out) infinite; }
   .rv[data-motion="full"] .rv-halt > * { transform-box: fill-box; transform-origin: 50% 100%; animation: rv-halt var(--dur-slow) var(--ease) both; }
-  /* Night map to paper: the ground eases over instead of cutting from dark to light. */
-  .rv[data-stage="complete"][data-motion="full"] { animation: rv-paper-in var(--dur-slow) var(--ease-in-out) both; }
   .rv-done[data-animate="true"] .rv-done-title { animation: rv-rise var(--dur-slow) var(--ease) .1s both; }
   .rv-done[data-animate="true"] .rv-done-stamps { animation: rv-fade var(--dur-slow) var(--ease) .5s both; }
   .rv-done[data-animate="true"] .rv-crew figure { animation: rv-crew var(--dur-slow) var(--ease) calc(.25s + var(--i) * 110ms) both; }
@@ -154,10 +130,9 @@
 @keyframes rv-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes rv-out { to { opacity: 0; transform: scale(1.03); } }
 @keyframes rv-map-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
-@keyframes rv-card-in { from { opacity: 0; transform: translateY(16px) rotate(-.8deg); } to { opacity: 1; transform: rotate(-.8deg); } }
+@keyframes rv-card-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes rv-pop { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
 @keyframes rv-pulse { 50% { transform: scale(1.2); opacity: .55; } }
 @keyframes rv-halt { 0% { transform: translateY(-5px); } 45% { transform: translateY(0) scale(1.04, .95); } 100% { transform: none; } }
-@keyframes rv-paper-in { from { background-color: #141a16; } }
 @keyframes rv-crew { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes rv-cheer { 0%, 100% { transform: none; } 20% { transform: translateY(-6px) rotate(-3deg); } 40% { transform: none; } 60% { transform: translateY(-3px) rotate(2deg); } }
