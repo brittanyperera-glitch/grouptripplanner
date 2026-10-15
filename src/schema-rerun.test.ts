@@ -13,6 +13,11 @@ describe('supabase/schema.sql can be re-run', () => {
     expect(created.filter(p => !dropped.has(p))).toEqual([]);
   });
 
+  // Pasting into the SQL editor can join every line into one, and a -- comment then swallows the rest of the script.
+  it('has no line comments, so it still runs when pasted onto one line', () => {
+    expect(sql.match(/--/g)).toBeNull();
+  });
+
   it('creates tables only if missing and never adds to the publication unguarded', () => {
     expect(sql.match(/create table (?!if not exists)/g)).toBeNull();
     expect(sql.match(/^alter publication .* add table/gm)).toBeNull();

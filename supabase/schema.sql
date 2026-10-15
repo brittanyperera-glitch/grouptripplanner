@@ -26,7 +26,7 @@ create table if not exists knockout_votes (
   primary key (fork_id, name)
 );
 
--- Every choice as it was made, never updated or deleted, so the starting opinions survive re-ranks and changed votes.
+/* Every choice as it was made, never updated or deleted, so the starting opinions survive re-ranks and changed votes. */
 create table if not exists choice_log (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -41,8 +41,8 @@ alter table suggestions enable row level security;
 alter table knockout_votes enable row level security;
 alter table choice_log enable row level security;
 
--- The anon key ships in the browser, so anon can read, add and change rows but never delete them.
--- Every policy is dropped before it is created, so the script can be re-run on a database that already has some of it.
+/* The anon key ships in the browser, so anon can read, add and change rows but never delete them. */
+/* Every policy is dropped before it is created, so the script can be re-run on a database that already has some of it. */
 drop policy if exists "anon all" on responses;
 drop policy if exists "anon all" on suggestions;
 drop policy if exists "anon all" on knockout_votes;
@@ -73,7 +73,7 @@ create policy "anon update" on knockout_votes for update to anon using (true) wi
 create policy "anon select" on choice_log for select to anon using (true);
 create policy "anon insert" on choice_log for insert to anon with check (true);
 
--- Adding a table that is already in the publication is an error, so add only the missing ones.
+/* Adding a table that is already in the publication is an error, so add only the missing ones. */
 do $$
 declare t text;
 begin
