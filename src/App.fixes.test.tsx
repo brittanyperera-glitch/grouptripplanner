@@ -70,11 +70,13 @@ describe('R3 change days or pace', () => {
     expect(saved('Alex').ranking.must).toEqual([['a']]);
   });
 
-  it('in the tabs footer, while not locked', async () => {
+  it('from the tabs via the Menu, while not locked', async () => {
     seed(row('Alex', { ...DONE, ranking: { ...emptyRanking(), must: [['a'], ['b'], ['c']] } }));
     localStorage.setItem('tp:me', 'Alex');
     const user = userEvent.setup();
     render(<App />);
+    await screen.findByRole('tablist');
+    openMenu();
     await user.click(await screen.findByRole('button', { name: 'Change days or pace' }));
     expect(await screen.findByText('How many days can you do?')).toBeInTheDocument();
   });
@@ -82,8 +84,12 @@ describe('R3 change days or pace', () => {
   it('is gone once the group is locked', async () => {
     for (const p of PEOPLE) seed(row(p, DONE));
     localStorage.setItem('tp:me', 'Alex');
+    const user = userEvent.setup();
     render(<App />);
+    await user.click(await screen.findByRole('tab', { name: 'Picks' }));
     await screen.findByText(/ratings are locked/i);
+    expect(screen.queryByRole('button', { name: 'Change days or pace' })).toBeNull();
+    openMenu();
     expect(screen.queryByRole('button', { name: 'Change days or pace' })).toBeNull();
   });
 });
@@ -96,7 +102,7 @@ describe('R4 lock while editing picks', () => {
     localStorage.setItem('tp:me', 'Alex');
     const user = userEvent.setup();
     render(<App />);
-    await user.click(await screen.findByRole('button', { name: /edit my ratings/i }));
+    await user.click(await screen.findByRole('tab', { name: 'Picks' }));
     expect(await screen.findByRole('button', { name: /^Gamma Beach,/ })).toBeInTheDocument();
     const before = localStorage.getItem('tp:resp:Alex');
 

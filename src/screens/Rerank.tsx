@@ -30,7 +30,7 @@ export default function Rerank({ ranking, byId, onChange, draws = false, onSubmi
   ranking: Ranking; byId: Record<string, Item>;
   /** The whole ranking after one drag, drop, keyboard move or draw toggle, and the id that moved. */
   onChange: (next: Ranking, id: string) => void; draws?: boolean; onSubmit: () => void;
-  title: string; kicker?: string; sub: string; cta: string; tag?: (id: string) => string | undefined; sticky?: boolean;
+  title: string; kicker?: string; sub: string; cta?: string; tag?: (id: string) => string | undefined; sticky?: boolean;
 }) {
   const known = (id: string) => !!byId[id];
   const flatOf = (r: Ranking): Flat => Object.fromEntries(TIERS.map(t => [t, r[t].flat().filter(known)])) as Flat;
@@ -182,7 +182,7 @@ export default function Rerank({ ranking, byId, onChange, draws = false, onSubmi
         </DndContext>
         <div className="sr-only" role="status" aria-live="polite">{said}</div>
       </section>
-      <div className={`foot${sticky ? ' sticky' : ''}`}><button className="cta" onClick={onSubmit}>{cta}</button></div>
+      {cta && <div className={`foot${sticky ? ' sticky' : ''}`}><button className="cta" onClick={onSubmit}>{cta}</button></div>}
     </>
   );
 }

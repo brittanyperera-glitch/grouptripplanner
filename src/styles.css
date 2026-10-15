@@ -74,6 +74,9 @@ svg { flex: none; }
 .top { position: sticky; top: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 16px; background: var(--glass); backdrop-filter: blur(var(--blur)) saturate(1.4); -webkit-backdrop-filter: blur(var(--blur)) saturate(1.4); border-bottom: 1px solid var(--line); font-size: var(--fs-sm); color: var(--muted); view-transition-name: top; }
 .top .who { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .top .who b { font-size: 22px; line-height: 1; color: var(--ink); }
+/* The header's avatar and name open the profile: the old span is now a button, same look. */
+.top button.who { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 8px; min-width: 0; border-radius: var(--r-sm); }
+.top button.who:focus-visible { outline: 2px solid var(--coconut); outline-offset: 3px; }
 .avatar { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--sunset); color: var(--on-red); font-weight: 800; font-size: 13px; flex: none; }
 .hmenu { position: relative; flex: none; }
 .hmenu-list { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; display: flex; flex-direction: column; min-width: 200px; padding: 6px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-card); }
@@ -99,6 +102,9 @@ h1.big { margin: 0; }
 /* buttons */
 .cta { all: unset; box-sizing: border-box; cursor: pointer; flex: 1; text-align: center; padding: 14px 18px; border-radius: var(--r-btn); background: var(--red-deep); color: var(--on-red); font: 800 20px/1.1 var(--font-head); letter-spacing: .03em; text-transform: uppercase; box-shadow: var(--shadow-btn); transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease); }
 .cta.alt { background: var(--white); color: var(--ink); box-shadow: var(--shadow-btn), inset 0 0 0 1.5px var(--line-strong); }
+.everyone-more > summary { display: block; margin: 8px 16px 16px; list-style: none; }
+.everyone-more > summary::-webkit-details-marker { display: none; }
+.everyone-more[open] > summary { margin-bottom: 0; }
 .body > .cta { flex: none; }
 .cta[disabled] { opacity: .3; pointer-events: none; }
 .cta:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
@@ -254,6 +260,7 @@ h1.big { margin: 0; }
 .same:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
 .ko { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow-card); }
 .ko .sub { margin-top: 0; }
+.ko-wait { font-size: var(--fs-md); font-weight: 800; color: var(--teal); }
 .ko .big.display { margin: 0; }
 .tally { display: flex; align-items: center; justify-content: center; gap: 10px; }
 .tally .sub { margin: 0; font-weight: 700; }

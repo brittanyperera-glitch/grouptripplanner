@@ -65,7 +65,7 @@ export default function Waiting() {
         })}
       </div>
       {openGuide && <button className="cta guide-open" onClick={openGuide}>Open the guide</button>}
-      {isLocal && <button className="demo" onClick={fill}>Fill the other four with sample votes</button>}
+      {isLocal && <button className="demo" onClick={fill}>Test only: fake votes for the other four</button>}
     </section>
   );
 }

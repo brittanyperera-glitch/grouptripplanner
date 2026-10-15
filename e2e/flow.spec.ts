@@ -89,7 +89,8 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
   await shot(page, 'saved-not-locked');
   await expect(page.getByText(/Provisional until all five finalize their lists \(1 of 5 done\)/)).toBeVisible();
 
-  await page.getByRole('tab', { name: 'Everyone' }).click();
+  await page.getByText("See everyone's votes").click();
+  await expect(page.getByRole('region', { name: 'Everyone' })).toBeVisible();
   await shot(page, 'everyone');
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);

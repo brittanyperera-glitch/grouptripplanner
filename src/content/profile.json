@@ -1,0 +1,41 @@
+{
+  "menuItem": "My profile",
+  "headerLabel": "view your profile",
+  "back": "Back",
+  "switchLabel": "Profile view",
+  "viewCard": "Card",
+  "viewCharacter": "Character",
+  "cardNo": "Card {n} of {total}",
+  "height": "Height",
+  "kit": "Kit",
+  "noKit": "Travels light",
+  "rarity": [
+    "Common",
+    "Uncommon",
+    "Rare",
+    "Epic",
+    "Legendary"
+  ],
+  "save": "Save image",
+  "copy": "Copy",
+  "send": "Send",
+  "saved": "Saved",
+  "copied": "Copied",
+  "sent": "Sent",
+  "failed": "Could not make the image",
+  "gear": {
+    "glasses": "Glasses",
+    "earrings": "Earrings",
+    "bangle": "Bangle",
+    "watch": "Watch",
+    "ring": "Ring"
+  },
+  "funFact": "Fun fact",
+  "facts": {
+    "Saulie": "HE HAS BANGS NOW",
+    "Alex": "LOVES TO CARPE DIEM IN THEORY",
+    "Lazza": "IS NOT A PERMANENT RESIDENT OF GREAT BRITAIN & NORTHERN IRELAND",
+    "Antek": "IS NEARLY FLUENT IN ENGLISH",
+    "Brittany": "34TH IN LINE TO THE SRI LANKAN THRONE"
+  }
+}

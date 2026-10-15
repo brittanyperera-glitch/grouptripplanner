@@ -227,7 +227,7 @@ describe('submit, lock and errors', () => {
     await user.click(await screen.findByRole('button', { name: 'Keen' }));
     await user.click(await screen.findByRole('button', { name: 'Meh' }));
     await user.click(await screen.findByRole('button', { name: /Done, submit/ }));
-    for (const t of ['My trip', 'Group', 'Everyone', 'Suggest']) {
+    for (const t of ['My trip', 'Picks', 'Group', 'Suggest']) {
       expect(await screen.findByRole('tab', { name: t })).toBeInTheDocument();
     }
     expect(savedAlex().submitted).toBe(true);
@@ -236,10 +236,11 @@ describe('submit, lock and errors', () => {
   it('locks ratings once all five have submitted', async () => {
     for (const p of PEOPLE) seed(row(p, { submitted: true, rated: ['a', 'b', 'c'], ranking: { ...emptyRanking(), must: [['a'], ['b'], ['c']] } }));
     localStorage.setItem('tp:me', 'Alex');
+    const user = userEvent.setup();
     render(<App />);
-    expect(await screen.findByRole('tab', { name: 'My trip' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /edit my ratings/i })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole('tab', { name: 'Picks' }));
     expect(screen.getByText(/ratings are locked/i)).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Musts' })).not.toBeInTheDocument();
   });
 
   it('shows the crew selfies at the top of the Group tab once the group is open', async () => {
@@ -307,8 +308,10 @@ describe('submit, lock and errors', () => {
   it('keeps ratings editable before the group opens', async () => {
     seed(row('Alex', { submitted: true, rated: ['a', 'b', 'c'], ranking: { ...emptyRanking(), must: [['a'], ['b'], ['c']] } }));
     localStorage.setItem('tp:me', 'Alex');
+    const user = userEvent.setup();
     render(<App />);
-    expect(await screen.findByRole('button', { name: /edit my ratings/i })).toBeInTheDocument();
+    await user.click(await screen.findByRole('tab', { name: 'Picks' }));
+    expect(await screen.findByRole('list', { name: 'Musts' })).toBeInTheDocument();
   });
 
   it('a failed save shows the retry banner, keeps going, and clears on retry', async () => {

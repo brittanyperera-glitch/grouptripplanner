@@ -116,7 +116,7 @@ describe('local demo votes', () => {
     const user = userEvent.setup();
     render(<AppProvider store={new LocalStore()}><Waiting /></AppProvider>);
     await screen.findByText('1 of 5 done');
-    await user.click(screen.getByRole('button', { name: 'Fill the other four with sample votes' }));
+    await user.click(screen.getByRole('button', { name: 'Test only: fake votes for the other four' }));
     await screen.findByText('4 of 5 done');
     expect(localStorage.getItem('tp:resp:Brittany')).toBeNull();
     const alex = JSON.parse(localStorage.getItem('tp:resp:Alex')!) as Response;

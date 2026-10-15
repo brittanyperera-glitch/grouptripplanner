@@ -1,0 +1,84 @@
+/* Profile: a collectible trip card, or the character full size. The card is laid out on the same 800 x 1056 grid as the
+   exported PNG (src/screens/profileCard.ts); one canvas pixel is --p, so what is on screen is what Save image produces.
+   Every class here starts pf- because all CSS is global (src/css-collisions.test.ts). */
+
+.pf-screen { gap: 10px; padding-top: 10px; }
+.pf-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
+.pf-back { min-height: 32px; display: inline-flex; align-items: center; font-size: 13px; padding: 4px 14px; }
+
+.pf-switch { display: flex; padding: 3px; border-radius: var(--r-pill); background: var(--chip); box-shadow: inset 0 0 0 1px var(--line); }
+.pf-switch button { all: unset; box-sizing: border-box; cursor: pointer; padding: 7px 16px; border-radius: var(--r-pill); font: 800 13px/1 var(--font-body); color: var(--muted); transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
+.pf-switch button[aria-pressed="true"] { background: var(--red-deep); color: var(--on-red); box-shadow: var(--shadow-btn); }
+.pf-switch button:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
+
+/* The card is as large as the screen allows: the column's width, or the height left under the header and above the buttons. */
+.pf-card { container-type: inline-size; position: relative; align-self: center; width: min(100%, max(260px, calc((100dvh - 215px) * 800 / 1056))); aspect-ratio: 800 / 1056; perspective: 900px; touch-action: pan-y; }
+.pf-c-in { --p: .125cqw; position: absolute; inset: 0; border-radius: calc(56 * var(--p)); color: #fff;
+  background: linear-gradient(135deg, #f8dc86, #c98a10 35%, #f8dc86 60%, #a86d0a); box-shadow: var(--shadow-2);
+  transform: rotateX(var(--pf-rx, 0deg)) rotateY(var(--pf-ry, 0deg)); transition: transform var(--dur) var(--ease); }
+.pf-card[data-tilting] .pf-c-in { transition-duration: var(--dur-fast); }
+.pf-c-in > * { position: absolute; margin: 0; }
+.pf-c-face { inset: calc(16 * var(--p)); border-radius: calc(42 * var(--p)); background: repeating-conic-gradient(from 0deg at 50% 33%, var(--pf-a) 0 6deg, var(--pf-b) 6deg 12deg); }
+
+.pf-c-no { left: calc(52 * var(--p)); top: calc(48 * var(--p)); font: 800 calc(24 * var(--p))/1 var(--font-body); text-transform: uppercase; }
+.pf-c-stars { right: calc(52 * var(--p)); top: calc(40 * var(--p)); display: flex; font: 400 calc(36 * var(--p))/1 var(--font-body); }
+.pf-c-stars > span { width: calc(40 * var(--p)); text-align: right; color: rgba(255, 255, 255, .3); }
+.pf-c-stars > span.on { color: #f2b632; text-shadow: 0 calc(2 * var(--p)) 0 rgba(0, 0, 0, .25); }
+
+/* The picture window has lighter rays and a spotlight; the pop box stands taller than the window so the head breaks the top border. */
+.pf-c-pic { left: calc(48 * var(--p)); top: calc(170 * var(--p)); width: calc(704 * var(--p)); height: calc(390 * var(--p)); }
+.pf-c-win { position: absolute; inset: 0; box-sizing: border-box; border: calc(8 * var(--p)) solid #fffaf0; border-radius: calc(24 * var(--p)); background-origin: border-box;
+  background: radial-gradient(circle calc(242 * var(--p)) at 50% 70%, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0)), repeating-conic-gradient(from 0deg at 50% 70%, rgba(255, 255, 255, .28) 0 6deg, rgba(255, 255, 255, .1) 6deg 12deg), var(--pf-b); }
+.pf-c-pop { position: absolute; left: calc(8 * var(--p)); right: calc(8 * var(--p)); bottom: calc(8 * var(--p)); top: calc(-72 * var(--p)); overflow: hidden; border-radius: 0 0 calc(16 * var(--p)) calc(16 * var(--p)); }
+.pf-c-pop img { position: absolute; bottom: 0; left: 50%; height: 100%; width: auto; max-width: none; transform: translateX(-50%); }
+.pf-c-initial { position: absolute; left: 0; right: 0; bottom: calc(24 * var(--p)); text-align: center; font: 800 calc(240 * var(--p))/1 var(--font-head); color: #fff; }
+
+.pf-c-stamp { left: calc(48 * var(--p)); top: calc(172 * var(--p)); width: calc(224 * var(--p)); height: calc(64 * var(--p)); box-sizing: border-box; display: grid; place-items: center; border: calc(5 * var(--p)) solid var(--red-deep); border-radius: calc(8 * var(--p)); background: rgba(255, 255, 255, .95); color: var(--red-deep); font: 800 calc(40 * var(--p))/1 var(--font-head); text-transform: uppercase; transform: rotate(-9deg); }
+.pf-c-name { left: calc(30 * var(--p)); top: calc(510 * var(--p)); width: calc(740 * var(--p)); height: calc(90 * var(--p)); box-sizing: border-box; display: grid; place-items: center; border: calc(5 * var(--p)) solid #f2b632; border-radius: calc(12 * var(--p)); background: var(--card-ink); color: #fff; font: 800 calc(80 * var(--p))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+.pf-c-title { left: calc(48 * var(--p)); top: calc(608 * var(--p)); width: calc(704 * var(--p)); height: calc(50 * var(--p)); display: grid; place-items: center; font: 800 calc(44 * var(--p))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 calc(2 * var(--p)) 0 rgba(0, 0, 0, .3); }
+
+.pf-c-stats { left: calc(40 * var(--p)); top: calc(664 * var(--p)); width: calc(720 * var(--p)); box-sizing: border-box; padding: calc(6 * var(--p)) calc(14 * var(--p)); border: calc(4 * var(--p)) solid var(--card-ink); border-radius: calc(28 * var(--p)); background: #fffaf0; color: var(--card-ink); }
+.pf-c-stat { position: relative; height: calc(var(--rh) * var(--p)); --pf-fill: #1f6f6b; --pf-ink: #fff; }
+.pf-c-stat[data-tier="mid"] { --pf-fill: #f2b632; --pf-ink: var(--card-ink); }
+.pf-c-stat[data-tier="hi"] { --pf-fill: #bf3a22; --pf-ink: #fff; }
+.pf-c-val { position: absolute; left: 0; top: calc(8 * var(--p)); width: calc(86 * var(--p)); height: calc((var(--rh) - 16) * var(--p)); box-sizing: border-box; display: grid; place-items: center; border: calc(3 * var(--p)) solid var(--card-ink); border-radius: calc(14 * var(--p)); background: var(--pf-fill); color: var(--pf-ink); font: 800 calc(48 * var(--p))/1 var(--font-head); font-variant-numeric: tabular-nums; }
+.pf-c-val.over { border-color: #f2b632; }
+.pf-c-label { position: absolute; left: calc(106 * var(--p)); right: 0; top: calc(5 * var(--p)); font: 800 calc(27 * var(--p))/1.2 var(--font-body); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-c-bar { position: absolute; left: calc(106 * var(--p)); right: 0; top: calc(40 * var(--p)); height: calc(26 * var(--p)); box-sizing: border-box; border: calc(3 * var(--p)) solid var(--card-ink); border-radius: calc(8 * var(--p)); background: #e9e1d1; overflow: hidden; }
+.pf-c-bar > span { display: block; height: 100%; width: calc(var(--v) * 100%); background: var(--pf-fill); transform-origin: left; }
+.pf-c-bar::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: calc(100% + 4 * var(--p)); background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 4 * var(--p)), #fffaf0 calc(10% - 4 * var(--p)) 10%); }
+
+.pf-c-fact { left: calc(40 * var(--p)); top: calc(916 * var(--p)); width: calc(720 * var(--p)); height: calc(80 * var(--p)); box-sizing: border-box; padding: 0 calc(18 * var(--p)); display: flex; align-items: center; gap: calc(16 * var(--p)); border: calc(4 * var(--p)) solid #f2b632; border-radius: calc(16 * var(--p)); background: var(--card-ink); }
+.pf-c-fact > span { flex: none; width: calc(120 * var(--p)); height: calc(44 * var(--p)); display: grid; place-items: center; border-radius: calc(10 * var(--p)); background: #f2b632; color: var(--card-ink); font: 800 calc(20 * var(--p))/1 var(--font-body); text-transform: uppercase; white-space: nowrap; }
+.pf-c-fact > b { flex: 1; min-width: 0; font: 800 calc(28 * var(--p))/1.05 var(--font-head); text-transform: uppercase; overflow-wrap: anywhere; }
+.pf-c-meta { left: calc(40 * var(--p)); top: calc(1004 * var(--p)); width: calc(720 * var(--p)); height: calc(28 * var(--p)); display: flex; justify-content: center; gap: calc(14 * var(--p)); font: 700 calc(22 * var(--p))/1.2 var(--font-body); text-transform: uppercase; color: rgba(255, 255, 255, .92); white-space: nowrap; }
+.pf-c-meta > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pf-c-meta > i { font-style: normal; opacity: .6; }
+
+/* Foil: a rainbow sheen. It sweeps once when the card appears, then follows the pointer as the card tilts (--pf-fx). */
+.pf-c-foil { inset: calc(16 * var(--p)); border-radius: calc(42 * var(--p)); pointer-events: none; background: linear-gradient(115deg, transparent 25%, rgba(255, 80, 160, .14) 36%, rgba(255, 220, 80, .17) 45%, rgba(80, 255, 200, .14) 54%, rgba(100, 140, 255, .13) 64%, transparent 75%) var(--pf-fx, 40%) 0 / 300% 100%; transition: background-position var(--dur-fast) var(--ease); }
+
+.pf-actions { display: flex; gap: 8px; margin-top: 4px; }
+.pf-actions > button { flex: 1 1 0; min-width: 0; padding: 13px 6px; font-size: 18px; white-space: nowrap; }
+.pf-actions > button:first-child { flex-grow: 1.6; }
+.pf-fail { text-align: center; font-size: 13px; font-weight: 700; color: var(--red-ink); }
+
+/* Character view: the full-size art on rays, as tall as the screen allows, with the name and title under it. It stands still and jumps once per tap. */
+.pf-char { display: flex; flex-direction: column; align-items: center; gap: 6px; height: max(360px, calc(100dvh - 150px)); }
+.pf-stage { all: unset; cursor: pointer; flex: 1 1 0; min-height: 0; width: 100%; box-sizing: border-box; padding: 22px 12px 4px; border-radius: 24px; background: repeating-conic-gradient(from 0deg at 50% 78%, var(--pf-a) 0 6deg, var(--pf-b) 6deg 12deg); box-shadow: var(--shadow-card); }
+.pf-stage:focus-visible { outline: 3px solid var(--coconut); outline-offset: 3px; }
+.pf-jumper { display: block; width: 100%; height: 100%; }
+.pf-jumper svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.pf-char-name { margin: 0; font: 800 56px/.9 var(--font-head); text-transform: uppercase; color: var(--ink); }
+.pf-char-title { font: 800 26px/1 var(--font-head); text-transform: uppercase; color: var(--red-ink); text-align: center; text-wrap: balance; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .pf-jumper[data-jump] svg > g { transform-box: fill-box; transform-origin: 50% 100%; animation: pf-jump var(--dur-slow) var(--ease) 1; }
+  .pf-c-bar > span { animation: pf-fill var(--dur-slow) var(--ease) 200ms backwards; }
+  .pf-card { animation: pf-deal var(--dur-slow) var(--ease) backwards; }
+  .pf-c-foil { animation: pf-foil var(--dur-slow) var(--ease) 1; }
+}
+@keyframes pf-jump { 0%, 100% { transform: translateY(0) scale(1, 1); } 35% { transform: translateY(-28px) scale(.96, 1.05); } 70% { transform: translateY(0) scale(1.06, .93); } }
+@keyframes pf-deal { from { opacity: 0; transform: translateY(24px) rotate(-2deg) scale(.96); } }
+@keyframes pf-fill { from { transform: scaleX(0); } }
+@keyframes pf-foil { from { background-position: 100% 0; } }

@@ -3,7 +3,7 @@ import Avatar from './components/Avatar';
 import CrewStrip from './components/CrewStrip';
 import { GuideNav } from './components/GuideNav';
 import { MUTE_KEY } from './components/sound';
-import { IconBook, IconGrid, IconGroup, IconRoute, IconSpark } from './components/Icons';
+import { IconBook, IconGroup, IconList, IconRoute, IconSpark } from './components/Icons';
 import { cssEnter, lastNav, navigate } from './components/motion';
 import QuipBurst from './components/QuipBurst';
 import type { QuipKind } from './components/QuipBurst';
@@ -21,6 +21,8 @@ import Name from './screens/Name';
 import Pace from './screens/Pace';
 import Plan from './screens/Plan';
 import Premiere from './screens/Reveal';
+import Profile from './screens/Profile';
+import profileCopy from './content/profile.json';
 import Raw, { wantsRaw } from './screens/Raw';
 import Rate from './screens/Rate';
 import Rerank from './screens/Rerank';
@@ -39,10 +41,10 @@ import type { Item, Pace as PaceT, Person, Ranking, Response, Store, Tier } from
 
 type Step = 'days' | 'pace' | 'howto' | 'rate' | 'tabs';
 const howtoCopy = () => (copyData as unknown as { howto?: HowToCopy }).howto;
-type Tab = 'My trip' | 'Group' | 'Everyone' | 'Suggest' | 'Guide';
+type Tab = 'My trip' | 'Picks' | 'Group' | 'Suggest' | 'Guide';
 // The tab bar only renders once I have submitted, so Guide is never offered before that.
-const TABS: Tab[] = ['My trip', 'Group', 'Everyone', 'Suggest', 'Guide'];
-const TAB_ICON: Record<Tab, (p: { size?: number }) => JSX.Element> = { 'My trip': IconRoute, 'Group': IconGroup, 'Everyone': IconGrid, 'Suggest': IconSpark, 'Guide': IconBook };
+const TABS: Tab[] = ['My trip', 'Picks', 'Group', 'Suggest', 'Guide'];
+const TAB_ICON: Record<Tab, (p: { size?: number }) => JSX.Element> = { 'My trip': IconRoute, 'Picks': IconList, 'Group': IconGroup, 'Suggest': IconSpark, 'Guide': IconBook };
 type Say = (t?: string, kind?: QuipKind) => void;
 
 function MyTripTab() {
@@ -72,14 +74,14 @@ function GroupTab() {
       <Plan group={group} />
       <Extras group={group} />
       <Friends />
+      {/* Everyone's tier for every place: the one view the old Everyone tab had that Group lacked (Brittany 2026-10-15). */}
+      <details className="everyone-more">
+        <summary className="cta alt">See everyone's votes</summary>
+        <Everyone open />
+      </details>
       <Premiere group={group} />
     </>
   );
-}
-
-function EveryoneTab() {
-  const { state } = useApp();
-  return <Everyone open={PEOPLE.every(p => state.responses[p]?.submitted)} />;
 }
 
 function SuggestTab() {
@@ -87,7 +89,8 @@ function SuggestTab() {
   return <Suggest open={PEOPLE.every(p => state.responses[p]?.submitted)} />;
 }
 
-const PANELS: Record<Tab, () => JSX.Element> = { 'My trip': MyTripTab, 'Group': GroupTab, 'Everyone': EveryoneTab, 'Suggest': SuggestTab, 'Guide': Guide };
+// Picks is drawn inside Flow, which holds my draft ranking.
+const PANELS: Record<Exclude<Tab, 'Picks'>, () => JSX.Element> = { 'My trip': MyTripTab, 'Group': GroupTab, 'Suggest': SuggestTab, 'Guide': Guide };
 
 const blank = (name: Person): Response => ({
   name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: new Date().toISOString(),
@@ -99,7 +102,7 @@ const START_OVER_ARMED_MS = 4000;
  * The header's one Menu: Change days or pace (while rating), Not you? and Start over, so the header stays one row
  * on a phone (Brittany 2026-10-15). Start over takes two taps; the first arms it for a few seconds, no browser dialog.
  */
-function HeaderMenu({ onChange, onNotYou, onStartOver }: { onChange?(): void; onNotYou(): void; onStartOver(): void }) {
+function HeaderMenu({ onProfile, onChange, onNotYou, onStartOver }: { onProfile(): void; onChange?(): void; onNotYou(): void; onStartOver(): void }) {
   const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -123,6 +126,7 @@ function HeaderMenu({ onChange, onNotYou, onStartOver }: { onChange?(): void; on
       <button className="link" aria-haspopup="true" aria-expanded={open} onClick={() => { setOpen(o => !o); setArmed(false); }}>Menu</button>
       {open && (
         <div className="hmenu-list" role="group" aria-label="Menu">
+          <button onClick={pick(onProfile)}>{profileCopy.menuItem}</button>
           {onChange && <button onClick={pick(onChange)}>Change days or pace</button>}
           <button onClick={pick(onNotYou)}>Not you?</button>
           <button className={armed ? 'armed' : undefined} onClick={armed ? pick(onStartOver) : () => setArmed(true)}>
@@ -144,6 +148,11 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
   const [step, setStep] = useState<Step>(() => (draft.days === null ? 'days' : draft.pace === null ? 'pace' : draft.submitted ? 'tabs' : 'rate'));
   const [tab, setTabState] = useState<Tab>('My trip');
   const [editing, setEditing] = useState(false);
+  // The profile card sits over whatever step or tab I was on; Back closes it and that screen is still there.
+  const [profileOpen, setProfileOpen] = useState(false);
+  const scrollBack = useRef<number | null>(null);
+  const openProfile = () => { if (profileOpen) return; scrollBack.current = window.scrollY; navigate('fwd', () => setProfileOpen(true)); };
+  const closeProfile = () => navigate('back', () => setProfileOpen(false));
 
   // Each tab switch is a history entry with the same URL, so a phone's Back returns to the previous tab
   // instead of leaving the app. The hash is left alone because the raw page routes on it.
@@ -180,7 +189,7 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
   const locked = PEOPLE.every(p => (p === me ? draft.submitted : state.responses[p]?.submitted));
   const shown: Step = locked ? 'tabs' : step;
 
-  const changeDays = () => navigate('back', () => { setEditing(true); setStep('days'); });
+  const changeDays = () => navigate('back', () => { setProfileOpen(false); setEditing(true); setStep('days'); });
   const changeLink = <button className="link" onClick={changeDays}>Change days or pace</button>;
 
   const commit = (r: Ranking, id: string) => save({ ranking: r, rated: draft.rated.includes(id) ? draft.rated : [...draft.rated, id] });
@@ -239,41 +248,49 @@ function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): v
   } else if (shown === 'rate') {
     content = <Rerank ranking={draft.ranking} byId={byId} onChange={onReorder} onSubmit={submit}
       title="Your picks" kicker="All rated" sub="Drag a row to rank it inside its tier, or into another tier to change it. Then submit." cta="Done, submit" />;
+  } else if (tab === 'Picks') {
+    // Your picks lives in the tab bar (Brittany 2026-10-15); after submitting, a reorder saves as you go.
+    content = (
+      <div role="tabpanel" aria-label="Picks" className="panel">
+        {locked && <div className="sub locked">Ratings are locked, the group stage is open.</div>}
+        {!locked && unrated.length > 0 && (
+          <button className="cta" onClick={() => navigate('back', () => setStep('rate'))}>{unrated.length} new to rate</button>
+        )}
+        {!locked && (
+          <>
+            <Rerank ranking={draft.ranking} byId={byId} onChange={onReorder} onSubmit={() => undefined} sticky={false}
+              title="Your picks" kicker="My picks" sub="Drag a row to rank it, or into another tier to change it. Saves as you go." />
+            <div className="foot stack">{changeLink}</div>
+          </>
+        )}
+      </div>
+    );
   } else {
     const Panel = PANELS[tab];
     content = (
-      <>
-        <div role="tabpanel" aria-label={tab} className="panel"><GuideNav.Provider value={() => navigate('tab', () => setTab('Guide'))}><Panel /></GuideNav.Provider></div>
-        <div className="foot stack">
-          {locked
-            ? <div className="sub locked">Ratings are locked, the group stage is open.</div>
-            : <button className="cta alt" onClick={() => navigate('back', () => setStep('rate'))}>Edit my ratings</button>}
-          {!locked && unrated.length > 0 && (
-            <button className="cta" onClick={() => navigate('back', () => setStep('rate'))}>{unrated.length} new to rate</button>
-          )}
-          {!locked && changeLink}
-        </div>
-      </>
+      <div role="tabpanel" aria-label={tab} className="panel"><GuideNav.Provider value={() => navigate('tab', () => setTab('Guide'))}><Panel /></GuideNav.Provider></div>
     );
   }
 
   const enter = cssEnter() ? lastNav() : null;
-  const screenKey = shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
+  if (profileOpen) content = <Profile name={me} players={copy.players} onBack={closeProfile} />;
+  const screenKey = profileOpen ? 'profile' : shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
   useLayoutEffect(() => {
-    if (!/jsdom/.test(navigator.userAgent)) window.scrollTo(0, 0);
+    if (!/jsdom/.test(navigator.userAgent)) window.scrollTo(0, screenKey === 'profile' ? 0 : scrollBack.current ?? 0);
+    if (screenKey !== 'profile') scrollBack.current = null;
   }, [screenKey]);
 
   return (
     <>
       <header className="top">
-        <span className="who">
+        <button className="who" aria-label={`${me}, ${profileCopy.headerLabel}`} onClick={openProfile}>
           <Avatar name={me} size={30} />
           <b>{me}</b>
-        </span>
-        <HeaderMenu onChange={shown === 'rate' ? changeDays : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} />
+        </button>
+        <HeaderMenu onProfile={openProfile} onChange={(shown === 'rate' || shown === 'tabs') && !locked ? changeDays : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} />
       </header>
       <div className={`screen${enter ? ` enter-${enter}` : ''}`} key={screenKey}>{content}</div>
-      {shown === 'tabs' && (
+      {shown === 'tabs' && !profileOpen && (
         <nav className="tabs" role="tablist" aria-label="Sections">
           {TABS.map(t => {
             const Icon = TAB_ICON[t];
