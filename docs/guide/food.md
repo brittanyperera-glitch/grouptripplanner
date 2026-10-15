@@ -62,7 +62,7 @@ Best place to get fruit, in my opinion, is the roadside stalls. They're literall
 - **Bibikkan**: Coconut cake.
 - **Kiri toffee**: Fudge but with coconut milk.
 - **The palm sugar pancake one**: Don't know what they're called but palm sugar n coconut all wrapped up in a pancake. You'll know if you see it ;)
-- **Kokis** `[drafted in Britt's tone]`: Crunchy flower-shaped biscuits, very New Year vibes. Addictive.
+- **Kokis**: I'm not the biggest fan, kinda just deep fried batter. Vessel for oil.
 - **Pani walalu** `[drafted in Britt's tone]`: Sticky syrupy spirals. Sweet tooth only.
 
 ## Beach spots
