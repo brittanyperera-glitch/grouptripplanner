@@ -1,8 +1,11 @@
 import { IconCar, IconPin, IconSun, IconTrain } from '../components/Icons';
+import { useEffect, useState } from 'react';
 import RouteMap from '../components/Map';
+import { motion } from '../components/motion';
 import { Cover } from '../components/PhotoCard';
 import { useApp } from '../state';
 import type { DayEntry, Item, Plan } from '../types';
+import { Reveal } from './Reveal';
 
 // A day with this many driving hours or more gets a "Long driving day" note.
 const LONG_DRIVE_HOURS = 5;
@@ -72,9 +75,18 @@ export function DayRows({ plan, items = [], skippedBy }: { plan: Plan; items?: I
   );
 }
 
+// Set once My trip has played its reveal by itself; a tp: key, so ?fresh resets it.
+export const REVEAL_SEEN_KEY = 'tp:reveal-mine';
+const seen = () => { try { return localStorage.getItem(REVEAL_SEEN_KEY) !== null; } catch { return true; } };
+
 export default function MyTrip({ plan, days }: { plan: Plan & { mustFit: number | null }; days: number }) {
-  const { items } = useApp();
+  const { items, me } = useApp();
   const name = (id: string) => items.find(i => i.id === id)?.name ?? id;
+  // The first visit with motion on plays the reveal; the map's own drive waits until it closes.
+  const [revealing, setRevealing] = useState(() => motion() === 'full' && !!me && !seen());
+  useEffect(() => {
+    if (revealing) try { localStorage.setItem(REVEAL_SEEN_KEY, '1'); } catch { /* storage unavailable: it may play again next visit */ }
+  }, [revealing]);
   return (
     <section className="body" aria-label="My trip">
       <div className="kicker">My trip</div>
@@ -85,7 +97,9 @@ export default function MyTrip({ plan, days }: { plan: Plan & { mustFit: number 
           {plan.missingMusts.length > 0 && `. Left out: ${plan.missingMusts.map(name).join(', ')}`}
         </div>
       )}
-      <RouteMap route={plan.route} />
+      <RouteMap route={plan.route} drive={!revealing} />
+      {me && <button type="button" className="cta mytrip-reveal" onClick={() => setRevealing(true)}>Play my route reveal</button>}
+      {revealing && me && <Reveal plan={plan} who={me} onClose={() => setRevealing(false)} />}
       <DayRows plan={plan} items={items} />
     </section>
   );

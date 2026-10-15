@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { hits, inside, measureStop } from './reveal-helpers';
 import fs from 'node:fs';
 
 // All five have submitted and saved the same Finalize list, so the plan is locked with no head to heads.
@@ -25,7 +26,7 @@ async function openReveal(page: Page, w: number, h: number, quips: boolean, rout
   // The north route asks North or South first; everyone votes North so the plan can lock.
   const votes = route === 'north' ? PEOPLE.map(name => ({ forkId: 'region:north', name, choice: 'a' })) : [];
   await page.evaluate(([rs, vs]) => {
-    localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:votes', JSON.stringify(vs));
+    localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:votes', JSON.stringify(vs)); localStorage.setItem('tp:reveal-mine', '1');
     for (const r of rs as { name: string }[]) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
   }, [rows, votes] as const);
   await page.reload();
@@ -34,26 +35,6 @@ async function openReveal(page: Page, w: number, h: number, quips: boolean, rout
   return page.getByRole('dialog', { name: 'Route reveal' });
 }
 
-type R = { left: number; right: number; top: number; bottom: number; width: number; height: number };
-const hits = (a: R, b: R) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
-const inside = (a: R, b: R, slack = 1) => a.left >= b.left - slack && a.right <= b.right + slack && a.top >= b.top - slack && a.bottom <= b.bottom + slack;
-
-async function measureStop(page: Page) {
-  return page.evaluate(() => {
-    const r = (el: Element | null) => { const b = el!.getBoundingClientRect(); return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, height: b.height }; };
-    const card = document.querySelector('[aria-label="Day card"] .rv-card');
-    return {
-      vw: document.documentElement.clientWidth, vh: window.innerHeight,
-      overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      card: r(card), tuk: r(document.querySelector('.rv-tuk')), label: r(document.querySelector('.rv-stop.on .rv-label')),
-      bubble: r(document.querySelector('.rv-bubble')), paper: r(document.querySelector('.rv-paper')),
-      btn: r(document.querySelector('.rv-actions .rv-btn')),
-      labels: [...document.querySelectorAll('.rv-label')].map(r),
-      cardClipped: card ? (card as HTMLElement).scrollWidth > (card as HTMLElement).clientWidth + 1 : true,
-      place: card?.querySelector('h2')?.textContent ?? '',
-    };
-  });
-}
 
 for (const [w, h, route] of [[390, 844, 'south'], [390, 667, 'south'], [1280, 800, 'south'], [390, 667, 'north'], [1280, 800, 'north']] as const) {
   test(`plays the ${route} reveal stop to stop to Mission Complete at ${w}x${h}`, async ({ page }) => {

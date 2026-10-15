@@ -5,17 +5,19 @@ import { createPortal } from 'react-dom';
 import Avatar from '../components/Avatar';
 import { COAST, hubLabel, hubName, hubXY, px } from '../components/Map';
 import { motion } from '../components/motion';
+import { buildLegs, legD, tukHeight, tukTransform, useLegDrive, type Pt } from '../components/routeDrive';
 import TukTuk from '../components/TukTuk';
 import { compromises, MAX_CARDS, routeStops, type Compromise } from '../lib/compromises';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
-import type { GroupResult, Hub, Item, Plan } from '../types';
+import type { GroupResult, Hub, Item, Person, Plan } from '../types';
 import Poster from './Poster';
 
 export const INTRO_MS = 3000; // dark HUD, title, then the island fades in
 export const HOLD_MS = 2500;  // each day card, unless Next stop is tapped
 const HOME_MS = 1400;         // back at the airport, before Mission Complete
-const MIN_LEG_MS = 700, MAX_LEG_MS = 1600, MS_PER_UNIT = 9;
+
+const NO_CARDS: Compromise[] = [];
 
 export interface RevealStop { hub: Hub; name: string; days: number[]; items: string[]; notes: string[] }
 
@@ -79,29 +81,9 @@ const QUIP: Record<Hub, string> = {
 const VB = { x: -62, y: -4, w: 360, h: 496 };
 // The paper fills whatever box it gets; sea and texture run well past the viewBox so the letterbox is paper too.
 const BG = { x: -1200, y: -1200, w: 2800, h: 2900 };
-const TUK_W = 46, TUK_H = (TUK_W * 60) / 72, WHEEL_Y = (TUK_W * 55.2) / 72; // TukTuk art is 72 x 60, wheels touch y 55.2
-type Pt = [number, number];
-interface Leg { a: Pt; c: Pt; b: Pt; ms: number }
-const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
-const bez = ({ a, c, b }: Leg, t: number): Pt => [
-  (1 - t) ** 2 * a[0] + 2 * (1 - t) * t * c[0] + t * t * b[0],
-  (1 - t) ** 2 * a[1] + 2 * (1 - t) * t * c[1] + t * t * b[1],
-];
-/** Each leg bows a little, alternating sides, so the line looks drawn by hand. */
-function buildLegs(path: Hub[]): Leg[] {
-  return path.slice(1).map((h, k) => {
-    const a = hubXY(path[k]), b = hubXY(h);
-    const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
-    const bow = len * 0.14 * (k % 2 ? 1 : -1);
-    const c: Pt = [(a[0] + b[0]) / 2 - (dy / len) * bow, (a[1] + b[1]) / 2 + (dx / len) * bow];
-    return { a, c, b, ms: Math.round(Math.max(MIN_LEG_MS, Math.min(MAX_LEG_MS, len * MS_PER_UNIT))) };
-  });
-}
-const legD = ({ a, c, b }: Leg) => `M${a[0].toFixed(1)} ${a[1].toFixed(1)}Q${c[0].toFixed(1)} ${c[1].toFixed(1)} ${b[0].toFixed(1)} ${b[1].toFixed(1)}`;
+const TUK_W = 46, TUK_H = tukHeight(TUK_W);
 // The tuk-tuk parks on the road above a stop, or below it where the stop's name sits on top.
 const parkDy = (h: Hub) => (hubLabel(h).side === 't' || hubXY(h)[1] - 6 - TUK_H < VB.y + 2 ? TUK_H + 8 : -6);
-const tukTransform = (x: number, y: number, left: boolean) =>
-  left ? `translate(${(x + TUK_W / 2).toFixed(1)} ${(y - WHEEL_Y).toFixed(1)}) scale(-1 1)` : `translate(${(x - TUK_W / 2).toFixed(1)} ${(y - WHEEL_Y).toFixed(1)})`;
 
 interface Box { x: number; y: number; w: number; h: number }
 const overlaps = (a: Box, b: Box) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -202,12 +184,25 @@ function Island({ uid }: { uid: string }) {
 
 type Stage = 'intro' | 'drive' | 'stop' | 'complete' | 'poster';
 
-function DayCard({ stop, n, of }: { stop: RevealStop; n: number; of: number }) {
+// The words change with whose plan it is: the locked group plan, or one person's own.
+interface Voice { title: string; tagline: string; meta: string; done: string; doneLabel: string; respect: string; doneTag: string; picked: string; button: string; foot: string }
+const GROUP: Voice = {
+  title: 'THE PLAN IS IN.', tagline: 'FIVE OPINIONS. QUESTIONABLE LOGISTICS. ONE VERY GOOD HOLIDAY.', meta: 'THE CREW HAS SPOKEN',
+  done: 'MISSION COMPLETE', doneLabel: 'Mission complete', respect: 'RESPECT +5', doneTag: 'FIVE OPINIONS. QUESTIONABLE LOGISTICS. ONE VERY GOOD HOLIDAY.',
+  picked: 'The crew picked', button: 'See the poster', foot: 'POWERED BY GROUP CHAT DEMOCRACY.',
+};
+const MINE: Voice = {
+  title: 'YOUR ROUTE IS IN.', tagline: 'ONE OPINION. ZERO COMPROMISE. FOR NOW.', meta: 'YOUR CALL',
+  done: 'MISSION READY', doneLabel: 'Mission ready', respect: 'RESPECT +1', doneTag: 'NOW CONVINCE THE OTHER FOUR.',
+  picked: 'You picked', button: 'Back to my trip', foot: 'POWERED BY ONE VERY STRONG OPINION.',
+};
+
+function DayCard({ stop, n, of, meta }: { stop: RevealStop; n: number; of: number; meta: string }) {
   return (
     <article className="rv-card">
       <div className="rv-card-tag">{dayTag(stop.days)} // DESTINATION LOCKED</div>
       <h2>{stop.name}</h2>
-      <div className="rv-card-meta">STOP {n} OF {of} · THE CREW HAS SPOKEN</div>
+      <div className="rv-card-meta">STOP {n} OF {of} · {meta}</div>
       {stop.items.length > 0
         ? <ul className="rv-card-items">{stop.items.map(t => <li key={t}>{t}</li>)}</ul>
         : <p className="rv-card-items rv-card-empty">Nothing booked. Pure vibes.</p>}
@@ -219,58 +214,65 @@ function DayCard({ stop, n, of }: { stop: RevealStop; n: number; of: number }) {
 function dayLine(plan: Plan, names: Map<string, string>) {
   let at: Hub = 'AIR';
   return plan.days.map(d => {
-    const start = at;
-    let busy = false; // anything done before the day's move happens where the day started
+    // Every place something happens that day, in order, then where it ends: "Sigiriya to Kandy".
+    const seq: Hub[] = [];
+    const visit = (h: Hub) => { if (seq[seq.length - 1] !== h) seq.push(h); };
     for (const e of d.entries) {
       if ((e.kind === 'drive' || e.kind === 'train') && e.to) at = e.to;
-      else if (at === start && e.kind === 'activity') busy = true;
+      if ((e.kind === 'activity' || e.kind === 'train') && at !== 'AIR') visit(at);
     }
-    const end = at === 'AIR' ? (start === 'AIR' ? 'Airport' : 'Fly home') : hubName(at);
-    const place = busy && start !== at && start !== 'AIR' ? `${hubName(start)} to ${end}` : end;
+    if (at !== 'AIR' || seq.length) visit(at);
+    const place = seq.length ? seq.map(hubName).join(' to ') : 'Fly home';
     const acts = d.entries.filter(e => e.kind === 'activity' || e.kind === 'train').map(e => (e.itemId && names.get(e.itemId)) || e.label);
     const what = acts.length ? acts.join(' + ') : d.entries.some(e => e.kind === 'drive') ? 'On the road' : 'Free day';
     return { n: d.n, place, what };
   });
 }
 
-function MissionComplete({ plan, items, animate, onPoster }: { plan: Plan; items: Item[]; animate: boolean; onPoster: () => void }) {
+function MissionComplete({ plan, items, animate, voice, crew, onDone }: { plan: Plan; items: Item[]; animate: boolean; voice: Voice; crew: Person[]; onDone: () => void }) {
   const names = useMemo(() => new Map(items.map(i => [i.id, i.name])), [items]);
   const days = useMemo(() => dayLine(plan, names), [plan, names]);
   return (
-    <section className="rv-done" aria-label="Mission complete" data-animate={animate}>
-      <h1 className="rv-done-title">MISSION COMPLETE</h1>
-      <div className="rv-done-respect">RESPECT +5</div>
+    <section className="rv-done" aria-label={voice.doneLabel} data-animate={animate}>
+      <h1 className="rv-done-title">{voice.done}</h1>
+      <div className="rv-done-respect">{voice.respect}</div>
       <div className="rv-crew" role="list" aria-label="The crew">
-        {PEOPLE.map((p, i) => (
+        {crew.map((p, i) => (
           <figure key={p} role="listitem" style={{ '--i': i } as CSSProperties}>
             <img src={`/img/players/${p.toLowerCase()}-selfie.png`} alt={`${p} selfie`} />
             <figcaption>{p}</figcaption>
           </figure>
         ))}
       </div>
-      <div className="rv-done-tag">FIVE OPINIONS. QUESTIONABLE LOGISTICS. ONE VERY GOOD HOLIDAY.</div>
+      <div className="rv-done-tag">{voice.doneTag}</div>
       <h3 className="rv-done-h">The route</h3>
       <ol className="rv-itin" aria-label="Itinerary">
         {days.map(d => (
           <li key={d.n}><b>D{two(d.n)}</b><span className="rv-itin-place">{d.place}</span><span className="rv-itin-what">{d.what}</span></li>
         ))}
       </ol>
-      <h3 className="rv-done-h">The crew picked</h3>
+      <h3 className="rv-done-h">{voice.picked}</h3>
       <ul className="rv-chips" aria-label="Chosen experiences">
         {plan.chosen.map(id => <li key={id}>{names.get(id) ?? id}</li>)}
       </ul>
-      <button type="button" className="rv-btn" onClick={onPoster}>See the poster</button>
-      <div className="rv-foot">NO REFUNDS. ONLY MEMORIES.<br />POWERED BY GROUP CHAT DEMOCRACY.</div>
+      <button type="button" className="rv-btn" onClick={onDone}>{voice.button}</button>
+      <div className="rv-foot">NO REFUNDS. ONLY MEMORIES.<br />{voice.foot}</div>
     </section>
   );
 }
 
-/** Full-screen GTA-style route reveal: dark HUD intro, the island, the tuk-tuk drives stop to stop with a day card at each, then Mission Complete and the poster. */
-export function Reveal({ plan, cards, onClose }: { plan: Plan; cards: Compromise[]; onClose: () => void }) {
+/**
+ * Full-screen GTA-style route reveal: dark HUD intro, the island, the tuk-tuk drives stop to stop with a day card at each,
+ * then Mission Complete and the poster. With `who` it is that person's own plan: no compromise lines, just their selfie, no poster.
+ */
+export function Reveal({ plan, cards = NO_CARDS, who, onClose }: { plan: Plan; cards?: Compromise[]; who?: Person; onClose: () => void }) {
   const { items } = useApp();
-  const stops = useMemo(() => revealStops(plan, items, cards), [plan, items, cards]);
+  const voice = who ? MINE : GROUP;
+  const crew = useMemo(() => (who ? [who] : PEOPLE), [who]);
+  const done = () => (who ? onClose() : setStage('poster'));
+  const stops = useMemo(() => revealStops(plan, items, who ? NO_CARDS : cards), [plan, items, cards, who]);
   const path = useMemo<Hub[]>(() => ['AIR', ...stops.map(s => s.hub), 'AIR'], [stops]);
-  const legs = useMemo(() => buildLegs(path), [path]);
+  const legs = useMemo(() => buildLegs(path.map(hubXY), 0.14), [path]);
   const animate = motion() === 'full' && stops.length > 0;
   const [stage, setStage] = useState<Stage>(animate ? 'intro' : 'complete');
   const [k, setK] = useState(0); // leg being driven, or the stop just reached at the end of leg k
@@ -297,22 +299,7 @@ export function Reveal({ plan, cards, onClose }: { plan: Plan; cards: Compromise
   }, [stage, k, home, animate]);
 
   // Drive: the leg's line and the tuk-tuk move together, frame by frame.
-  useEffect(() => {
-    if (stage !== 'drive' || typeof requestAnimationFrame !== 'function') return;
-    const leg = legs[k], dy0 = parkDy(path[k]), dy1 = parkDy(path[k + 1]);
-    const left = leg.b[0] < leg.a[0];
-    const t0 = performance.now();
-    let raf = 0;
-    const step = (now: number) => {
-      const t = Math.min(1, (now - t0) / leg.ms), e = ease(t);
-      const [x, y] = bez(leg, e);
-      tukRef.current?.setAttribute('transform', tukTransform(x, y + dy0 + (dy1 - dy0) * e, left));
-      legRef.current?.style.setProperty('--o', String(1 - e));
-      if (t < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [stage, k, legs, path]);
+  useLegDrive(stage === 'drive', legs[k], parkDy(path[k]), parkDy(path[k + 1] ?? 'AIR'), TUK_W, tukRef, legRef);
 
   const skip = () => setStage('complete');
   const nextStop = () => { if (stage === 'stop' && !home) { setK(k + 1); setStage('drive'); } };
@@ -369,7 +356,7 @@ export function Reveal({ plan, cards, onClose }: { plan: Plan; cards: Compromise
                 <text x={l.x + (l.side === 'l' ? -3 : l.side === 'r' ? 3 : 0)} y={l.y + (l.side === 't' ? -3 : 1)} textAnchor={l.anchor} className="rv-label">{s.name.toUpperCase()}</text>              </g>
             );
           })}
-          <g ref={tukRef} className="rv-tuk" transform={tukTransform(tukAt[0], tukAt[1], tukLeft)}>
+          <g ref={tukRef} className="rv-tuk" transform={tukTransform(tukAt[0], tukAt[1], tukLeft, TUK_W)}>
             <g key={`${stage}${k}`} className={stage === 'stop' && animate ? 'rv-halt' : undefined}>
               <TukTuk width={TUK_W} driving={stage === 'drive'} idle={stage === 'stop'} />
             </g>
@@ -399,16 +386,16 @@ export function Reveal({ plan, cards, onClose }: { plan: Plan; cards: Compromise
     body = (
       <div className="rv-scroll">
         {hud}
-        <h1 className="rv-title still">THE PLAN IS IN.</h1>
+        <h1 className="rv-title still">{voice.title}</h1>
         <div className="rv-still-map">{map}</div>
         <ol className="rv-list" aria-label="Day cards">
-          {stops.map((s, i) => <li key={s.hub}><DayCard stop={s} n={i + 1} of={stops.length} /></li>)}
+          {stops.map((s, i) => <li key={s.hub}><DayCard stop={s} n={i + 1} of={stops.length} meta={voice.meta} /></li>)}
         </ol>
-        <MissionComplete plan={plan} items={items} animate={false} onPoster={() => setStage('poster')} />
+        <MissionComplete plan={plan} items={items} animate={false} voice={voice} crew={crew} onDone={done} />
       </div>
     );
   } else if (stage === 'complete') {
-    body = <div className="rv-scroll">{hud}<MissionComplete plan={plan} items={items} animate onPoster={() => setStage('poster')} /></div>;
+    body = <div className="rv-scroll">{hud}<MissionComplete plan={plan} items={items} animate voice={voice} crew={crew} onDone={done} /></div>;
   } else {
     const nextHub = stops[stage === 'stop' ? k + 1 : k];
     body = (
@@ -418,18 +405,18 @@ export function Reveal({ plan, cards, onClose }: { plan: Plan; cards: Compromise
           {map}
           {stage === 'intro' && (
             <div className="rv-intro">
-              <h1 className="rv-title">THE PLAN IS IN.</h1>
-              <div className="rv-tagline">FIVE OPINIONS. QUESTIONABLE LOGISTICS. ONE VERY GOOD HOLIDAY.</div>
+              <h1 className="rv-title">{voice.title}</h1>
+              <div className="rv-tagline">{voice.tagline}</div>
             </div>
           )}
         </div>
         <div className="rv-dock">
           {/* Every card is laid out invisibly in the same cell, so the dock is as tall as the tallest and the map never jumps. */}
           {stops.map((s, i) => (
-            <div key={s.hub} className="rv-sizer" aria-hidden="true"><DayCard stop={s} n={i + 1} of={stops.length} /></div>
+            <div key={s.hub} className="rv-sizer" aria-hidden="true"><DayCard stop={s} n={i + 1} of={stops.length} meta={voice.meta} /></div>
           ))}
           {active
-            ? <section className="rv-slot" aria-label="Day card" key={active.hub}><DayCard stop={active} n={k + 1} of={stops.length} /></section>
+            ? <section className="rv-slot" aria-label="Day card" key={active.hub}><DayCard stop={active} n={k + 1} of={stops.length} meta={voice.meta} /></section>
             : (
               <div className="rv-slot rv-status">
                 <div className="rv-hud-line gold">ROUTE CALCULATED // LK-001</div>

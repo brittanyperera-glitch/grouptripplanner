@@ -173,3 +173,46 @@ describe('route reveal, motion off', () => {
     expect(dlg.querySelector('[data-tuktuk][data-driving="true"]')).toBeNull();
   });
 });
+
+describe('itinerary', () => {
+  it('names every place a day visits, in order, and the last day flies home', async () => {
+    const p: Plan = {
+      ...rplan,
+      days: [
+        rplan.days[0], rplan.days[1],
+        { n: 3, area: 'Ella', spare: 0, rainSlack: false, entries: [act1('knuckles'), { kind: 'train', label: 'Nanu Oya to Ella train', hours: 4, itemId: 'train', from: 'Kandy', to: 'Ella' }, act1('ninearch')] },
+        { n: 4, area: null, spare: 0, rainSlack: false, entries: [{ kind: 'drive', label: 'd', hours: 5, from: 'Ella', to: 'AIR' }] },
+      ],
+    };
+    render(<AppProvider><Reveal plan={p} onClose={() => {}} /></AppProvider>);
+    const list = await screen.findByRole('list', { name: 'Itinerary' });
+    expect([...list.querySelectorAll('.rv-itin-place')].map(e => e.textContent)).toEqual(['Colombo', 'Kandy', 'Kandy to Ella', 'Fly home']);
+  });
+});
+
+describe('route reveal, just me', () => {
+  it('motion off: my day cards with no compromise lines, then MISSION READY with only my selfie and a way back', async () => {
+    const onClose = vi.fn();
+    render(<AppProvider><Reveal plan={rplan} who="Lazza" onClose={onClose} /></AppProvider>);
+    const dlg = await screen.findByRole('dialog');
+    expect(within(dlg).getByText('YOUR ROUTE IS IN.')).toBeInTheDocument();
+    const rows = [...screen.getByRole('list', { name: 'Day cards' }).children] as HTMLElement[];
+    expect(rows.map(r => r.querySelector('h2')?.textContent)).toEqual(['Colombo', 'Kandy', 'Ella']);
+    expect(rows[0]).toHaveTextContent('STOP 1 OF 3 · YOUR CALL');
+    expect(within(dlg).queryByRole('list', { name: 'Compromises' })).toBeNull();
+    const ready = screen.getByRole('region', { name: 'Mission ready' });
+    expect(within(ready).getByText('MISSION READY')).toBeInTheDocument();
+    expect(within(ready).getAllByRole('img', { name: / selfie$/ }).map(i => i.getAttribute('src'))).toEqual(['/img/players/lazza-selfie.png']);
+    expect(within(dlg).queryByRole('button', { name: 'See the poster' })).toBeNull();
+    fireEvent.click(within(ready).getByRole('button', { name: 'Back to my trip' }));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+  it('Skip lands on MISSION READY', async () => {
+    fullMotion();
+    await mount(<AppProvider><Reveal plan={rplan} who="Lazza" onClose={() => {}} /></AppProvider>);
+    expect(stage()).toBe('intro');
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    expect(stage()).toBe('complete');
+    expect(screen.getByRole('region', { name: 'Mission ready' })).toBeInTheDocument();
+  });
+});
