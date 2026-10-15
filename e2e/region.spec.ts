@@ -34,6 +34,8 @@ test('one North or South question, settled by three votes', async ({ page }) => 
     await region.locator('button').nth(1).click();
   }
   await expect(page.getByText('North or South?')).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Group' }).click();
+  await page.getByRole('button', { name: 'Save my list' }).click();
   await expect(page.getByText(/South beat North/)).toBeVisible();
   await shot(page, 'region-decided');
 });

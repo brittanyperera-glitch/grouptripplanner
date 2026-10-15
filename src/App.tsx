@@ -9,7 +9,7 @@ import { setTier, tierOf } from './lib/ranking';
 import Days from './screens/Days';
 import Everyone from './screens/Everyone';
 import Extras from './screens/Extras';
-import Finalize from './screens/Finalize';
+import Finalize, { EditListRow } from './screens/Finalize';
 import Friends from './screens/Friends';
 import Knockouts from './screens/Knockouts';
 import MyTrip from './screens/MyTrip';
@@ -44,15 +44,20 @@ function MyTripTab() {
 }
 
 function GroupTab() {
-  const { state, items, legs } = useApp();
+  const { state, me, items, legs } = useApp();
   const { data: group } = useGroupResult(state, items, legs);
+  const [editing, setEditing] = useState(false);
   if (!group) return <div className="body"><div className="sub">Working out the plan...</div></div>;
   if (!group.open) return <Waiting />;
+  // Until I have saved my final list, that step stands alone; the plan returns after saving.
+  const finalizing = group.knockouts.length === 0 && !!group.final && !group.locked;
+  const saved = !!(me && state.responses[me]?.final);
+  if (finalizing && (!saved || editing)) return <Finalize group={group} editing={editing} onSaved={() => setEditing(false)} />;
   return (
     <>
       <CrewStrip />
       {(group.knockouts.length > 0 || group.results.length > 0) && <Knockouts group={group} />}
-      <Finalize group={group} />
+      {finalizing && <EditListRow group={group} onEdit={() => setEditing(true)} />}
       <Plan group={group} />
       <Extras group={group} />
       <Friends />

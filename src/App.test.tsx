@@ -237,7 +237,7 @@ describe('submit, lock and errors', () => {
   });
 
   it('shows the crew selfies at the top of the Group tab once the group is open', async () => {
-    for (const p of PEOPLE) seed(row(p, { submitted: true, rated: ['a', 'b', 'c'], ranking: { ...emptyRanking(), must: [['a'], ['b'], ['c']] } }));
+    for (const p of PEOPLE) seed(row(p, { submitted: true, rated: ['a', 'b', 'c'], ranking: { ...emptyRanking(), must: [['a'], ['b'], ['c']] }, final: { ...emptyRanking(), must: [['a'], ['b'], ['c']] } }));
     localStorage.setItem('tp:me', 'Alex');
     const user = userEvent.setup();
     render(<App />);
@@ -255,7 +255,47 @@ describe('submit, lock and errors', () => {
     expect(Array.from(list.querySelectorAll('.rk')).map(n => n.textContent)).toEqual(['1', '2', '3']);
     await user.click(screen.getByRole('button', { name: 'Save my list' }));
     await waitFor(() => expect(savedAlex().final?.must).toEqual([['a'], ['b'], ['c']]));
-    expect(await screen.findByText(/Your final list is saved\. 1 of 5 done/)).toBeInTheDocument();
+    expect(await screen.findByText(/Your list is saved\. 1 of 5 done/)).toBeInTheDocument();
+  });
+
+  const openGroup = async (finals: Person[]) => {
+    const rk = { ...emptyRanking(), must: [['a'], ['b'], ['c']] };
+    for (const p of PEOPLE) seed(row(p, { submitted: true, rated: ['a', 'b', 'c'], ranking: { ...emptyRanking(), must: [['a', 'b', 'c']] }, ...(finals.includes(p) ? { final: rk } : {}) }));
+    localStorage.setItem('tp:me', 'Alex');
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('tab', { name: 'Group' }));
+    return user;
+  };
+
+  it('before I save my list the Finalize step stands alone, with no plan under it', async () => {
+    await openGroup([]);
+    await screen.findByRole('region', { name: 'Finalize your list' });
+    expect(screen.queryByText(/Provisional until all five finalize/)).toBeNull();
+    expect(screen.queryByLabelText('Trailer')).toBeNull();
+  });
+
+  it('after I save, the plan shows and Edit my list reopens the Finalize step until the lock', async () => {
+    const user = await openGroup(['Alex']);
+    expect(await screen.findByText(/Provisional until all five finalize/)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Finalize your list' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Edit my list' }));
+    expect(await screen.findByRole('region', { name: 'Finalize your list' })).toBeInTheDocument();
+    expect(screen.queryByText(/Provisional until all five finalize/)).toBeNull();
+  });
+
+  it('shows no Play trailer button before the lock', async () => {
+    await openGroup(['Alex', 'Lazza']);
+    expect(await screen.findByText(/The trailer drops once all five lock their lists/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Play trailer' })).toBeNull();
+    expect(screen.getByRole('list', { name: 'Still to go' }).children).toHaveLength(3);
+  });
+
+  it('offers Play trailer, and no Edit my list, once the plan is locked', async () => {
+    await openGroup([...PEOPLE]);
+    expect(await screen.findByRole('button', { name: 'Play trailer' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit my list' })).toBeNull();
+    expect(screen.queryByText(/The trailer drops once/)).toBeNull();
   });
 
   it('keeps ratings editable before the group opens', async () => {

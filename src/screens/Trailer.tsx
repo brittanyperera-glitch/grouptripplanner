@@ -1,8 +1,10 @@
 import './Premiere.css';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import Avatar from '../components/Avatar';
 import { motion } from '../components/motion';
 import { useApp } from '../state';
+import { PEOPLE } from '../types';
 import type { GroupResult, Item, Plan } from '../types';
 import Poster from './Poster';
 
@@ -65,6 +67,18 @@ export default function Premiere({ group }: { group: GroupResult }) {
   const [on, setOn] = useState(false);
   const plan = group.final ?? group.base;
   if (!plan) return null;
+  if (!group.locked) {
+    const todo = PEOPLE.filter(p => !group.finalized.includes(p));
+    return (
+      <section className="body" aria-label="Trailer">
+        <div className="kicker">Premiere</div>
+        <div className="sub">The trailer drops once all five lock their lists.</div>
+        <div className="premiere-todo" role="list" aria-label="Still to go">
+          {todo.map(p => <span key={p} role="listitem" aria-label={p} title={p}><Avatar name={p} size={40} /></span>)}
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="body" aria-label="Trailer">
       <div className="kicker">Premiere</div>

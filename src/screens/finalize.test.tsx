@@ -42,12 +42,11 @@ describe('Finalize your list', () => {
     await waitFor(() => expect(saved('Alex').final).toEqual({ ...emptyRanking(), must: [[A.id]], keen: [[C.id, B.id]] }));
     expect(saved('Alex').ranking).toEqual(resp('Alex').ranking);
   });
-  it('after saving shows how many have finalized, and the plan stays provisional until all five have', async () => {
+  it('after saving shows how many have finalized and the plan stays provisional until all five have', async () => {
     localStorage.setItem('tp:resp:Alex', JSON.stringify(resp('Alex', { final: { ...emptyRanking(), must: [[A.id]] } })));
     show(group({ finalized: ['Alex', 'Lazza'] }));
-    expect(await screen.findByText(/Your final list is saved\. 2 of 5 done/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Change my list' })).toBeInTheDocument();
-    expect(screen.getByText(/Provisional until all five finalize their lists/)).toBeInTheDocument();
+    expect(await screen.findByText(/Provisional until all five finalize their lists/)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Finalize your list' })).toBeNull();
   });
   it('is not offered while head to heads are open or once the plan is locked', async () => {
     const { unmount } = show(group({ final: null, knockouts: [{ forkId: 'ko:x', a: [A.id], b: [C.id], votes: { a: [], b: [] } }] }));
@@ -57,6 +56,6 @@ describe('Finalize your list', () => {
     show(group({ finalized: ['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie'], locked: true }));
     await screen.findByText(/about 1\.0 h driving/);
     expect(screen.queryByRole('region', { name: 'Finalize your list' })).toBeNull();
-    expect(screen.queryByText(/Your final list is saved/)).toBeNull();
+    expect(screen.queryByText(/Your list is saved/)).toBeNull();
   });
 });
