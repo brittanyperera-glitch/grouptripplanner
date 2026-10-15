@@ -90,6 +90,25 @@ describe('U5 long driving day', () => {
   });
 });
 
+describe('waiting screen', () => {
+  it('shows all five avatars, a tick on who has submitted, muted for the rest, and no nudge', async () => {
+    localStorage.setItem('tp:me', 'Brittany');
+    seedResp(resp('Alex', [ids[0]]));
+    render(<AppProvider store={new LocalStore()}><Waiting /></AppProvider>);
+    await screen.findByText('1 of 5 done');
+    const tiles = document.querySelectorAll('.wait-person');
+    expect(tiles).toHaveLength(5);
+    expect(document.querySelectorAll('.wait-person svg.avatar-art')).toHaveLength(5);
+    for (const p of PEOPLE) {
+      const tile = screen.getByRole('listitem', { name: new RegExp(`^${p}`) });
+      const done = p === 'Alex';
+      expect(tile).toHaveAttribute('data-done', String(done));
+      expect(within(tile).queryAllByLabelText('Submitted')).toHaveLength(done ? 1 : 0);
+    }
+    expect(screen.queryByRole('button', { name: /nudge|remind/i })).toBeNull();
+  });
+});
+
 describe('local demo votes', () => {
   it('fills the other four, never overwriting a submitted one, and keeps me untouched', async () => {
     localStorage.setItem('tp:me', 'Brittany');

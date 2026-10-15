@@ -1,4 +1,5 @@
 import Avatar from '../components/Avatar';
+import { IconCheck } from '../components/Icons';
 import { useApp } from '../state';
 import { isLocal } from '../store';
 import { emptyRanking, PEOPLE } from '../types';
@@ -40,10 +41,20 @@ export default function Waiting() {
       <div className="big display">{done.length} of {PEOPLE.length} done</div>
       <div className="meter" aria-hidden="true"><span style={{ width: `${(done.length / PEOPLE.length) * 100}%` }} /></div>
       <div className="sub">The group plan opens when all five have submitted.</div>
-      {PEOPLE.map(p => {
-        const ok = done.includes(p);
-        return <div key={p} className="row2 person"><span><Avatar name={p} size={30} />{p}</span><span className={`status-pill ${ok ? 'done' : 'wait'}`}>{ok ? 'Submitted' : 'Not yet'}</span></div>;
-      })}
+      <div className="wait-grid" role="list" aria-label="Who has submitted">
+        {PEOPLE.map(p => {
+          const ok = done.includes(p);
+          return (
+            <div key={p} className="wait-person" role="listitem" aria-label={`${p}, ${ok ? 'submitted' : 'not yet'}`} data-done={ok}>
+              <span className="wait-pic">
+                <Avatar name={p} size={72} />
+                {ok && <span className="wait-tick" role="img" aria-label="Submitted"><IconCheck size={14} /></span>}
+              </span>
+              <span className="wait-name">{p}</span>
+            </div>
+          );
+        })}
+      </div>
       {isLocal && <button className="demo" onClick={fill}>Fill the other four with sample votes</button>}
     </section>
   );

@@ -354,6 +354,11 @@ h1.big { margin: 0; }
 .status-pill { padding: 4px 10px; border-radius: var(--r-pill); font-size: 12px; font-weight: 800; box-shadow: inset 0 0 0 1.5px currentColor; }
 .row2 .done { color: var(--tea); }
 .row2 .wait { color: var(--muted); }
+.wait-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 14px 8px; margin: 18px 0 8px; }
+.wait-person { display: flex; flex-direction: column; align-items: center; gap: 6px; font-weight: 750; transition: opacity var(--dur-slow, .3s), filter var(--dur-slow, .3s); }
+.wait-person[data-done="false"] { opacity: .42; filter: grayscale(1); }
+.wait-pic { position: relative; display: inline-flex; }
+.wait-tick { position: absolute; right: -4px; top: -4px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--tea); color: #fff; box-shadow: 0 0 0 2px var(--bg, #0B0D10); }
 .row2.sug { align-items: center; }
 .row2 .nm { font-weight: 700; display: block; }
 .row2 small { display: block; color: var(--muted); font-size: 12.5px; font-weight: 400; }
