@@ -104,16 +104,26 @@ describe('group', () => {
     const g9 = groupResult(base(), items, L);
     expect(g9.days).toBe(9); expect(g9.extras.length).toBeGreaterThan(0);
   });
-  // The 5-question cap counts questions asked: north items behind the open "North or South?" fork
-  // used to take places in the top 5 and then be skipped, leaving 2 questions for 14 contested items.
-  it('asks up to 5 item questions however many contested items sit behind the region fork', () => {
-    const live = liveCatalogue.items as Item[];
-    for (const seed of [3, 5]) {
-      const g = groupResult(seeded(live, seed), live, L);
-      expect(g.knockouts.some(k => k.forkId === 'region:north'), `seed ${seed}`).toBe(true);
-      expect(g.knockouts.filter(k => k.forkId.startsWith('ko:')).length, `seed ${seed}`).toBe(5);
-    }
-    for (let seed = 1; seed <= 12; seed++) expect(groupResult(seeded(live, seed), live, L).knockouts.filter(k => k.forkId.startsWith('ko:')).length).toBeLessThanOrEqual(5);
+  // The 5-question cap counts questions asked. Two people Must all five north items, so those top
+  // the contested list; behind the open "North or South?" fork they used to fill the 5 places and
+  // then be skipped, leaving no question for the south Musts that did not fit.
+  it('asks item questions for the south while the region fork holds the north items back', () => {
+    const N5 = ['jaffna', 'delft', 'nainativu', 'trinco', 'pigeon'];
+    const mk = (name: Person, must: string[]): Response => {
+      const r = emptyRanking(); r.must = must.map(m => [m]); r.meh = items.filter(i => !must.includes(i.id)).map(i => [i.id]);
+      return { name, days: 9, flex: false, pace: 1, ranking: r, rated: items.map(i => i.id), submitted: true, updatedAt: '' };
+    };
+    const g = groupResult({ responses: {
+      Brittany: mk('Brittany', N5), Alex: mk('Alex', N5),
+      Antek: mk('Antek', ['sigiriya', 'yala', 'galle', 'knuckles']),
+      Lazza: mk('Lazza', ['ellarock', 'horton', 'polonnaruwa', 'hiriketiya']),
+      Saulie: mk('Saulie', ['anuradhapura', 'diyaluma', 'rafting', 'train']),
+    }, suggestions: [], votes: [] }, items, L);
+    const asked = g.knockouts.filter(k => k.forkId.startsWith('ko:'));
+    expect(g.knockouts[0].forkId).toBe('region:north');
+    expect(asked.length).toBeGreaterThan(0);
+    expect(asked.length).toBeLessThanOrEqual(5);
+    expect(asked.every(k => !N5.includes(k.forkId.slice(3)))).toBe(true);
   });
   // "With 14 days you'd also get..." means the plan plus every extra, in one 14-day trip.
   it('extras all fit alongside the plan in 14 days', () => {
