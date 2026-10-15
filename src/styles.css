@@ -228,7 +228,7 @@ h1.big { margin: 0; }
 .fact-warn { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; }
 .fact-warn svg { color: var(--skip); margin-top: 1px; }
 .fact-warn b { color: var(--skip); }
-.review { margin: 2px 0; padding: 2px 0 2px 16px; border-left: 3px solid var(--coconut); }
+.review { margin: 2px 0; padding: 2px 0; }
 .review p { margin: 0; font-size: 16px; font-weight: 600; font-style: italic; line-height: 1.45; }
 .review a { text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
 .review cite { display: block; margin-top: 6px; font-style: normal; font-size: 12.5px; color: var(--muted); }
