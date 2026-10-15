@@ -27,7 +27,7 @@ export const PosterArt = forwardRef<SVGSVGElement, { areas: Area[] }>(function P
   const x0 = (W - total) / 2;
   const lines = routeLines(areas);
   return (
-    <svg ref={ref} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label="Sri Lanka poster" className="poster-art">
+    <svg ref={ref} viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label="Sri Lanka poster" className="poster-art">
       <defs>
         <linearGradient id="poster-sky" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#0A1A28" /><stop offset=".55" stopColor="#7A2E4D" /><stop offset=".8" stopColor="#FF7A1A" /><stop offset="1" stopColor="#FFC15E" />
@@ -55,9 +55,45 @@ export const PosterArt = forwardRef<SVGSVGElement, { areas: Area[] }>(function P
 
 const SCALE = 3;
 
+const toDataUrl = (blob: Blob) => new Promise<string>((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(String(r.result));
+  r.onerror = () => rej(r.error);
+  r.readAsDataURL(blob);
+});
+
+/** An SVG drawn as an image cannot fetch files, so every <image> is inlined as a data URL first. */
+async function inlineImages(svg: SVGSVGElement) {
+  await Promise.all([...svg.querySelectorAll('image')].map(async im => {
+    const href = im.getAttribute('href');
+    if (!href || href.startsWith('data:')) return;
+    try {
+      const res = await fetch(href);
+      if (res.ok) im.setAttribute('href', await toDataUrl(await res.blob()));
+    } catch { /* keep the link; the figure just will not show */ }
+  }));
+}
+
+/** Text is drawn on the canvas, not inside the SVG image: an SVG image cannot see the page's web font (Archivo). */
+async function drawText(ctx: CanvasRenderingContext2D, texts: SVGTextElement[]) {
+  await Promise.all(texts.map(t => document.fonts.load(`${t.getAttribute('font-weight')} ${t.getAttribute('font-size')}px Archivo`, t.textContent ?? '')));
+  for (const t of texts) {
+    ctx.font = `${t.getAttribute('font-weight')} ${SCALE * Number(t.getAttribute('font-size'))}px ${FONT}`;
+    ctx.fillStyle = t.getAttribute('fill') ?? '#fff';
+    ctx.textAlign = 'center';
+    (ctx as unknown as { letterSpacing: string }).letterSpacing = `${SCALE * Number(t.getAttribute('letter-spacing') ?? 0)}px`;
+    const spans = [...t.querySelectorAll('tspan')];
+    if (spans.length) spans.forEach(sp => ctx.fillText(sp.textContent ?? '', SCALE * Number(sp.getAttribute('x')), SCALE * Number(sp.getAttribute('y'))));
+    else ctx.fillText(t.textContent ?? '', SCALE * Number(t.getAttribute('x')), SCALE * Number(t.getAttribute('y')));
+  }
+}
+
 export async function posterBlob(el: SVGSVGElement): Promise<Blob> {
-  const svg = new XMLSerializer().serializeToString(el);
-  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  const clone = el.cloneNode(true) as SVGSVGElement;
+  const texts = [...clone.querySelectorAll('text')];
+  texts.forEach(t => t.parentNode?.removeChild(t));
+  await inlineImages(clone);
+  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' }));
   try {
     const img = new Image();
     img.src = url;
@@ -65,7 +101,9 @@ export async function posterBlob(el: SVGSVGElement): Promise<Blob> {
     const canvas = document.createElement('canvas');
     canvas.width = W * SCALE;
     canvas.height = H * SCALE;
-    canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    await drawText(ctx, texts);
     return await new Promise<Blob>((res, rej) => canvas.toBlob(b => (b ? res(b) : rej(new Error('no png'))), 'image/png'));
   } finally {
     URL.revokeObjectURL(url);

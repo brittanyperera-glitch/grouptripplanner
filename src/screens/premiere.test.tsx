@@ -5,6 +5,7 @@ import catalogue from '../data/catalogue.json';
 import { AppProvider } from '../state';
 import { emptyRanking, PEOPLE } from '../types';
 import type { Item, Person, Plan, Response, Tier } from '../types';
+import { IMAGE_AVATARS } from '../components/Avatar';
 import Friends from './Friends';
 import Poster, { routeLines } from './Poster';
 import { Trailer, trailerFrames } from './Trailer';
@@ -23,7 +24,7 @@ const plan: Plan = {
   days: [1, 2, 3].map(n => ({ n, area: 'Colombo' as const, spare: 0, rainSlack: false, entries: [{ kind: 'activity' as const, label: 'x', hours: 1, itemId: ITEMS[n].id }] })),
 };
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => { localStorage.clear(); Object.defineProperty(document, 'fonts', { value: { load: async () => [] }, configurable: true }); });
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe('Friends', () => {
@@ -100,7 +101,7 @@ describe('poster', () => {
     vi.stubGlobal('Image', class { src = ''; decode = async () => {}; });
     URL.createObjectURL = vi.fn(() => 'blob:x');
     URL.revokeObjectURL = vi.fn();
-    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({ drawImage: vi.fn() })) as never;
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({ drawImage: vi.fn(), fillText: vi.fn() })) as never;
     HTMLCanvasElement.prototype.toBlob = function (cb: BlobCallback) { cb(new Blob(['png'], { type: 'image/png' })); };
     const share = vi.fn(async () => {});
     Object.assign(navigator, { share, canShare: () => true });
@@ -115,13 +116,66 @@ describe('poster', () => {
     vi.stubGlobal('Image', class { src = ''; decode = async () => {}; });
     URL.createObjectURL = vi.fn(() => 'blob:x');
     URL.revokeObjectURL = vi.fn();
-    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({ drawImage: vi.fn() })) as never;
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({ drawImage: vi.fn(), fillText: vi.fn() })) as never;
     HTMLCanvasElement.prototype.toBlob = function (cb: BlobCallback) { cb(new Blob(['png'], { type: 'image/png' })); };
     Object.assign(navigator, { share: undefined, canShare: undefined });
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
     render(<Poster areas={plan.areas} />);
     await userEvent.click(screen.getByRole('button', { name: 'Save poster' }));
     expect(click).toHaveBeenCalledOnce();
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('poster export fidelity', () => {
+  const stubCanvas = () => {
+    const fills: { text: string; font: string }[] = [];
+    const ctx: Record<string, unknown> = {
+      font: '', fillStyle: '', textAlign: '', letterSpacing: '',
+      drawImage: () => {},
+      fillText(text: string) { fills.push({ text, font: String(ctx.font) }); },
+    };
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => ctx) as never;
+    HTMLCanvasElement.prototype.toBlob = function (cb: BlobCallback) { cb(new Blob(['png'], { type: 'image/png' })); };
+    return { fills };
+  };
+  const readText = (b: Blob) => new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsText(b); });
+
+  it('draws the title in the app font after loading it, not the SVG fallback', async () => {
+    const load = vi.fn(async () => []);
+    Object.defineProperty(document, 'fonts', { value: { load }, configurable: true });
+    vi.stubGlobal('Image', class { src = ''; decode = async () => {}; });
+    URL.createObjectURL = vi.fn(() => 'blob:x');
+    URL.revokeObjectURL = vi.fn();
+    const { fills } = stubCanvas();
+    const { posterBlob } = await import('./Poster');
+    const { container } = render(<Poster areas={plan.areas} />);
+    await posterBlob(container.querySelector('svg.poster-art') as SVGSVGElement);
+    expect(load).toHaveBeenCalledWith(expect.stringContaining('Archivo'), expect.anything());
+    const title = fills.find(f => f.text === 'SRI LANKA');
+    expect(title?.font).toContain('Archivo');
+    expect(title?.font).toContain('900');
+    vi.unstubAllGlobals();
+  });
+
+  it('inlines an image avatar as a data URL so it survives export', async () => {
+    (IMAGE_AVATARS as Set<Person>).add('Alex');
+    const png = new Blob([new Uint8Array([137, 80, 78, 71])], { type: 'image/png' });
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, blob: async () => png })));
+    vi.stubGlobal('Image', class { src = ''; decode = async () => {}; });
+    Object.defineProperty(document, 'fonts', { value: { load: async () => [] }, configurable: true });
+    const blobs: Blob[] = [];
+    URL.createObjectURL = vi.fn((b: Blob) => { blobs.push(b); return 'blob:x'; });
+    URL.revokeObjectURL = vi.fn();
+    stubCanvas();
+    const { posterBlob } = await import('./Poster');
+    const { container } = render(<Poster areas={plan.areas} />);
+    expect(container.querySelector('image[href="/img/players/alex.png"]')).not.toBeNull();
+    await posterBlob(container.querySelector('svg.poster-art') as SVGSVGElement);
+    const svg = await readText(blobs[0]);
+    expect(svg).toContain('data:image/png;base64');
+    expect(svg).not.toContain('/img/players/alex.png');
+    (IMAGE_AVATARS as Set<Person>).delete('Alex');
     vi.unstubAllGlobals();
   });
 });
