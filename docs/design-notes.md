@@ -94,3 +94,14 @@ Clickable mockup of Section 1: `docs/mockups/section1-flow.html` (photos and cre
 - Quip burst plays on Must and Skip only; Keen and Meh slide away quietly.
 - First card plays a one-time animated demo of the four swipe directions.
 - Waiting screen: avatars with who's done; no nudge button.
+
+## Logic decisions, Brittany 2026-10-15 (from docs/review/logic-audit.md D1-D8)
+- D1 Landing day: any drive allowed on day 1, including the 7.5 h airport to Jaffna (no change).
+- D2 No daily driving limits. D3 No rain slack half day. D4 Raw totals: more Musts means more pull (no per-person scaling).
+- D5 Her words: "the rejected musts shouldnt be completely knocked out, but knocked down". A Must that loses a head to head is demoted, not removed, so it can come back if room opens.
+- D6 "North or South?" is voted first, alone; place head to heads come after it is settled.
+- D7 Skip stays a strong minus (no veto); each planned item shows who skipped it.
+- D8 Weligama to Colombo: use an estimate of about 2 h (Southern Expressway; Colombo to Galle measured 1 h 23, research/research_transport.md) until measured in Google Maps.
+- Characters: Brittany's image-AI characters (lineup pose + selfie per person) replace the drawn avatars.
+- D5 mechanism (Brittany chose 2026-10-15): a Must that loses a head to head is scored as if each Must rating of it were Keen, and is no longer force-excluded.
+- Selfies (Brittany 2026-10-15): a Selfie button on the character page shows that person's emote; the Group results show the five selfies as the crew.
