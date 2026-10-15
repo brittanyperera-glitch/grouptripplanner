@@ -10,6 +10,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Trip Planning. Optimized.' })).toBeVisible();
     await shot(page, `${scheme}-1-name`);
+    await page.getByRole('button', { name: 'Choose your character' }).click();
     await page.getByRole('button', { name: 'Alex', exact: true }).click();
     await expect(page.getByRole('status')).toContainText('solo wolf');
     await shot(page, `${scheme}-1b-quip`);

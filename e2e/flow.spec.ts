@@ -29,6 +29,7 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
   await page.evaluate((fr) => { localStorage.clear(); for (const f of fr) localStorage.setItem(`tp:resp:${f.name}`, JSON.stringify(f)); }, FRIENDS);
   await page.reload();
 
+  await page.getByRole('button', { name: 'Choose your character' }).click();
   await page.getByRole('button', { name: 'Brittany', exact: true }).click();
   await page.getByRole('button', { name: /^9 days/ }).click();
   await page.getByRole('button', { name: /^Balanced/ }).click();
@@ -65,6 +66,7 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
       for (let i = 0; i < await f.count(); i++) await f.nth(i).locator('button.pick').first().click();
     }
     await page.getByRole('button', { name: 'Not you?' }).click();
+    await page.getByRole('button', { name: 'Choose your character' }).click();
     await page.getByRole('button', { name: 'Brittany', exact: true }).click();
     await page.getByRole('tab', { name: 'Group' }).click();
   }
