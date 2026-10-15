@@ -454,9 +454,9 @@ h1.big { margin: 0; }
 /* Guide */
 .guide-open { margin-top: 16px; flex: none; }
 .guide { gap: 14px; text-align: left; align-items: stretch; }
-/* One row of five equal chips, so no section wraps onto a second line at phone width. */
-.guide-chips { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding: 2px 0 4px; }
-.guide-chips button { all: unset; cursor: pointer; text-align: center; padding: 10px 2px; border-radius: var(--r-pill); font-size: 12.5px; font-weight: 800; color: var(--ink); background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line-strong); transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
+/* Chips grow to share the row and wrap only when their labels cannot fit, so none is ever cut off. */
+.guide-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 0 4px; }
+.guide-chips button { all: unset; flex: 1 0 auto; cursor: pointer; text-align: center; padding: 10px 8px; border-radius: var(--r-pill); font-size: 12.5px; font-weight: 800; color: var(--ink); background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line-strong); transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
 .guide-chips button[aria-pressed="true"] { color: var(--on-red); background: var(--red); box-shadow: none; }
 .guide-chips button:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
 .guide-section { display: flex; flex-direction: column; gap: 10px; }
