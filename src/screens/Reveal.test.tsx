@@ -206,7 +206,7 @@ describe('itinerary', () => {
     const days = [...list.children] as HTMLElement[];
     expect(days.map(d => d.querySelector('img')?.getAttribute('src') ?? null))
       .toEqual([photo('galleface'), photo('galleface'), photo('tooth'), photo('ninearch'), null]);
-    expect(days.map(d => d.querySelector('.stamp-label')?.textContent)).toEqual(['D01', 'D02', 'D03', 'D04', 'D05']);
+    expect(days.map(d => d.querySelector('.rv-daynum')?.textContent)).toEqual(['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5']);
     expect(list.classList.contains('route')).toBe(true);
     expect(days[2].querySelector('img')).toHaveAttribute('alt', nm('tooth'));
     const done = screen.getByRole('region', { name: 'Mission complete' });

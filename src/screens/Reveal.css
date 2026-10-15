@@ -94,7 +94,9 @@
 .rv-day.banner .rv-day-card { min-height: 112px; align-items: flex-end; padding: 10px 14px 11px; background: #141a16; }
 .rv-day.banner .rv-day-card::after { content: ""; position: absolute; inset: auto 0 0 0; height: 78%; background: linear-gradient(to top, rgba(20, 26, 22, .9), rgba(20, 26, 22, 0)); }
 .rv-day.banner .rv-day-photo { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 0; }
-.rv-day.banner .stamp-label { position: absolute; z-index: 1; top: 9px; left: 10px; background: var(--white); }
+/* Brittany 2026-10-15: "DAY 1", bold, not a D01 stamp. */
+.rv-daynum { flex: none; padding: 5px 10px 4px; border-radius: var(--r-stamp); background: var(--red); color: var(--on-red); font-family: var(--font-head); font-size: 20px; font-weight: 800; line-height: 1; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; }
+.rv-day.banner .rv-daynum { position: absolute; z-index: 1; top: 9px; left: 10px; }
 .rv-day.banner .rv-day-txt { position: relative; z-index: 1; }
 .rv-day.banner .rv-itin-place { font-size: 26px; color: #fff; }
 .rv-day.banner .rv-itin-what { color: rgba(255, 255, 255, .92); font-size: 12px; }

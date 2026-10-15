@@ -255,7 +255,7 @@ function DayRow({ d }: { d: DayLine }) {
       <span className="route-pin" aria-hidden="true" />
       <div className="rv-day-card">
         {d.photo && <img className="rv-day-photo" src={`/img/${d.photo.photo}.jpg`} alt={d.photo.name} loading="lazy" decoding="async" />}
-        <span className="stamp-label">D{two(d.n)}</span>
+        <span className="rv-daynum">Day {d.n}</span>
         <div className="rv-day-txt">
           <span className="rv-itin-place">{d.place}</span>
           <span className="rv-itin-what">{d.what}</span>
