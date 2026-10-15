@@ -86,8 +86,8 @@ describe('R3 change days or pace', () => {
   });
 });
 
-describe('R4 lock during a comparison', () => {
-  it('drops the comparison and commits nothing when the group locks mid-compare', async () => {
+describe('R4 lock while editing picks', () => {
+  it('closes the picks screen and keeps the ratings when the group locks', async () => {
     const ranking = { ...emptyRanking(), must: [['a'], ['b']], keen: [['c']] };
     for (const p of PEOPLE) if (p !== 'Saulie') seed(row(p, { ...DONE, ranking }));
     seed(row('Saulie', { ...DONE, submitted: false, ranking }));
@@ -95,31 +95,14 @@ describe('R4 lock during a comparison', () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(await screen.findByRole('button', { name: /edit my ratings/i }));
-    await user.selectOptions(await screen.findByLabelText('Change tier for Gamma Beach'), 'must');
-    expect(await screen.findByRole('button', { name: /this one/i })).toBeInTheDocument();
+    expect(await screen.findByLabelText('Change tier for Gamma Beach')).toBeInTheDocument();
     const before = localStorage.getItem('tp:resp:Alex');
 
     seed(row('Saulie', { ...DONE, ranking }));
     act(() => { window.dispatchEvent(new StorageEvent('storage', { key: 'tp:resp:Saulie' })); });
 
     expect(await screen.findByText(/ratings are locked/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /this one/i })).toBeNull();
+    expect(screen.queryByLabelText('Change tier for Gamma Beach')).toBeNull();
     expect(localStorage.getItem('tp:resp:Alex')).toBe(before);
-  });
-});
-
-describe('R11 cancel a first-rating comparison', () => {
-  it('Never mind drops the pending placement and the card is unrated again', async () => {
-    seed(row('Alex', { rated: ['a'], ranking: { ...emptyRanking(), must: [['a']] } }));
-    localStorage.setItem('tp:me', 'Alex');
-    const user = userEvent.setup();
-    render(<App />);
-    await screen.findByText('2 of 3');
-    await user.click(screen.getByRole('button', { name: 'Must' }));
-    await user.click(await screen.findByRole('button', { name: 'Never mind' }));
-    expect(await screen.findByText('2 of 3')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Must' })).toBeInTheDocument();
-    expect(saved('Alex').rated).toEqual(['a']);
-    expect(saved('Alex').ranking.must).toEqual([['a']]);
   });
 });

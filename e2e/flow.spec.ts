@@ -36,14 +36,11 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
 
   const submit = page.getByRole('button', { name: 'Done, submit' });
   for (let guard = 0; guard < 400 && !(await submit.isVisible()); guard++) {
-    if (await page.getByText('Which do you want more?').isVisible()) {
-      await page.getByRole('button', { name: /This one/ }).click();
-      continue;
-    }
     const title = (await page.locator('.title').first().textContent())?.trim() ?? '';
     await page.getByRole('button', { name: BRITTANY_MUSTS.has(title) ? 'Must' : 'Meh', exact: true }).click();
   }
-  await shot(page, 'rerank');
+  await expect(page.getByRole('region', { name: 'Your picks' })).toBeVisible();
+  await shot(page, 'picks');
   await submit.click();
 
   await page.getByRole('tab', { name: 'My trip' }).click();

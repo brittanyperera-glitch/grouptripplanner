@@ -43,21 +43,23 @@ async function toRate(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('rating flow', () => {
-  it('name, days, pace, rate with a compare, then rerank shows 1, 2 and 3', async () => {
+  // Brittany 2026-10-15: before the head to heads people only swipe tiers and submit.
+  it('name, days, pace, then swipes with no compare, then a picks screen with no ranks or moves', async () => {
     const user = userEvent.setup();
     render(<App />);
     await toRate(user);
 
     await user.click(await screen.findByRole('button', { name: 'Must' }));
     await user.click(await screen.findByRole('button', { name: 'Must' }));
-    await user.click(await screen.findByRole('button', { name: /this one/i }));
     await user.click(await screen.findByRole('button', { name: 'Keen' }));
 
-    const list = await screen.findByRole('region', { name: 'Your ranking' });
-    const ranks = Array.from(list.querySelectorAll('.rk')).map(n => n.textContent);
-    expect(ranks).toEqual(['1', '2', '3']);
+    const list = await screen.findByRole('region', { name: 'Your picks' });
+    expect(list.querySelectorAll('.rk')).toHaveLength(0);
+    expect(within(list).queryByRole('button', { name: /^Move / })).toBeNull();
     const names = Array.from(list.querySelectorAll('.nm')).map(n => n.textContent);
-    expect(names).toEqual(['Beta Falls', 'Alpha Rock', 'Gamma Beach']);
+    expect(names).toEqual(['Alpha Rock', 'Beta Falls', 'Gamma Beach']);
+    expect(screen.queryByText(/Your ranking/)).toBeNull();
+    await waitFor(() => expect(savedAlex().ranking.must).toEqual([['a', 'b']]));
   });
 
   it('saves every change through the store', async () => {
@@ -101,28 +103,16 @@ describe('rating flow', () => {
   });
 });
 
-describe('compare', () => {
-  const four = () => [...THREE, mk('d', 'Delta Hill', 'South coast')];
-
-  it('disables tie when the level already holds three', async () => {
-    cat.items = four();
+describe('no compares before the head to heads', () => {
+  it('a fourth Must joins the same unordered spot', async () => {
+    cat.items = [...THREE, mk('d', 'Delta Hill', 'South coast')];
     seed(row('Alex', { ranking: { ...emptyRanking(), must: [['a', 'b', 'c']] }, rated: ['a', 'b', 'c'] }));
     localStorage.setItem('tp:me', 'Alex');
     const user = userEvent.setup();
     render(<App />);
     await user.click(await screen.findByRole('button', { name: 'Must' }));
-    const tie = await screen.findByRole('button', { name: /3 already tied there/i });
-    expect(tie).toBeDisabled();
-  });
-
-  it('offers tie when the level has room', async () => {
-    cat.items = four();
-    seed(row('Alex', { ranking: { ...emptyRanking(), must: [['a']] }, rated: ['a', 'b', 'c'] }));
-    localStorage.setItem('tp:me', 'Alex');
-    const user = userEvent.setup();
-    render(<App />);
-    await user.click(await screen.findByRole('button', { name: 'Must' }));
-    expect(await screen.findByRole('button', { name: /tie them/i })).toBeEnabled();
+    await waitFor(() => expect(savedAlex().ranking.must).toEqual([['a', 'b', 'c', 'd']]));
+    expect(screen.queryByRole('button', { name: /this one/i })).toBeNull();
   });
 });
 
@@ -284,25 +274,18 @@ describe('submit, lock and errors', () => {
   });
 });
 
-describe('rerank', () => {
+describe('picks screen', () => {
   const ready = () => {
     seed(row('Alex', { rated: ['a', 'b', 'c'], ranking: { ...emptyRanking(), must: [['a'], ['b']], keen: [['c']] } }));
     localStorage.setItem('tp:me', 'Alex');
   };
 
-  it('moves an item down and saves', async () => {
-    ready();
-    const user = userEvent.setup();
-    render(<App />);
-    await user.click(await screen.findByRole('button', { name: 'Move Alpha Rock down' }));
-    await waitFor(() => expect(savedAlex().ranking.must).toEqual([['b', 'a']]));
-  });
-
-  it('changing tier into an occupied tier opens a compare', async () => {
+  it('changing tier joins that tier without a compare', async () => {
     ready();
     const user = userEvent.setup();
     render(<App />);
     await user.selectOptions(await screen.findByLabelText('Change tier for Gamma Beach'), 'must');
-    expect(await screen.findByRole('button', { name: /this one/i })).toBeInTheDocument();
+    await waitFor(() => expect(savedAlex().ranking.must).toEqual([['a', 'b', 'c']]));
+    expect(screen.queryByRole('button', { name: /this one/i })).toBeNull();
   });
 });

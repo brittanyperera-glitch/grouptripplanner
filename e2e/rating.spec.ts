@@ -21,8 +21,9 @@ for (const scheme of ['light', 'dark'] as const) {
     await shot(page, `${scheme}-3-rate`);
     await must.click();
     await must.click();
-    await expect(page.getByText(/which do you want more/i)).toBeVisible();
-    await page.waitForTimeout(800);
-    await shot(page, `${scheme}-4-compare`);
+    // No in-tier comparison before the head to heads (Brittany 2026-10-15): the next card follows.
+    await expect(page.getByText(/^3 of \d+$/)).toBeVisible();
+    await expect(page.getByText(/which do you want more/i)).toHaveCount(0);
+    await shot(page, `${scheme}-4-third-card`);
   });
 }

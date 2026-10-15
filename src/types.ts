@@ -3,7 +3,6 @@ export const TIERS: Tier[] = ['must', 'keen', 'meh', 'skip'];
 export type Level = string[];
 export type Ranking = Record<Tier, Level[]>;
 export const emptyRanking = (): Ranking => ({ must: [], keen: [], meh: [], skip: [] });
-export interface Pending { id: string; tier: Tier; lo: number; hi: number; steps: number }
 
 export type Slot = 'sunrise' | 'morning' | 'afternoon' | 'sunset' | 'evening' | 'late' | 'any';
 export type Area = 'Colombo' | 'North' | 'East coast' | 'Cultural Triangle' | 'Kandy and Knuckles' | 'Kitulgala' | 'Hill country' | 'Ella' | 'Wild south' | 'South coast';

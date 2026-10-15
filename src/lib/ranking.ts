@@ -1,6 +1,7 @@
-import { TIERS, type Pending, type Ranking, type Tier } from '../types';
+import { TIERS, type Ranking, type Tier } from '../types';
 
-const MAX_TIE = 3;
+// Draws exist only on the Finalize screen, up to 5 to a spot (Brittany 2026-10-15).
+export const MAX_TIE = 5;
 export const BASE: Record<Tier, number> = { must: 10, keen: 4, meh: 1, skip: -3 };
 
 export function tierOf(r: Ranking, id: string): Tier | null {
@@ -12,32 +13,10 @@ export function removeId(r: Ranking, id: string): void {
   for (const t of TIERS) r[t] = r[t].map(l => l.filter(x => x !== id)).filter(l => l.length > 0);
 }
 
-export function startPlace(r: Ranking, id: string, tier: Tier): Pending | null {
-  if (r[tier].length === 0) { r[tier] = [[id]]; return null; }
-  return { id, tier, lo: 0, hi: r[tier].length, steps: 0 };
-}
-
-const mid = (p: Pending) => Math.floor((p.lo + p.hi) / 2);
-
-export function compareTarget(r: Ranking, p: Pending): string {
-  return r[p.tier][mid(p)][0];
-}
-
-export function canTie(r: Ranking, p: Pending): boolean {
-  return r[p.tier][mid(p)].length < MAX_TIE;
-}
-
-export function answer(r: Ranking, p: Pending, a: 'new' | 'old' | 'same'): Pending | null {
-  const m = mid(p);
-  const levels = r[p.tier];
-  if (a === 'same') {
-    if (levels[m].length >= MAX_TIE) throw new Error('tie full');
-    levels[m].push(p.id);
-    return null;
-  }
-  const next: Pending = { ...p, steps: p.steps + 1, lo: a === 'old' ? m + 1 : p.lo, hi: a === 'new' ? m : p.hi };
-  if (next.lo === next.hi) { levels.splice(next.lo, 0, [p.id]); return null; }
-  return next;
+/** Before the head to heads a tier is one unordered spot, so every item in it scores the same. */
+export function setTier(r: Ranking, id: string, tier: Tier): void {
+  removeId(r, id);
+  r[tier] = [[...r[tier].flat(), id]];
 }
 
 export function move(r: Ranking, id: string, dir: -1 | 1): void {
@@ -60,11 +39,6 @@ export function move(r: Ranking, id: string, dir: -1 | 1): void {
     levels[i] = levels[j];
     levels[j] = lvl;
   }
-}
-
-export function retier(r: Ranking, id: string, tier: Tier): Pending | null {
-  removeId(r, id);
-  return startPlace(r, id, tier);
 }
 
 export function labels(r: Ranking): Record<string, string> {
