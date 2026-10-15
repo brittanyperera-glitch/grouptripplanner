@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
+import './Map.css';
 import { motion } from './motion';
 import { buildLegs, legD, tukHeight, tukTransform, useLegDrive, type Leg } from './routeDrive';
 import TukTuk from './TukTuk';
@@ -35,6 +36,7 @@ export function hubLabel(h: Hub) {
 const pts = (list: [number, number][]) => list.map(([a, o]) => px(a, o).map(n => n.toFixed(1)).join(',')).join(' ');
 
 const TUK_W = 30, TUK_H = tukHeight(TUK_W);
+const TAG_CH = 6.6; // label width per letter, Barlow Condensed 11.5px uppercase with tracking
 const PAUSE_MS = 450; // the tuk-tuk's beat at each stop on My trip
 // Where the tuk-tuk's wheels sit relative to a stop's dot: beside it on the side away from the stop's name,
 // or below it when the name is on top.
@@ -49,7 +51,6 @@ type Drive = 'idle' | 'done' | { k: number; moving: boolean };
 export default function RouteMap({ route, drive = false }: { route: Hub[]; drive?: boolean }) {
   const uid = useId().replace(/[^A-Za-z0-9]/g, '');
   const line = pts(route.map(h => [HUB[h].lat, HUB[h].lon]));
-  const stops = [...new Set(route)];
   const animate = drive && motion() === 'full' && route.length > 1;
   const legs = useMemo(() => buildLegs(route.map(hubXY)), [route]);
   const [at, setAt] = useState<Drive>('idle');
@@ -66,60 +67,63 @@ export default function RouteMap({ route, drive = false }: { route: Hub[]; drive
     return () => clearTimeout(t);
   }, [animate, at, legs]);
 
+  const stops = [...new Set(route)];
   const run = animate && typeof at === 'object' ? at : null;
   useLegDrive(!!run?.moving, run ? legs[run.k] : undefined, parkOff(run ? route[run.k] : 'AIR'), parkOff(run ? route[run.k + 1] : 'AIR'), TUK_W, tukRef, lineRef);
   const drawn = run ? (run.moving ? run.k : run.k + 1) : legs.length;
   const shown = run ? new Set(route.slice(0, drawn + 1)) : null;
+  const shownStops = stops.filter(h => !shown || shown.has(h));
   const tukHub = run ? route[run.moving ? run.k : run.k + 1] : 'AIR';
   const tukLeg = run ? legs[run.k] : legs[legs.length - 1];
   const [hx, hy] = hubXY(tukHub);
   const legLine = (l: Leg, i: number) => (
     <g key={i}>
-      <path d={legD(l)} fill="none" stroke="#FF7A1A" strokeOpacity=".55" strokeWidth="9" strokeLinecap="round" filter={`url(#glow${uid})`} />
-      <path d={legD(l)} fill="none" stroke="#FF8A2A" strokeWidth="3.5" strokeLinecap="round" />
+      <path className="route-halo" d={legD(l)} />
+      <path className="route-line" d={legD(l)} />
     </g>
   );
   return (
-    <div className="map scene" data-drive={animate ? (run ? 'on' : at) : undefined}>
-      <svg viewBox="-60 10 340 470" role="img" aria-label={`Route: ${route.map(h => HUB[h].name).join(', ')}`}>
-        <defs>
-          <linearGradient id={`route${uid}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#FFC15E" /><stop offset=".55" stopColor="#FF7A1A" /><stop offset="1" stopColor="#FF4D6D" />
-          </linearGradient>
-          <filter id={`glow${uid}`} x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="4" />
-          </filter>
-        </defs>
-        <polygon points={pts(COAST)} fill="#1A2620" stroke="#2F4A3E" strokeWidth="1.5" />
+    <div className="map" data-drive={animate ? (run ? 'on' : at) : undefined}>
+      <svg viewBox="-60 10 350 470" role="img" aria-label={`Route: ${route.map(h => HUB[h].name).join(', ')}`}>
+        <rect className="map-sea" x="-60" y="10" width="350" height="470" />
+        <polygon className="map-shore" points={pts(COAST)} />
+        <polygon className="map-land" points={pts(COAST)} />
         {run ? (
           <>
             {legs.slice(0, drawn).map(legLine)}
             {run.moving && (
+              // The leg draws itself: a mask reveals the dashed line as --o runs 1 to 0 (a plain dashoffset would erase the dashes).
               <g key={`live${run.k}`} ref={lineRef} style={{ '--o': 1 } as CSSProperties}>
-                <path d={legD(legs[run.k])} fill="none" stroke="#FF7A1A" strokeOpacity=".55" strokeWidth="9" strokeLinecap="round" filter={`url(#glow${uid})`} pathLength={1} strokeDasharray="1 1" style={{ strokeDashoffset: 'var(--o)' }} />
-                <path d={legD(legs[run.k])} fill="none" stroke="#FF8A2A" strokeWidth="3.5" strokeLinecap="round" pathLength={1} strokeDasharray="1 1" style={{ strokeDashoffset: 'var(--o)' }} />
+                <mask id={`reveal${uid}${run.k}`} maskUnits="userSpaceOnUse" x="-60" y="10" width="350" height="470">
+                  <path d={legD(legs[run.k])} fill="none" stroke="#fff" strokeWidth="8" pathLength={1} strokeDasharray="1 1" style={{ strokeDashoffset: 'var(--o)' }} />
+                </mask>
+                <g mask={`url(#reveal${uid}${run.k})`}>
+                  <path className="route-halo" d={legD(legs[run.k])} />
+                  <path className="route-line" d={legD(legs[run.k])} />
+                </g>
               </g>
             )}
           </>
         ) : (
           <>
-            <polyline points={line} fill="none" stroke="#FF7A1A" strokeOpacity=".55" strokeWidth="9" strokeLinejoin="round" strokeLinecap="round" filter={`url(#glow${uid})`} />
-            <polyline points={line} fill="none" stroke={`url(#route${uid})`} strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" />
+            <polyline className="route-halo" points={line} />
+            <polyline className="route-line" points={line} />
           </>
         )}
-        {stops.filter(h => !shown || shown.has(h)).map(h => {
-          const [x, y] = px(HUB[h].lat, HUB[h].lon);
-          const { side, name } = HUB[h];
-          const tx = side === 'l' ? x - 10 : side === 'r' ? x + 10 : x;
-          const ty = side === 't' ? y - 11 : y + 4;
+        {shownStops.map(h => {
+          const { x, y, anchor } = hubLabel(h);
+          const w = HUB[h].name.length * TAG_CH;
+          const x0 = anchor === 'end' ? x - w : anchor === 'start' ? x : x - w / 2;
           return (
             <g key={h}>
-              <circle cx={x} cy={y} r="10" fill="#FFC15E" opacity=".35" filter={`url(#glow${uid})`} />
-              <circle cx={x} cy={y} r="4.5" fill="#FFF4E6" stroke="#FF7A1A" strokeWidth="2" />
-              <text x={tx} y={ty} textAnchor={side === 'l' ? 'end' : side === 'r' ? 'start' : 'middle'} fontSize="11.5" fontWeight="800"
-                fontFamily="Archivo, sans-serif" fill="#F6F2EC" stroke="#0B1620" strokeWidth="3" paintOrder="stroke">{name}</text>
+              <rect className="stop-tag" x={x0 - 4} y={y - 10.5} width={w + 8} height="14" rx="2" />
+              <text className="stop-label" x={x} y={y} textAnchor={anchor}>{HUB[h].name}</text>
             </g>
           );
+        })}
+        {shownStops.map(h => {
+          const [x, y] = hubXY(h);
+          return <circle key={h} className="stop-dot" cx={x} cy={y} r="4" />;
         })}
         {animate && at !== 'idle' && (
           <g ref={tukRef} transform={tukTransform(hx + parkOff(tukHub)[0], hy + parkOff(tukHub)[1], tukLeg.b[0] < tukLeg.a[0], TUK_W)}>

@@ -1,0 +1,2 @@
+/* A day with no photo: paper strip, so its labels take ink, not the white used over photos. */
+.strip.plain .day-area { color: var(--muted); }

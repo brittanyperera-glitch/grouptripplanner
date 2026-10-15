@@ -10,15 +10,14 @@ interface Look {
   height: number; build: number; skin: string; hair: string; hairStyle: Hair;
   top: string; longSleeves?: boolean; legs: Legs; denim: string; shoes: Shoes;
   glasses?: boolean; narrowEyes?: boolean; earrings?: boolean; bangle?: boolean; watch?: boolean; ring?: boolean;
-  bg: [string, string];
 }
 
 export const LOOKS: Record<Person, Look> = {
-  Brittany: { height: 164, build: 0.96, skin: '#8D5A3B', hair: '#22150E', hairStyle: 'curly-shoulder', top: '#F4F1EA', legs: 'wide', denim: '#5B7DB1', shoes: 'chunky', earrings: true, bangle: true, bg: ['#FF7A1A', '#FF4D6D'] },
-  Alex: { height: 200, build: 0.9, skin: '#C9A27A', hair: '#3B2416', hairStyle: 'short-swept', narrowEyes: true, top: '#1F2F5C', legs: 'camo', denim: '#CDB98F', shoes: 'af1', bg: ['#2BB673', '#1B6E8F'] },
-  Antek: { height: 189, build: 1.1, skin: '#EBC3A0', hair: '#4A3020', hairStyle: 'curly-mullet', top: '#F4F1EA', legs: 'wide', denim: '#17181C', shoes: 'loafer', glasses: true, watch: true, ring: true, bg: ['#4FB3E8', '#6A4CE0'] },
-  Lazza: { height: 181, build: 0.88, skin: '#E6BC97', hair: '#4B2E1C', hairStyle: 'high-ponytail', top: '#F2EEE8', longSleeves: true, legs: 'flared', denim: '#4E6E9E', shoes: 'flat', bg: ['#FFC15E', '#FF7A1A'] },
-  Saulie: { height: 191, build: 1, skin: '#F0CDB0', hair: '#9C6B42', hairStyle: 'short-light', top: '#F4F1EA', legs: 'straight', denim: '#3E5F94', shoes: 'af1', glasses: true, bg: ['#B07CFF', '#FF4D6D'] },
+  Brittany: { height: 164, build: 0.96, skin: '#8D5A3B', hair: '#22150E', hairStyle: 'curly-shoulder', top: '#F4F1EA', legs: 'wide', denim: '#5B7DB1', shoes: 'chunky', earrings: true, bangle: true },
+  Alex: { height: 200, build: 0.9, skin: '#C9A27A', hair: '#3B2416', hairStyle: 'short-swept', narrowEyes: true, top: '#1F2F5C', legs: 'camo', denim: '#CDB98F', shoes: 'af1' },
+  Antek: { height: 189, build: 1.1, skin: '#EBC3A0', hair: '#4A3020', hairStyle: 'curly-mullet', top: '#F4F1EA', legs: 'wide', denim: '#17181C', shoes: 'loafer', glasses: true, watch: true, ring: true },
+  Lazza: { height: 181, build: 0.88, skin: '#E6BC97', hair: '#4B2E1C', hairStyle: 'high-ponytail', top: '#F2EEE8', longSleeves: true, legs: 'flared', denim: '#4E6E9E', shoes: 'flat' },
+  Saulie: { height: 191, build: 1, skin: '#F0CDB0', hair: '#9C6B42', hairStyle: 'short-light', top: '#F4F1EA', legs: 'straight', denim: '#3E5F94', shoes: 'af1', glasses: true },
 };
 
 // Friends whose generated full-body PNG is in public/img/players/<lowercase name>.png. Add a name here once
@@ -63,7 +62,7 @@ function hairFront(l: Look): ReactNode {
     case 'curly-mullet':
       return <g fill={l.hair}>{[[42, 24], [48, 20], [55, 19], [62, 22], [66, 28], [39, 31]].map(([x, y]) => <circle key={`${x}-${y}`} cx={x} cy={y} r="5.5" />)}</g>;
     case 'high-ponytail':
-      return <g fill={l.hair}><path d="M38 36c-1-14 6-21 15-21 9 0 15 6 15 15-6-6-14-8-22-6-4 2-6 6-8 12z" /><circle cx="61" cy="15" r="4" fill="#FF4D6D" /></g>;
+      return <g fill={l.hair}><path d="M38 36c-1-14 6-21 15-21 9 0 15 6 15 15-6-6-14-8-22-6-4 2-6 6-8 12z" /><circle cx="61" cy="15" r="4" fill="#d6452c" /></g>;
     case 'short-light':
       return <path d="M38 32c0-12 7-19 16-19 8 0 14 5 15 13-6-3-12-4-18-3-5 1-9 4-13 9z" fill={l.hair} />;
   }

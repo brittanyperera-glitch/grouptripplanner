@@ -5,10 +5,11 @@ import type { Area } from '../types';
 
 // One SVG, so the same markup is the on-screen poster and the file we save (no screenshotting the DOM).
 const W = 360, H = 640;
-const AVATAR_H = 170, AVATAR_W = (AVATAR_H * 84) / 228, GAP = 6;
+const AVATAR_H = 170, AVATAR_W = (AVATAR_H * 84) / 228, GAP = 2;
 const FEET_Y = 436;
 const ROUTE_LINE_CHARS = 26;
-const FONT = 'Archivo, "Arial Black", system-ui, -apple-system, "Segoe UI", sans-serif';
+const HEAD = '"Barlow Condensed", "Arial Narrow", system-ui, sans-serif';
+const BODY = 'Manrope, system-ui, -apple-system, "Segoe UI", sans-serif';
 
 /** Greedy wrap of "A → B → C" at arrow boundaries so no line runs past the poster. */
 export function routeLines(areas: Area[]): string[] {
@@ -22,31 +23,33 @@ export function routeLines(areas: Area[]): string[] {
   return lines;
 }
 
+// The saved PNG is an SVG drawn as an image, which cannot see the page's CSS variables, so these are the Postcard tokens' values.
+const INK = '#1e2a26', PAPER = '#f4ede0', RED = '#d6452c', RED_INK = '#b8381f', MUTED = '#56615c';
+
+const UP = { textTransform: 'uppercase' } as const;
+
 export const PosterArt = forwardRef<SVGSVGElement, { areas: Area[] }>(function PosterArt({ areas }, ref) {
   const total = PEOPLE.length * AVATAR_W + (PEOPLE.length - 1) * GAP;
   const x0 = (W - total) / 2;
   const lines = routeLines(areas);
   return (
     <svg ref={ref} viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label="Sri Lanka poster" className="poster-art">
-      <defs>
-        <linearGradient id="poster-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#0A1A28" /><stop offset=".55" stopColor="#7A2E4D" /><stop offset=".8" stopColor="#FF7A1A" /><stop offset="1" stopColor="#FFC15E" />
-        </linearGradient>
-      </defs>
-      <rect width={W} height={H} fill="url(#poster-sky)" />
-      <circle cx="180" cy="372" r="120" fill="#FFC15E" opacity=".35" />
-      <text x={W / 2} y="92" textAnchor="middle" fontFamily={FONT} fontWeight="900" fontSize="48" letterSpacing="2" fill="#F5F1EA">SRI LANKA</text>
-      <text x={W / 2} y="124" textAnchor="middle" fontFamily={FONT} fontWeight="800" fontSize="16" letterSpacing="7" fill="#FFC15E">DEC 2026</text>
+      <rect width={W} height={H} fill={PAPER} />
+      <text x={W / 2} y="96" textAnchor="middle" fontFamily={HEAD} fontWeight="800" fontSize="64" letterSpacing="2" fill={INK}>SRI LANKA</text>
+      <rect x={W / 2 - 62} y="112" width="124" height="28" rx="4" fill="none" stroke={RED} strokeWidth="1.5" strokeDasharray="5 3" />
+      <text x={W / 2} y="132" textAnchor="middle" fontFamily={HEAD} fontWeight="800" fontSize="20" letterSpacing="4" fill={RED_INK}>DEC 2026</text>
+      <rect x="14" y="226" width={W - 28} height={FEET_Y + 12 - 226} fill="#fff" />
+      <rect x="14" y="14" width={W - 28} height={H - 28} rx="10" fill="none" stroke={RED} strokeWidth="1.5" strokeDasharray="6 4" />
       {PEOPLE.map((p, i) => (
         <g key={p} transform={`translate(${x0 + i * (AVATAR_W + GAP)} ${FEET_Y - AVATAR_H * (224 / 228)})`}>
           <Avatar name={p} size={AVATAR_H} crop="full" />
         </g>
       ))}
-      <rect x="0" y={FEET_Y + 10} width={W} height={H - FEET_Y - 10} fill="#0B0D10" opacity=".82" />
-      <text textAnchor="middle" fontFamily={FONT} fontWeight="800" fontSize="15" fill="#F5F1EA">
-        {lines.map((l, i) => <tspan key={i} x={W / 2} y={FEET_Y + 44 + i * 22}>{l}</tspan>)}
+      <line x1="40" y1={FEET_Y + 34} x2={W - 40} y2={FEET_Y + 34} stroke={RED} strokeWidth="2" strokeDasharray="5 4" strokeLinecap="round" />
+      <text textAnchor="middle" fontFamily={HEAD} fontWeight="800" fontSize="22" letterSpacing="1" fill={INK} style={UP}>
+        {lines.map((l, i) => <tspan key={i} x={W / 2} y={FEET_Y + 66 + i * 26}>{l}</tspan>)}
       </text>
-      <text x={W / 2} y={H - 22} textAnchor="middle" fontFamily={FONT} fontWeight="700" fontSize="9" letterSpacing="1.5" fill="#FFC15E">
+      <text x={W / 2} y={H - 34} textAnchor="middle" fontFamily={BODY} fontWeight="700" fontSize="10" letterSpacing="1.5" fill={MUTED}>
         {`starring ${PEOPLE.map(p => p.toUpperCase()).join(' ')}`}
       </text>
     </svg>
@@ -74,17 +77,19 @@ async function inlineImages(svg: SVGSVGElement) {
   }));
 }
 
-/** Text is drawn on the canvas, not inside the SVG image: an SVG image cannot see the page's web font (Archivo). */
+/** Text is drawn on the canvas, not inside the SVG image: an SVG image cannot see the page's web fonts (Barlow Condensed, Manrope). */
 async function drawText(ctx: CanvasRenderingContext2D, texts: SVGTextElement[]) {
-  await Promise.all(texts.map(t => document.fonts.load(`${t.getAttribute('font-weight')} ${t.getAttribute('font-size')}px Archivo`, t.textContent ?? '')));
+  await Promise.all(texts.map(t => document.fonts.load(`${t.getAttribute('font-weight')} ${t.getAttribute('font-size')}px ${t.getAttribute('font-family')}`, t.textContent ?? '')));
   for (const t of texts) {
-    ctx.font = `${t.getAttribute('font-weight')} ${SCALE * Number(t.getAttribute('font-size'))}px ${FONT}`;
+    ctx.font = `${t.getAttribute('font-weight')} ${SCALE * Number(t.getAttribute('font-size'))}px ${t.getAttribute('font-family')}`;
     ctx.fillStyle = t.getAttribute('fill') ?? '#fff';
     ctx.textAlign = 'center';
     (ctx as unknown as { letterSpacing: string }).letterSpacing = `${SCALE * Number(t.getAttribute('letter-spacing') ?? 0)}px`;
+    // On screen the route lines are uppercased by CSS; the canvas has no text-transform.
+    const up = (x: string | null) => ((t.getAttribute('font-family') ?? '').includes('Barlow') ? (x ?? '').toUpperCase() : (x ?? ''));
     const spans = [...t.querySelectorAll('tspan')];
-    if (spans.length) spans.forEach(sp => ctx.fillText(sp.textContent ?? '', SCALE * Number(sp.getAttribute('x')), SCALE * Number(sp.getAttribute('y'))));
-    else ctx.fillText(t.textContent ?? '', SCALE * Number(t.getAttribute('x')), SCALE * Number(t.getAttribute('y')));
+    if (spans.length) spans.forEach(sp => ctx.fillText(up(sp.textContent), SCALE * Number(sp.getAttribute('x')), SCALE * Number(sp.getAttribute('y'))));
+    else ctx.fillText(up(t.textContent), SCALE * Number(t.getAttribute('x')), SCALE * Number(t.getAttribute('y')));
   }
 }
 

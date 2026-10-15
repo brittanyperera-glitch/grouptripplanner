@@ -1,3 +1,4 @@
+import './MyTrip.css';
 import { IconCar, IconPin, IconSun, IconTrain } from '../components/Icons';
 import { useEffect, useState } from 'react';
 import RouteMap from '../components/Map';

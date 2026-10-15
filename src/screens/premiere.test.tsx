@@ -117,10 +117,10 @@ describe('poster export fidelity', () => {
     const { posterBlob } = await import('./Poster');
     const { container } = render(<Poster areas={plan.areas} />);
     await posterBlob(container.querySelector('svg.poster-art') as SVGSVGElement);
-    expect(load).toHaveBeenCalledWith(expect.stringContaining('Archivo'), expect.anything());
+    expect(load).toHaveBeenCalledWith(expect.stringContaining('Barlow Condensed'), expect.anything());
     const title = fills.find(f => f.text === 'SRI LANKA');
-    expect(title?.font).toContain('Archivo');
-    expect(title?.font).toContain('900');
+    expect(title?.font).toContain('Barlow Condensed');
+    expect(title?.font).toContain('800');
     vi.unstubAllGlobals();
   });
 
