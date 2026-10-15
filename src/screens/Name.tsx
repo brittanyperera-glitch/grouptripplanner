@@ -138,7 +138,7 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
         <div className="select scene">
           <div className="select-head">
             <h2 className="choose">Choose your character</h2>
-            <div className="sub">One link for all five of us. No account or password.</div>
+            <div className="sub">You kinda have to pick yourself or it won't work.</div>
           </div>
           <div className="carousel-wrap">
             <button className="nav prev" aria-label="Previous character" disabled={idx === 0} onClick={() => goTo(idx - 1)}><IconLeft size={20} /></button>

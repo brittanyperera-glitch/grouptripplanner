@@ -157,14 +157,12 @@ export default function Avatar({ name, size = 80, crop = 'bust', bob = false, im
     <svg viewBox={box} width={(size * bw) / bh} height={size} aria-hidden="true" focusable="false"
       className={`avatar-art ${crop}`} data-person={name} data-height={cm}>
       <defs>
-        <linearGradient id={`${id}-bg`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={l.bg[0]} /><stop offset="1" stopColor={l.bg[1]} /></linearGradient>
         <pattern id={`${id}-camo`} width="22" height="22" patternUnits="userSpaceOnUse">
           <rect width="22" height="22" fill={l.denim} />
           <path d="M2 4c4-3 9 0 8 4s-7 4-9 1zM13 13c3-2 8 0 8 4-1 4-7 3-8 0zM3 15c2-1 5 0 4 3-1 2-4 1-4-1z" fill="#6E86A8" />
           <path d="M12 2c2-1 5 0 5 2s-3 3-5 1zM0 11c2-1 4 0 4 2s-3 2-4 1z" fill="#9A8660" />
         </pattern>
       </defs>
-      {bust && <rect x="16" y={top} width="72" height="72" rx="18" fill={`url(#${id}-bg)`} />}
       <g className={bob ? 'bob' : undefined}>
         <ellipse cx="54" cy="208" rx="26" ry="4" fill="rgba(0,0,0,.28)" />
         {image ? (
