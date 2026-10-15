@@ -6,7 +6,8 @@ import { IconBook, IconGrid, IconGroup, IconRoute, IconSpark } from './component
 import { cssEnter, lastNav, navigate } from './components/motion';
 import QuipBurst from './components/QuipBurst';
 import type { QuipKind } from './components/QuipBurst';
-import { setTier, tierOf } from './lib/ranking';
+import { QuipGate } from './components/quipRate';
+import { setTier } from './lib/ranking';
 import Days from './screens/Days';
 import Everyone from './screens/Everyone';
 import Extras from './screens/Extras';
@@ -116,20 +117,19 @@ function Flow({ me, say }: { me: Person; say: Say }) {
   const commit = (r: Ranking, id: string) => save({ ranking: r, rated: draft.rated.includes(id) ? draft.rated : [...draft.rated, id] });
 
   // Before the head to heads a swipe only picks a tier: no in-tier comparisons (Brittany 2026-10-15).
+  const quipGate = useRef(new QuipGate());
   const pickTier = (item: Item, tier: Tier) => {
     if (locked) return;
     const r = structuredClone(draft.ranking);
     setTier(r, item.id, tier);
-    say(pickQuip(copy.quips.tier[tier]), tier);
+    if (quipGate.current.next(tier)) say(pickQuip(copy.quips.tier[tier]), tier);
     if (unrated.length === 1) navigate('fwd', () => commit(r, item.id));
     else commit(r, item.id);
   };
 
-  // A drag, drop or keyboard move on Your picks: the whole ranking arrives, with the id that moved.
-  const onReorder = (next: Ranking, id: string) => {
+  // A drag, drop or keyboard move on Your picks: the whole ranking arrives. No quips here (Brittany: less frequent).
+  const onReorder = (next: Ranking) => {
     if (locked) return;
-    const tier = tierOf(next, id);
-    if (tier && tier !== tierOf(draft.ranking, id)) say(pickQuip(copy.quips.tier[tier]), tier);
     save({ ranking: next });
   };
 
