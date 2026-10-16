@@ -3,9 +3,23 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import copyData from '../content/copy.json';
 import profile from '../content/profile.json';
-import { PEOPLE } from '../types';
-import Profile, { VIEW_KEY } from './Profile';
-import { cardData, CARD_H, CARD_W, rarityOf, renderCardBlob, tierOf } from './profileCard';
+import { emptyRanking, GUESTS, isGuest, PEOPLE } from '../types';
+import type { Person, Player, Tier } from '../types';
+import type { ReactNode } from 'react';
+import { useEffect } from 'react';
+import { MemoryStore } from '../guest/MemoryStore';
+import { seedState } from '../guest/seed';
+import { friendStats } from '../lib/friendship';
+import { AppProvider, useApp } from '../state';
+import Friends from './Friends';
+import ConnectedProfile, { ProfileView as Profile, VIEW_KEY } from './Profile';
+import { artSrc, cardColours, cardData, cardLayout, CARD_H, CARD_W, contrast, FRIEND_LABELS, rarityOf, renderCardBlob, selfieSrc, tierOf } from './profileCard';
+
+function PickThen({ who, children }: { who: Player; children: ReactNode }) {
+  const { setMe, me } = useApp();
+  useEffect(() => { setMe(who); }, [setMe, who]);
+  return me === who ? <>{children}</> : null;
+}
 
 // Brittany's words, exactly: the cards must show these and nothing else (src/content/profile.json holds them).
 const FACTS: Record<string, string> = {
@@ -61,7 +75,7 @@ afterEach(() => {
 });
 
 describe('profile card contents', () => {
-  it.each(PEOPLE)('%s: the title, every stat as a labelled bar with its number, the selfie, height and kit', name => {
+  it.each(PEOPLE)('%s: the title, every stat as a labelled bar with its number, the full-body art, height and kit', name => {
     render(<Profile name={name} players={players} onBack={() => {}} />);
     const card = screen.getByRole('article', { name: `${name} trip card` });
     expect(within(card).getByRole('heading', { name })).toBeInTheDocument();
@@ -75,7 +89,7 @@ describe('profile card contents', () => {
       expect(bar.closest('.pf-c-stat')).toHaveAttribute('data-tier', tierOf(s.value));
     }
     expect(within(card).getAllByRole('meter')).toHaveLength(players[name].stats.length);
-    expect(within(card).getByRole('img', { name: `${name} selfie` })).toHaveAttribute('src', `/img/players/${name.toLowerCase()}-selfie.png`);
+    expect(within(card).getByRole('img', { name })).toHaveAttribute('src', `/img/players/${name.toLowerCase()}.png`);
     expect(card.textContent).toMatch(/Height \d+ cm/);
     expect(card.textContent).toContain(profile.kit);
     const { stars, rarity } = rarityOf(players[name].stats);
@@ -125,9 +139,8 @@ describe('profile card contents', () => {
     expect(bar.closest('.pf-c-stat')?.querySelector('.pf-c-val')).toHaveClass('over');
   });
 
-  it('a missing selfie falls back to the character art, then the initial, never a hole', () => {
+  it('missing art falls back to the initial, never a hole', () => {
     render(<Profile name="Alex" players={players} onBack={() => {}} />);
-    fireEvent.error(screen.getByRole('img', { name: 'Alex selfie' }));
     const art = screen.getByRole('img', { name: 'Alex' });
     expect(art).toHaveAttribute('src', '/img/players/alex.png');
     fireEvent.error(art);
@@ -145,6 +158,149 @@ describe('profile card contents', () => {
     render(<Profile name="Alex" players={players} onBack={onBack} />);
     await userEvent.click(screen.getByRole('button', { name: profile.back }));
     expect(onBack).toHaveBeenCalledOnce();
+  });
+});
+
+// Brittany 2026-10-16: "character card is so mid compared to the other side". The card's hero is the full-body art on the player's rays, as on the Character view.
+describe('card hero layout (all 8 players)', () => {
+  const ALL = [...PEOPLE, ...GUESTS] as Player[];
+
+  it.each(ALL)('%s: renders with name, title, the full-body art as the hero, 3 stats, rays and a plate in the player colour', name => {
+    render(<Profile name={name} players={players} onBack={() => {}} />);
+    const card = screen.getByRole('article', { name: `${name} trip card` });
+    expect(within(card).getByRole('heading', { name })).toBeInTheDocument();
+    expect(within(card).getByText(players[name].title)).toBeInTheDocument();
+    const hero = card.querySelector('.pf-c-art img');
+    expect(hero).not.toBeNull();
+    expect(hero).toHaveAttribute('src', artSrc(name));
+    expect(card.querySelector(`img[src="${selfieSrc(name)}"]`)).toBeNull();
+    expect(card.querySelectorAll('.pf-c-stats .pf-c-stat')).toHaveLength(3);
+    expect(card.querySelector('.pf-c-face')).not.toBeNull();
+    const plate = card.querySelector('.pf-c-plate') as HTMLElement;
+    expect(plate).not.toBeNull();
+    expect((card as HTMLElement).style.getPropertyValue('--pf-plate')).toBe(cardColours(name).plate);
+  });
+
+  it.each(ALL)('%s: the fun fact line is there only when the player has one', name => {
+    render(<Profile name={name} players={players} onBack={() => {}} />);
+    const card = screen.getByRole('article', { name: `${name} trip card` });
+    const fact = card.querySelector('.pf-c-fact');
+    if (isGuest(name)) expect(fact).toBeNull();
+    else expect(fact?.querySelector('b')?.textContent).toBe(FACTS[name]);
+  });
+
+  it('guests are numbered within the guest roster, not as card 1 of the trip', () => {
+    render(<Profile name="Aunty" players={players} onBack={() => {}} />);
+    expect(document.querySelector('.pf-c-no')?.textContent).toBe('Card 02 of 03');
+  });
+
+  it.each(ALL)('%s: the layout stacks figure over plate with the feet on the plate, nothing outside the face, nothing overlapping', name => {
+    const d = cardData(name, 1, 5, players[name]);
+    const L = cardLayout(d);
+    expect(L.figBottom).toBeGreaterThan(L.plateTop);
+    expect(L.figBottom - L.figTop).toBeGreaterThan(CARD_H * 0.55);
+    const blocks = [L.name, L.title, L.stats, L.fact, L.meta].filter(Boolean) as { y: number; h: number }[];
+    expect(L.name.y).toBeGreaterThanOrEqual(L.figBottom - 1);
+    for (const b of blocks) { expect(b.y).toBeGreaterThanOrEqual(L.plateTop); expect(b.y + b.h).toBeLessThanOrEqual(CARD_H - 16); }
+    for (let i = 1; i < blocks.length; i++) expect(blocks[i].y).toBeGreaterThanOrEqual(blocks[i - 1].y + blocks[i - 1].h);
+    expect(Boolean(L.fact)).toBe(Boolean(d.fact));
+  });
+
+  it.each(ALL)('%s: text on the plate and the stamp reads at 4.5:1 or better', name => {
+    const c = cardColours(name);
+    for (const ink of ['#ffffff', c.tint, '#f2b632', c.meta]) expect(contrast(ink, c.plate)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c.plate, '#fffaf0')).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(ALL)('%s: the PNG draws the art (never the selfie) and puts name, title, stats and meta in the same boxes as the screen card', async name => {
+    stubCanvas();
+    const srcs: string[] = [];
+    class Recorded { onload: (() => void) | null = null; onerror: (() => void) | null = null; width = 400; height = 900; set src(s: string) { srcs.push(s); queueMicrotask(() => this.onload?.()); } }
+    vi.stubGlobal('Image', Recorded);
+    const d = cardData(name, 1, 5, players[name]);
+    await renderCardBlob(d);
+    expect(srcs).toEqual([artSrc(name)]);
+    const L = cardLayout(d);
+    const yOf = (t: string) => { const c = calls.find(k => k[0] === 'fillText' && k[1] === t); expect(c, t).toBeDefined(); return c![3] as number; };
+    const within_ = (y: number, b: { y: number; h: number }) => { expect(y).toBeGreaterThanOrEqual(b.y); expect(y).toBeLessThanOrEqual(b.y + b.h); };
+    within_(yOf(name.toUpperCase()), L.name);
+    within_(yOf(players[name].title.toUpperCase()), L.title!);
+    for (const s of players[name].stats) within_(yOf(s.label.toUpperCase()), L.stats!);
+    expect(drawn().includes('FUN FACT')).toBe(Boolean(d.fact));
+    const img = calls.find(k => k[0] === 'drawImage')!;
+    expect((img[3] as number) + (img[5] as number)).toBeCloseTo(L.figBottom, 0);
+  });
+});
+
+// Brittany 2026-10-16: "Once we start getting friendship stats we should put the top one the top 2 on the Pokemon cards".
+describe('friendship strip on the card', () => {
+  // Five submitted rows rating the same four places, spread so Brittany has a twin (Alex) and a clash.
+  const PICKS: Record<Person, Tier[]> = {
+    Brittany: ['must', 'must', 'keen', 'skip'], Alex: ['must', 'keen', 'meh', 'skip'], Antek: ['skip', 'skip', 'must', 'must'],
+    Lazza: ['keen', 'meh', 'meh', 'meh'], Saulie: ['meh', 'keen', 'skip', 'keen'],
+  };
+  const groupState = () => {
+    const s = seedState();
+    for (const p of PEOPLE) {
+      const ranking = emptyRanking();
+      PICKS[p].forEach((t, i) => ranking[t].push([`p${i}`]));
+      s.responses[p] = { ...s.responses[p]!, ranking, rated: ['p0', 'p1', 'p2', 'p3'], submitted: true };
+    }
+    return s;
+  };
+  const inApp = (who: Player, state = groupState()) =>
+    render(<AppProvider store={new MemoryStore(state)} sandbox={{ onFinish: () => {} }}><ConnectedProfile name={who} players={players} onBack={() => {}} /></AppProvider>);
+
+  it('shows the travel twin and biggest clash with names and percentages once all five have submitted', async () => {
+    const want = friendStats(groupState().responses, 'Brittany');
+    expect(want.twin && want.clash).toBeTruthy();
+    inApp('Brittany');
+    const card = await screen.findByRole('article', { name: 'Brittany trip card' });
+    const strip = card.querySelector('.pf-c-friends') as HTMLElement;
+    expect(strip).not.toBeNull();
+    const items = [...strip.querySelectorAll('.pf-c-friend')].map(e => e.textContent);
+    expect(items).toEqual([`${FRIEND_LABELS.twin}${want.twin!.name}${want.twin!.pct}%`, `${FRIEND_LABELS.clash}${want.clash!.name}${want.clash!.pct}%`]);
+    expect(strip.querySelector(`svg[data-person="${want.twin!.name}"]`)).not.toBeNull();
+  });
+
+  it('is absent for a guest', async () => {
+    inApp('Aunty');
+    const card = await screen.findByRole('article', { name: 'Aunty trip card' });
+    expect(card.querySelector('.pf-c-friends')).toBeNull();
+  });
+
+  it('is absent, with no empty row, until all five have submitted', async () => {
+    const s = groupState();
+    s.responses.Lazza = { ...s.responses.Lazza!, submitted: false };
+    inApp('Alex', s);
+    const card = await screen.findByRole('article', { name: 'Alex trip card' });
+    expect(card.querySelector('.pf-c-friends')).toBeNull();
+    expect(cardLayout(cardData('Alex', 2, 5, players.Alex)).friends).toBeNull();
+  });
+
+  it('uses the same two labels as the Group stats page', async () => {
+    render(<AppProvider store={new MemoryStore(groupState())} sandbox={{ onFinish: () => {} }}><PickThen who="Brittany"><Friends /></PickThen></AppProvider>);
+    const page = await screen.findByLabelText('Friendship stats');
+    expect(page.textContent).toContain(FRIEND_LABELS.twin);
+    expect(page.textContent).toContain(FRIEND_LABELS.clash);
+  });
+
+  it('the PNG draws the same strip: labels, names, percentages and both friends\' art', async () => {
+    stubCanvas();
+    const srcs: string[] = [];
+    class Recorded { onload: (() => void) | null = null; onerror: (() => void) | null = null; width = 400; height = 900; set src(s: string) { srcs.push(s); queueMicrotask(() => this.onload?.()); } }
+    vi.stubGlobal('Image', Recorded);
+    const f = friendStats(groupState().responses, 'Brittany');
+    const d = cardData('Brittany', 1, 5, players.Brittany, { twin: f.twin, clash: f.clash });
+    const L = cardLayout(d);
+    expect(L.friends).not.toBeNull();
+    await renderCardBlob(d);
+    expect(srcs).toEqual([artSrc('Brittany'), artSrc(f.twin!.name), artSrc(f.clash!.name)]);
+    const text = drawn();
+    for (const t of [FRIEND_LABELS.twin.toUpperCase(), FRIEND_LABELS.clash.toUpperCase(), f.twin!.name.toUpperCase(), f.clash!.name.toUpperCase(), `${f.twin!.pct}%`, `${f.clash!.pct}%`]) expect(text).toContain(t);
+    const y = calls.find(k => k[0] === 'fillText' && k[1] === `${f.twin!.pct}%`)![3] as number;
+    expect(y).toBeGreaterThanOrEqual(L.friends!.y);
+    expect(y).toBeLessThanOrEqual(L.friends!.y + L.friends!.h);
   });
 });
 
@@ -297,16 +453,17 @@ describe('exporting the card', () => {
     Object.defineProperty(document, 'fonts', { configurable: true, value: undefined });
   });
 
-  it('still exports when the selfie fails to load, using the character art', async () => {
+  it('still exports when the art fails to load, drawing the initial instead', async () => {
     stubCanvas();
-    class SelfieFails {
+    class ArtFails {
       onload: (() => void) | null = null; onerror: (() => void) | null = null; width = 400; height = 500;
-      set src(s: string) { queueMicrotask(() => (s.includes('selfie') ? this.onerror : this.onload)?.()); }
+      set src(_: string) { queueMicrotask(() => this.onerror?.()); }
     }
-    vi.stubGlobal('Image', SelfieFails);
+    vi.stubGlobal('Image', ArtFails);
     const blob = await renderCardBlob(cardData('Alex', 2, 5, players.Alex));
     expect(blob.size).toBeGreaterThan(0);
-    expect(calls.filter(c => c[0] === 'drawImage')).toHaveLength(1);
+    expect(calls.filter(c => c[0] === 'drawImage')).toHaveLength(0);
+    expect(drawn()).toContain('A');
   });
 
   describe('buttons', () => {

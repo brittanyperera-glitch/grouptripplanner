@@ -3,6 +3,7 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Avatar from './components/Avatar';
 import Profile from './screens/Profile';
+import { MemoryStore } from './guest/MemoryStore';
 import { AppProvider, useApp } from './state';
 import copy from './content/copy.json';
 import { GUESTS, type AppState, type Store } from './types';
@@ -68,10 +69,12 @@ describe('sandbox mode', () => {
     expect(set.mock.calls.some(c => String(c[0]).startsWith('tp:unsaved:'))).toBe(true);
   });
 
-  it.each(GUESTS)('Avatar and Profile render for %s', (id) => {
+  it.each(GUESTS)('Avatar and Profile render for %s', async (id) => {
     expect(() => render(<Avatar name={id} size={40} />)).not.toThrow();
     expect(() => render(<Avatar name={id} size={40} crop="full" />)).not.toThrow();
-    expect(() => render(<Profile name={id} players={copy.players} onBack={() => undefined} />)).not.toThrow();
+    // Profile reads the app state for the friendship strip, so it renders inside the provider as it does in the app.
+    render(<AppProvider store={new MemoryStore()} sandbox={{ onFinish() {} }}><Profile name={id} players={copy.players} onBack={() => undefined} /></AppProvider>);
+    expect(await screen.findByRole('article', { name: `${id} trip card` })).toBeInTheDocument();
   });
 
   it('quips and player cards exist for every guest', () => {

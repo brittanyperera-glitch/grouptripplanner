@@ -3,11 +3,13 @@ import type { CSSProperties, PointerEvent } from 'react';
 import Avatar from '../components/Avatar';
 import { motion } from '../components/motion';
 import profile from '../content/profile.json';
+import { friendStats } from '../lib/friendship';
+import { useApp } from '../state';
 import type { Copy } from '../state';
-import { PEOPLE } from '../types';
+import { GUESTS, isGuest, PEOPLE } from '../types';
 import type { Player } from '../types';
-import { artSrc, cardData, cardNo, kitText, PALETTE, renderCardBlob, selfieSrc, tierOf } from './profileCard';
-import type { CardData } from './profileCard';
+import { artSrc, cardColours, cardData, cardLayout, cardNo, FRIEND_LABELS, metaText, PALETTE, renderCardBlob, textSize, tierOf } from './profileCard';
+import type { Box, CardData, CardFriends } from './profileCard';
 import './Profile.css';
 
 type Players = NonNullable<Copy['players']>;
@@ -36,18 +38,20 @@ export function canShareImage() {
 const fileName = (name: Player) => `the-homecoming-${name.toLowerCase()}.png`;
 
 function Picture({ name }: { name: Player }) {
-  // Selfie first, then the character art, then the initial: a missing file never leaves a hole in the card.
-  const [stage, setStage] = useState<'selfie' | 'art' | 'none'>('selfie');
-  if (stage === 'none') return <span className="pf-c-initial" aria-hidden="true">{name.charAt(0)}</span>;
-  return stage === 'selfie'
-    ? <img src={selfieSrc(name)} alt={`${name} selfie`} onError={() => setStage('art')} />
-    : <img className="art" src={artSrc(name)} alt={name} onError={() => setStage('none')} />;
+  // The full-body art, then the initial: a missing file never leaves a hole in the card.
+  const [failed, setFailed] = useState(false);
+  return failed
+    ? <span className="pf-c-initial" aria-hidden="true">{name.charAt(0)}</span>
+    : <img src={artSrc(name)} alt={name} onError={() => setFailed(true)} />;
 }
 
+// Places a block on the 800 x 1056 card grid; the CSS multiplies by --p.
+const at = (b: Box, size?: number) => ({ '--y': b.y, '--h': b.h, ...(size ? { '--fs': size } : {}) } as CSSProperties);
+
 function Card({ d, tilt }: { d: CardData; tilt: boolean }) {
-  const rowH = Math.min(74, 222 / Math.max(d.stats.length, 1));
   const el = useRef<HTMLElement>(null);
-  const [a, b] = PALETTE[d.name];
+  const c = cardColours(d.name);
+  const L = cardLayout(d);
   // A small 3D tilt that follows the pointer or finger and settles back on leave. Set on the element, not in state, so a drag does not re-render.
   const aim = (e: PointerEvent) => {
     const box = el.current;
@@ -65,45 +69,73 @@ function Card({ d, tilt }: { d: CardData; tilt: boolean }) {
     box.style.removeProperty('--pf-ry'); box.style.removeProperty('--pf-rx'); box.style.removeProperty('--pf-fx');
     delete box.dataset.tilting;
   };
+  const colours = { '--pf-a': c.a, '--pf-b': c.b, '--pf-plate': c.plate, '--pf-tint': c.tint, '--pf-meta': c.meta, '--pf-ray-y': L.rayY,
+    '--pf-hi': c.fill.hi, '--pf-mid': c.fill.mid, '--pf-lo': c.fill.lo } as CSSProperties;
   return (
-    <article ref={el} className="pf-card" aria-label={`${d.name} trip card`} style={{ '--pf-a': a, '--pf-b': b } as CSSProperties}
+    <article ref={el} className="pf-card" aria-label={`${d.name} trip card`} style={colours}
       onPointerMove={aim} onPointerDown={aim} onPointerLeave={rest} onPointerUp={rest} onPointerCancel={rest}>
       <div className="pf-c-in">
         <div className="pf-c-face" />
+        <div className="pf-c-plate" style={{ '--y': L.plateTop } as CSSProperties} />
+        <div className="pf-c-art" style={at({ y: L.figTop, h: L.figBottom - L.figTop })}><Picture name={d.name} /></div>
         <span className="pf-c-no">{cardNo(d)}</span>
         <span className="pf-c-stars" role="img" aria-label={`${d.rarity}, ${d.stars} of 5 stars`}>
-          {[1, 2, 3, 4, 5].map(i => <span key={i} className={i <= d.stars ? 'on' : undefined}>{'★'}</span>)}
+          {[1, 2, 3, 4, 5].map(i => <span key={i} className={i <= d.stars ? 'on' : undefined}>{'\u2605'}</span>)}
         </span>
-        <div className="pf-c-pic">
-          <div className="pf-c-win" />
-          <div className="pf-c-pop"><Picture name={d.name} /></div>
-        </div>
         <span className="pf-c-stamp">{d.rarity}</span>
-        <h2 className="pf-c-name">{d.name}</h2>
-        {d.title && <div className="pf-c-title">{d.title}</div>}
-        {d.stats.length > 0 && (
-          <div className="pf-c-stats" style={{ '--rh': rowH } as CSSProperties}>
+        <h2 className="pf-c-name" style={at(L.name, textSize(d.name, 120, 720))}>{d.name}</h2>
+        {L.title && <div className="pf-c-title" style={at(L.title, textSize(d.title, 46, 720))}>{d.title}</div>}
+        {L.stats && (
+          <div className="pf-c-stats" style={at(L.stats)}>
             {d.stats.map(s => (
               <div key={s.label} className="pf-c-stat" data-tier={tierOf(s.value)}>
-                <span className={`pf-c-val${s.value > 10 ? ' over' : ''}`}>{s.value}</span>
                 <span className="pf-c-label">{s.label}</span>
                 <span className="pf-c-bar" role="meter" aria-label={s.label} aria-valuemin={0} aria-valuemax={10}
                   aria-valuenow={Math.min(10, s.value)} aria-valuetext={String(s.value)}>
                   <span style={{ '--v': Math.min(10, s.value) / 10 } as CSSProperties} />
                 </span>
+                <span className={`pf-c-val${s.value > 10 ? ' over' : ''}`}>{s.value}</span>
               </div>
             ))}
           </div>
         )}
-        <div className="pf-c-fact">{d.fact && <><span>{profile.funFact}</span><b>{d.fact}</b></>}</div>
-        <div className="pf-c-meta"><span>{profile.height} {d.heightCm} cm</span><i aria-hidden="true">|</i><span>{profile.kit} {kitText(d)}</span></div>
+        {L.friends && d.friends && (
+          <div className="pf-c-friends" style={at(L.friends)}>
+            {(['twin', 'clash'] as const).map(k => {
+              const f = d.friends![k];
+              return f && (
+                <div key={k} className="pf-c-friend" data-kind={k}>
+                  <i style={{ '--pf-fc': PALETTE[f.name][1] } as CSSProperties}><Avatar name={f.name} size={48} /></i>
+                  <small>{FRIEND_LABELS[k]}</small><b>{f.name}</b><em>{f.pct}%</em>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {L.fact && d.fact && <div className="pf-c-fact" style={at(L.fact)}><span>{profile.funFact}</span><b>{d.fact}</b></div>}
+        <div className="pf-c-meta" style={at(L.meta)}>{metaText(d).map((t, i) => <span key={i}>{t}</span>)}</div>
         <div className="pf-c-foil" aria-hidden="true" />
       </div>
     </article>
   );
 }
 
-export default function Profile({ name, players = {}, onBack }: { name: Player; players?: Players; onBack: () => void }) {
+type ProfileProps = { name: Player; players?: Players; onBack: () => void };
+
+/** The Profile screen inside the app: reads the group's friendship stats for the card. */
+export default function Profile(props: ProfileProps) {
+  const { state } = useApp();
+  const { name } = props;
+  // Same gate as the Group stats page (Friends.tsx): a trip member, once all five have submitted.
+  const friends = useMemo<CardFriends | null>(() => {
+    if (isGuest(name) || !PEOPLE.every(p => state.responses[p]?.submitted)) return null;
+    const { twin, clash } = friendStats(state.responses, name);
+    return twin || clash ? { twin, clash } : null;
+  }, [name, state.responses]);
+  return <ProfileView {...props} friends={friends} />;
+}
+
+export function ProfileView({ name, players = {}, onBack, friends }: ProfileProps & { friends?: CardFriends | null }) {
   const [mode] = useState(motion);
   // Each tap remounts the figure, which restarts its one jump; nothing animates until the first tap.
   const [jumps, setJumps] = useState(0);
@@ -112,7 +144,9 @@ export default function Profile({ name, players = {}, onBack }: { name: Player; 
     setViewState(v);
     try { localStorage.setItem(VIEW_KEY, v); } catch { /* storage unavailable: the choice lasts this visit */ }
   };
-  const d = useMemo(() => cardData(name, Math.max((PEOPLE as Player[]).indexOf(name), 0) + 1, PEOPLE.length, players[name]), [name, players]);
+  // A guest is numbered within the guest roster, so Aunty is card 2 of 3 rather than card 1 of the trip's five.
+  const roster: readonly Player[] = isGuest(name) ? GUESTS : PEOPLE;
+  const d = useMemo(() => cardData(name, Math.max(roster.indexOf(name), 0) + 1, roster.length, players[name], friends), [name, players, roster, friends]);
   const [done, setDone] = useState<Done | null>(null);
   const [busy, setBusy] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);

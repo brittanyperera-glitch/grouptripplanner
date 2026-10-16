@@ -51,8 +51,9 @@ for (const who of PLAYERS) {
           clipped: q('.pf-c-name, .pf-c-title, .pf-c-label, .pf-c-fact > b, .pf-c-fact > span, .pf-c-meta > span, .pf-c-no, .pf-c-stamp').filter(e => e.scrollWidth > e.clientWidth + 1).map(e => `${e.className}:${e.textContent}`),
           stats: q('.pf-c-stat').map(s => ({ val: r(s.querySelector('.pf-c-val')!), label: r(s.querySelector('.pf-c-label')!), bar: r(s.querySelector('.pf-c-bar')!) })),
           panel: one('.pf-c-stats'), fact: one('.pf-c-fact'), factText: one('.pf-c-fact > b'), factTag: one('.pf-c-fact > span'), factLines: Math.round((document.querySelector('.pf-c-fact > b') as HTMLElement).getBoundingClientRect().height / parseFloat(getComputedStyle(document.querySelector('.pf-c-fact > b')!).lineHeight)), factWords: document.querySelector('.pf-c-fact > b')!.textContent, meta: one('.pf-c-meta'), name: one('.pf-c-name'), title: one('.pf-c-title'),
-          win: one('.pf-c-win'), selfie: one('.pf-c-pop img'), stamp: one('.pf-c-stamp'), stars: one('.pf-c-stars'), no: one('.pf-c-no'),
-          selfieLoaded: (document.querySelector('.pf-c-pop img') as HTMLImageElement).naturalWidth > 0,
+          art: one('.pf-c-art img'), plate: one('.pf-c-plate'), stamp: one('.pf-c-stamp'), stars: one('.pf-c-stars'), no: one('.pf-c-no'),
+          artLoaded: (document.querySelector('.pf-c-art img') as HTMLImageElement).naturalWidth > 0,
+          artSrc: (document.querySelector('.pf-c-art img') as HTMLImageElement).getAttribute('src'),
           scrollables: q('.pf-screen *').filter(e => /auto|scroll/.test(getComputedStyle(e).overflowY) && e.scrollHeight > e.clientHeight + 1 && !e.closest('.pf-card')).length,
           cardW: (document.querySelector('.pf-card') as HTMLElement).offsetWidth,
         };
@@ -65,7 +66,8 @@ for (const who of PLAYERS) {
       expect(m.btns.length).toBeGreaterThanOrEqual(1);
       for (const b of m.btns) expect(b.b).toBeLessThanOrEqual(m.vh + eps);
       expect(m.overflow).toBeLessThanOrEqual(0);
-      expect(m.selfieLoaded).toBe(true);
+      expect(m.artLoaded).toBe(true);
+      expect(m.artSrc).toBe(`/img/players/${who.toLowerCase()}.png`);
       expect(m.clipped).toEqual([]);
       expect(m.scrollables).toBe(0);
       // Readable: the card is wide enough that its smallest text stays legible.
@@ -78,26 +80,27 @@ for (const who of PLAYERS) {
         expect(b.r).toBeLessThanOrEqual(m.vw + eps);
       }
       for (let i = 1; i < m.btns.length; i++) expect(m.btns[i].l).toBeGreaterThanOrEqual(m.btns[i - 1].r - eps);
-      // Inside the card, top to bottom: stars and number, window, name, title, stats, move and meta; all within the card.
+      // Inside the card, top to bottom: stars and number, the full-body art standing on the plate, name, title, stats, fun fact and meta.
       const inside = (b: { l: number; t: number; r: number; b: number }) => {
         expect(b.l).toBeGreaterThanOrEqual(m.card.l - eps); expect(b.r).toBeLessThanOrEqual(m.card.r + eps);
         expect(b.t).toBeGreaterThanOrEqual(m.card.t - eps); expect(b.b).toBeLessThanOrEqual(m.card.b + eps);
       };
-      [m.win, m.selfie, m.stamp, m.stars, m.no, m.name, m.title, m.panel, m.fact, m.meta].forEach(inside);
+      [m.art, m.plate, m.stamp, m.stars, m.no, m.name, m.title, m.panel, m.fact, m.meta].forEach(inside);
       expect(m.stars.l).toBeGreaterThanOrEqual(m.no.r - eps);
-      // The selfie breaks the window's top border, as the design says.
-      expect(m.selfie.t).toBeLessThan(m.win.t);
-      expect(m.selfie.t).toBeGreaterThan(m.stars.b - 20);
-      expect(m.name.t).toBeGreaterThanOrEqual(m.win.t);
+      // The art is the hero: over half the card tall, feet over the plate's top edge, the name below the feet.
+      expect(m.art.b - m.art.t).toBeGreaterThan((m.card.b - m.card.t) * 0.5);
+      expect(m.art.b).toBeGreaterThan(m.plate.t);
+      expect(m.name.t).toBeGreaterThanOrEqual(m.art.b - eps);
       expect(m.name.b).toBeLessThanOrEqual(m.title.t + eps + 2);
       expect(m.title.b).toBeLessThanOrEqual(m.panel.t + eps);
+      // One compact row per stat: label, then bar, then number, left to right, rows stacked without overlap.
       m.stats.forEach((s, i) => {
-        expect(s.val.r).toBeLessThanOrEqual(s.label.l + eps);
-        expect(s.bar.t).toBeGreaterThanOrEqual(s.label.b - 3);
-        expect(s.bar.l).toBeGreaterThanOrEqual(s.val.r - eps);
-        expect(s.bar.r).toBeLessThanOrEqual(m.panel.r);
-        expect(s.val.t).toBeGreaterThanOrEqual(m.panel.t); expect(s.val.b).toBeLessThanOrEqual(m.panel.b);
-        if (i > 0) expect(s.label.t).toBeGreaterThanOrEqual(m.stats[i - 1].bar.b - eps);
+        expect(s.label.r).toBeLessThanOrEqual(s.bar.l + eps);
+        expect(s.bar.r).toBeLessThanOrEqual(s.val.l + eps);
+        expect(s.val.r).toBeLessThanOrEqual(m.panel.r + eps);
+        expect(s.bar.t).toBeGreaterThanOrEqual(s.label.t - eps); expect(s.bar.b).toBeLessThanOrEqual(s.label.b + eps);
+        expect(s.val.t).toBeGreaterThanOrEqual(m.panel.t - eps); expect(s.val.b).toBeLessThanOrEqual(m.panel.b + eps);
+        if (i > 0) expect(s.label.t).toBeGreaterThanOrEqual(m.stats[i - 1].label.b - eps);
       });
       // The fun fact is the exact line, sits wholly inside its box beside the tag, in at most two lines.
       expect(m.factWords).toBe(FACTS[who]);

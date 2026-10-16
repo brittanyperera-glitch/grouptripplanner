@@ -1,6 +1,6 @@
 /* Profile: a collectible trip card, or the character full size. The card is laid out on the same 800 x 1056 grid as the
-   exported PNG (src/screens/profileCard.ts); one canvas pixel is --p, so what is on screen is what Save image produces.
-   Every class here starts pf- because all CSS is global (src/css-collisions.test.ts). */
+   exported PNG (src/screens/profileCard.ts); one canvas pixel is --p, and block positions come from cardLayout, so what is on
+   screen is what Save image produces. Every class here starts pf- because all CSS is global (src/css-collisions.test.ts). */
 
 .pf-screen { gap: 10px; padding-top: 10px; }
 .pf-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
@@ -18,42 +18,56 @@
   transform: rotateX(var(--pf-rx, 0deg)) rotateY(var(--pf-ry, 0deg)); transition: transform var(--dur) var(--ease); }
 .pf-card[data-tilting] .pf-c-in { transition-duration: var(--dur-fast); }
 .pf-c-in > * { position: absolute; margin: 0; }
-.pf-c-face { inset: calc(16 * var(--p)); border-radius: calc(42 * var(--p)); background: repeating-conic-gradient(from 0deg at 50% 33%, var(--pf-a) 0 6deg, var(--pf-b) 6deg 12deg); }
+.pf-c-in > :is(.pf-c-plate, .pf-c-art, .pf-c-name, .pf-c-title, .pf-c-stats, .pf-c-friends, .pf-c-fact, .pf-c-meta) { left: calc(56 * var(--p)); right: calc(56 * var(--p)); top: calc(var(--y) * var(--p)); height: calc(var(--h) * var(--p)); }
+.pf-c-face { inset: calc(16 * var(--p)); border-radius: calc(42 * var(--p)); --pf-ray-at: calc((var(--pf-ray-y) - 16) * var(--p)); }
 
-.pf-c-no { left: calc(52 * var(--p)); top: calc(48 * var(--p)); font: 800 calc(24 * var(--p))/1 var(--font-body); text-transform: uppercase; }
-.pf-c-stars { right: calc(52 * var(--p)); top: calc(40 * var(--p)); display: flex; font: 400 calc(36 * var(--p))/1 var(--font-body); }
-.pf-c-stars > span { width: calc(40 * var(--p)); text-align: right; color: rgba(255, 255, 255, .3); }
-.pf-c-stars > span.on { color: #f2b632; text-shadow: 0 calc(2 * var(--p)) 0 rgba(0, 0, 0, .25); }
+/* The plate: the player's deep colour under a gold edge; the figure's feet stand over that edge. */
+.pf-c-in > .pf-c-plate { left: calc(16 * var(--p)); right: calc(16 * var(--p)); bottom: calc(16 * var(--p)); height: auto; border-radius: 0 0 calc(42 * var(--p)) calc(42 * var(--p)); background: var(--pf-plate); box-shadow: inset 0 calc(5 * var(--p)) 0 #f2b632; }
+.pf-c-in > .pf-c-art { left: calc(16 * var(--p)); right: calc(16 * var(--p)); pointer-events: none; }
+.pf-c-art img { position: absolute; bottom: 0; left: 50%; height: 100%; width: auto; max-width: 100%; object-fit: contain; object-position: bottom; transform: translateX(-50%); filter: drop-shadow(0 calc(10 * var(--p)) calc(8 * var(--p)) rgba(0, 0, 0, .35)); }
+.pf-c-initial { position: absolute; left: 0; right: 0; bottom: calc(60 * var(--p)); text-align: center; font: 800 calc(320 * var(--p))/1 var(--font-head); color: #fff; }
 
-/* The picture window has lighter rays and a spotlight; the pop box stands taller than the window so the head breaks the top border. */
-.pf-c-pic { left: calc(48 * var(--p)); top: calc(170 * var(--p)); width: calc(704 * var(--p)); height: calc(390 * var(--p)); }
-.pf-c-win { position: absolute; inset: 0; box-sizing: border-box; border: calc(8 * var(--p)) solid #fffaf0; border-radius: calc(24 * var(--p)); background-origin: border-box;
-  background: radial-gradient(circle calc(242 * var(--p)) at 50% 70%, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0)), repeating-conic-gradient(from 0deg at 50% 70%, rgba(255, 255, 255, .28) 0 6deg, rgba(255, 255, 255, .1) 6deg 12deg), var(--pf-b); }
-.pf-c-pop { position: absolute; left: calc(8 * var(--p)); right: calc(8 * var(--p)); bottom: calc(8 * var(--p)); top: calc(-72 * var(--p)); overflow: hidden; border-radius: 0 0 calc(16 * var(--p)) calc(16 * var(--p)); }
-.pf-c-pop img { position: absolute; bottom: 0; left: 50%; height: 100%; width: auto; max-width: none; transform: translateX(-50%); }
-.pf-c-initial { position: absolute; left: 0; right: 0; bottom: calc(24 * var(--p)); text-align: center; font: 800 calc(240 * var(--p))/1 var(--font-head); color: #fff; }
+.pf-c-no { left: calc(52 * var(--p)); top: calc(48 * var(--p)); font: 800 calc(22 * var(--p))/1 var(--font-body); text-transform: uppercase; text-shadow: 0 calc(2 * var(--p)) calc(6 * var(--p)) rgba(0, 0, 0, .35); }
+.pf-c-stars { right: calc(52 * var(--p)); top: calc(42 * var(--p)); display: flex; font: 400 calc(32 * var(--p))/1 var(--font-body); }
+.pf-c-stars > span { width: calc(36 * var(--p)); text-align: right; color: rgba(255, 255, 255, .3); }
+.pf-c-stars > span.on { color: #f2b632; text-shadow: 0 calc(2 * var(--p)) 0 rgba(0, 0, 0, .3); }
+.pf-c-stamp { left: calc(46 * var(--p)); top: calc(100 * var(--p)); width: calc(176 * var(--p)); height: calc(48 * var(--p)); box-sizing: border-box; display: grid; place-items: center; border: calc(4 * var(--p)) solid var(--pf-plate); border-radius: calc(8 * var(--p)); background: #fffaf0; color: var(--pf-plate); font: 800 calc(30 * var(--p))/1 var(--font-head); text-transform: uppercase; transform: rotate(-8deg); }
 
-.pf-c-stamp { left: calc(48 * var(--p)); top: calc(172 * var(--p)); width: calc(224 * var(--p)); height: calc(64 * var(--p)); box-sizing: border-box; display: grid; place-items: center; border: calc(5 * var(--p)) solid var(--red-deep); border-radius: calc(8 * var(--p)); background: rgba(255, 255, 255, .95); color: var(--red-deep); font: 800 calc(40 * var(--p))/1 var(--font-head); text-transform: uppercase; transform: rotate(-9deg); }
-.pf-c-name { left: calc(30 * var(--p)); top: calc(510 * var(--p)); width: calc(740 * var(--p)); height: calc(90 * var(--p)); box-sizing: border-box; display: grid; place-items: center; border: calc(5 * var(--p)) solid #f2b632; border-radius: calc(12 * var(--p)); background: var(--card-ink); color: #fff; font: 800 calc(80 * var(--p))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; }
-.pf-c-title { left: calc(48 * var(--p)); top: calc(608 * var(--p)); width: calc(704 * var(--p)); height: calc(50 * var(--p)); display: grid; place-items: center; font: 800 calc(44 * var(--p))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 calc(2 * var(--p)) 0 rgba(0, 0, 0, .3); }
+/* Name and title: display type on the plate, sized from textSize so long titles shrink instead of clipping. */
+.pf-c-name, .pf-c-title { display: grid; place-items: center; font: 800 calc(var(--fs) * var(--p))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-c-in > .pf-c-name, .pf-c-in > .pf-c-title { left: calc(40 * var(--p)); right: calc(40 * var(--p)); }
+.pf-c-name { color: #fff; }
+.pf-c-title { color: var(--pf-tint); }
 
-.pf-c-stats { left: calc(40 * var(--p)); top: calc(664 * var(--p)); width: calc(720 * var(--p)); box-sizing: border-box; padding: calc(6 * var(--p)) calc(14 * var(--p)); border: calc(4 * var(--p)) solid var(--card-ink); border-radius: calc(28 * var(--p)); background: #fffaf0; color: var(--card-ink); }
-.pf-c-stat { position: relative; height: calc(var(--rh) * var(--p)); --pf-fill: #1f6f6b; --pf-ink: #fff; }
-.pf-c-stat[data-tier="mid"] { --pf-fill: #f2b632; --pf-ink: var(--card-ink); }
-.pf-c-stat[data-tier="hi"] { --pf-fill: #bf3a22; --pf-ink: #fff; }
-.pf-c-val { position: absolute; left: 0; top: calc(8 * var(--p)); width: calc(86 * var(--p)); height: calc((var(--rh) - 16) * var(--p)); box-sizing: border-box; display: grid; place-items: center; border: calc(3 * var(--p)) solid var(--card-ink); border-radius: calc(14 * var(--p)); background: var(--pf-fill); color: var(--pf-ink); font: 800 calc(48 * var(--p))/1 var(--font-head); font-variant-numeric: tabular-nums; }
-.pf-c-val.over { border-color: #f2b632; }
-.pf-c-label { position: absolute; left: calc(106 * var(--p)); right: 0; top: calc(5 * var(--p)); font: 800 calc(27 * var(--p))/1.2 var(--font-body); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pf-c-bar { position: absolute; left: calc(106 * var(--p)); right: 0; top: calc(40 * var(--p)); height: calc(26 * var(--p)); box-sizing: border-box; border: calc(3 * var(--p)) solid var(--card-ink); border-radius: calc(8 * var(--p)); background: #e9e1d1; overflow: hidden; }
+/* Stats: one compact row each, label then a segmented bar in the player's tint, then the number. */
+.pf-c-stat { position: relative; height: calc(36 * var(--p)); --pf-fill: var(--pf-lo); }
+.pf-c-stat[data-tier="mid"] { --pf-fill: var(--pf-mid); }
+.pf-c-stat[data-tier="hi"] { --pf-fill: var(--pf-hi); }
+.pf-c-label { position: absolute; left: 0; top: 0; bottom: 0; width: calc(372 * var(--p)); display: flex; align-items: center; font: 800 calc(26 * var(--p))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-c-bar { position: absolute; left: calc(388 * var(--p)); top: calc(11 * var(--p)); width: calc(220 * var(--p)); height: calc(14 * var(--p)); border-radius: calc(7 * var(--p)); background: rgba(255, 255, 255, .16); overflow: hidden; }
 .pf-c-bar > span { display: block; height: 100%; width: calc(var(--v) * 100%); background: var(--pf-fill); transform-origin: left; }
-.pf-c-bar::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: calc(100% + 4 * var(--p)); background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 4 * var(--p)), #fffaf0 calc(10% - 4 * var(--p)) 10%); }
+.pf-c-bar::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1.5 * var(--p)), var(--pf-plate) calc(10% - 1.5 * var(--p)) calc(10% + 1.5 * var(--p)), transparent calc(10% + 1.5 * var(--p)) 10%); }
+.pf-c-val { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; font: 800 calc(34 * var(--p))/1 var(--font-head); font-variant-numeric: tabular-nums; }
+.pf-c-val.over { color: #f2b632; }
+.pf-c-stat:has(.pf-c-val.over) { --pf-fill: #f2b632; }
 
-.pf-c-fact { left: calc(40 * var(--p)); top: calc(916 * var(--p)); width: calc(720 * var(--p)); height: calc(80 * var(--p)); box-sizing: border-box; padding: 0 calc(18 * var(--p)); display: flex; align-items: center; gap: calc(16 * var(--p)); border: calc(4 * var(--p)) solid #f2b632; border-radius: calc(16 * var(--p)); background: var(--card-ink); }
-.pf-c-fact > span { flex: none; width: calc(120 * var(--p)); height: calc(44 * var(--p)); display: grid; place-items: center; border-radius: calc(10 * var(--p)); background: #f2b632; color: var(--card-ink); font: 800 calc(20 * var(--p))/1 var(--font-body); text-transform: uppercase; white-space: nowrap; }
-.pf-c-fact > b { flex: 1; min-width: 0; font: 800 calc(28 * var(--p))/1.05 var(--font-head); text-transform: uppercase; overflow-wrap: anywhere; }
-.pf-c-meta { left: calc(40 * var(--p)); top: calc(1004 * var(--p)); width: calc(720 * var(--p)); height: calc(28 * var(--p)); display: flex; justify-content: center; gap: calc(14 * var(--p)); font: 700 calc(22 * var(--p))/1.2 var(--font-body); text-transform: uppercase; color: rgba(255, 255, 255, .92); white-space: nowrap; }
+/* Friendship strip: travel twin left, biggest clash right; each a head on the friend's colour, label over name, then the %. */
+.pf-c-friends { display: grid; grid-template-columns: 1fr 1fr; column-gap: calc(16 * var(--p)); }
+.pf-c-friend { position: relative; min-width: 0; }
+.pf-c-friend[data-kind="clash"] { grid-column: 2; }
+.pf-c-friend > i { position: absolute; left: 0; top: calc(2 * var(--p)); width: calc(48 * var(--p)); height: calc(48 * var(--p)); border-radius: 50%; overflow: hidden; background: var(--pf-fc); }
+.pf-c-friend > i svg { display: block; width: 100%; height: 100%; }
+.pf-c-friend > small { position: absolute; left: calc(60 * var(--p)); top: calc(3 * var(--p)); right: calc(90 * var(--p)); color: var(--pf-tint); font: 800 calc(17 * var(--p))/1 var(--font-body); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-c-friend > b { position: absolute; left: calc(60 * var(--p)); top: calc(24 * var(--p)); right: calc(90 * var(--p)); font: 800 calc(26 * var(--p))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-c-friend > em { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; font: 800 calc(34 * var(--p))/1 var(--font-head); font-style: normal; font-variant-numeric: tabular-nums; }
+
+.pf-c-fact { display: flex; align-items: center; gap: calc(12 * var(--p)); }
+.pf-c-fact > span { flex: none; width: calc(104 * var(--p)); color: #f2b632; font: 800 calc(18 * var(--p))/1 var(--font-body); text-transform: uppercase; white-space: nowrap; }
+.pf-c-fact > b { flex: 1; min-width: 0; font: 800 calc(24 * var(--p))/1.05 var(--font-head); text-transform: uppercase; overflow-wrap: anywhere; }
+.pf-c-in > .pf-c-meta { left: calc(40 * var(--p)); right: calc(40 * var(--p)); display: flex; align-items: center; justify-content: center; gap: calc(28 * var(--p)); font: 700 calc(20 * var(--p))/1 var(--font-body); text-transform: uppercase; color: var(--pf-meta); white-space: nowrap; }
 .pf-c-meta > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.pf-c-meta > i { font-style: normal; opacity: .6; }
+.pf-c-meta > span + span { position: relative; }
+.pf-c-meta > span + span::before { content: "|"; position: absolute; left: calc(-17 * var(--p)); opacity: .6; }
 
 /* Foil: a rainbow sheen. It sweeps once when the card appears, then follows the pointer as the card tilts (--pf-fx). */
 .pf-c-foil { inset: calc(16 * var(--p)); border-radius: calc(42 * var(--p)); pointer-events: none; background: linear-gradient(115deg, transparent 25%, rgba(255, 80, 160, .14) 36%, rgba(255, 220, 80, .17) 45%, rgba(80, 255, 200, .14) 54%, rgba(100, 140, 255, .13) 64%, transparent 75%) var(--pf-fx, 40%) 0 / 300% 100%; transition: background-position var(--dur-fast) var(--ease); }
@@ -65,7 +79,9 @@
 
 /* Character view: the full-size art on rays, as tall as the screen allows, with the name and title under it. It stands still and jumps once per tap. */
 .pf-char { display: flex; flex-direction: column; align-items: center; gap: 6px; height: max(360px, calc(100dvh - 150px)); }
-.pf-stage { all: unset; cursor: pointer; flex: 1 1 0; min-height: 0; width: 100%; box-sizing: border-box; padding: 22px 12px 4px; border-radius: 24px; background: repeating-conic-gradient(from 0deg at 50% 78%, var(--pf-a) 0 6deg, var(--pf-b) 6deg 12deg); box-shadow: var(--shadow-card); }
+.pf-stage { all: unset; cursor: pointer; flex: 1 1 0; min-height: 0; width: 100%; box-sizing: border-box; padding: 22px 12px 4px; border-radius: 24px; box-shadow: var(--shadow-card); }
+/* One sunburst for both views: the card face sets --pf-ray-at to sit behind its figure; the stage keeps 78%. */
+.pf-stage, .pf-c-face { background: repeating-conic-gradient(from 0deg at 50% var(--pf-ray-at, 78%), var(--pf-a) 0 6deg, var(--pf-b) 6deg 12deg); }
 .pf-stage:focus-visible { outline: 3px solid var(--coconut); outline-offset: 3px; }
 .pf-jumper { display: block; width: 100%; height: 100%; }
 .pf-jumper svg { display: block; width: 100%; height: 100%; overflow: visible; }

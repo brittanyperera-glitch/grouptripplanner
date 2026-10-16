@@ -1,8 +1,13 @@
+// The canvas twin of the DOM card in Profile.tsx/Profile.css: both read cardLayout, cardColours and textSize from here, so Save image draws the same card.
 import { IMAGE_CM, LOOKS } from '../components/Avatar';
-import type { Player } from '../types';
+import type { Person, Player } from '../types';
 import profile from '../content/profile.json';
 
 export interface CardStat { label: string; value: number }
+export type CardFriend = { name: Person; pct: number } | null;
+export interface CardFriends { twin: CardFriend; clash: CardFriend }
+/** The labels the Group stats page (Friends.tsx) uses for the same two numbers; a test keeps them equal. */
+export const FRIEND_LABELS = { twin: 'Travel twin', clash: 'Biggest clash' };
 export type Tier = 'lo' | 'mid' | 'hi';
 export interface CardData {
   name: Player; no: number; total: number; title: string; stats: CardStat[]; heightCm: number; kit: string[];
@@ -10,6 +15,8 @@ export interface CardData {
   stars: number; rarity: string;
   /** Brittany's one-line fun fact for the player, from profile.json. */
   fact: string | null;
+  /** The viewer's travel twin and biggest clash, once all five have submitted; null for guests and before that. */
+  friends: CardFriends | null;
 }
 
 export const CARD_W = 800;
@@ -34,9 +41,28 @@ export const PALETTE: Record<Player, [string, string]> = {
 };
 const FALLBACK: [string, string] = PALETTE.Brittany;
 
-// Tier colours for the stat rows: 8 and up red, 4 up to 8 gold, under 4 teal.
 export const tierOf = (v: number): Tier => (v >= 8 ? 'hi' : v >= 4 ? 'mid' : 'lo');
-export const TIER = { hi: { fill: '#bf3a22', ink: '#ffffff' }, mid: { fill: '#f2b632', ink: '#1e2a26' }, lo: { fill: '#1f6f6b', ink: '#ffffff' } };
+
+const rgb = (h: string) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+/** Mixes hex colour `a` toward `b` by t (0 to 1). */
+export const mix = (a: string, b: string, t: number) =>
+  `#${rgb(a).map((v, i) => Math.round(v + (rgb(b)[i] - v) * t).toString(16).padStart(2, '0')).join('')}`;
+const lum = (h: string) => {
+  const [r, g, b] = rgb(h).map(v => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+/** WCAG contrast ratio of two hex colours. */
+export const contrast = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+
+/** The player's colours beyond the rays: a deep plate, a light tint for the title, an opaque meta grey, and the bar fills by tier. */
+export function cardColours(name: Player) {
+  const [a, b] = PALETTE[name] ?? FALLBACK;
+  const plate = mix(a, '#000000', 0.45);
+  return {
+    a, b, plate, tint: mix(b, '#ffffff', 0.62), meta: mix(plate, '#ffffff', 0.74),
+    fill: { hi: mix(b, '#ffffff', 0.62), mid: mix(b, '#ffffff', 0.4), lo: mix(b, '#ffffff', 0.18) } as Record<Tier, string>,
+  };
+}
 
 /** Every card is 5 stars, the top rarity (Brittany 2026-10-16: "All the cards should be 5/5"). */
 export function rarityOf(_stats: CardStat[]) {
@@ -45,17 +71,50 @@ export function rarityOf(_stats: CardStat[]) {
 }
 
 /** Everything the card shows, from the character select data. Stats with no label or a non-number are dropped, as on the select screen. */
-export function cardData(name: Player, no: number, total: number, card?: { title?: string; stats?: CardStat[] }): CardData {
+export function cardData(name: Player, no: number, total: number, card?: { title?: string; stats?: CardStat[] }, friends?: CardFriends | null): CardData {
   const stats = (card?.stats ?? []).filter(s => s.label && Number.isFinite(s.value)).map(s => ({ label: s.label, value: Math.max(0, s.value) }));
-  return { name, no, total, title: card?.title ?? '', stats, heightCm: IMAGE_CM[name], kit: kitFor(name), ...rarityOf(stats), fact: (profile.facts as Record<string, string>)[name] ?? null };
+  return { name, no, total, title: card?.title ?? '', stats, heightCm: IMAGE_CM[name], kit: kitFor(name), ...rarityOf(stats), fact: (profile.facts as Record<string, string>)[name] ?? null,
+    friends: friends && (friends.twin || friends.clash) ? friends : null };
 }
 
 export const cardNo = (d: Pick<CardData, 'no' | 'total'>) =>
   profile.cardNo.replace('{n}', String(d.no).padStart(2, '0')).replace('{total}', String(d.total).padStart(2, '0'));
 export const kitText = (d: Pick<CardData, 'kit'>) => (d.kit.length ? d.kit.join(', ') : profile.noKit);
+export const metaText = (d: Pick<CardData, 'heightCm' | 'kit'>) => [`${profile.height} ${d.heightCm} cm`, `${profile.kit} ${kitText(d)}`];
+
+// Card geometry in canvas pixels (800 x 1056). The face is inset 16; the figure stands on the plate, feet over its gold top edge.
+export const FACE = 16;
+export const FIG_TOP = 84;
+export const ROW_H = 36;
+export const FEET_ON_PLATE = 34;
+export const STAMP = { cx: 134, cy: 124, w: 176, h: 48, rot: -8, size: 30 };
+export const STAT_X = { label: 56, labelW: 372, bar: 444, barW: 220, barH: 14, val: 744 };
+export const FACT_X = { tag: 56, text: 172, textW: 572, size: 24 };
+export const FRIEND = { half: 336, gap: 16, dot: 48 };
+// Avatar.tsx's bust crop, repeated so the PNG frames the friend's head the same way: figure height 211 of a 214 baseline, 72 unit square.
+const BUST = { figure: 211, base: 214, box: 72, left: 16, centre: 52, above: 6 };
+export interface Box { y: number; h: number }
+export interface CardLayout { figTop: number; figBottom: number; plateTop: number; rayY: number; name: Box; title: Box | null; stats: Box | null; friends: Box | null; fact: Box | null; meta: Box }
+
+/** Stacks the plate from the bottom up, so a card with no fun fact or no stats gives the figure the room instead of leaving a gap. */
+export function cardLayout(d: Pick<CardData, 'title' | 'stats' | 'fact'> & { friends?: CardFriends | null }): CardLayout {
+  let y = CARD_H - FACE - 10;
+  const take = (h: number, gap = 0): Box => { y -= h; const b = { y, h }; y -= gap; return b; };
+  const meta = take(24, 8);
+  const fact = d.fact ? take(54, 10) : null;
+  const friends = d.friends ? take(52, 10) : null;
+  const stats = d.stats.length ? take(d.stats.length * ROW_H, 12) : null;
+  const title = d.title ? take(44) : null;
+  const name = take(100);
+  const figBottom = name.y;
+  return { figTop: FIG_TOP, figBottom, plateTop: figBottom - FEET_ON_PLATE, rayY: FIG_TOP + 0.78 * (figBottom - FIG_TOP), name, title, stats, friends, fact, meta };
+}
+
+/** Font size that keeps a line of condensed capitals inside the card width: `max` px, smaller for long text (about 0.47em a letter). */
+export const textSize = (text: string, max: number, width: number) => Math.min(max, Math.floor(width / (Math.max(text.length, 1) * 0.47)));
 
 // The Postcard tokens from src/styles.css, repeated: a canvas cannot read the stylesheet's variables.
-const C = { ink: '#1e2a26', gold: '#f2b632', cream: '#fffaf0', track: '#e9e1d1', white: '#ffffff', stamp: '#bf3a22' };
+const C = { gold: '#f2b632', cream: '#fffaf0', white: '#ffffff' };
 const HEAD = '"Barlow Condensed", "Arial Narrow", sans-serif';
 const BODY = 'Manrope, system-ui, sans-serif';
 
@@ -118,126 +177,130 @@ function rays(ctx: Ctx, cx: number, cy: number, a: string, b: string) {
   }
 }
 
-// The picture window, the room above it for the head to break the frame, and the foil: shared with the CSS in Profile.css.
-const WIN = { x: 48, y: 170, w: 704, h: 390, border: 8, pop: 80 };
+// Baseline of a line of capitals centred in a box: CSS centres the em box, so the baseline sits about 0.36em below the middle.
+const mid = (b: Box, size: number) => b.y + b.h / 2 + size * 0.36;
 
-/** Draws the whole card onto a CARD_W x CARD_H context. `selfie` and `art` may be null; the picture then falls back to the character art, then an initial. */
-export function drawCard(ctx: Ctx, d: CardData, selfie: HTMLImageElement | null, art: HTMLImageElement | null) {
-  const pal = PALETTE[d.name] ?? FALLBACK;
+/** Draws the whole card onto a CARD_W x CARD_H context. `art` may be null; the figure then falls back to the initial. */
+export function drawCard(ctx: Ctx, d: CardData, art: HTMLImageElement | null, friendArt: Partial<Record<Person, HTMLImageElement | null>> = {}) {
+  const col = cardColours(d.name);
+  const L = cardLayout(d);
+  const inner = CARD_W - 2 * FACE;
   ctx.textBaseline = 'alphabetic';
 
-  // Gold foil frame, then the player's colour with sunrays.
+  // Gold foil frame, then the player's rays across the whole face, centred behind the figure.
   const gold = ctx.createLinearGradient(0, 0, CARD_W, CARD_H);
   [[0, '#f8dc86'], [.35, '#c98a10'], [.6, '#f8dc86'], [1, '#a86d0a']].forEach(([o, c]) => gold.addColorStop(o as number, c as string));
   rrect(ctx, 0, 0, CARD_W, CARD_H, 56); ctx.fillStyle = gold; ctx.fill();
   ctx.save();
-  rrect(ctx, 16, 16, CARD_W - 32, CARD_H - 32, 42); ctx.clip();
-  ctx.fillStyle = pal[0]; ctx.fillRect(0, 0, CARD_W, CARD_H);
-  rays(ctx, CARD_W / 2, 16 + 0.33 * (CARD_H - 32), pal[0], pal[1]);
+  rrect(ctx, FACE, FACE, inner, CARD_H - 2 * FACE, 42); ctx.clip();
+  ctx.fillStyle = col.a; ctx.fillRect(0, 0, CARD_W, CARD_H);
+  rays(ctx, CARD_W / 2, L.rayY, col.a, col.b);
+  // The plate in the player's deep colour, with a gold top edge.
+  ctx.fillStyle = col.plate; ctx.fillRect(0, L.plateTop, CARD_W, CARD_H);
+  ctx.fillStyle = C.gold; ctx.fillRect(0, L.plateTop, CARD_W, 5);
   ctx.restore();
 
-  // Top row: card number and rarity stars.
-  ctx.fillStyle = C.white; ctx.textAlign = 'left'; ctx.font = `800 24px ${BODY}`;
-  ctx.fillText(cardNo(d).toUpperCase(), 52, 72);
-  ctx.textAlign = 'right'; ctx.font = `400 36px ${BODY}`;
-  for (let i = 0; i < 5; i++) { ctx.fillStyle = i < d.stars ? C.gold : 'rgba(255,255,255,.3)'; ctx.fillText('★', CARD_W - 52 - (4 - i) * 40, 76); }
-
-  // Picture window: lighter rays and a spotlight, a cream border.
-  const { x: wx, y: wy, w: ww, h: wh, border: bd, pop } = WIN;
-  ctx.save();
-  rrect(ctx, wx, wy, ww, wh, 24); ctx.clip();
-  ctx.fillStyle = pal[1]; ctx.fillRect(wx, wy, ww, wh);
-  rays(ctx, CARD_W / 2, wy + 0.7 * wh, 'rgba(255,255,255,.28)', 'rgba(255,255,255,.1)');
-  const spot = ctx.createRadialGradient(CARD_W / 2, wy + 0.7 * wh, 0, CARD_W / 2, wy + 0.7 * wh, wh * 0.62);
-  spot.addColorStop(0, 'rgba(255,255,255,.5)'); spot.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = spot; ctx.fillRect(wx, wy, ww, wh);
-  ctx.restore();
-  rrect(ctx, wx + bd / 2, wy + bd / 2, ww - bd, wh - bd, 20); ctx.lineWidth = bd; ctx.strokeStyle = C.cream; ctx.stroke();
-
-  // The picture stands in the window and breaks the top border: clipped at the sides and bottom, open above.
-  const ix = wx + bd, iw = ww - 2 * bd, top = wy + bd - pop, bottom = wy + wh - bd, r = 16;
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(ix, top); ctx.lineTo(ix + iw, top); ctx.lineTo(ix + iw, bottom - r);
-  ctx.arcTo(ix + iw, bottom, ix + iw - r, bottom, r); ctx.lineTo(ix + r, bottom); ctx.arcTo(ix, bottom, ix, bottom - r, r);
-  ctx.closePath(); ctx.clip();
-  const pic = selfie ?? art;
-  if (pic) {
-    const h = bottom - top, w = (pic.width * h) / pic.height;
-    ctx.drawImage(pic, CARD_W / 2 - w / 2, top, w, h);
-  } else {
-    ctx.fillStyle = C.white; ctx.textAlign = 'center'; ctx.font = `800 240px ${HEAD}`;
-    ctx.fillText(d.name.charAt(0), CARD_W / 2, bottom - 40);
-  }
-  ctx.restore();
-
-  // Rarity stamp, angled on the window's top right corner.
-  ctx.save();
-  ctx.translate(160, 204); ctx.rotate(deg(-9));
-  rrect(ctx, -112, -32, 224, 64, 8); ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fill();
-  ctx.lineWidth = 5; ctx.strokeStyle = C.stamp; ctx.stroke();
-  ctx.fillStyle = C.stamp; ctx.textAlign = 'center';
-  fitText(ctx, d.rarity.toUpperCase(), 0, 14, 192, 800, 40, 24, HEAD);
-  ctx.restore();
-
-  // Name ribbon over the bottom of the picture, then the title.
-  rrect(ctx, 30, 510, 740, 90, 12); ctx.fillStyle = C.ink; ctx.fill();
-  ctx.lineWidth = 5; ctx.strokeStyle = C.gold; ctx.stroke();
-  ctx.fillStyle = C.white; ctx.textAlign = 'center';
-  fitText(ctx, d.name.toUpperCase(), CARD_W / 2, 580, 680, 800, 80, 48, HEAD);
-  if (d.title) { ctx.fillStyle = C.white; fitText(ctx, d.title.toUpperCase(), CARD_W / 2, 650, 704, 800, 44, 26, HEAD); }
-
-  // Stats: a number badge and a segmented bar in the tier colour.
-  const n = Math.max(d.stats.length, 1);
-  const rh = Math.min(74, 222 / n);
-  const py = 664;
-  rrect(ctx, 40, py, 720, n * rh + 20, 28); ctx.fillStyle = C.cream; ctx.fill();
-  ctx.lineWidth = 4; ctx.strokeStyle = C.ink; ctx.stroke();
-  d.stats.forEach((s, i) => {
-    const y = py + 10 + i * rh, t = TIER[tierOf(s.value)];
-    const bx = 58, bw = 86, bh = rh - 16;
-    rrect(ctx, bx, y + 8, bw, bh, 14); ctx.fillStyle = t.fill; ctx.fill();
-    ctx.lineWidth = 3; ctx.strokeStyle = s.value > 10 ? C.gold : C.ink; ctx.stroke();
-    ctx.fillStyle = t.ink; ctx.textAlign = 'center';
-    fitText(ctx, String(s.value), bx + bw / 2, y + 8 + bh / 2 + 17, bw - 14, 800, 48, 26, HEAD);
-    const lx = bx + bw + 20, lw = 742 - lx;
-    ctx.fillStyle = C.ink; ctx.textAlign = 'left';
-    fitText(ctx, s.label.toUpperCase(), lx, y + 33, lw, 800, 27, 15, BODY);
-    const by = y + 40;
-    rrect(ctx, lx, by, lw, 26, 8); ctx.fillStyle = C.track; ctx.fill();
-    ctx.save(); rrect(ctx, lx, by, lw, 26, 8); ctx.clip();
-    ctx.fillStyle = t.fill; ctx.fillRect(lx, by, (lw * Math.min(10, s.value)) / 10, 26);
-    ctx.fillStyle = C.cream;
-    for (let k = 1; k < 10; k++) ctx.fillRect(lx + (lw * k) / 10 - 2, by, 4, 26);
+  // The figure, full height, feet over the plate's edge.
+  const figH = L.figBottom - L.figTop;
+  if (art) {
+    const w = Math.min(inner, (art.width * figH) / art.height);
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowOffsetY = 10; ctx.shadowBlur = 16;
+    ctx.drawImage(art, CARD_W / 2 - w / 2, L.figTop, w, figH);
     ctx.restore();
-    rrect(ctx, lx, by, lw, 26, 8); ctx.lineWidth = 3; ctx.strokeStyle = C.ink; ctx.stroke();
-  });
+  } else {
+    ctx.fillStyle = C.white; ctx.textAlign = 'center'; ctx.font = `800 320px ${HEAD}`;
+    ctx.fillText(d.name.charAt(0), CARD_W / 2, L.figBottom - 60);
+  }
 
-  // Fun fact: a tag and up to two lines, shrunk until it fits so it is never clipped.
-  const fy = 916;
-  rrect(ctx, 40, fy, 720, 80, 16); ctx.fillStyle = C.ink; ctx.fill();
-  ctx.lineWidth = 4; ctx.strokeStyle = C.gold; ctx.stroke();
-  if (d.fact) {
-    rrect(ctx, 62, fy + 18, 120, 44, 10); ctx.fillStyle = C.gold; ctx.fill();
-    ctx.fillStyle = C.ink; ctx.textAlign = 'center';
-    fitText(ctx, profile.funFact.toUpperCase(), 122, fy + 48, 104, 800, 20, 12, BODY);
-    let size = 28, lines = [d.fact];
+  // Top row: card number and rarity stars, then the small rarity stamp in the player's colour.
+  ctx.fillStyle = C.white; ctx.textAlign = 'left'; ctx.font = `800 22px ${BODY}`;
+  ctx.fillText(cardNo(d).toUpperCase(), 52, 68);
+  ctx.textAlign = 'right'; ctx.font = `400 32px ${BODY}`;
+  for (let i = 0; i < 5; i++) { ctx.fillStyle = i < d.stars ? C.gold : 'rgba(255,255,255,.3)'; ctx.fillText('★', CARD_W - 52 - (4 - i) * 36, 72); }
+  ctx.save();
+  ctx.translate(STAMP.cx, STAMP.cy); ctx.rotate(deg(STAMP.rot));
+  rrect(ctx, -STAMP.w / 2, -STAMP.h / 2, STAMP.w, STAMP.h, 8); ctx.fillStyle = C.cream; ctx.fill();
+  ctx.lineWidth = 4; ctx.strokeStyle = col.plate; ctx.stroke();
+  ctx.fillStyle = col.plate; ctx.textAlign = 'center';
+  fitText(ctx, d.rarity.toUpperCase(), 0, STAMP.size * 0.36, STAMP.w - 24, 800, STAMP.size, 18, HEAD);
+  ctx.restore();
+
+  // Name and title as display type on the plate.
+  ctx.textAlign = 'center';
+  const nameSize = textSize(d.name, 120, 720);
+  ctx.fillStyle = C.white;
+  fitText(ctx, d.name.toUpperCase(), CARD_W / 2, mid(L.name, nameSize), 720, 800, nameSize, 48, HEAD);
+  if (L.title) {
+    const s = textSize(d.title, 46, 720);
+    ctx.fillStyle = col.tint;
+    fitText(ctx, d.title.toUpperCase(), CARD_W / 2, mid(L.title, s), 720, 800, s, 20, HEAD);
+  }
+
+  // Stats: a compact strip, one row each: label, a segmented bar in the player's tint, the number.
+  if (L.stats) {
+    d.stats.forEach((s, i) => {
+      const row = { y: L.stats!.y + i * ROW_H, h: ROW_H }, over = s.value > 10;
+      ctx.fillStyle = C.white; ctx.textAlign = 'left';
+      fitText(ctx, s.label.toUpperCase(), STAT_X.label, mid(row, 26), STAT_X.labelW, 800, 26, 14, HEAD);
+      const by = row.y + (ROW_H - STAT_X.barH) / 2, { bar: bx, barW: bw, barH: bh } = STAT_X;
+      ctx.save(); rrect(ctx, bx, by, bw, bh, bh / 2); ctx.clip();
+      ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(bx, by, bw, bh);
+      ctx.fillStyle = over ? C.gold : col.fill[tierOf(s.value)]; ctx.fillRect(bx, by, (bw * Math.min(10, s.value)) / 10, bh);
+      ctx.fillStyle = col.plate;
+      for (let k = 1; k < 10; k++) ctx.fillRect(bx + (bw * k) / 10 - 1.5, by, 3, bh);
+      ctx.restore();
+      ctx.fillStyle = over ? C.gold : C.white; ctx.textAlign = 'right';
+      fitText(ctx, String(s.value), STAT_X.val, mid(row, 34), 64, 800, 34, 20, HEAD);
+    });
+  }
+
+  // Friendship strip: the travel twin on the left, the biggest clash on the right, each a head in their colour, label, name and %.
+  if (L.friends && d.friends) {
+    ([['twin', 0], ['clash', 1]] as const).forEach(([k, i]) => {
+      const f = d.friends![k];
+      if (!f) return;
+      const x0 = STAT_X.label + i * (FRIEND.half + FRIEND.gap), cy = L.friends!.y + L.friends!.h / 2, r = FRIEND.dot / 2;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(x0 + r, cy, r, 0, Math.PI * 2); ctx.closePath(); ctx.clip();
+      ctx.fillStyle = (PALETTE[f.name] ?? FALLBACK)[1]; ctx.fillRect(x0, cy - r, FRIEND.dot, FRIEND.dot);
+      const img = friendArt[f.name];
+      if (img) {
+        const s = IMAGE_CM[f.name] / 200, u = FRIEND.dot / BUST.box, h = BUST.figure * s, w = (img.width * h) / img.height;
+        ctx.drawImage(img, x0 + (BUST.centre - w / 2 - BUST.left) * u, cy - r + BUST.above * u, w * u, h * u);
+      }
+      ctx.restore();
+      const tx = x0 + FRIEND.dot + 12;
+      ctx.textAlign = 'left'; ctx.fillStyle = col.tint;
+      fitText(ctx, FRIEND_LABELS[k].toUpperCase(), tx, L.friends!.y + 19, FRIEND.half - FRIEND.dot - 90, 800, 17, 10, BODY);
+      ctx.fillStyle = C.white;
+      fitText(ctx, f.name.toUpperCase(), tx, L.friends!.y + 45, FRIEND.half - FRIEND.dot - 90, 800, 26, 16, HEAD);
+      ctx.textAlign = 'right';
+      fitText(ctx, `${f.pct}%`, x0 + FRIEND.half, mid(L.friends!, 34), 76, 800, 34, 20, HEAD);
+    });
+  }
+
+  // Fun fact, only when there is one: a gold tag and up to two lines, shrunk until it fits so it is never clipped.
+  if (L.fact && d.fact) {
+    ctx.fillStyle = C.gold; ctx.textAlign = 'left';
+    fitText(ctx, profile.funFact.toUpperCase(), FACT_X.tag, mid(L.fact, 18), FACT_X.text - FACT_X.tag - 12, 800, 18, 10, BODY);
+    let size = FACT_X.size, lines = [d.fact];
     for (; size >= 16; size -= 2) {
       ctx.font = `800 ${size}px ${HEAD}`;
-      lines = wrap(ctx, d.fact, 540);
+      lines = wrap(ctx, d.fact, FACT_X.textW);
       if (lines.length <= 2) break;
     }
-    ctx.fillStyle = C.white; ctx.textAlign = 'left';
-    const lh = size * 1.05, first = fy + 40 - ((lines.length - 1) * lh) / 2 + size * 0.35;
-    lines.forEach((l, i) => ctx.fillText(l, 198, first + i * lh));
+    ctx.fillStyle = C.white;
+    const lh = size * 1.05, first = L.fact.y + L.fact.h / 2 - ((lines.length - 1) * lh) / 2 + size * 0.36;
+    lines.forEach((l, i) => ctx.fillText(l, FACT_X.text, first + i * lh));
   }
 
-  ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.textAlign = 'center';
-  fitText(ctx, `${profile.height} ${d.heightCm} cm  |  ${profile.kit} ${kitText(d)}`.toUpperCase(), CARD_W / 2, 1026, 720, 700, 22, 12, BODY);
+  ctx.fillStyle = col.meta; ctx.textAlign = 'center';
+  fitText(ctx, metaText(d).join('  |  ').toUpperCase(), CARD_W / 2, mid(L.meta, 20), 720, 700, 20, 11, BODY);
 
   // Foil: a static rainbow sheen across the face (it sweeps on screen).
   ctx.save();
-  rrect(ctx, 16, 16, CARD_W - 32, CARD_H - 32, 42); ctx.clip();
+  rrect(ctx, FACE, FACE, inner, CARD_H - 2 * FACE, 42); ctx.clip();
   const foil = ctx.createLinearGradient(0, CARD_H * 0.15, CARD_W, CARD_H * 0.85);
   [[0.25, 'rgba(255,255,255,0)'], [0.36, 'rgba(255,80,160,.14)'], [0.45, 'rgba(255,220,80,.17)'], [0.54, 'rgba(80,255,200,.14)'], [0.64, 'rgba(100,140,255,.13)'], [0.75, 'rgba(255,255,255,0)']]
     .forEach(([o, c]) => foil.addColorStop(o as number, c as string));
@@ -248,13 +311,14 @@ export function drawCard(ctx: Ctx, d: CardData, selfie: HTMLImageElement | null,
 export const selfieSrc = (n: Player) => `/img/players/${n.toLowerCase()}-selfie.png`;
 export const artSrc = (n: Player) => `/img/players/${n.toLowerCase()}.png`;
 
-/** Renders the card to a PNG, after the fonts and both pictures have loaded so none is missing from the file. */
+/** Renders the card to a PNG, after the fonts and every picture (the player, then any friends) have loaded so none is missing from the file. */
 export async function renderCardBlob(d: CardData): Promise<Blob> {
-  const [, selfie, art] = await Promise.all([loadFonts(), loadImage(selfieSrc(d.name)), loadImage(artSrc(d.name))]);
+  const others = d.friends ? [d.friends.twin, d.friends.clash].flatMap(f => (f ? [f.name] : [])) : [];
+  const [, art, ...more] = await Promise.all([loadFonts(), loadImage(artSrc(d.name)), ...others.map(n => loadImage(artSrc(n)))]);
   const canvas = document.createElement('canvas');
   canvas.width = CARD_W; canvas.height = CARD_H;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('no canvas');
-  drawCard(ctx, d, selfie, art);
+  drawCard(ctx, d, art, Object.fromEntries(others.map((n, i) => [n, more[i]])));
   return new Promise((resolve, reject) => canvas.toBlob(b => (b ? resolve(b) : reject(new Error('empty png'))), 'image/png'));
 }
