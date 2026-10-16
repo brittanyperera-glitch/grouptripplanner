@@ -1,0 +1,12 @@
+{
+  "most-enthusiastic": { "title": "Mr and Mrs Keen", "line": "{value} {unit}. Never met a plan they did not love." },
+  "most-indifferent": { "title": "The Meh Medal", "line": "{value} {unit}. Cool, calm and unbothered." },
+  "attenborough": { "title": "David Attenborough award", "line": "{value} {unit}. Quiet please, the leopard is thinking." },
+  "poseidon": { "title": "Child of Poseidon", "line": "{value} {unit}. Probably has gills." },
+  "culture-vulture": { "title": "Culture vulture", "line": "{value} {unit}. Will read every plaque." },
+  "mountain-goat": { "title": "Mountain goat", "line": "{value} {unit}. Stairs are a lifestyle." },
+  "early-bird": { "title": "Early bird", "line": "{value} {unit}. Alarm set before the sun." },
+  "skipper": { "title": "The Skipper", "line": "{value} {unit}. Knows exactly what they do not want." },
+  "foodie": { "title": "Chief eater", "line": "{value} {unit}. Planning around lunch." },
+  "train-spotter": { "title": "Train spotter", "line": "{value} {unit}. Window seat or nothing." }
+}

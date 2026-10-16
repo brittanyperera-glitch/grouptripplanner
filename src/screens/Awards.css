@@ -1,0 +1,15 @@
+.aw-screen { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font-family: var(--font-body); }
+.aw-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); flex: none; }
+.aw-top h2 { margin: 0; font-family: var(--font-head); font-size: var(--fs-xl); text-transform: uppercase; letter-spacing: .04em; min-width: 0; overflow-wrap: anywhere; }
+.aw-close { flex: none; min-height: 44px; padding: 0 18px; border: 0; border-radius: var(--r-btn); background: var(--red); color: var(--on-red); font: inherit; font-weight: 800; cursor: pointer; }
+.aw-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 16px; }
+.aw-card { flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px 16px; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow-card); text-align: center; min-width: 0; }
+.aw-title { margin: 0; font-family: var(--font-head); font-size: var(--fs-2xl); text-transform: uppercase; color: var(--red-ink); overflow-wrap: anywhere; }
+.aw-faces { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.aw-name { margin: 0; font-size: var(--fs-xl); font-weight: 900; overflow-wrap: anywhere; }
+.aw-line { margin: 0; font-size: var(--fs-md); color: var(--muted); overflow-wrap: anywhere; }
+@keyframes aw-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .aw-card { animation: aw-rise var(--dur-slow) var(--ease) both; }
+  .aw-close { transition: background var(--dur-fast) var(--ease); }
+}
