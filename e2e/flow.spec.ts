@@ -68,15 +68,13 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
         await page.getByRole('button', { name: who, exact: true }).click();
         await groupTab();
       }
+      // Always the first fork this voter has not picked in: a third vote settles a fork and it leaves the
+      // list, so walking by index skips the fork that slides into its place. Earlier votes stand.
       const f = page.getByRole('group', { name: /^Knockout:/ });
-      for (let i = 0; i < await f.count(); i++) {
-        // A fork I voted on in an earlier round comes back folded to one row; Change opens it again.
-        const change = f.nth(i).getByRole('button', { name: 'Change' }), vote = f.nth(i).getByRole('button', { name: /^Vote for/ }).first();
-        await expect(async () => {
-          await vote.or(change).first().waitFor({ timeout: 2000 });
-          if (await change.count()) await change.click({ timeout: 2000 });
-          await vote.click({ timeout: 2000 });
-        }).toPass({ timeout: 10_000 });
+      const open = f.filter({ hasNot: page.getByRole('button', { name: 'Change' }) }).getByRole('button', { name: /^Vote for/ });
+      for (let guard = 0; guard < 20 && await open.count(); guard++) {
+        await open.first().click();
+        await page.waitForTimeout(150);
       }
     }
     await page.getByRole('button', { name: 'Menu' }).click();

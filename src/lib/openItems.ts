@@ -25,7 +25,10 @@ export const isFinalizing = (g: GroupResult): boolean => g.open && g.knockouts.l
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 // Same idea from several people is one row: the same key as Suggest groups by.
-const ideaKey = (s: { title: string; area: string }) => `${s.title.trim().toLowerCase()}|${s.area}`;
+export const ideaKey = (s: { title: string; area: string }) => `${s.title.trim().toLowerCase()}|${s.area}`;
+
+/** Places still to rate: late items are voted head to head, never rated. */
+export const toRate = <T extends { id: string; late?: boolean }>(items: T[], rated: string[]): T[] => items.filter(i => !i.late && !rated.includes(i.id));
 
 /** What is waiting on this device's user, in the order it should be tackled. Pure. */
 export function openItems({ me, group, state, unrated, ratingsLocked, awardsUnseen }: OpenCtx): OpenItem[] {

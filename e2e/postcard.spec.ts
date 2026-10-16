@@ -94,7 +94,7 @@ for (const [w, h] of [[390, 844], [1280, 800]] as const) {
     await page.goto('/');
     const rows = PEOPLE.map(name => ({ name, days: 9, flex: false, pace: 1, ranking, final: ranking, rated: ids, submitted: true, updatedAt: '2026-10-15T00:00:00Z' }));
     await page.evaluate(rs => {
-      localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:votes', '[]'); localStorage.setItem('tp:reveal-mine', '1');
+      localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:votes', JSON.stringify(['Antek', 'Lazza', 'Saulie'].map(name => ({ forkId: 'ko:scuba', name, choice: 'b' })))); localStorage.setItem('tp:reveal-mine', '1');
       for (const r of rs) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
     }, rows);
     await page.reload();
@@ -154,7 +154,7 @@ test('key movements run on the motion scale: character sheet, swipe card, Missio
 
   const rows = PEOPLE.map(name => ({ name, days: 9, flex: false, pace: 1, ranking, final: ranking, rated: ids, submitted: true, updatedAt: '2026-10-15T00:00:00Z' }));
   await page.evaluate(rs => {
-    localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:votes', '[]'); localStorage.setItem('tp:reveal-mine', '1');
+    localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:votes', JSON.stringify(['Antek', 'Lazza', 'Saulie'].map(name => ({ forkId: 'ko:scuba', name, choice: 'b' })))); localStorage.setItem('tp:reveal-mine', '1');
     for (const r of rs) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
   }, rows);
   await page.reload();

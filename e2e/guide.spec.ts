@@ -47,7 +47,9 @@ for (const scheme of ['dark', 'light'] as const) {
     for (const w of [390, 360]) {
       await page.setViewportSize({ width: w, height: 844 });
       const chips = await page.evaluate(() => Array.from(document.querySelectorAll('.guide-chips button')).map(b => { const r = b.getBoundingClientRect(); return { l: r.left, r: r.right }; }));
-      expect(chips).toHaveLength(5);
+      expect(chips).toHaveLength(6);
+      // Two even rows of three: no chip may be stretched across a row of its own.
+      expect(new Set(chips.map(c => Math.round(c.r - c.l))).size).toBe(1);
       for (const c of chips) {
         expect(c.l).toBeGreaterThanOrEqual(0);
         expect(c.r).toBeLessThanOrEqual(w);

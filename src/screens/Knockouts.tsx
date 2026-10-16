@@ -166,6 +166,7 @@ export default function Knockouts({ group }: { group: GroupResult }) {
               {isItem(r) && r.winner === 'a' && `${names(r.a)} beat ${names(r.b)}`}
               {isItem(r) && r.winner === 'b' && `${names(r.b)} beat ${names(r.a)}`}
               {isItem(r) && r.winner === 'displaced' && `${names(r.a)} dropped out after an earlier result`}
+              {isItem(r) && r.winner === 'nofit' && `${names(r.a)} doesn't fit the ${group.days}-day plan`}
             </div>
           ))}
         </div>

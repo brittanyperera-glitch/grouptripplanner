@@ -38,6 +38,7 @@ export default function ItemSheet({ items, title, fit, onClose, onVote, voted = 
               {factPills(item).map(([icon, text]) => <span key={text} className="pill">{icon}<span>{text}</span></span>)}
             </div>
             {item.about && <p className="about">{item.about}</p>}
+            {item.britt && <p className="about is-britt" data-testid="is-britt"><b>Britt says:</b> {item.britt}</p>}
             {item.warn && <div className="fact-warn"><IconWarn size={16} /><span><b>Heads up:</b> {item.warn}</span></div>}
             {item.book && <p className="about"><b>Book:</b> {item.book}</p>}
             {item.google && (

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
+import { voteThroughOpenForks } from './helpers';
 
 // Two friends want the north, three the south: the group stage should ask "North or South?" once.
 const cat = JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string }[] };
@@ -37,9 +38,14 @@ test('one North or South question, settled by three votes', async ({ page }) => 
     await region.getByRole('button', { name: 'Vote for South' }).click();
   }
   await expect(page.getByText('North or South?')).toHaveCount(0);
+  // The region fork settling opens the late item's own head to head, which needs its own three votes.
+  for (const who of ['Antek', 'Lazza', 'Saulie']) await voteThroughOpenForks(page, who);
   await page.getByRole('tab', { name: 'Group' }).click();
   await page.getByRole('button', { name: 'Save my list' }).click();
   await page.getByRole('button', { name: /Group knockouts/ }).click();
+  // Settled forks sit behind the Decided toggle once other forks are open.
+  const decided = page.getByRole('button', { name: /^Decided/ });
+  if (await decided.count() && await decided.getAttribute('aria-expanded') === 'false') await decided.click();
   await expect(page.getByText(/South beat North/)).toBeVisible();
   await shot(page, 'region-decided');
 });

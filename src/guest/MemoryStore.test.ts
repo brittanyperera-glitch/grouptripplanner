@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import catalogue from '../data/catalogue.json';
 import legsData from '../data/legs.json';
 import { groupResult, VOTES_TO_RESOLVE } from '../lib/group';
-import { type AppState, type Item, type Leg } from '../types';
+import { PEOPLE, type AppState, type Item, type Leg } from '../types';
 import { MemoryStore } from './MemoryStore';
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
@@ -133,11 +133,25 @@ describe('MemoryStore guest sandbox', () => {
     expect((await s.load()).votes.filter(v => v.forkId === k.forkId)).toHaveLength(1);
   });
 
-  it('(d) a guest vote on a non-ko fork is stored once', async () => {
+  it('(d) a guest vote on a non-ko, non-genre fork is stored once', async () => {
     const s = new MemoryStore();
-    await s.vote({ forkId: 'genre:beach:surf', name: 'Groom', choice: 'a' });
     await s.vote({ forkId: 'region:north', name: 'Groom', choice: 'b' });
-    expect((await s.load()).votes).toHaveLength(2);
+    expect((await s.load()).votes).toHaveLength(1);
+  });
+
+  it('(d2) a guest genre keep vote is mirrored by the first members without a vote, so the place resolves', async () => {
+    const s = new MemoryStore();
+    await s.vote({ forkId: 'genre:trainviews:train', name: 'Groom', choice: 'a' });
+    const v = (await s.load()).votes.filter(x => x.forkId === 'genre:trainviews:train');
+    expect(v.filter(x => (PEOPLE as readonly string[]).includes(x.name) && x.choice === 'a')).toHaveLength(VOTES_TO_RESOLVE);
+    await s.vote({ forkId: 'genre:trainviews#2', name: 'Groom', choice: 'b' });
+    expect((await s.load()).votes.filter(x => x.forkId === 'genre:trainviews#2')).toHaveLength(1 + VOTES_TO_RESOLVE);
+  });
+
+  it('(d3) a member vote on a genre fork is not mirrored', async () => {
+    const s = new MemoryStore();
+    await s.vote({ forkId: 'genre:trainviews:train', name: 'Alex', choice: 'a' });
+    expect((await s.load()).votes).toHaveLength(1);
   });
 
   it('(e) a guest suggestion is live, a member suggestion is pending', async () => {

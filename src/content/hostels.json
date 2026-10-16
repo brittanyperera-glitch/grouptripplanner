@@ -574,35 +574,6 @@
    }
   },
   {
-   "id": "kandy-city-hostel-281",
-   "name": "281 Kandy City Hostel",
-   "hub": "Kandy",
-   "area": "Peradeniya Road, Kandy",
-   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=281%20Kandy%20City%20Hostel%20Peradeniya%20Road%2C%20Kandy%20Sri%20Lanka",
-   "rating": {
-    "source": "Hostelworld",
-    "score": 4.0,
-    "outOf": 10,
-    "reviews": 224,
-    "checked": "2026-10-16",
-    "url": "https://www.hostelworld.com/hostels/p/286096/281-kandy-city-hostel/"
-   },
-   "about": "Basic hostel on Peradeniya Road in Kandy with a 14-bed dorm and twin rooms; reviews are mixed.",
-   "groupFit": "Dorms of 2 beds; largest private room sleeps 2.",
-   "bunkGbp": 6.92,
-   "roomGbp": 10.77,
-   "roomFor": 2,
-   "priceDate": "2026-12-08",
-   "priceChecked": "2026-10-16",
-   "priceNote": "Bunk price is for a women's dorm.",
-   "bookUrl": "https://www.hostelworld.com/hostels/p/286096/281-kandy-city-hostel/",
-   "photo": {
-    "file": "kandy-city-hostel-281.jpg",
-    "source": "https://www.hostelworld.com/hostels/p/286096/281-kandy-city-hostel/"
-   },
-   "note": "Matched from \"Kandy City...\" in the pasted list."
-  },
-  {
    "id": "ceylon-nature-kitulgala",
    "name": "Ceylon Nature Hostel Kitulgala",
    "hub": "Kitulgala",

@@ -74,9 +74,11 @@ const copy: Copy = copyData;
 
 export function liveItems(state: AppState): Item[] {
   const base = (catalogue as unknown as { items: Item[] }).items;
+  // Late = suggested after voting = no trip member has rated it (the table has no approval timestamp).
+  const ratedByAnyone = new Set(PEOPLE.flatMap(p => state.responses[p]?.rated ?? []));
   const suggested: Item[] = state.suggestions.filter(s => s.status === 'live').map(s => ({
     id: `s:${s.id}`, name: s.title, area: s.area, about: s.note, hours: 2, sideTrip: 0,
-    slot: 'any', fee: '', suggestedBy: s.name, late: true,
+    slot: 'any', fee: '', suggestedBy: s.name, late: !ratedByAnyone.has(`s:${s.id}`),
   }));
   return [...base, ...suggested];
 }

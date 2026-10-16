@@ -39,7 +39,7 @@ export class MemoryStore implements Store {
 
   async vote(v: Vote): Promise<void> {
     this.state.votes = [...this.state.votes.filter(x => !(x.forkId === v.forkId && x.name === v.name)), { ...v }];
-    if (isGuest(v.name) && v.forkId.startsWith('ko:')) {
+    if (isGuest(v.name) && (v.forkId.startsWith('ko:') || v.forkId.startsWith('genre:'))) {
       // The example crew follows the guest so the demo can finish.
       const voted = new Set(this.state.votes.filter(x => x.forkId === v.forkId).map(x => x.name));
       for (const p of PEOPLE.filter(p => !voted.has(p)).slice(0, VOTES_TO_RESOLVE)) this.state.votes.push({ forkId: v.forkId, name: p, choice: v.choice });

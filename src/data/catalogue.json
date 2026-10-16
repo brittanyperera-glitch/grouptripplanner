@@ -108,7 +108,8 @@
    "warn": "Rated 3.4 on Google; it's about the 3am kottu, not the service",
    "when": "late night",
    "sideTrip": 0,
-   "credit": "Vis M, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Vis M, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)",
+   "britt": "The GOAT of Sri Lankan food, on my Last Supper menu. Veggies, get the egg or cheese kottu."
   },
   {
    "id": "sigiriya",
@@ -128,7 +129,8 @@
    },
    "when": "gate opening",
    "sideTrip": 0,
-   "credit": "Dylan Shaw, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Dylan Shaw, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)",
+   "britt": "The kings used it to hide from and attack enemies. Loads of stairs, takes a couple of hours. The ponds round it used to be full of crocodiles."
   },
   {
    "id": "pidurangala",
@@ -168,7 +170,8 @@
    },
    "when": "morning",
    "sideTrip": 1.14,
-   "credit": "Vedanth Ravi, private use"
+   "credit": "Vedanth Ravi, private use",
+   "britt": "Massive gold Buddha on top, and super old caves with ancient paintings. Loads of monkeys that steal food and accessories straight out of your hands, so keep an eye out."
   },
   {
    "id": "polonnaruwa",
@@ -187,7 +190,8 @@
    },
    "when": "morning",
    "sideTrip": 2.7,
-   "credit": "Secret Travel Guide, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Secret Travel Guide, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)",
+   "britt": "One of the oldest towns in Sri Lanka, with ruins of palaces from thousands of years ago."
   },
   {
    "id": "elephants",
@@ -205,9 +209,10 @@
     "reviews": "227",
     "url": "https://www.google.com/maps/search/Kaudulla%20National%20Park,%20Sri%20Lanka"
    },
-   "when": "afternoon",
+   "when": "early morning",
    "sideTrip": 1.54,
-   "credit": "Rajiv Perera, private use"
+   "credit": "Rajiv Perera, private use",
+   "britt": "Go early in the morning or in the evening while they're drinking at the lakes. Not the afternoon: it's super hot, the animals sleep and you see a lot of trees."
   },
   {
    "id": "anuradhapura",
@@ -227,7 +232,8 @@
    },
    "when": "morning",
    "sideTrip": 3.06,
-   "credit": "Chathura Anuradha Subasinghe, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+   "credit": "Chathura Anuradha Subasinghe, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)",
+   "britt": "Every temple here has a story. You can walk between sites or take the cheap buses. Ruwanwelisaya is the famous ruin, and Jaya Sri Maha Bodhi has the sacred tree."
   },
   {
    "id": "tooth",
@@ -247,7 +253,8 @@
    },
    "when": "18:30",
    "sideTrip": 0,
-   "credit": "Chathura Anuradha Subasinghe, private use"
+   "credit": "Chathura Anuradha Subasinghe, private use",
+   "britt": "One of the most sacred temples. The city is nice too: touristy, with a nice walk round the temple grounds and the lake."
   },
   {
    "id": "knuckles",
@@ -303,7 +310,8 @@
    "about": "The best-scenery stretch of the hill country railway, tea fields all the way.",
    "when": "09:00 or 14:30",
    "sideTrip": 0.2,
-   "credit": "Danny Postma, private use"
+   "credit": "Danny Postma, private use",
+   "britt": "The train through the Ella tea country is quite nice."
   },
   {
    "id": "horton",
@@ -323,7 +331,8 @@
    },
    "when": "sunrise",
    "sideTrip": 2.4,
-   "credit": "Brittany's pick, private use"
+   "credit": "Brittany's pick, private use",
+   "britt": "One of the coldest parts of Sri Lanka, pretty much like England: super rainy, kinda chilly."
   },
   {
    "id": "tea",
@@ -343,7 +352,8 @@
    },
    "when": "daytime",
    "sideTrip": 1.06,
-   "credit": "Praveen Maleesha, private use"
+   "credit": "Praveen Maleesha, private use",
+   "britt": "They walk you through the whole tea process. Mine was Mackwoods, but there are loads."
   },
   {
    "id": "ellarock",
@@ -383,7 +393,8 @@
    },
    "when": "train times",
    "sideTrip": 0,
-   "credit": "gemmmm, private use"
+   "credit": "gemmmm, private use",
+   "britt": "Very famous bridge. Takes a little hike to get there but worth it, and very pretty."
   },
   {
    "id": "diyaluma",
@@ -403,7 +414,8 @@
    },
    "when": "late morning",
    "sideTrip": 2.5,
-   "credit": "Lakshan Mamalgaha, private use"
+   "credit": "Lakshan Mamalgaha, private use",
+   "britt": "Loads of waterfalls round Ella. On out-of-the-way hikes, look out for leeches in the rivers and falls!"
   },
   {
    "id": "yala",
@@ -424,7 +436,8 @@
    "when": "gate opening",
    "sideTrip": 1.24,
    "hub": "Tissa",
-   "credit": "Tommaso Delton, private use"
+   "credit": "Tommaso Delton, private use",
+   "britt": "The OG safari park, but a bit weak now compared to the others. Still nice, with a beach at the end of the jungle. It was cheaper when I went, so double check."
   },
   {
    "id": "udawalawe",
@@ -633,7 +646,8 @@
    },
    "when": "sunrise",
    "sideTrip": 2.4,
-   "credit": "Carlos Delgado, private use"
+   "credit": "Carlos Delgado, private use",
+   "britt": "It's huge. A bit far out: tuk-tuks will take you but will try to rip you off, and it's all there is to see, so it might not be worth the hassle."
   },
   {
    "id": "rekawa",

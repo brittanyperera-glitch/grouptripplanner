@@ -44,9 +44,9 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
   const pace = medianPace(rs.flatMap(r => (r.pace === null ? [] : [r.pace])));
   if (!open) return { open, days, pace, base: null, knockouts: [], results: [], final: null, extras: [], knocked: [], finalized: [], locked: false };
 
-  // Every Finalize list saved: late items sit out of the rebuild and are asked afterwards against the locked plan.
   const sealed = rs.length === PEOPLE.length && rs.every(r => r.final);
-  const lateAll = sealed ? allItems.filter(i => i.late === true) : [];
+  // Late items never enter the rated stages, sealed or not, so the fifth Finalize list cannot change them (B1).
+  const lateAll = allItems.filter(i => i.late === true);
   const items = lateAll.length ? allItems.filter(i => i.late !== true) : allItems;
   let pool = items;
   const ids = items.map(i => i.id);
@@ -71,20 +71,20 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
   const settle = (picked: Plan) => { const next = run(F, O); return next.score > picked.score + EPS ? next : picked; };
   const baseP = run(F, O);
   const rated = (id: string, t: 'must' | 'keen') => rs.filter(r => tierOf(r.ranking, id) === t).length;
-  // Late items skip the rating round: they are always asked, before the rated ones, outside the cap.
-  const late = new Set(items.filter(i => i.late === true).map(i => i.id));
-  const contested = [
-    ...ids.filter(id => late.has(id) && !baseP.chosen.includes(id)).sort(),
-    ...ids
-      .filter(id => !late.has(id) && !baseP.chosen.includes(id) && (rated(id, 'must') >= 1 || rated(id, 'keen') >= 2))
-      .sort((x, y) => scores[y] - scores[x] || (x < y ? -1 : 1)),
-  ];
+  const tallyFor = (forkId: string) => {
+    const latest = new Map<Player, 'a' | 'b'>();
+    for (const v of state.votes) if (v.forkId === forkId) latest.set(v.name, v.choice);
+    const who = (side: 'a' | 'b') => PEOPLE.filter(p => latest.get(p) === side);
+    return { a: who('a'), b: who('b') };
+  };
+  const contested = ids
+    .filter(id => !baseP.chosen.includes(id) && (rated(id, 'must') >= 1 || rated(id, 'keen') >= 2))
+    .sort((x, y) => scores[y] - scores[x] || (x < y ? -1 : 1));
 
   const knockouts: Knockout[] = [];
   const results: GroupResult['results'] = [];
   let P = baseP;
   const covered = new Set<string>(); // a-sides of open forks: one question per item
-  const lateTaken = new Set<string>(); // a-sides of open late forks: kept apart so a late fork never hides an ordinary one
 
   // "North or South?" is settled first, once, instead of one item knockout per northern item.
   const north = ids.filter(id => NORTH_AREAS.has(items.find(i => i.id === id)!.area));
@@ -109,10 +109,7 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
     // b empty: going north costs nobody anything, so there is nothing to vote on.
     if (!planNorth.forceFailed && a.length && b.length && (southMustLost || northMustLost)) {
       skipNorth = true;
-      const latest = new Map<Player, 'a' | 'b'>();
-      for (const v of state.votes) if (v.forkId === REGION_FORK) latest.set(v.name, v.choice);
-      const who = (side: 'a' | 'b') => PEOPLE.filter(p => latest.get(p) === side);
-      const votes = { a: who('a'), b: who('b') };
+      const votes = tallyFor(REGION_FORK);
       if (votes.a.length >= VOTES_TO_RESOLVE) { a.forEach(id => F.add(id)); north.filter(id => !a.includes(id)).forEach(id => O.add(id)); results.push({ forkId: REGION_FORK, a, b, winner: 'a' }); P = run(F, O); }
       else if (votes.b.length >= VOTES_TO_RESOLVE) { north.forEach(id => O.add(id)); results.push({ forkId: REGION_FORK, a, b, winner: 'b' }); P = run(F, O); }
       else { knockouts.push({ forkId: REGION_FORK, a, b, votes }); a.forEach(id => covered.add(id)); }
@@ -126,7 +123,7 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
   // question, items that fit for free or ride on another question) do not use up a place.
   let asked = 0;
   for (const c of regionOpen ? [] : contested) {
-    if (!late.has(c) && asked >= MAX_CONTESTED) break;
+    if (asked >= MAX_CONTESTED) break;
     if (skipNorth && northSet.has(c)) continue;
     if (P.chosen.includes(c)) continue;
     if (covered.has(c)) continue;
@@ -137,28 +134,15 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
     const b = P.chosen.filter(id => !Q.chosen.includes(id) && !F.has(id));
     if (!b.length) { F.add(c); P = Q; continue; }
     const added = Q.chosen.filter(id => !P.chosen.includes(id) && id !== c);
-    // A late item is never dropped for overlapping an open fork; it leaves the shared places to that fork.
-    if (!late.has(c) && added.some(id => covered.has(id))) continue; // overlaps an open fork: it rides on that one
-    const a = [c, ...added.filter(id => !late.has(c) || !(covered.has(id) || lateTaken.has(id)))];
+    if (added.some(id => covered.has(id))) continue; // overlaps an open fork: it rides on that one
+    const a = [c, ...added];
     // Keyed on c alone: a vote for 'a' means "add c", which stays true when b shifts after an earlier result.
     const forkId = `ko:${c}`;
-    if (!late.has(c)) asked++;
-    const latest = new Map<Player, 'a' | 'b'>();
-    for (const v of state.votes) if (v.forkId === forkId) latest.set(v.name, v.choice);
-    const who = (side: 'a' | 'b') => PEOPLE.filter(p => latest.get(p) === side);
-    const votes = { a: who('a'), b: who('b') };
+    asked++;
+    const votes = tallyFor(forkId);
     if (votes.a.length >= VOTES_TO_RESOLVE) { F.add(c); b.forEach(knockDown); results.push({ forkId, a, b, winner: 'a' }); P = settle(Q); }
     else if (votes.b.length >= VOTES_TO_RESOLVE) { knockDown(c); results.push({ forkId, a, b, winner: 'b' }); P = settle(P); }
-    else {
-      const k: Knockout = { forkId, a, b, votes };
-      if (late.has(c)) {
-        const day = Q.days.findIndex(d => d.entries.some(e => e.itemId === c));
-        k.fit = { day: day < 0 ? null : day + 1, hub: day < 0 ? null : Q.days[day].area, travelBefore: P.travelHours, travelAfter: Q.travelHours };
-      }
-      knockouts.push(k);
-      (late.has(c) ? [c] : a).forEach(id => covered.add(id));
-      if (late.has(c)) a.forEach(id => lateTaken.add(id));
-    }
+    else { knockouts.push({ forkId, a, b, votes }); a.forEach(id => covered.add(id)); }
   }
 
   // Same-type keep vote (Brittany 2026-10-15): once the head to heads are done, two or more places of one
@@ -255,33 +239,39 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
     P = run(F, O);
   }
 
-  // Reopen for one vote (Brittany 2026-10-16): a late item asked of a locked plan is one head to head
-  // against the plan as locked; the rest stays. Three votes lock it again with the outcome applied.
-  if (lateAll.length && !knockouts.length) {
-    const won: Item[] = [], taken = new Set<string>();
+  // Late items (Brittany 2026-10-16) come last, sealed or not: one vote each against the plan as it stands; the rest stays.
+  let held: Plan | null = null;
+  if (lateAll.length && !regionOpen) {
+    if (!knockouts.length) floor();
+    const southWon = results.some(r => r.forkId === REGION_FORK && r.winner === 'b');
+    const won: Item[] = [], taken = new Set<string>(), open: Knockout[] = [];
     const lateKnock = (id: string) => { lateKnocked.add(id); knocked.add(id); scores[id] = rs.reduce((n, r) => n + val(r, id), 0); };
     for (const c of [...lateAll].sort((x, y) => (x.id < y.id ? -1 : 1))) {
       pool = [...items, ...won, c];
       scores[c.id] = rs.reduce((n, r) => n + val(r, c.id), 0);
       const Q = run(new Set([...F, c.id]), O);
-      if (Q.forceFailed) continue;
+      // S7: never a silent drop; the Decided list says it does not fit. A South result rules out the north too.
+      if (Q.forceFailed || (southWon && NORTH_AREAS.has(c.area))) { results.push({ forkId: `ko:${c.id}:nofit`, a: [c.id], b: [], winner: 'nofit' }); continue; }
       const b = P.chosen.filter(id => !Q.chosen.includes(id) && !F.has(id));
       if (!b.length) { F.add(c.id); P = Q; won.push(c); continue; }
       const a = [c.id, ...Q.chosen.filter(id => !P.chosen.includes(id) && id !== c.id && !taken.has(id))];
       const forkId = `ko:${c.id}`;
-      const latest = new Map<Player, 'a' | 'b'>();
-      for (const v of state.votes) if (v.forkId === forkId) latest.set(v.name, v.choice);
-      const who = (side: 'a' | 'b') => PEOPLE.filter(p => latest.get(p) === side);
-      const votes = { a: who('a'), b: who('b') };
+      const votes = tallyFor(forkId);
       if (votes.a.length >= VOTES_TO_RESOLVE) { F.add(c.id); b.forEach(lateKnock); results.push({ forkId, a, b, winner: 'a' }); P = settle(Q); won.push(c); }
       else if (votes.b.length >= VOTES_TO_RESOLVE) { lateKnock(c.id); results.push({ forkId, a, b, winner: 'b' }); }
       else {
         const day = Q.days.findIndex(d => d.entries.some(e => e.itemId === c.id));
-        knockouts.push({ forkId, a, b, votes, fit: { day: day < 0 ? null : day + 1, hub: day < 0 ? null : Q.days[day].area, travelBefore: P.travelHours, travelAfter: Q.travelHours } });
+        open.push({ forkId, a, b, votes, fit: { day: day < 0 ? null : day + 1, hub: day < 0 ? null : Q.days[day].area, travelBefore: P.travelHours, travelAfter: Q.travelHours } });
         a.forEach(id => taken.add(id));
       }
     }
     pool = [...items, ...won];
+    if (open.length) {
+      // Late forks go first; same-type keep votes wait for them, as they wait for every head to head.
+      const rest = knockouts.filter(k => !k.genre);
+      knockouts.splice(0, knockouts.length, ...open, ...rest);
+      if (!rest.length) held = P; // S1: Group trip keeps showing this plan while the vote is open
+    }
     if (knockouts.length) finalized = [];
   }
   if (!knockouts.length) floor();
@@ -294,5 +284,5 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
     .map(id => ({ id, who: rs.flatMap(r => { const t = tierOf(r.ranking, id); return t === 'must' || t === 'keen' ? [{ name: r.name, tier: t }] : []; }) }))
     .filter(e => e.who.length > 0)
     .sort((x, y) => scores[y.id] - scores[x.id] || (x.id < y.id ? -1 : 1));
-  return { open, days, pace, base: baseP, knockouts, results, final, extras, knocked: [...knocked].sort(), finalized, locked: finalized.length === PEOPLE.length };
+  return { open, days, pace, base: baseP, knockouts, results, final, extras, knocked: [...knocked].sort(), finalized, locked: finalized.length === PEOPLE.length, ...(held ? { held } : {}) };
 }

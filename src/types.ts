@@ -13,6 +13,8 @@ export interface Item {
   id: string; name: string; area: Area; about: string; hours: number; slot: Slot; fee: string;
   category?: Category; sideTrip: number; book?: string; warn?: string; photo?: string; hub?: Hub;
   google?: { rating: string; reviews: string; url: string }; suggestedBy?: Player; credit?: string; when?: string;
+  // Brittany's own tip, from her 2023 Sri Lanka guide.
+  britt?: string;
   // Added after the ratings closed: goes straight to the head to head, never rated.
   late?: boolean;
 }
@@ -76,10 +78,13 @@ export interface Knockout {
 export interface Genre { id: string; label: string; one: string; many: string; items: string[] }
 export interface GroupResult {
   open: boolean; days: number; pace: Pace; base: Plan | null; knockouts: Knockout[];
-  results: { forkId: string; a: string[]; b: string[]; winner: 'a' | 'b' | 'displaced' }[]; final: Plan | null;
+  // 'nofit': a late item the plan cannot hold at all (forkId `ko:<id>:nofit`).
+  results: { forkId: string; a: string[]; b: string[]; winner: 'a' | 'b' | 'displaced' | 'nofit' }[]; final: Plan | null;
   extras: { id: string; who: { name: Player; tier: Tier }[] }[];
   // Items that lost a head to head; who has saved a Finalize list; locked once all five have.
   knocked: string[]; finalized: Player[]; locked: boolean;
+  // Set only while late votes are the sole open questions: the plan they are asked against.
+  held?: Plan;
 }
 export const AREA_HUB: Record<Area, Hub> = {
   'Colombo': 'Colombo', 'North': 'Jaffna', 'East coast': 'Trincomalee', 'Cultural Triangle': 'Sigiriya', 'Kandy and Knuckles': 'Kandy', 'Kitulgala': 'Kitulgala',

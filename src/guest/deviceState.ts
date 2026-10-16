@@ -1,5 +1,4 @@
 import { MUTE_KEY } from '../components/sound';
-import { EPOCH_KEY } from '../store/fresh';
 
 const tpKeys = (): string[] => Object.keys(localStorage).filter(k => k.startsWith('tp:'));
 
@@ -44,6 +43,6 @@ export function recoverGuestOnBoot(hash: string): void {
 
 export function clearStaleTp(): void {
   try {
-    for (const k of tpKeys()) if (k !== MUTE_KEY && k !== EPOCH_KEY) localStorage.removeItem(k);
+    for (const k of tpKeys()) if (k !== MUTE_KEY) localStorage.removeItem(k);
   } catch { /* storage unavailable */ }
 }

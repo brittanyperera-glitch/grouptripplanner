@@ -8,7 +8,7 @@ import QuipBurst from './components/QuipBurst';
 import type { QuipKind } from './components/QuipBurst';
 import { QuipGate } from './components/quipRate';
 import { groupAwards } from './lib/awards';
-import { awardsKey, isFinalizing, openItems, tabBadges } from './lib/openItems';
+import { awardsKey, isFinalizing, openItems, tabBadges, toRate } from './lib/openItems';
 import type { OpenItem } from './lib/openItems';
 import { outstanding } from './lib/outstanding';
 import { removeId, setTier } from './lib/ranking';
@@ -300,8 +300,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const byId = Object.fromEntries(items.map(i => [i.id, i])) as Record<string, Item>;
   // A card brought back by Undo goes first, whatever its area.
   const [undone, setUndone] = useState<string | null>(null);
-  const unrated = items
-    .filter(i => !draft.rated.includes(i.id))
+  const unrated = toRate(items, draft.rated)
     .sort((a, b) => Number(b.id === undone) - Number(a.id === undone) || AREAS.indexOf(a.area) - AREAS.indexOf(b.area));
   // Only the five trip members are in the group: a guest is never locked out by the seeded crew.
   const statsOpen = !isGuest(me) && PEOPLE.every(p => state.responses[p]?.submitted);

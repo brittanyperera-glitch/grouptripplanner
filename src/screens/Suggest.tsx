@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ideaKey } from '../lib/openItems';
 import { useApp } from '../state';
 import { AREAS } from '../types';
 import type { Area, Suggestion } from '../types';
@@ -7,7 +8,7 @@ import type { Area, Suggestion } from '../types';
 function groupByIdea(list: Suggestion[]): Suggestion[][] {
   const groups = new Map<string, Suggestion[]>();
   for (const s of list) {
-    const key = `${s.title.trim().toLowerCase()}|${s.area}`;
+    const key = ideaKey(s);
     groups.set(key, [...(groups.get(key) ?? []), s]);
   }
   return [...groups.values()];
