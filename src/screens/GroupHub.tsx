@@ -80,11 +80,11 @@ export default function GroupHub({ group, view, onView }: { group: GroupResult; 
         {stats && <Block icon={<IconGroup size={26} />} title="Group stats" lines={[twin ? `Travel twin: ${twin.name} ${twin.pct}%` : 'Who travels like who']} onOpen={() => go('stats')} />}
         <Block icon={<IconSpark size={26} />} title="Group knockouts" lines={koLines(open, mine, others)} onOpen={() => go('knockouts')} alert={owing} pulse={pulse} />
         <Block icon={<IconList size={26} />} title="Everyone's picks" lines={[`${items.length} places, ${withMust} Musts`]} onOpen={() => go('picks')} />
-        {/* Brittany 2026-10-16: a teaser once the plan is locked; the real feature comes later. */}
-        {group.locked && (
+        {/* Brittany 2026-10-16: shown once I have voted on all my knockouts (or the plan is locked); the real feature comes later. */}
+        {(group.locked || (group.open && !owing)) && (
           <div className="gh-block gh-soon" role="status">
             <span className="gh-icon" aria-hidden="true"><IconSpark size={26} /></span>
-            <span className="gh-text"><b>Accommodation battles</b><small>Loading. Coming soon.</small></span>
+            <span className="gh-text"><b>Accommodation battles</b><small>In dev. Opens once everyone has finished the knockouts.</small></span>
           </div>
         )}
       </section>

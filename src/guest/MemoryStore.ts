@@ -1,6 +1,6 @@
 import { VOTES_TO_RESOLVE } from '../lib/group';
-import { emptyRanking, isGuest, PEOPLE } from '../types';
-import type { AppState, ChoiceEntry, ChoiceInput, Player, Response, Store, Suggestion, Vote } from '../types';
+import { blankCrew, EMPTY_STAYS, emptyRanking, isGuest, PEOPLE } from '../types';
+import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Player, Response, Store, Suggestion, Vote } from '../types';
 import { seedState } from './seed';
 
 const defaultRow = (name: Player): Response => ({
@@ -13,8 +13,9 @@ export class MemoryStore implements Store {
   private log: ChoiceEntry[] = [];
   private listeners = new Set<(s: AppState) => void>();
 
+  // Crew rows start empty unless the caller passes some: the guest takes the quiz themselves.
   constructor(initial: AppState = seedState()) {
-    this.state = structuredClone(initial);
+    this.state = structuredClone({ ...initial, stays: initial.stays ?? EMPTY_STAYS });
   }
 
   async load(): Promise<AppState> {
@@ -24,6 +25,12 @@ export class MemoryStore implements Store {
   async saveResponse(name: Player, patch: Partial<Omit<Response, 'name'>>): Promise<void> {
     const existing = this.state.responses[name] ?? defaultRow(name);
     this.state.responses[name] = structuredClone({ ...existing, ...patch, name, updatedAt: new Date().toISOString() });
+    this.emit();
+  }
+
+  async saveCrewStays(name: Player, patch: Partial<Omit<CrewStays, 'name'>>): Promise<void> {
+    const stays = this.state.stays ?? (this.state.stays = structuredClone(EMPTY_STAYS));
+    stays.crew[name] = structuredClone({ ...(stays.crew[name] ?? blankCrew(name)), ...patch, name, updatedAt: new Date().toISOString() });
     this.emit();
   }
 

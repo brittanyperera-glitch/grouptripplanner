@@ -2,9 +2,9 @@ import type { AppState, GroupResult, Player } from '../types';
 import type { Award } from './awards';
 import { outstanding } from './outstanding';
 
-export type OpenTab = 'Picks' | 'Group' | 'Suggest' | 'Awards';
+export type OpenTab = 'Picks' | 'Group' | 'Suggest' | 'Awards' | 'Quiz';
 export interface OpenItem {
-  id: 'votes' | 'final' | 'rate' | 'approve' | 'awards';
+  id: 'votes' | 'final' | 'rate' | 'approve' | 'stayQuiz' | 'awards';
   label: string;
   count?: number;
   target: { tab: OpenTab; view?: 'knockouts' };
@@ -44,6 +44,7 @@ export function openItems({ me, group, state, unrated, ratingsLocked, awardsUnse
     const ideas = new Set(state.suggestions.filter(s => s.status === 'pending').map(ideaKey)).size;
     if (ideas > 0) out.push({ id: 'approve', label: `${plural(ideas, 'idea', 'ideas')} waiting for approval`, count: ideas, target: { tab: 'Suggest' } });
   }
+  if (!state.stays?.crew[me]?.quizDone) out.push({ id: 'stayQuiz', label: 'Do your travel profile (3 minutes)', target: { tab: 'Quiz' } });
   if (group?.locked && awardsUnseen) out.push({ id: 'awards', label: 'See the group awards', target: { tab: 'Awards' } });
   return out;
 }

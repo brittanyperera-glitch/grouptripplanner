@@ -36,10 +36,22 @@ create table if not exists choice_log (
   at timestamptz not null default now()
 );
 
+/* Stays phase: one row per person (quiz answers, lock-in, ranks, bingo). Not in the realtime publication: the app reloads on a broadcast ping. */
+create table if not exists crew_stays (
+  name text primary key check (name in ('Brittany','Alex','Antek','Lazza','Saulie')),
+  prefs jsonb not null default '[]',
+  quiz_done boolean not null default false,
+  locked boolean not null default false,
+  ranks jsonb not null default '{}',
+  bingo jsonb not null default '[]',
+  updated_at timestamptz not null default now()
+);
+
 alter table responses enable row level security;
 alter table suggestions enable row level security;
 alter table knockout_votes enable row level security;
 alter table choice_log enable row level security;
+alter table crew_stays enable row level security;
 
 /* The trip password. Only its sha256 is stored, and anon has no policy on this table, so it cannot be read. */
 /* Set or change it with supabase/set-trip-password.sql, never in this file. */
@@ -77,6 +89,9 @@ drop policy if exists "anon insert" on knockout_votes;
 drop policy if exists "anon update" on knockout_votes;
 drop policy if exists "anon select" on choice_log;
 drop policy if exists "anon insert" on choice_log;
+drop policy if exists "anon select" on crew_stays;
+drop policy if exists "anon insert" on crew_stays;
+drop policy if exists "anon update" on crew_stays;
 
 create policy "anon select" on responses for select to anon using (public.trip_ok());
 create policy "anon insert" on responses for insert to anon with check (public.trip_ok());
@@ -92,6 +107,10 @@ create policy "anon update" on knockout_votes for update to anon using (public.t
 
 create policy "anon select" on choice_log for select to anon using (public.trip_ok());
 create policy "anon insert" on choice_log for insert to anon with check (public.trip_ok());
+
+create policy "anon select" on crew_stays for select to anon using (public.trip_ok());
+create policy "anon insert" on crew_stays for insert to anon with check (public.trip_ok());
+create policy "anon update" on crew_stays for update to anon using (public.trip_ok()) with check (public.trip_ok());
 
 /* Adding a table that is already in the publication is an error, so add only the missing ones. */
 do $$

@@ -97,9 +97,25 @@ describe('MemoryStore', () => {
     await s.vote({ forkId: 'f', name: WHO, choice: 'a' });
     await s.logChoice({ name: WHO, kind: 'days', ref: null, value: 7 });
     await s.loadLog();
+    await s.saveCrewStays(WHO, { quizDone: true });
     off();
     expect(setItem).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('MemoryStore crew stays', () => {
+  it('starts with no crew rows, so the guest takes the quiz', async () => {
+    expect((await new MemoryStore().load()).stays?.crew).toEqual({});
+  });
+
+  it('merges saves field by field and stamps updatedAt', async () => {
+    const s = new MemoryStore();
+    await s.saveCrewStays(WHO, { locked: true });
+    await s.saveCrewStays(WHO, { quizDone: true });
+    const c = (await s.load()).stays!.crew[WHO]!;
+    expect(c).toMatchObject({ name: WHO, locked: true, quizDone: true, prefs: [], ranks: {}, bingo: [] });
+    expect(Date.parse(c.updatedAt)).toBeGreaterThan(0);
   });
 });
 

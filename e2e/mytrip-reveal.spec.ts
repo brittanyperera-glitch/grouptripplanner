@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import { hits, inside, measureStop } from './reveal-helpers';
+import { seenWalkthroughToday } from './helpers';
 
 // Brittany has submitted; the others have not, so the group plan is not open. My trip is the landing tab.
 // ?quips=1 turns motion back on under webdriver.
@@ -16,6 +17,7 @@ const SHOTS = process.env.REVEAL_SHOTS;
 async function land(page: Page, w: number, h: number, quips = true) {
   await page.setViewportSize({ width: w, height: h });
   await page.goto(quips ? '/?quips=1' : '/');
+  await seenWalkthroughToday(page);
   await page.evaluate(r => { localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r)); }, me);
   await page.reload();
 }
@@ -154,6 +156,7 @@ test('the route is not drawn on the first frames of My trip drive or of the reve
   await page.addInitScript(SAMPLER);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?quips=1');
+  await seenWalkthroughToday(page);
   await page.evaluate(r => { localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r)); localStorage.setItem('tp:reveal-mine', '1'); }, me);
   await page.reload();
   await expect(page.locator('[aria-label="My trip"] .map')).toHaveAttribute('data-drive', 'on');

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
+import { seenWalkthroughToday } from './helpers';
 
 // Brittany 2026-10-15: after Open the guide, a phone's Back left the app. Back must return to the previous tab.
 const cat = JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string }[] };
@@ -12,6 +13,7 @@ const me = {
 test('Back after Open the guide returns to Group, then My trip, without leaving the app', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
+  await seenWalkthroughToday(page);
   await page.evaluate(r => { localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:reveal-mine', '1'); localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r)); }, me);
   await page.reload();
   const tab = (name: string) => page.getByRole('tab', { name, selected: true });

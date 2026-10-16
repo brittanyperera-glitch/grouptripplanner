@@ -41,9 +41,12 @@ const row = (name: Person, over: Partial<Response> = {}): Response => ({
 });
 const seed = (r: Response) => localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
 // One person rates a place Keen, so the "most enthusiastic" award has a single winner.
+// Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
+const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z' }));
 const seedCrew = (me: Person, keener: Person = 'Alex') => {
   for (const p of PEOPLE) seed(row(p, p === keener ? { ranking: { ...emptyRanking(), must: [['b'], ['c']], keen: [['a']] } } : {}));
   localStorage.setItem('tp:me', me);
+  quizDone(me);
 };
 const yesterday = () => { const d = new Date(); d.setDate(d.getDate() - 1); return todayKey(d); };
 const walk = () => screen.findByTestId('walkthrough');
@@ -83,6 +86,22 @@ describe('welcome-back walkthrough', () => {
   it('does not show to a returning member with nothing to do', async () => {
     seedCrew('Alex');
     grp.current = group(NONE);
+    render(<App />);
+    await screen.findByRole('tab', { name: 'Group' });
+    expect(screen.queryByTestId('walkthrough')).toBeNull();
+  });
+
+  it('a returning member with nothing else to do but no quiz sees the travel profile line, and not once it is done', async () => {
+    seedCrew('Alex');
+    localStorage.removeItem('tp:stays:Alex'); // seedCrew marks the quiz done; this member has not done it.
+    grp.current = group(NONE);
+    const user = userEvent.setup();
+    render(<App />);
+    await walk();
+    await user.click(screen.getByRole('button', { name: 'Next' })); // the greeting comes first, then one step per to-do.
+    expect(await walk()).toHaveTextContent(/travel profile/i);
+    cleanup();
+    quizDone('Alex');
     render(<App />);
     await screen.findByRole('tab', { name: 'Group' });
     expect(screen.queryByTestId('walkthrough')).toBeNull();

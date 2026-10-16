@@ -10,7 +10,10 @@ const group = (over: Partial<GroupResult> = {}): GroupResult => ({
   open: true, days: 9, pace: 1, base: null, knockouts: [], results: [], final: null, extras: [], knocked: [], finalized: [], locked: false, ...over,
 });
 const sug = (id: string, title: string, over: Partial<Suggestion> = {}): Suggestion => ({ id, name: 'Alex', title, area: 'Colombo', note: '', status: 'pending', createdAt: 'x', ...over });
-const empty: AppState = { responses: {}, suggestions: [], votes: [] };
+// The quiz is marked done for every person under test so these cases keep proving what they did before the stayQuiz to-do existed.
+const quizDone = (name: Player) => ({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '' });
+const doneStays = (...names: Player[]): NonNullable<AppState['stays']> => ({ crew: Object.fromEntries(names.map(n => [n, quizDone(n)])), suggestions: [], admin: { pins: [], scouts: {} } });
+const empty: AppState = { responses: {}, suggestions: [], votes: [], stays: doneStays('Alex', 'Brittany', 'Aunty') };
 const ctx = (over: Partial<OpenCtx> = {}): OpenCtx => ({ me: 'Alex', group: group(), state: empty, unrated: 0, ratingsLocked: false, awardsUnseen: false, ...over });
 const ids = (c: OpenCtx) => openItems(c).map(i => i.id);
 
@@ -85,6 +88,16 @@ describe('openItems', () => {
       expect(i.label).toMatch(/^[\x20-\x7e]+$/);
       expect(i.label.split(' ').length).toBeLessThan(8);
     }
+  });
+});
+
+describe('stayQuiz', () => {
+  it('is owed after approve and before awards until the quiz is done', () => {
+    const state: AppState = { ...empty, stays: undefined, suggestions: [sug('1', 'Tea tour')] };
+    const c = ctx({ me: 'Brittany', state, group: group({ locked: true }), awardsUnseen: true });
+    expect(ids(c)).toEqual(['approve', 'stayQuiz', 'awards']);
+    expect(openItems(c).find(i => i.id === 'stayQuiz')).toMatchObject({ id: 'stayQuiz', target: { tab: 'Quiz' } });
+    expect(ids({ ...c, state: { ...state, stays: doneStays('Brittany') } })).toEqual(['approve', 'awards']);
   });
 });
 

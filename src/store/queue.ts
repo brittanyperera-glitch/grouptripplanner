@@ -1,9 +1,11 @@
 import { diffResponse } from './choices';
-import type { ChoiceInput, Player, Response, Store, Vote } from '../types';
+import type { ChoiceInput, CrewStays, Player, Response, Store, Vote } from '../types';
 
 type Patch = Partial<Omit<Response, 'name'>>;
+type CrewPatch = Partial<Omit<CrewStays, 'name'>>;
 type Job =
   | { kind: 'resp'; key: string; name: Player; patch: Patch; waiters: Array<() => void> }
+  | { kind: 'crew'; key: string; name: Player; patch: CrewPatch; waiters: Array<() => void> }
   | { kind: 'vote'; key: string; vote: Vote; waiters: Array<() => void> }
   | { kind: 'log'; key: 'log'; entries: ChoiceInput[]; waiters: Array<() => void> }
   | { kind: 'op'; key: null; run: () => Promise<void>; waiters: Array<() => void> };
@@ -51,6 +53,7 @@ export class WriteQueue {
         const saved = this.add({ kind: 'op', key: null, run: () => base.addSuggestion(s), waiters: [] });
         return Promise.all([saved, this.logAll([{ name: s.name, kind: 'suggest', ref: s.area, value: { title: s.title, note: s.note } }])]).then(() => undefined);
       },
+      saveCrewStays: (name, patch) => this.add({ kind: 'crew', key: `c:${name}`, name, patch, waiters: [] }),
       setSuggestionStatus: (id, st) => this.add({ kind: 'op', key: null, run: () => base.setSuggestionStatus(id, st), waiters: [] }),
       logChoice: c => this.logAll([c]),
       loadLog: () => base.loadLog(),
@@ -85,6 +88,7 @@ export class WriteQueue {
 
   private exec(j: Job): Promise<void> {
     if (j.kind === 'resp') return this.base.saveResponse(j.name, j.patch);
+    if (j.kind === 'crew') return this.base.saveCrewStays(j.name, j.patch);
     if (j.kind === 'vote') return this.base.vote(j.vote);
     if (j.kind === 'log') return this.writeLog(j.entries);
     return j.run();
@@ -131,6 +135,8 @@ export class WriteQueue {
 /** Folds `from` into `into`. The newer job wins field by field; `intoIsNewer` says which one that is. */
 function merge(into: Job, from: Job, intoIsNewer = false): void {
   if (into.kind === 'resp' && from.kind === 'resp') {
+    into.patch = intoIsNewer ? { ...from.patch, ...into.patch } : { ...into.patch, ...from.patch };
+  } else if (into.kind === 'crew' && from.kind === 'crew') {
     into.patch = intoIsNewer ? { ...from.patch, ...into.patch } : { ...into.patch, ...from.patch };
   } else if (into.kind === 'vote' && from.kind === 'vote' && !intoIsNewer) {
     into.vote = from.vote;

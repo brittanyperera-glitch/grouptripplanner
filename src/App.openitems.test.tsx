@@ -44,9 +44,12 @@ const row = (name: Person, over: Partial<Response> = {}): Response => ({
 });
 const seed = (r: Response) => localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
 // One person rates a place Keen, so the "most enthusiastic" award has a single winner.
+// Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
+const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z' }));
 const seedCrew = (me: Person, keener: Person = 'Alex') => {
   for (const p of PEOPLE) seed(row(p, p === keener ? { ranking: { ...emptyRanking(), must: [['b'], ['c']], keen: [['a']] } } : {}));
   localStorage.setItem('tp:me', me);
+  quizDone(me);
 };
 const dot = () => document.querySelector('.oi-dot');
 const knockoutCards = () => screen.findAllByRole('group', { name: /^Knockout:/ });

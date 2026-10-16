@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
+import { seenWalkthroughToday } from './helpers';
 
 // Postcard theme, wave 1: the opening's sub line reads over every cover photo, and the key movements run on the one motion scale.
 const cat = JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string }[] };
@@ -19,6 +20,7 @@ test('the opening sub line reaches 4.5:1 over every cover photo', async ({ page 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
+  await seenWalkthroughToday(page);
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   const sub = page.locator('.intro-sub');
@@ -68,6 +70,7 @@ for (const [w, h] of [[320, 640], [390, 844], [1280, 800]] as const) {
     await page.setViewportSize({ width: w, height: h });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
+    await seenWalkthroughToday(page);
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     await expect(page.getByRole('heading', { name: 'The Homecoming.' })).toBeVisible();
@@ -93,6 +96,7 @@ for (const [w, h] of [[390, 844], [1280, 800]] as const) {
     await page.setViewportSize({ width: w, height: h });
     await page.goto('/');
     const rows = PEOPLE.map(name => ({ name, days: 9, flex: false, pace: 1, ranking, final: ranking, rated: ids, submitted: true, updatedAt: '2026-10-15T00:00:00Z' }));
+    await seenWalkthroughToday(page);
     await page.evaluate(rs => {
       localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:votes', JSON.stringify(['Antek', 'Lazza', 'Saulie'].map(name => ({ forkId: 'ko:scuba', name, choice: 'b' })))); localStorage.setItem('tp:reveal-mine', '1');
       for (const r of rs) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
@@ -125,6 +129,7 @@ for (const [w, h] of [[390, 844], [1280, 800]] as const) {
 test('key movements run on the motion scale: character sheet, swipe card, Mission Complete title', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/?quips=1');
+  await seenWalkthroughToday(page);
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   const s = await scale(page);
@@ -134,6 +139,7 @@ test('key movements run on the motion scale: character sheet, swipe card, Missio
   const sheet = await page.locator('.select').evaluate(el => getComputedStyle(el).animationDuration);
   expect(toMs(sheet)).toBe(toMs(s.slow));
 
+  await seenWalkthroughToday(page);
   await page.evaluate(() => {
     localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:swipe-demo', '1');
     localStorage.setItem('tp:resp:Brittany', JSON.stringify({ name: 'Brittany', days: 9, flex: false, pace: 1, ranking: { must: [], keen: [], meh: [], skip: [] }, rated: [], submitted: false, updatedAt: '2026-10-14T00:00:00Z' }));
@@ -153,6 +159,7 @@ test('key movements run on the motion scale: character sheet, swipe card, Missio
   expect(bar.bottom).toBeGreaterThanOrEqual(0);
 
   const rows = PEOPLE.map(name => ({ name, days: 9, flex: false, pace: 1, ranking, final: ranking, rated: ids, submitted: true, updatedAt: '2026-10-15T00:00:00Z' }));
+  await seenWalkthroughToday(page);
   await page.evaluate(rs => {
     localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:votes', JSON.stringify(['Antek', 'Lazza', 'Saulie'].map(name => ({ forkId: 'ko:scuba', name, choice: 'b' })))); localStorage.setItem('tp:reveal-mine', '1');
     for (const r of rs) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));

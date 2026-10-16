@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
+import { seenWalkthroughToday } from './helpers';
 
 const cat = JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string }[] };
 const ids = cat.items.map(i => i.id);
@@ -12,6 +13,7 @@ for (const w of [320, 360, 390, 1280]) {
   test(`no Guide section chip is cut off at ${w}px`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: 800 });
     await page.goto('/');
+    await seenWalkthroughToday(page);
     await page.evaluate(r => { localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:reveal-mine', '1'); localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r)); }, me);
     await page.reload();
     await page.getByRole('tab', { name: 'Guide' }).click();

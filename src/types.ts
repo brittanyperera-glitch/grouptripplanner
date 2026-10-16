@@ -64,6 +64,8 @@ export interface Store {
   subscribe(cb: (s: AppState) => void): () => void;
   logChoice(c: ChoiceInput): Promise<void>;
   loadLog(): Promise<ChoiceEntry[]>;
+  // Stays phase: one row per person (quiz answers, lock, ranks, bingo); latest write wins field by field.
+  saveCrewStays(name: Player, patch: Partial<Omit<CrewStays, 'name'>>): Promise<void>;
 }
 // a = contested item first, then anything else forcing it in adds; b = items it would displace
 export interface Knockout {
@@ -126,5 +128,7 @@ export interface StaysAdmin { pins: StayPin[]; scouts: Partial<Record<Area, Play
 // forkId `react:<suggestionId>` (choice a = interested, b = not) and `stay:<area>:<idA>:<idB>` (a or b).
 export interface StaysState { crew: Partial<Record<Player, CrewStays>>; suggestions: PlaceSuggestion[]; admin: StaysAdmin }
 export const EMPTY_STAYS: StaysState = { crew: {}, suggestions: [], admin: { pins: [], scouts: {} } };
+// Epoch updatedAt, so any stored row counts as newer than this placeholder.
+export const blankCrew = (name: Player): CrewStays => ({ name, prefs: [], quizDone: false, locked: false, ranks: {}, bingo: [], updatedAt: new Date(0).toISOString() });
 export const stayForkId = (area: Area, a: string, b: string) => `stay:${area}:${a}:${b}`;
 export const reactForkId = (suggestionId: string) => `react:${suggestionId}`;

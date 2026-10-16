@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { hits, inside, measureStop } from './reveal-helpers';
 import fs from 'node:fs';
+import { seenWalkthroughToday } from './helpers';
 
 // All five have submitted and saved the same Finalize list, so the plan is locked with no head to heads.
 // ?quips=1 turns motion back on under webdriver, so the full reveal plays.
@@ -27,6 +28,7 @@ async function openReveal(page: Page, w: number, h: number, quips: boolean, rout
   // The late scuba item is a head to head for everyone once the plan is locked; three votes to keep the plan settle it.
   const scuba = ['Antek', 'Lazza', 'Saulie'].map(name => ({ forkId: 'ko:scuba', name, choice: 'b' }));
   const votes = [...(route === 'north' ? PEOPLE.map(name => ({ forkId: 'region:north', name, choice: 'a' })) : []), ...scuba];
+  await seenWalkthroughToday(page);
   await page.evaluate(([rs, vs]) => {
     localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:votes', JSON.stringify(vs)); localStorage.setItem('tp:reveal-mine', '1');
     for (const r of rs as { name: string }[]) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));

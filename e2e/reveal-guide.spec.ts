@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
+import { seenWalkthroughToday } from './helpers';
 
 // Brittany 2026-10-15: Mission ready needs an obvious way into Britt's guide.
 const cat = JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string }[] };
@@ -13,6 +14,7 @@ const me = {
 test('See Britt\'s guide on Mission ready closes the reveal and opens the Guide', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
+  await seenWalkthroughToday(page);
   await page.evaluate(r => { localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:reveal-mine', '1'); localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r)); }, me);
   await page.reload();
   await page.getByRole('button', { name: 'Play my route reveal' }).click();

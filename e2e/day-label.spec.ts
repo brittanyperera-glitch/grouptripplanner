@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
+import { seenWalkthroughToday } from './helpers';
 
 // Brittany 2026-10-15: on days with no photo (first and last) the area label was near-white on paper, because the strip
 // still carried the photo surface's light text colours. Every label on a plain strip must pass WCAG AA contrast.
@@ -14,6 +15,7 @@ const me = {
 test('day labels on photo-less days pass WCAG AA contrast', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
+  await seenWalkthroughToday(page);
   await page.evaluate(r => { localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:reveal-mine', '1'); localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r)); }, me);
   await page.reload();
   await expect(page.locator('.day').first()).toBeVisible();

@@ -23,6 +23,8 @@ const done = (name: Person): Response => ({
   rated: ['a', 'b', 'c'], submitted: true, updatedAt: '2026-10-14T00:00:00Z',
 });
 
+// Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
+const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z' }));
 beforeEach(() => {
   localStorage.clear();
   cat.items = [mk('a', 'Alpha Rock', 'Cultural Triangle'), mk('b', 'Beta Falls', 'Cultural Triangle'), mk('c', 'Gamma Beach', 'South coast')];
@@ -34,6 +36,7 @@ describe('Start over', () => {
     localStorage.setItem('tp:resp:Alex', JSON.stringify(done('Alex')));
     localStorage.setItem('tp:resp:Lazza', JSON.stringify(done('Lazza')));
     localStorage.setItem('tp:me', 'Alex');
+    quizDone('Alex');
     localStorage.setItem('tp:sound-muted', '1');
     localStorage.setItem('tp:reveal-mine', '1');
     const lazza = localStorage.getItem('tp:resp:Lazza');
@@ -61,6 +64,7 @@ describe('Start over', () => {
   it('a first tap left alone for four seconds goes back to Start over', async () => {
     localStorage.setItem('tp:resp:Alex', JSON.stringify(done('Alex')));
     localStorage.setItem('tp:me', 'Alex');
+    quizDone('Alex');
     render(<App store={new LocalStore()} />);
     await screen.findByRole('tab', { name: 'My trip' });
     vi.useFakeTimers();
@@ -77,6 +81,8 @@ describe('Start over', () => {
   it('with a server that only updates on a realtime reload, lands on days, not Loading or the old tabs', async () => {
     const store = new ServerLike();
     store.rows = { Alex: done('Alex'), Lazza: done('Lazza') };
+    // Quiz done on the server, so this still lands on My trip as before the stayQuiz to-do existed.
+    store.stays = { crew: { Alex: { name: 'Alex', prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z' } }, suggestions: [], admin: { pins: [], scouts: {} } };
     localStorage.setItem('tp:me', 'Alex');
     render(<App store={store} />);
     await screen.findByRole('tab', { name: 'My trip' });

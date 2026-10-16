@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { LocalStore } from './local';
+import { isLocalStoreKey, LocalStore } from './local';
 
 beforeEach(() => localStorage.clear());
 
@@ -44,5 +44,31 @@ describe('LocalStore', () => {
     await new Promise(r => setTimeout(r, 0));
     off();
     expect((got as { responses: Record<string, { days: number }> }).responses.Lazza.days).toBe(5);
+  });
+
+  it('crew stays merge field by field across stores, stamp updatedAt and reload', async () => {
+    await new LocalStore().saveCrewStays('Alex', { locked: true });
+    await new LocalStore().saveCrewStays('Alex', { quizDone: true });
+    const c = (await new LocalStore().load()).stays?.crew.Alex;
+    expect(c).toMatchObject({ name: 'Alex', locked: true, quizDone: true, prefs: [], ranks: {}, bingo: [] });
+    expect(Date.parse(c!.updatedAt)).toBeGreaterThan(0);
+  });
+
+  it('load always carries a stays block, empty when nothing is saved', async () => {
+    expect((await new LocalStore().load()).stays).toEqual({ crew: {}, suggestions: [], admin: { pins: [], scouts: {} } });
+  });
+
+  it('subscribe callback fires after saveCrewStays', async () => {
+    const s = new LocalStore();
+    let got: Awaited<ReturnType<LocalStore['load']>> | null = null;
+    const off = s.subscribe(st => { got = st; });
+    await s.saveCrewStays('Lazza', { quizDone: true });
+    off();
+    expect(got!.stays?.crew.Lazza?.quizDone).toBe(true);
+  });
+
+  it('crew stays rows count as shared store data, cleared by Start over', () => {
+    expect(isLocalStoreKey('tp:stays:Alex')).toBe(true);
+    expect(isLocalStoreKey('tp:me')).toBe(false);
   });
 });

@@ -7,8 +7,8 @@ import PasswordGate from './components/PasswordGate';
 import { getStore, supabaseConfigured } from './store';
 import { useTripAccess } from './store/useTripAccess';
 import { WriteQueue } from './store/queue';
-import { emptyRanking, PEOPLE } from './types';
-import type { AppState, Item, Leg, Person, Player, Response, Store, Vote } from './types';
+import { blankCrew, EMPTY_STAYS, emptyRanking, PEOPLE } from './types';
+import type { AppState, CrewStays, Item, Leg, Person, Player, Response, Store, Vote } from './types';
 
 // A quip is one line, or a list the app picks from at random so it doesn't repeat.
 export type Quip = string | string[];
@@ -35,13 +35,15 @@ export const ME_KEY = 'tp:me';
 // My own saves, kept here until the server has them, so a failed save survives a reload of the page.
 const UNSAVED_KEY = (p: Person) => `tp:unsaved:${p}`;
 type Rows = AppState['responses'];
+// My crew writes, field by field, stamped when made; shown over the server row until it holds them.
+type CrewOverlay = Partial<Record<Player, { patch: Partial<Omit<CrewStays, 'name'>>; updatedAt: string }>>;
 
 const blankRow = (name: Player): Response => ({
   name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: new Date(0).toISOString(),
 });
 
 /** True when the server has not yet caught up with a local save (missing, or written before it). */
-const ahead = (local: Response, server?: Response) => !server || Date.parse(server.updatedAt) < Date.parse(local.updatedAt);
+const ahead = (local: { updatedAt: string }, server?: { updatedAt: string }) => !server || Date.parse(server.updatedAt) < Date.parse(local.updatedAt);
 
 function readUnsaved(): Rows {
   const out: Rows = {};
@@ -65,13 +67,19 @@ function writeUnsaved(rows: Rows): void {
 }
 
 /** Server state with my not-yet-stored saves on top, so a reload that lacks them never wipes them from screen. */
-function withLocal(server: AppState, local: Rows, votes: Vote[] = []): AppState {
+function withLocal(server: AppState, local: Rows, votes: Vote[] = [], crew: CrewOverlay = {}): AppState {
   const responses = { ...server.responses };
   for (const r of Object.values(local)) if (r && ahead(r, server.responses[r.name])) responses[r.name] = r;
   // My own taps, shown at once; the server's row replaces them once it holds the same choice.
   const mine = votes.filter(v => !server.votes.some(s => s.forkId === v.forkId && s.name === v.name && s.choice === v.choice));
   const kept = server.votes.filter(s => !mine.some(v => v.forkId === s.forkId && v.name === s.name));
-  return { ...server, responses, votes: mine.length ? [...kept, ...mine] : server.votes };
+  const out = { ...server, responses, votes: mine.length ? [...kept, ...mine] : server.votes };
+  const pending = (Object.entries(crew) as [Player, NonNullable<CrewOverlay[Player]>][]).filter(([n, c]) => ahead(c, server.stays?.crew[n]));
+  if (pending.length === 0) return out;
+  const stays = server.stays ?? EMPTY_STAYS;
+  const rows = { ...stays.crew };
+  for (const [n, c] of pending) rows[n] = { ...(rows[n] ?? blankCrew(n)), ...c.patch, name: n, updatedAt: c.updatedAt };
+  return { ...out, stays: { ...stays, crew: rows } };
 }
 const copy: Copy = copyData;
 
@@ -117,6 +125,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   const [server, setServer] = useState<AppState | null>(null);
   const [local, setLocal] = useState<Rows>(() => (sandbox ? {} : readUnsaved()));
   const [localVotes, setLocalVotes] = useState<Vote[]>([]);
+  const [localCrew, setLocalCrew] = useState<CrewOverlay>({});
   const serverRef = useRef(server);
   serverRef.current = server;
   const localRef = useRef(local);
@@ -150,6 +159,10 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
       const kept = Object.fromEntries(Object.entries(l).filter(([, r]) => r && ahead(r, server.responses[r.name]))) as Rows;
       return Object.keys(kept).length === Object.keys(l).length ? l : kept;
     });
+    setLocalCrew(l => {
+      const kept = Object.fromEntries(Object.entries(l).filter(([n, c]) => c && ahead(c, server.stays?.crew[n as Player]))) as CrewOverlay;
+      return Object.keys(kept).length === Object.keys(l).length ? l : kept;
+    });
   }, [server]);
   useEffect(() => { if (!sandbox) writeUnsaved(local); }, [local, sandbox]);
 
@@ -178,8 +191,12 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
       setLocalVotes(l => [...l.filter(x => !(x.forkId === v.forkId && x.name === v.name)), v]);
       return queue.store.vote(v);
     },
+    saveCrewStays: (name, patch) => {
+      setLocalCrew(l => ({ ...l, [name]: { patch: { ...l[name]?.patch, ...patch }, updatedAt: new Date().toISOString() } }));
+      return queue.store.saveCrewStays(name, patch);
+    },
   }, [queue]);
-  const state = useMemo(() => server && withLocal(server, local, localVotes), [server, local, localVotes]);
+  const state = useMemo(() => server && withLocal(server, local, localVotes, localCrew), [server, local, localVotes, localCrew]);
 
   const retry = useCallback(() => {
     if (!queue) { setAttempt(a => a + 1); return; }

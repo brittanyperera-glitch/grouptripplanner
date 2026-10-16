@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
+import { seenWalkthroughToday } from './helpers';
 
 // Brittany 2026-10-15: Your picks lives in the tab bar. The tabs must fit a small phone with every label whole.
 const cat = JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string }[] };
@@ -13,6 +14,7 @@ for (const w of [320, 360, 390, 1280]) {
   test(`tabs fit with whole labels, and Picks shows my list, at ${w}px`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: 800 });
     await page.goto('/');
+    await seenWalkthroughToday(page);
     await page.evaluate(r => { localStorage.clear(); localStorage.setItem('tp:me', 'Brittany'); localStorage.setItem('tp:reveal-mine', '1'); localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r)); }, me);
     await page.reload();
     await expect(page.getByRole('tab')).toHaveCount(6);

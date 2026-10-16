@@ -15,6 +15,8 @@ const mk = (id: string, name: string, area: string) => ({
 const row = (name: Person, over: Partial<Response> = {}): Response => ({
   name, days: 9, flex: false, pace: 1, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: '2026-10-14T00:00:00Z', ...over,
 });
+// Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
+const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z' }));
 const start = (who: Person) => {
   localStorage.setItem(`tp:resp:${who}`, JSON.stringify(row(who, { rated: ['a'], ranking: { ...emptyRanking(), must: [['a']] } })));
   localStorage.setItem('tp:me', who);
@@ -84,6 +86,7 @@ describe('Back from the profile', () => {
   it('returns to the tab I was on after submitting', async () => {
     localStorage.setItem('tp:resp:Alex', JSON.stringify(row('Alex', { rated: ['a', 'b', 'c'], submitted: true, ranking: { ...emptyRanking(), must: [['a'], ['b'], ['c']] } })));
     localStorage.setItem('tp:me', 'Alex');
+    quizDone('Alex');
     render(<App />);
     const tabs = await screen.findByRole('tablist', { name: 'Sections' });
     await userEvent.click(within(tabs).getByRole('tab', { name: 'Suggest' }));

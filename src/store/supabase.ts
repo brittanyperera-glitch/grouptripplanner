@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { tripClient } from './tripKey';
-import { emptyRanking } from '../types';
-import type { AppState, ChoiceEntry, ChoiceInput, Person, Response, Store, Suggestion, Vote } from '../types';
+import { EMPTY_STAYS, emptyRanking } from '../types';
+import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, Response, StaysState, Store, Suggestion, Vote } from '../types';
 
 interface RespRow {
   name: Person; days: number | null; flex?: boolean | null; pace: Response['pace'];
@@ -13,6 +13,14 @@ interface SuggRow {
 }
 interface LogRow { id: string; name: Person; kind: ChoiceEntry['kind']; ref: string | null; value: unknown; at: string }
 interface VoteRow { fork_id: string; name: Person; choice: 'a' | 'b' }
+interface CrewRow {
+  name: Person; prefs: CrewStays['prefs'] | null; quiz_done: boolean | null; locked: boolean | null;
+  ranks: CrewStays['ranks'] | null; bingo: CrewStays['bingo'] | null; updated_at: string | null;
+}
+const toCrew = (r: CrewRow): CrewStays => ({
+  name: r.name, prefs: r.prefs ?? [], quizDone: r.quiz_done ?? false, locked: r.locked ?? false,
+  ranks: r.ranks ?? {}, bingo: r.bingo ?? [], updatedAt: r.updated_at ?? new Date(0).toISOString(),
+});
 
 // The Finalize list is kept inside the ranking jsonb column under "final", so the live table needs
 // no new column.
@@ -52,10 +60,11 @@ export class SupabaseStore implements Store {
   }
 
   async load(): Promise<AppState> {
-    const [r, s, v] = await Promise.all([
+    const [r, s, v, stays] = await Promise.all([
       this.db.from('responses').select('*'),
       this.db.from('suggestions').select('*').order('created_at'),
       this.db.from('knockout_votes').select('*'),
+      this.loadStays(),
     ]);
     const err = r.error ?? s.error ?? v.error;
     if (err) throw err;
@@ -68,7 +77,19 @@ export class SupabaseStore implements Store {
         status: x.status, createdAt: x.created_at,
       })),
       votes: ((v.data ?? []) as VoteRow[]).map(x => ({ forkId: x.fork_id, name: x.name, choice: x.choice })),
+      stays,
     };
+  }
+
+  /** Never throws: a crew_stays table missing on a database whose schema was not re-run must not blank the whole app. */
+  private async loadStays(): Promise<StaysState> {
+    const stays: StaysState = structuredClone(EMPTY_STAYS);
+    try {
+      const { data, error } = await this.db.from('crew_stays').select('*');
+      if (error) return stays;
+      for (const row of (data ?? []) as CrewRow[]) stays.crew[row.name] = toCrew(row);
+    } catch { /* same as an error result: the stays phase starts empty */ }
+    return stays;
   }
 
   async saveResponse(name: Person, patch: Partial<Omit<Response, 'name'>>): Promise<void> {
@@ -80,6 +101,19 @@ export class SupabaseStore implements Store {
     }
     if (patch.final !== undefined && patch.ranking) cols.ranking = { ...patch.ranking, final: patch.final };
     const { error } = await this.db.from('responses').upsert(cols, { onConflict: 'name' });
+    if (error) throw error;
+    this.ping();
+  }
+
+  // Only the fields in the patch are written, so saving the quiz never clears ranks or bingo.
+  async saveCrewStays(name: Person, patch: Partial<Omit<CrewStays, 'name'>>): Promise<void> {
+    const cols: Record<string, unknown> = { name, updated_at: new Date().toISOString() };
+    if (patch.prefs !== undefined) cols.prefs = patch.prefs;
+    if (patch.quizDone !== undefined) cols.quiz_done = patch.quizDone;
+    if (patch.locked !== undefined) cols.locked = patch.locked;
+    if (patch.ranks !== undefined) cols.ranks = patch.ranks;
+    if (patch.bingo !== undefined) cols.bingo = patch.bingo;
+    const { error } = await this.db.from('crew_stays').upsert(cols, { onConflict: 'name' });
     if (error) throw error;
     this.ping();
   }

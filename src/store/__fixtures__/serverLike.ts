@@ -1,4 +1,4 @@
-import type { AppState, ChoiceEntry, ChoiceInput, Person, Response, Store, Suggestion, Vote } from '../../types';
+import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, Response, Store, Suggestion, Vote } from '../../types';
 
 /**
  * Behaves like SupabaseStore: a save never notifies this tab (only a realtime reload does, via push()),
@@ -6,6 +6,8 @@ import type { AppState, ChoiceEntry, ChoiceInput, Person, Response, Store, Sugge
  */
 export class ServerLike implements Store {
   rows: AppState['responses'] = {};
+  /** Optional crew stays rows the server holds, so a test can mark a quiz done. */
+  stays?: AppState['stays'];
   failResp = false;
   failLog = false;
   logCalls = 0;
@@ -13,7 +15,7 @@ export class ServerLike implements Store {
   private listeners = new Set<(s: AppState) => void>();
 
   async load(): Promise<AppState> {
-    return { responses: structuredClone(this.rows), suggestions: [], votes: [] };
+    return { responses: structuredClone(this.rows), suggestions: [], votes: [], ...(this.stays ? { stays: structuredClone(this.stays) } : {}) };
   }
   async saveResponse(name: Person, patch: Partial<Omit<Response, 'name'>>): Promise<void> {
     if (this.failResp) throw new Error('500');
@@ -22,6 +24,7 @@ export class ServerLike implements Store {
   async addSuggestion(_s: { name: Person; title: string; area: Suggestion['area']; note: string }): Promise<void> {}
   async setSuggestionStatus(_id: string, _st: Suggestion['status']): Promise<void> {}
   async vote(_v: Vote): Promise<void> {}
+  async saveCrewStays(_n: Person, _p: Partial<Omit<CrewStays, 'name'>>): Promise<void> {}
   async logChoice(c: ChoiceInput): Promise<void> {
     this.logCalls++;
     if (this.failLog) throw new Error('404 choice_log');

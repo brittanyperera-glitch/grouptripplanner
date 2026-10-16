@@ -1,13 +1,14 @@
-import { emptyRanking, PEOPLE } from '../types';
-import type { AppState, ChoiceEntry, ChoiceInput, Person, Response, Store, Suggestion, Vote } from '../types';
+import { blankCrew, emptyRanking, PEOPLE } from '../types';
+import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, Response, Store, Suggestion, Vote } from '../types';
 
 const SUGG = 'tp:sugg';
 const VOTES = 'tp:votes';
 const LOG = 'tp:log';
 const respKey = (n: Person) => `tp:resp:${n}`;
+const staysKey = (n: Person) => `tp:stays:${n}`;
 
 /** The keys that are this store's shared data (everyone's rows, votes, suggestions, log), not one person's progress. */
-export const isLocalStoreKey = (k: string) => k === SUGG || k === VOTES || k === LOG || k.startsWith('tp:resp:');
+export const isLocalStoreKey = (k: string) => k === SUGG || k === VOTES || k === LOG || k.startsWith('tp:resp:') || k.startsWith('tp:stays:');
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -40,13 +41,25 @@ export class LocalStore implements Store {
       const r = read<Response | null>(respKey(p), null);
       if (r && typeof r === 'object') responses[p] = r;
     }
+    const crew: Partial<Record<Person, CrewStays>> = {};
+    for (const p of PEOPLE) {
+      const c = read<CrewStays | null>(staysKey(p), null);
+      if (c && typeof c === 'object') crew[p] = c;
+    }
     const suggestions = read<Suggestion[]>(SUGG, []);
     const votes = read<Vote[]>(VOTES, []);
     return {
       responses,
       suggestions: Array.isArray(suggestions) ? suggestions : [],
       votes: Array.isArray(votes) ? votes : [],
+      stays: { crew, suggestions: [], admin: { pins: [], scouts: {} } },
     };
+  }
+
+  async saveCrewStays(name: Person, patch: Partial<Omit<CrewStays, 'name'>>): Promise<void> {
+    const existing = read<CrewStays | null>(staysKey(name), null) ?? blankCrew(name);
+    write(staysKey(name), { ...existing, ...patch, name, updatedAt: new Date().toISOString() });
+    await this.emit();
   }
 
   async saveResponse(name: Person, patch: Partial<Omit<Response, 'name'>>): Promise<void> {

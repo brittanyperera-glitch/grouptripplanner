@@ -42,9 +42,12 @@ const row = (name: Person, over: Partial<Response> = {}): Response => ({
   name, days: 9, flex: false, pace: 1, ranking: { ...emptyRanking(), must: [['a'], ['b'], ['c']] }, rated: ['a', 'b', 'c'], submitted: true, updatedAt: '2026-10-14T00:00:00Z', ...over,
 });
 const seed = (r: Response) => localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
+// Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
+const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z' }));
 const seedCrew = (me: Person, lacking?: Person) => {
   for (const p of PEOPLE) seed(row(p, p === lacking ? { submitted: false } : {}));
   localStorage.setItem('tp:me', me);
+  quizDone(me);
 };
 const blocks = () => Array.from(document.querySelectorAll<HTMLElement>('.gh-block'));
 const koBlock = () => blocks().find(b => /Group knockouts/.test(b.textContent ?? ''));
@@ -218,7 +221,8 @@ describe('Accommodation battles teaser', () => {
     render(<App />);
     await user.click(await screen.findByRole('tab', { name: 'Group' }));
     expect(await screen.findByText('Accommodation battles')).toBeInTheDocument();
-    expect(screen.getByText('Loading. Coming soon.')).toBeInTheDocument();
+    // Changed deliberately (Brittany 2026-10-16): the teaser now says it is in dev.
+    expect(screen.getByText('In dev. Opens once everyone has finished the knockouts.')).toBeInTheDocument();
   });
   it('is absent while the group stage is still open', async () => {
     seedCrew('Brittany');

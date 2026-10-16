@@ -25,6 +25,8 @@ const row = (name: Person, over: Partial<Response> = {}): Response => ({
 });
 const seed = (r: Response) => localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
 
+// Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
+const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z' }));
 beforeEach(() => {
   localStorage.clear();
   window.history.replaceState({}, '', '/?howto=1');
@@ -80,6 +82,7 @@ describe('how-to step', () => {
   it('does not show once submitted', async () => {
     seed(row('Alex', { submitted: true, rated: ['a', 'b'], ranking: { ...emptyRanking(), must: [['a'], ['b']] } }));
     localStorage.setItem('tp:me', 'Alex');
+    quizDone('Alex');
     const user = userEvent.setup();
     render(<App />);
     await screen.findByRole('button', { name: 'Menu' });

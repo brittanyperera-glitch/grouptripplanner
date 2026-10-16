@@ -111,3 +111,46 @@ describe('WriteQueue', () => {
     expect(sent.at(-1)).toBe(14);
   });
 });
+
+describe('WriteQueue crew stays', () => {
+  type CrewPatch = Parameters<LocalStore['saveCrewStays']>[1];
+  const pref = { topic: 'budget' as const, picks: {}, noPreference: true, skipped: false };
+
+  it('two saves for one person queued behind another write become one write, newest value per field', async () => {
+    const sent: Array<[string, CrewPatch]> = [];
+    let release: () => void = () => undefined;
+    class Spy extends LocalStore {
+      override async saveCrewStays(n: Name, p: CrewPatch) {
+        if (n === 'Brittany') await new Promise<void>(r => { release = r; });
+        sent.push([n, p]);
+      }
+    }
+    const q = new WriteQueue(new Spy(), hooks());
+    const blocker = q.store.saveCrewStays('Brittany', { locked: true });
+    const one = q.store.saveCrewStays('Alex', { quizDone: false, locked: true });
+    const two = q.store.saveCrewStays('Alex', { quizDone: true, prefs: [pref] });
+    release();
+    await Promise.all([blocker, one, two]);
+    const alex = sent.filter(([n]) => n === 'Alex');
+    expect(alex).toHaveLength(1);
+    expect(alex[0][1]).toEqual({ quizDone: true, locked: true, prefs: [pref] });
+  });
+
+  it('a retry after failures sends one write per person holding every field, newest value per field', async () => {
+    const sent: CrewPatch[] = [];
+    class Spy extends LocalStore {
+      fail = true;
+      override async saveCrewStays(_n: Name, p: CrewPatch) {
+        if (this.fail) throw new Error('offline');
+        sent.push(p);
+      }
+    }
+    const base = new Spy();
+    const q = new WriteQueue(base, hooks());
+    await q.store.saveCrewStays('Alex', { quizDone: false, locked: true });
+    await q.store.saveCrewStays('Alex', { quizDone: true, prefs: [pref] });
+    base.fail = false;
+    expect(await q.flush()).toBe(true);
+    expect(sent).toEqual([{ quizDone: true, locked: true, prefs: [pref] }]);
+  });
+});

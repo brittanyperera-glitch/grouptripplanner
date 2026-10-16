@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
+import { seenWalkthroughToday } from './helpers';
 
 // Only Brittany has submitted: the Group tab shows the waiting screen with the guide button.
 const cat = JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string }[] };
@@ -13,6 +14,7 @@ for (const scheme of ['dark', 'light'] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
+    await seenWalkthroughToday(page);
     await page.evaluate(f => { localStorage.clear(); localStorage.setItem(`tp:resp:${f.name}`, JSON.stringify(f)); localStorage.setItem('tp:me', f.name); }, brittany);
     await page.reload();
 

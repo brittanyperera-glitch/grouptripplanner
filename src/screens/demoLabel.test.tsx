@@ -21,6 +21,8 @@ const mk = (id: string, name: string, area: string) => ({
 });
 const submitted = (name: Person): Response => ({ name, days: 9, flex: false, pace: 1, ranking: emptyRanking(), rated: [], submitted: true, updatedAt: '2026-10-14T00:00:00Z' });
 
+// Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
+const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z' }));
 beforeEach(() => { localStorage.clear(); window.location.hash = ''; cat.items = [mk('a', 'Alpha Rock', 'Cultural Triangle'), mk('b', 'Beta Falls', 'Cultural Triangle'), mk('c', 'Gamma Beach', 'South coast')]; });
 afterEach(() => { cleanup(); window.location.hash = ''; });
 
@@ -45,6 +47,7 @@ describe('demo label on the Group hub and Everyone', () => {
     const user = userEvent.setup();
     for (const p of PEOPLE) localStorage.setItem(`tp:resp:${p}`, JSON.stringify(submitted(p)));
     localStorage.setItem('tp:me', 'Alex');
+    quizDone('Alex');
     render(<App />);
     await user.click(await screen.findByRole('tab', { name: 'Group' }));
     await screen.findByRole('button', { name: /Everyone's picks/ });
