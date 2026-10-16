@@ -8,8 +8,8 @@ import type { Response } from '../types';
 /** Friendship stats. Rendered only after all five have submitted. */
 export default function Friends() {
   const { state, me, items } = useApp();
-  if (!PEOPLE.every(p => state.responses[p]?.submitted)) return null;
-  const viewer = me && !isGuest(me) ? me : PEOPLE[0];
+  if (isGuest(me) || !PEOPLE.every(p => state.responses[p]?.submitted)) return null;
+  const viewer = me ?? PEOPLE[0];
   const rs = PEOPLE.map(p => state.responses[p]).filter((r): r is Response => !!r);
   const stats = friendStats(state.responses, viewer);
   const div = divisive(rs, items.map(i => i.id));

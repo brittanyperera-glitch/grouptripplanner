@@ -1,4 +1,5 @@
-import { emptyRanking } from '../types';
+import { VOTES_TO_RESOLVE } from '../lib/group';
+import { emptyRanking, isGuest, PEOPLE } from '../types';
 import type { AppState, ChoiceEntry, ChoiceInput, Player, Response, Store, Suggestion, Vote } from '../types';
 import { seedState } from './seed';
 
@@ -27,7 +28,7 @@ export class MemoryStore implements Store {
   }
 
   async addSuggestion(s: { name: Player; title: string; area: Suggestion['area']; note: string }): Promise<void> {
-    this.state.suggestions.push({ ...s, id: crypto.randomUUID(), status: 'pending', createdAt: new Date().toISOString() });
+    this.state.suggestions.push({ ...s, id: crypto.randomUUID(), status: isGuest(s.name) ? 'live' : 'pending', createdAt: new Date().toISOString() });
     this.emit();
   }
 
@@ -38,6 +39,11 @@ export class MemoryStore implements Store {
 
   async vote(v: Vote): Promise<void> {
     this.state.votes = [...this.state.votes.filter(x => !(x.forkId === v.forkId && x.name === v.name)), { ...v }];
+    if (isGuest(v.name) && v.forkId.startsWith('ko:')) {
+      // The example crew follows the guest so the demo can finish.
+      const voted = new Set(this.state.votes.filter(x => x.forkId === v.forkId).map(x => x.name));
+      for (const p of PEOPLE.filter(p => !voted.has(p)).slice(0, VOTES_TO_RESOLVE)) this.state.votes.push({ forkId: v.forkId, name: p, choice: v.choice });
+    }
     this.emit();
   }
 
