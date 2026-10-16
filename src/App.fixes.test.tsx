@@ -5,6 +5,9 @@ import { LocalStore } from './store/local';
 import { emptyRanking, PEOPLE, type Person, type Response } from './types';
 import App from './App';
 import { openMenu } from './__fixtures__/menu';
+import { WALKTHROUGH_KEY, todayKey } from './lib/walkthrough';
+// These tests exercise the tabs, not the once-a-day welcome-back walkthrough (it has its own tests), so it counts as seen today.
+const seenWalkToday = () => localStorage.setItem(WALKTHROUGH_KEY, todayKey(new Date()));
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 vi.mock('./data/catalogue.json', () => ({ default: cat }));
@@ -22,7 +25,7 @@ const saved = (n: Person) => JSON.parse(localStorage.getItem(`tp:resp:${n}`) ?? 
 const DONE = { rated: ['a', 'b', 'c'], submitted: true };
 
 beforeEach(() => {
-  localStorage.clear();
+  localStorage.clear(); seenWalkToday();
   cat.items = THREE;
 });
 

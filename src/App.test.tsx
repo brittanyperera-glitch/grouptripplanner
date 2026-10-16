@@ -5,6 +5,9 @@ import { LocalStore } from './store/local';
 import { emptyRanking, PEOPLE, type Person, type Response } from './types';
 import { score } from './lib/ranking';
 import App from './App';
+import { WALKTHROUGH_KEY, todayKey } from './lib/walkthrough';
+// These tests exercise the tabs, not the once-a-day welcome-back walkthrough (it has its own tests), so it counts as seen today.
+const seenWalkToday = () => localStorage.setItem(WALKTHROUGH_KEY, todayKey(new Date()));
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const copy = vi.hoisted(() => ({
@@ -29,7 +32,7 @@ const seed = (r: Response) => localStorage.setItem(`tp:resp:${r.name}`, JSON.str
 const savedAlex = () => JSON.parse(localStorage.getItem('tp:resp:Alex') ?? '{}') as Response;
 
 beforeEach(() => {
-  localStorage.clear();
+  localStorage.clear(); seenWalkToday();
   cat.items = THREE;
   copy.welcome = '';
   copy.quips = { name: {}, days: {}, pace: {}, tier: {} };

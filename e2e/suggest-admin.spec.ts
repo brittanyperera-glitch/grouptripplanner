@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
+import { seenWalkthroughToday } from './helpers';
 
 const cat = JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string }[] };
 const ids = cat.items.map(i => i.id);
@@ -10,6 +11,7 @@ for (const w of [320, 390, 1280]) {
   test(`Approve and Reject are two separate buttons inside the row at ${w}px`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: 800 });
     await page.goto('/');
+    await seenWalkthroughToday(page);
     await page.evaluate(([f, s]) => { localStorage.clear(); localStorage.setItem('tp:resp:Brittany', JSON.stringify(f)); localStorage.setItem('tp:sugg', JSON.stringify(s)); localStorage.setItem('tp:me', 'Brittany'); }, [brittany, pending] as const);
     await page.reload();
     await page.getByRole('tab', { name: /Suggest/ }).click();

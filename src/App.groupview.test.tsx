@@ -3,6 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyRanking, PEOPLE, type GroupResult, type Person, type Plan, type Response } from './types';
 import App from './App';
+import { WALKTHROUGH_KEY, todayKey } from './lib/walkthrough';
+// These tests exercise the tabs, not the once-a-day welcome-back walkthrough (it has its own tests), so it counts as seen today.
+const seenWalkToday = () => localStorage.setItem(WALKTHROUGH_KEY, todayKey(new Date()));
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const grp = vi.hoisted(() => ({ current: null as unknown }));
@@ -39,7 +42,7 @@ const row = (name: Person): Response => ({
 });
 
 beforeEach(() => {
-  localStorage.clear(); window.location.hash = ''; cat.items = ITEMS; grp.current = locked();
+  localStorage.clear(); seenWalkToday(); window.location.hash = ''; cat.items = ITEMS; grp.current = locked();
   for (const p of PEOPLE) localStorage.setItem(`tp:resp:${p}`, JSON.stringify(row(p)));
   localStorage.setItem('tp:me', 'Alex');
 });

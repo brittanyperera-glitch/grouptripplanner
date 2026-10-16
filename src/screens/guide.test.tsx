@@ -3,6 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyRanking, type Person, type Response } from '../types';
 import App from '../App';
+import { WALKTHROUGH_KEY, todayKey } from '../lib/walkthrough';
+// These tests exercise the tabs, not the once-a-day welcome-back walkthrough (it has its own tests), so it counts as seen today.
+const seenWalkToday = () => localStorage.setItem(WALKTHROUGH_KEY, todayKey(new Date()));
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 vi.mock('../data/catalogue.json', () => ({ default: cat }));
@@ -19,7 +22,7 @@ const seed = (r: Response) => localStorage.setItem(`tp:resp:${r.name}`, JSON.str
 const submitted = () => row('Alex', { submitted: true, rated: ['a'], ranking: { ...emptyRanking(), must: [['a']] } });
 
 beforeEach(() => {
-  localStorage.clear();
+  localStorage.clear(); seenWalkToday();
   cat.items = [mk('a', 'Alpha Rock'), mk('b', 'Beta Falls')];
   localStorage.setItem('tp:me', 'Alex');
 });

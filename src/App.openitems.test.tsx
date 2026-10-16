@@ -4,6 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyRanking, PEOPLE, type GroupResult, type Person, type Plan, type Response } from './types';
 import App from './App';
 import { openMenu } from './__fixtures__/menu';
+import { WALKTHROUGH_KEY, todayKey } from './lib/walkthrough';
+// These tests exercise the tabs, not the once-a-day welcome-back walkthrough (it has its own tests), so it counts as seen today.
+const seenWalkToday = () => localStorage.setItem(WALKTHROUGH_KEY, todayKey(new Date()));
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const grp = vi.hoisted(() => ({ current: null as unknown }));
@@ -48,7 +51,7 @@ const seedCrew = (me: Person, keener: Person = 'Alex') => {
 const dot = () => document.querySelector('.oi-dot');
 const knockoutCards = () => screen.findAllByRole('group', { name: /^Knockout:/ });
 
-beforeEach(() => { localStorage.clear(); window.location.hash = ''; cat.items = THREE; grp.current = group(); });
+beforeEach(() => { localStorage.clear(); seenWalkToday(); window.location.hash = ''; cat.items = THREE; grp.current = group(); });
 afterEach(() => { cleanup(); window.location.hash = ''; });
 
 describe('Menu red dot', () => {

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
-import { voteThroughOpenForks } from './helpers';
+import { voteThroughOpenForks, seenWalkthroughToday } from './helpers';
 
 // Two friends want the north, three the south: the group stage should ask "North or South?" once.
 const cat = JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string }[] };
@@ -20,6 +20,7 @@ const FRIENDS = [friend('Brittany', NORTH), friend('Alex', NORTH), friend('Antek
 test('one North or South question, settled by three votes', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
+  await seenWalkthroughToday(page);
   await page.evaluate(fr => { localStorage.clear(); for (const f of fr) localStorage.setItem(`tp:resp:${f.name}`, JSON.stringify(f)); localStorage.setItem('tp:me', 'Brittany'); }, FRIENDS);
   await page.reload();
   await page.getByRole('tab', { name: 'Group' }).click();

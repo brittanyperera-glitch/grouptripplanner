@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
-import { voteThroughOpenForks } from './helpers';
+import { voteThroughOpenForks, seenWalkthroughToday } from './helpers';
 
 // Brittany 2026-10-15: rank by dragging rows, inside a tier or across tiers, no arrow buttons. Real pointer and touch events at 390 x 844.
 const cat = JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string }[] };
@@ -98,6 +98,7 @@ test('Finalize: drag reorders, = makes a draw shown as a shared rank on joined r
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
+  await seenWalkthroughToday(page);
   await page.evaluate(fr => { localStorage.clear(); for (const f of fr) localStorage.setItem(`tp:resp:${f.name}`, JSON.stringify(f)); localStorage.setItem('tp:me', 'Brittany'); }, FRIENDS);
   await page.reload();
   await page.getByRole('tab', { name: 'Group' }).click();

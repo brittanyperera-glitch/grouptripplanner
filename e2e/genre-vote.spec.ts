@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
+import { seenWalkthroughToday } from './helpers';
 
 // All five Must Yala and Udawalawe, so two safaris land on the shortlist with no head to head before it.
 // Every other place with a type is Skip, so the safari pair is the only question.
@@ -17,6 +18,7 @@ const FRIENDS = ['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie'].map(friend);
 const open = async (page: Page, width: number, height: number) => {
   await page.setViewportSize({ width, height });
   await page.goto('/');
+  await seenWalkthroughToday(page);
   await page.evaluate(fr => { localStorage.clear(); for (const f of fr) localStorage.setItem(`tp:resp:${f.name}`, JSON.stringify(f)); localStorage.setItem('tp:me', 'Brittany'); }, FRIENDS);
   await page.reload();
   await page.getByRole('tab', { name: 'Group' }).click();

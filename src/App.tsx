@@ -22,6 +22,8 @@ import type { GroupView } from './screens/GroupHub';
 import MyTrip from './screens/MyTrip';
 import Name from './screens/Name';
 import OpenItems from './screens/OpenItems';
+import Walkthrough from './screens/Walkthrough';
+import { markSeen as markWalkSeen, readSeen as readWalkSeen, shouldShow as walkShould, todayKey } from './lib/walkthrough';
 import Pace from './screens/Pace';
 import Plan from './screens/Plan';
 import Premiere from './screens/Reveal';
@@ -238,6 +240,8 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const [itemsOpen, setItemsOpen] = useState(false);
   const [awardsOpen, setAwardsOpen] = useState(false);
   const [awardsSeen, setAwardsSeen] = useState<string | null>(readSeen);
+  // The welcome-back walkthrough shows once a day, to someone who opens the app already submitted.
+  const [walkDay, setWalkDay] = useState<string | null>(readWalkSeen);
   const scrollBack = useRef<number | null>(null);
   // On the tabs the profile is its own tab (Brittany 2026-10-16); before that it opens over the current step.
   const openProfile = () => {
@@ -310,6 +314,12 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const awardsUnseen = awardList.length > 0 && awardsSeen !== awardsKey(awardList);
   const todo = shown === 'tabs' ? openItems({ me, group, state, unrated: unrated.length, ratingsLocked: locked, awardsUnseen }) : [];
   const badges = tabBadges(todo);
+  const today = todayKey(new Date());
+  // Returning means they had already submitted when the app opened; a guest sandbox has no "back", so it never shows there.
+  const arrivedSubmitted = useRef(draft.submitted).current;
+  // Awards open on their own first; the walkthrough follows with whatever is still to do.
+  const walking = shown === 'tabs' && arrivedSubmitted && !isGuest(me) && !profileOpen && !itemsOpen && !awardsUnseen && !awardsOpen && walkShould(todo, today, walkDay);
+  const finishWalk = () => { setWalkDay(today); markWalkSeen(); };
 
   const changeDays = () => navigate('back', () => { setProfileOpen(false); setEditing(true); setStep('days'); });
   const changeLink = <button className="link" onClick={changeDays}>Change days or pace</button>;
@@ -401,8 +411,9 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
 
   const enter = cssEnter() ? lastNav() : null;
   if (itemsOpen && shown === 'tabs') content = <OpenItems items={todo} onGo={goItem} onBack={closeItems} />;
+  if (walking) content = <Walkthrough name={me} items={todo} onGo={goItem} onDone={finishWalk} />;
   if (profileOpen) content = <Profile name={me} players={copy.players} onBack={closeProfile} />;
-  const screenKey = profileOpen ? 'profile' : itemsOpen && shown === 'tabs' ? 'items' : shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
+  const screenKey = walking ? 'walkthrough' : profileOpen ? 'profile' : itemsOpen && shown === 'tabs' ? 'items' : shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
   useLayoutEffect(() => {
     const overlay = screenKey === 'profile' || screenKey === 'items';
     if (!/jsdom/.test(navigator.userAgent)) window.scrollTo(0, overlay ? 0 : scrollBack.current ?? 0);
@@ -420,7 +431,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
           todo={todo.length} onItems={shown === 'tabs' ? () => { if (profileOpen) setProfileOpen(false); openItemsPage(); } : undefined} onAwards={shown === 'tabs' && awardList.length > 0 ? () => setAwardsOpen(true) : undefined} />
       </header>
       <div className={`screen${enter ? ` enter-${enter}` : ''}`} key={screenKey}>{content}</div>
-      {shown === 'tabs' && !profileOpen && (
+      {shown === 'tabs' && !profileOpen && !walking && (
         <nav className="tabs" role="tablist" aria-label="Sections">
           {TABS.map(t => {
             const Icon = TAB_ICON[t];

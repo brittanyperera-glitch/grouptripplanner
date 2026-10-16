@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
+import { seenWalkthroughToday } from './helpers';
 
 // Four friends are pre-filled in localStorage (LocalStore stands in for the shared database);
 // Brittany goes through every real screen, then Alex and Lazza vote via "Not you?".
@@ -33,6 +34,7 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
   test.setTimeout(240_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
+  await seenWalkthroughToday(page);
   await page.evaluate((fr) => { localStorage.clear(); for (const f of fr) localStorage.setItem(`tp:resp:${f.name}`, JSON.stringify(f)); }, FRIENDS);
   await page.reload();
 

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
+import { seenWalkthroughToday } from './helpers';
 
 const cat = JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string }[] };
 const ids = cat.items.map(i => i.id);
@@ -79,6 +80,7 @@ for (const vp of VIEWPORTS) {
     await page.setViewportSize(vp);
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/');
+    await seenWalkthroughToday(page);
     await page.evaluate(fr => { localStorage.clear(); for (const f of fr) localStorage.setItem(`tp:resp:${f.name}`, JSON.stringify(f)); localStorage.setItem('tp:me', 'Brittany'); }, FRIENDS);
     await page.reload();
     await page.getByRole('tab', { name: 'Group' }).click();

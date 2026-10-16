@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import { hits, type R } from './reveal-helpers';
+import { seenWalkthroughToday } from './helpers';
 
 // Hub landmarks on the route map (src/components/Landmarks.tsx): My trip after the tuk-tuk drive, and the group Plan.
 // ?quips=1 turns motion back on under webdriver; without it the map is static and the landmarks are simply there.
@@ -24,6 +25,7 @@ const OTHERS = [
 async function land(page: Page, w: number, h: number, quips: boolean, everyone: boolean) {
   await page.setViewportSize({ width: w, height: h });
   await page.goto(quips ? '/?quips=1' : '/');
+  await seenWalkthroughToday(page);
   await page.evaluate(({ me, others, everyone }) => {
     localStorage.clear();
     localStorage.setItem('tp:me', 'Brittany');

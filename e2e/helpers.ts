@@ -17,3 +17,10 @@ export async function voteThroughOpenForks(page: Page, who: string) {
     await page.waitForTimeout(150);
   }
 }
+
+// Returning members now get a once-a-day welcome-back walkthrough. These specs test the screens behind it, so
+// every load starts with today's walkthrough already seen (an init script survives the specs' own storage clears).
+export const seenWalkthroughToday = (page: Page) => page.addInitScript(() => {
+  const d = new Date(), p = (n: number) => String(n).padStart(2, '0');
+  if (localStorage.getItem('tp:walkthrough-day') === null) localStorage.setItem('tp:walkthrough-day', `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`);
+});
