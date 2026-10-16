@@ -30,6 +30,7 @@ export const IconWarn = (p: P) => <Svg {...p}><path d="M12 4l9 16H3z" /><path d=
 export const IconExternal = (p: P) => <Svg {...p}><path d="M14 4.5h5.5V10M19.5 4.5L11 13M18 14v4.5a1 1 0 0 1-1 1H5.5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1H10" /></Svg>;
 export const IconThumb = (p: P) => <Svg {...p}><path d="M7 10.5v9.5H4.5a1 1 0 0 1-1-1v-7.5a1 1 0 0 1 1-1z" /><path d="M7 10.5l3.6-6.3a1.9 1.9 0 0 1 3.5 1.3l-.8 3.9h5.2a2 2 0 0 1 2 2.3l-1.2 6.7a2 2 0 0 1-2 1.6H7" /></Svg>;
 export const IconCheck = (p: P) => <Svg {...p}><path d="M5 12.5l4.5 4.5L19 7.5" /></Svg>;
+export const IconCross = (p: P) => <Svg {...p}><path d="M6 6l12 12M18 6L6 18" /></Svg>;
 export const IconMinus = (p: P) => <Svg {...p}><path d="M6 12h12" /></Svg>;
 export const IconPlus = (p: P) => <Svg {...p}><path d="M12 6v12M6 12h12" /></Svg>;
 export const IconInfinity = (p: P) => <Svg {...p}><path d="M12 12c-2-3-3.5-4.5-5.5-4.5a4.5 4.5 0 0 0 0 9c2 0 3.5-1.5 5.5-4.5s3.5-4.5 5.5-4.5a4.5 4.5 0 0 1 0 9c-2 0-3.5-1.5-5.5-4.5z" /></Svg>;
