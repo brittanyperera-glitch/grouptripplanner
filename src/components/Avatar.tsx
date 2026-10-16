@@ -27,6 +27,9 @@ export const LOOKS: Record<Player, Look> = {
 // the file is committed; a static list means no request is made to probe for a missing file.
 export const IMAGE_AVATARS: ReadonlySet<Player> = new Set<Player>(['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie', 'Tuktuk', 'Aunty', 'Groom']);
 // Real heights in cm for the PNG figures, measured from each figure's own pixel height (the crops differ).
+// Width / height of each PNG (Avatar.aspect.test.ts checks these against the files). Wide art such as the
+// tuk-tuk widens the frame instead of being cropped at the sides.
+export const IMAGE_ASPECT: Record<Player, number> = { Brittany: 0.427, Alex: 0.441, Antek: 0.47, Lazza: 0.477, Saulie: 0.416, Tuktuk: 0.823, Aunty: 0.526, Groom: 0.406 };
 export const IMAGE_CM: Record<Player, number> = { Alex: 188, Saulie: 183, Antek: 178, Lazza: 170, Brittany: 160, Tuktuk: 172, Aunty: 160, Groom: 178 };
 // Top of the SVG figure's head above the feet at 200 cm, in grid units; the PNG is fitted to the same height.
 const FIGURE_H = 211;
@@ -153,8 +156,13 @@ export default function Avatar({ name, size = 80, crop = 'bust', bob = false, im
   const headY = image ? 214 - FIGURE_H * s : 214 - (214 - 30.5) * s;
   const top = headY - (image ? 6 : 30);
   const stage = crop === 'stage';
-  const box = bust ? `16 ${top.toFixed(1)} 72 72` : stage ? (image ? STAGE_IMAGE_BOX : STAGE_BOX) : image ? IMAGE_FULL_BOX : FULL_BOX;
-  const [, , bw, bh] = box.split(' ').map(Number);
+  const base = bust ? `16 ${top.toFixed(1)} 72 72` : stage ? (image ? STAGE_IMAGE_BOX : STAGE_BOX) : image ? IMAGE_FULL_BOX : FULL_BOX;
+  // Drawn width of the art at true height; the image slot and, outside the bust crop, the frame grow to fit it.
+  const artW = image ? FIGURE_H * s * IMAGE_ASPECT[name] : 0;
+  const imgW = Math.max(184, artW);
+  let [bx, by, bw, bh] = base.split(' ').map(Number);
+  if (!bust && artW + 4 > bw) { bw = artW + 4; bx = 52 - bw / 2; }
+  const box = `${+bx.toFixed(1)} ${by} ${+bw.toFixed(1)} ${bh}`;
   return (
     <svg viewBox={box} width={(size * bw) / bh} height={size} aria-hidden="true" focusable="false"
       className={`avatar-art ${crop}`} data-person={name} data-height={cm}>
@@ -168,7 +176,7 @@ export default function Avatar({ name, size = 80, crop = 'bust', bob = false, im
       <g className={bob ? 'bob' : undefined}>
         <ellipse cx="54" cy="208" rx="26" ry="4" fill="rgba(0,0,0,.28)" />
         {image ? (
-          <image href={`/img/players/${name.toLowerCase()}.png`} x="-40" width="184" y={(214 - FIGURE_H * s).toFixed(1)} height={(FIGURE_H * s).toFixed(1)} preserveAspectRatio="xMidYMax meet" />
+          <image href={`/img/players/${name.toLowerCase()}.png`} x={(52 - imgW / 2).toFixed(1)} width={imgW.toFixed(1)} y={(214 - FIGURE_H * s).toFixed(1)} height={(FIGURE_H * s).toFixed(1)} preserveAspectRatio="xMidYMax meet" />
         ) : (
           <>
             <g transform={bodyT}>{body(l, id)}{shoes(l)}</g>

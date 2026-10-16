@@ -301,9 +301,9 @@ describe('submit, lock and errors', () => {
   it('shows no Play route reveal button before the lock', async () => {
     const user = await openGroup(['Alex', 'Lazza']);
     await groupTrip(user);
-    expect(await screen.findByText(/The route reveal drops once all five lock their lists/)).toBeInTheDocument();
+    expect(await screen.findByText(/Provisional until all five finalize/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Play route reveal' })).toBeNull();
-    expect(screen.getByRole('list', { name: 'Still to go' }).children).toHaveLength(3);
+    expect(screen.queryByText(/The route reveal drops once/)).toBeNull();
   });
 
   it('offers Play route reveal, and no Edit my list, once the plan is locked', async () => {

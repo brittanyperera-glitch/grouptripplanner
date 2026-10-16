@@ -1,0 +1,16 @@
+/* The Open items page and the My trip vote banner. Every class starts oi- (global CSS, src/css-collisions.test.ts). */
+.oi-page { gap: 12px; }
+.oi-back { align-self: flex-start; min-height: 32px; display: inline-flex; align-items: center; font-size: 13px; padding: 4px 14px; }
+.oi-empty { margin: 0; }
+.oi-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.oi-row { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 56px; padding: 14px 18px; border-radius: var(--r-card); background: var(--card); color: var(--ink); box-shadow: var(--shadow-card), 0 0 0 2px var(--red-deep); }
+.oi-row:active { transform: scale(.98); }
+.oi-row:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
+.oi-label { font-size: var(--fs-md); font-weight: 800; overflow-wrap: anywhere; }
+.oi-go { color: var(--muted); display: grid; place-items: center; }
+
+.oi-banner { margin: 12px 20px 0; padding: 18px; display: flex; flex-direction: column; gap: 8px; border-radius: var(--r-card); background: var(--red-deep); color: var(--on-red); box-shadow: var(--shadow-card); }
+.oi-banner-head { margin: 0; font-family: var(--font-head); font-size: var(--fs-2xl); font-weight: 800; line-height: .95; text-transform: uppercase; overflow-wrap: anywhere; }
+.oi-banner-line { margin: 0; font-size: var(--fs-md); font-weight: 700; }
+.oi-banner > button { flex: none; background: var(--white); color: var(--red-deep); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .oi-row { transition: none; } }

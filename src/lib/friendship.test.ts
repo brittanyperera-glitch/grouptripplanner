@@ -36,6 +36,17 @@ describe('friendStats', () => {
   it('lists every pair once', () => {
     expect(friendStats(all, 'Brittany').pairs).toHaveLength(10);
   });
+  it('when I match everyone equally there is no twin or clash, just the even score', () => {
+    const same = resp('Alex', { p1: 'must', p2: 'skip', p3: 'skip' });
+    const even = { ...all, Alex: same, Antek: { ...same, name: 'Antek' as Person }, Lazza: { ...same, name: 'Lazza' as Person }, Saulie: { ...same, name: 'Saulie' as Person } };
+    const s = friendStats(even, 'Brittany');
+    expect(s.twin).toBeNull();
+    expect(s.clash).toBeNull();
+    expect(s.even).toBe(s.pairs.find(p => p.a === 'Brittany')!.pct);
+  });
+  it('a normal spread has no even score', () => {
+    expect(friendStats(all, 'Brittany').even).toBeNull();
+  });
 });
 
 describe('divisive', () => {

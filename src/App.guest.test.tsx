@@ -77,14 +77,14 @@ describe('guest mode in the app shell', () => {
     expect(await screen.findByText('Pick your guest character')).toBeInTheDocument();
   });
 
-  it('(f) Finish and reset returns to Landing and leaves localStorage as it was', async () => {
+  it('(f) Log out (guest) returns to Landing and leaves localStorage as it was', async () => {
     const user = userEvent.setup();
     localStorage.setItem('tp:me', 'Alex');
     localStorage.setItem('tp-trip-key', 'secret');
     const before = JSON.stringify(Object.entries(localStorage).sort());
     await pickGuest(user);
     await user.click(await screen.findByRole('button', { name: 'Menu' }));
-    await user.click(await screen.findByRole('button', { name: 'Finish and reset' }));
+    await user.click(await screen.findByRole('button', { name: 'Log out' }));
     expect(await screen.findByRole('heading', { name: 'The Homecoming' })).toBeInTheDocument();
     expect(JSON.stringify(Object.entries(localStorage).sort())).toBe(before);
   });

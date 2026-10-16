@@ -3,12 +3,13 @@ import type { ReactNode } from 'react';
 import { IconCheck } from '../components/Icons';
 import ItemSheet from '../components/ItemSheet';
 import { Cover } from '../components/PhotoCard';
-import { VOTES_TO_RESOLVE } from '../lib/group';
+import { fitLine, VOTES_TO_RESOLVE } from '../lib/group';
 import { score, tierOf } from '../lib/ranking';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
 import type { GroupResult, Item, Knockout, Player } from '../types';
 import GenreVote, { genreOf } from './GenreVote';
+import './Knockouts.css';
 
 const SHOWN_NAMES = 2;
 const REGION_FORK = 'region:north';
@@ -30,8 +31,15 @@ export default function Knockouts({ group }: { group: GroupResult }) {
 
   // Mine comes from the stored votes, not the group's tally, so a guest (never in the tally) sees it too.
   const choiceOf = (forkId: string) => state.votes.filter(v => v.forkId === forkId && v.name === me).at(-1)?.choice;
-  const [sheet, setSheet] = useState<{ title: string; ids: string[]; forkId: string; choice: 'a' | 'b' } | null>(null);
-  const castVote = (forkId: string, choice: 'a' | 'b') => { if (me) void store.vote({ forkId, name: me, choice }); };
+  const [sheet, setSheet] = useState<{ title: string; ids: string[]; forkId: string; choice: 'a' | 'b'; fit?: string } | null>(null);
+  // Forks voted on this visit stay put and full size; only votes already stored when the view opens fold away.
+  const [fresh, setFresh] = useState<Set<string>>(new Set());
+  const [reopened, setReopened] = useState<Set<string>>(new Set());
+  const [decidedOpen, setDecidedOpen] = useState(false);
+  const add = (set: Set<string>, id: string) => new Set(set).add(id);
+  const castVote = (forkId: string, choice: 'a' | 'b') => { if (me) { setFresh(f => add(f, forkId)); void store.vote({ forkId, name: me, choice }); } };
+  const settled = (k: Knockout) => !k.genre && choiceOf(k.forkId) !== undefined && !fresh.has(k.forkId);
+  const folded = (k: Knockout) => settled(k) && !reopened.has(k.forkId);
 
   // One option of a head to head: tap the card for the full page, the Vote pill to vote.
   const card = (k: Knockout, s: 'a' | 'b', tag: string, copy: ReactNode) => {
@@ -44,7 +52,7 @@ export default function Knockouts({ group }: { group: GroupResult }) {
         {first && <Cover item={first} className="ph" named={false} />}
         {mine && <span className="mine" aria-hidden="true"><IconCheck size={16} /></span>}
         <button type="button" className="pick-open" aria-haspopup="dialog" aria-label={`Details of ${label}`}
-          onClick={() => setSheet({ title: tag, ids, forkId: k.forkId, choice: s })} />
+          onClick={() => setSheet({ title: tag, ids, forkId: k.forkId, choice: s, fit: s === 'a' && k.fit ? fitLine(k.fit) : undefined })} />
         <span className="pick-copy">
           <span className="tag">{tag}</span>
           {copy}
@@ -77,8 +85,17 @@ export default function Knockouts({ group }: { group: GroupResult }) {
     </div>
   );
 
+  // One row for a fork I have already voted on: my pick, the dots, and Change to open it again.
+  const compact = (k: Knockout, label: string, pick: string) => (
+    <div key={k.forkId} role="group" aria-label={label} className="ko ko-done">
+      <span className="ko-pick">You picked <b>{pick}</b></span>
+      <span className="ko-tally">{tally(k)}</span>
+      <button type="button" className="ko-change" aria-expanded="false" onClick={() => setReopened(r => add(r, k.forkId))}>Change</button>
+    </div>
+  );
+
   // North or South: one card, full lists on both sides (a = north, left; b = south, right).
-  const region = (k: Knockout) => (
+  const region = (k: Knockout) => folded(k) ? compact(k, 'Knockout: North or South?', choiceOf(k.forkId) === 'a' ? 'North' : 'South') : (
     <div key={k.forkId} role="group" aria-label="Knockout: North or South?" className="ko">
       <div className="big display">North or South?</div>
       <p className="sub" data-testid="ko-why">{why(k)}</p>
@@ -115,6 +132,9 @@ export default function Knockouts({ group }: { group: GroupResult }) {
     ? Math.min(...group.knockouts.map(need))
     : null;
 
+  // Votes still owed first, then forks voted before this visit, each group in its existing order.
+  const ordered = [...group.knockouts.filter(k => !settled(k)), ...group.knockouts.filter(settled)];
+
   return (
     <section className="body" aria-label="Knockouts">
       {group.knockouts.length > 0 && <div className="kicker">Group knockouts</div>}
@@ -123,22 +143,23 @@ export default function Knockouts({ group }: { group: GroupResult }) {
         ? <div className="ko-wait" role="status">Waiting on votes to move onto the next knockout ({waiting} more needed).</div>
         : group.knockouts.length > 0 && (
           <div className="sub">
-            Three votes settle each one.
+            {VOTES_TO_RESOLVE} of {PEOPLE.length} votes settle each one.
             {group.knockouts.some(k => k.forkId === REGION_FORK) && ' Head to heads on places come once North or South is settled.'}
           </div>
         )}
       {placesOpen && regionResult && <div className="tierhead"><IconCheck size={16} />{regionLine(regionResult)}</div>}
-      {group.knockouts.map(k => k.forkId === REGION_FORK ? region(k) : k.genre ? <GenreVote key={k.forkId} k={{ ...k, genre: k.genre }} /> : (
+      {ordered.map(k => k.forkId === REGION_FORK ? region(k) : k.genre ? <GenreVote key={k.forkId} k={{ ...k, genre: k.genre }} /> : folded(k) ? compact(k, `Knockout: ${names(k.a)} or ${names(k.b)}`, names(choiceOf(k.forkId) === 'a' ? k.a : k.b)) : (
         <div key={k.forkId} role="group" aria-label={`Knockout: ${names(k.a)} or ${names(k.b)}`} className="ko">
           <p className="sub" data-testid="ko-why">{why(k)}</p>
+          {k.fit && <p className="sub" data-testid="ko-fit">{fitLine(k.fit)}</p>}
           <div className="vs2 face">{side(k, 'a')}{side(k, 'b')}<span className="vs" aria-hidden="true">VS</span></div>
           {tally(k)}
         </div>
       ))}
       {decided.length > 0 && (
         <div>
-          <div className="tierhead"><IconCheck size={16} />Decided</div>
-          {decided.map(r => (
+          <button type="button" className="tierhead ko-decided" aria-expanded={decidedOpen} onClick={() => setDecidedOpen(o => !o)}><IconCheck size={16} />Decided {decided.length}</button>
+          {decidedOpen && decided.map(r => (
             <div key={r.forkId} className="decided">
               {r.forkId === REGION_FORK && regionLine(r)}
               {r.forkId.startsWith('genre:') && genreLine(r)}
@@ -150,7 +171,7 @@ export default function Knockouts({ group }: { group: GroupResult }) {
         </div>
       )}
       {sheet && (
-        <ItemSheet items={sheet.ids.flatMap(id => byId[id] ?? [])} title={sheet.title} onClose={() => setSheet(null)}
+        <ItemSheet items={sheet.ids.flatMap(id => byId[id] ?? [])} title={sheet.title} fit={sheet.fit} onClose={() => setSheet(null)}
           voted={me !== null && choiceOf(sheet.forkId) === sheet.choice}
           onVote={me !== null ? () => { castVote(sheet.forkId, sheet.choice); setSheet(null); } : undefined} />
       )}

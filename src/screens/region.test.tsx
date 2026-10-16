@@ -47,6 +47,7 @@ describe('region knockout card', () => {
   });
   it('shows a decided region result', async () => {
     render(<AppProvider store={new SpyStore()}><Knockouts group={group({ knockouts: [], results: [{ forkId: 'region:north', a: NORTH, b: SOUTH, winner: 'b' }] })} /></AppProvider>);
+    await userEvent.click(await screen.findByRole('button', { name: 'Decided 1' }));
     expect(await screen.findByText('South beat North')).toBeInTheDocument();
   });
   // D6 (Brittany 2026-10-15): North or South first, alone; the place head to heads follow it.

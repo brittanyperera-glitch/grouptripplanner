@@ -172,21 +172,6 @@ describe('My trip sub-tabs', () => {
   });
 });
 
-describe('Book before you go', () => {
-  it('sits at the top of My trip as one card whose headline carries the count, and opens in place', async () => {
-    seedCrew('Alex');
-    const user = userEvent.setup();
-    render(<App />);
-    const region = await screen.findByRole('region', { name: 'My trip' });
-    const card = within(region).getByText('1 thing to book soon').closest('details')!;
-    expect(card).not.toHaveAttribute('open');
-    expect(region.querySelector('.map')?.compareDocumentPosition(card) ?? 0).toBe(Node.DOCUMENT_POSITION_PRECEDING);
-    await user.click(within(card).getByText('1 thing to book soon'));
-    expect(card).toHaveAttribute('open');
-    expect(within(card).getByText('Book a week ahead')).toBeInTheDocument();
-  });
-});
-
 describe('Ratings locked on Picks', () => {
   it('a big block says so and one button goes straight to the knockouts, labelled with my open votes', async () => {
     seedCrew('Brittany');
@@ -210,14 +195,34 @@ describe('Ratings locked on Picks', () => {
 });
 
 describe('guest exit', () => {
-  it('Finish and reset also clears the #/guest hash so a reload does not re-enter guest mode', async () => {
+  it('Log out (guest) also clears the #/guest hash so a reload does not re-enter guest mode', async () => {
     const user = userEvent.setup();
     await guestToTabs(user);
     await screen.findByRole('tab', { name: 'Group' });
     expect(window.location.hash).toBe('#/guest');
     openMenu();
-    await user.click(await screen.findByRole('button', { name: 'Finish and reset' }));
+    await user.click(await screen.findByRole('button', { name: 'Log out' }));
     await screen.findByRole('heading', { name: 'The Homecoming' });
     expect(window.location.hash).toBe('');
+  });
+});
+
+describe('Accommodation battles teaser', () => {
+  it('shows on the Group hub only once the plan is locked', async () => {
+    seedCrew('Brittany');
+    grp.current = group({ knockouts: [], locked: true, final: plan, finalized: [...PEOPLE] });
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('tab', { name: 'Group' }));
+    expect(await screen.findByText('Accommodation battles')).toBeInTheDocument();
+    expect(screen.getByText('Loading. Coming soon.')).toBeInTheDocument();
+  });
+  it('is absent while the group stage is still open', async () => {
+    seedCrew('Brittany');
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('tab', { name: 'Group' }));
+    await waitFor(() => expect(koBlock()).toBeDefined());
+    expect(screen.queryByText('Accommodation battles')).toBeNull();
   });
 });

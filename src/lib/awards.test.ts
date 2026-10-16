@@ -5,7 +5,8 @@ import { seedState } from '../guest/seed';
 import { emptyRanking, type AppState, type Genre, type Item, type Player, type Response } from '../types';
 import { groupAwards, seaItemIds } from './awards';
 
-const ITEMS = (catalogue as unknown as { items: Item[] }).items;
+// The late scuba entry is asked after the ratings close, so these ordinary-catalogue tests leave it out.
+const ITEMS = (catalogue as unknown as { items: Item[] }).items.filter(i => !i.late);
 const GENRES = (genresJson as { genres: Genre[] }).genres;
 const CREW = ['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie'];
 
@@ -90,5 +91,16 @@ describe('groupAwards', () => {
       expect(a.winners.length).toBeGreaterThan(0);
       expect(a.winners.every(w => CREW.includes(w))).toBe(true);
     }
+  });
+});
+
+describe('award unit pluralisation', () => {
+  it("uses 'hike' for 1 and 'hikes' for 2", () => {
+    const one = state([resp('Alex', { must: ['crab'] })]);
+    const hike = ITEMS.find(i => i.category === 'Hike')!.id;
+    const hike2 = ITEMS.filter(i => i.category === 'Hike')[1].id;
+    expect(get(state([resp('Alex', { must: [hike] })]), 'mountain-goat')).toMatchObject({ value: 1, unit: 'hike' });
+    expect(get(state([resp('Alex', { must: [hike, hike2] })]), 'mountain-goat')).toMatchObject({ value: 2, unit: 'hikes' });
+    expect(one).toBeTruthy();
   });
 });

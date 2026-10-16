@@ -654,6 +654,23 @@
    "when": "evening",
    "sideTrip": 2.46,
    "credit": "Jerzy Strzelecki, private-use only (Unsplash licence / Wikimedia Commons; licence not checked per Brittany)"
+  },
+  {
+   "id": "scuba",
+   "name": "Scuba diving, south coast",
+   "area": "South coast",
+   "category": "Adventure",
+   "hours": 4,
+   "slot": "morning",
+   "fee": "Try dive about EUR 70; certified boat dives about EUR 35 each, EUR 60 for two",
+   "warn": "Levels differ: a try dive needs no certificate (max 12 m); boat dives need one. Bring your card, and ask the centre about a refresher if you have not dived in 6 months. Do not fly for at least 18 hours after your last dive.",
+   "about": "Pick your level: a shallow try dive with an instructor, or boat dives for certified divers. Unawatuna is the suggested base.",
+   "hub": "Weligama",
+   "photo": "scuba",
+   "late": true,
+   "when": "morning",
+   "sideTrip": 1.5,
+   "credit": "Janindu wijesoorya, CC BY-SA 4.0"
   }
  ]
 }

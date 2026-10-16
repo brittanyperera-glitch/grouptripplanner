@@ -22,7 +22,7 @@ export default function Finalize({ group, editing = false, onSaved }: { group: G
   };
   return (
     <Rerank ranking={list} byId={byId} draws onChange={next => setDraft(next)} onSubmit={save}
-      title="Finalize your list" kicker="Last step" cta="Save my list" sticky={false} tag={lost}
+      title="Finalize your list" kicker="Last step" cta="Save my list" aboveTabs tag={lost}
       sub="Drag rows to reorder. The = button draws a row with the one above; up to 5 can share a spot. The group plan is rebuilt from everyone's lists." />
   );
 }

@@ -21,6 +21,9 @@ export default function Friends() {
         {stats.twin && (
           <div className="friend-card"><Avatar name={stats.twin.name} size={44} /><span><small>Travel twin</small><b>{stats.twin.name}</b></span><em>{stats.twin.pct}%</em></div>
         )}
+        {stats.even !== null && (
+          <div className="friend-card"><span><small>Travel twin</small><b>Same match with everyone</b></span><em>{stats.even}%</em></div>
+        )}
         {stats.clash && (
           <div className="friend-card"><Avatar name={stats.clash.name} size={44} /><span><small>Biggest clash</small><b>{stats.clash.name}</b></span><em>{stats.clash.pct}%</em></div>
         )}

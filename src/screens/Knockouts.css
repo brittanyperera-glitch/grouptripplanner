@@ -1,0 +1,7 @@
+/* Folded head to head and the Decided toggle (Knockouts.tsx). */
+.ko-done.ko-done { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 10px 14px; }
+.ko-pick { flex: 1 1 140px; min-width: 0; font-size: var(--fs-md); overflow-wrap: anywhere; }
+.ko-tally { flex: none; }
+.ko-change { all: unset; box-sizing: border-box; cursor: pointer; min-height: 40px; padding: 0 14px; display: grid; place-items: center; border-radius: var(--r-btn); box-shadow: inset 0 0 0 1.5px var(--line-strong); font: 800 14px/1 var(--font-head); letter-spacing: .03em; text-transform: uppercase; color: var(--ink); }
+.ko-change:focus-visible, .ko-decided:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.ko-decided { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 6px; min-height: 40px; font-weight: 800; }

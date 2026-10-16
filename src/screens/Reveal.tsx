@@ -2,7 +2,6 @@ import './Premiere.css';
 import './Reveal.css';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import Avatar from '../components/Avatar';
 import { useOpenGuide } from '../components/GuideNav';
 import { COAST, hubLabel, hubName, hubXY, px } from '../components/Map';
 import { motion, skipNavTransition } from '../components/motion';
@@ -11,6 +10,7 @@ import TransportLine, { transportOf, type Transport } from '../components/Transp
 import { engineStart, engineStop, horn, isMuted, jingle, setMuted, stopAll, thud, unlock } from '../components/sound';
 import TukTuk from '../components/TukTuk';
 import { compromises, MAX_CARDS, routeStops, type Compromise } from '../lib/compromises';
+import { sideQuestLine, sideQuests } from '../lib/sideQuests';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
 import type { GroupResult, Hub, Item, Leg, Plan, Player } from '../types';
@@ -272,6 +272,9 @@ function MissionComplete({ plan, items, legs, animate, voice, crew, onDone }: { 
   const days = useMemo(() => dayLine(plan, byId, legs), [plan, byId, legs]);
   // Switching to the Guide tab unmounts this tab and the reveal with it (Brittany 2026-10-15: the guide needs a way in here).
   const openGuide = useOpenGuide();
+  // Only the group reveal: a person's own trip is already all theirs.
+  const { state, me } = useApp();
+  const quests = useMemo(() => (crew.length > 1 ? sideQuests(plan, me, state, items) : []), [crew.length, plan, me, state, items]);
   return (
     <section className="rv-done" aria-label={voice.doneLabel} data-animate={animate} data-solo={crew.length === 1}>
       <header className="rv-done-head">
@@ -297,6 +300,13 @@ function MissionComplete({ plan, items, legs, animate, voice, crew, onDone }: { 
       <ol className="rv-itin route" aria-label="Itinerary">
         {days.map(d => <DayRow key={d.n} d={d} />)}
       </ol>
+      {quests.length > 0 && (
+        <details className="rv-side">
+          <summary>{quests.length} optional side {quests.length === 1 ? 'quest' : 'quests'} for you</summary>
+          <ul>{quests.map(q => <li key={q.itemId}>{sideQuestLine(q)}</li>)}</ul>
+          <p>Optional. Go with a friend if you can.</p>
+        </details>
+      )}
       <h3 className="rv-done-h">{voice.picked}</h3>
       <ul className="rv-picks" aria-label="Chosen experiences">
         {plan.chosen.map(id => {
@@ -529,20 +539,9 @@ export default function Premiere({ group }: { group: GroupResult }) {
   const plan = group.final ?? group.base;
   const cards = useMemo(() => compromises(group, state, items), [group, state, items]);
   if (!plan) return null;
-  if (!group.locked) {
-    const todo = PEOPLE.filter(p => !group.finalized.includes(p));
-    return (
-      <section className="body" aria-label="Route reveal">
-        <div className="kicker">Premiere</div>
-        <div className="sub">The route reveal drops once all five lock their lists.</div>
-        <div className="premiere-todo" role="list" aria-label="Still to go">
-          {todo.map(p => <span key={p} role="listitem" aria-label={p} title={p}><Avatar name={p} size={40} /></span>)}
-        </div>
-      </section>
-    );
-  }
+  if (!group.locked) return null;
   return (
-    <section className="body" aria-label="Route reveal">
+    <section className="rv-entry" aria-label="Route reveal">
       <div className="kicker">Premiere</div>
       <div className="sub">A tuk-tuk drives your route, day by day.</div>
       <button type="button" className="cta" onClick={() => { unlock(); setOn(true); }}>Play route reveal</button>

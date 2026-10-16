@@ -69,7 +69,15 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
         await groupTab();
       }
       const f = page.getByRole('group', { name: /^Knockout:/ });
-      for (let i = 0; i < await f.count(); i++) await f.nth(i).getByRole('button', { name: /^Vote for/ }).first().click();
+      for (let i = 0; i < await f.count(); i++) {
+        // A fork I voted on in an earlier round comes back folded to one row; Change opens it again.
+        const change = f.nth(i).getByRole('button', { name: 'Change' }), vote = f.nth(i).getByRole('button', { name: /^Vote for/ }).first();
+        await expect(async () => {
+          await vote.or(change).first().waitFor({ timeout: 2000 });
+          if (await change.count()) await change.click({ timeout: 2000 });
+          await vote.click({ timeout: 2000 });
+        }).toPass({ timeout: 10_000 });
+      }
     }
     await page.getByRole('button', { name: 'Menu' }).click();
     await page.getByRole('button', { name: 'Not you?' }).click();

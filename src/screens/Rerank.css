@@ -26,3 +26,10 @@
 .item .eq:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .item { transition: none !important; } }
+/* Mehs fold behind "Mehs 27 Show"; the count stays right-aligned like the other heads. */
+.tierfold { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding-top: 8px; font-family: var(--font-head); font-weight: 800; font-size: 22px; text-transform: uppercase; color: var(--meh); }
+.tierfold > span:not([aria-hidden]) { margin-left: auto; font-family: var(--font-body); font-weight: 700; color: var(--muted); font-size: 12.5px; text-transform: none; }
+.tierfold em { font-style: normal; font-family: var(--font-body); font-weight: 800; font-size: 12.5px; text-transform: none; color: var(--coconut-text); }
+.tierfold:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
+.tierfold-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--meh-fill); flex: none; }
+.is-folded { min-height: 44px; }

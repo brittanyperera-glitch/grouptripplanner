@@ -9,6 +9,8 @@ export interface FriendStats {
   pairs: PairScore[];
   twin: { name: Person; pct: number } | null;
   clash: { name: Person; pct: number } | null;
+  // Set when every one of my matches is the same score: then there is no real twin or clash to name.
+  even: number | null;
 }
 
 const rank = (r: Ranking, id: string) => {
@@ -52,8 +54,9 @@ export function friendStats(responses: Partial<Record<Person, Response>>, viewer
     if (!twin || m.pct > twin.pct) twin = m;
     if (!clash || m.pct < clash.pct) clash = m;
   }
+  if (mine.length > 1 && twin && clash && twin.pct === clash.pct) return { pairs, twin: null, clash: null, even: twin.pct };
   if (twin && clash && twin.name === clash.name) clash = null;
-  return { pairs, twin, clash };
+  return { pairs, twin, clash, even: null };
 }
 
 /** The place with the widest tier spread across the group; ties go to more Musts plus Skips, then id. */

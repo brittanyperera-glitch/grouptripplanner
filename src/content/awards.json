@@ -8,5 +8,6 @@
   "early-bird": { "title": "Early bird", "line": "{value} {unit}. Alarm set before the sun." },
   "skipper": { "title": "The Skipper", "line": "{value} {unit}. Knows exactly what they do not want." },
   "foodie": { "title": "Chief eater", "line": "{value} {unit}. Planning around lunch." },
-  "train-spotter": { "title": "Train spotter", "line": "{value} {unit}. Window seat or nothing." }
+  "train-spotter": { "title": "Train spotter", "line": "{value} {unit}. Window seat or nothing." },
+  "wetwipe": { "title": "Biggest wetwipe", "line": "Gave up {value} of their own faves. Too nice for their own good." }
 }

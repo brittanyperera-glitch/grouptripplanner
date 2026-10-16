@@ -6,6 +6,7 @@
 .is-close:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 .is-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 16px 24px; display: flex; flex-direction: column; gap: 22px; }
 .is-item { display: flex; flex-direction: column; gap: 8px; max-width: 520px; width: 100%; margin: 0 auto; }
+.is-fit { margin: 0 auto; max-width: 520px; width: 100%; font-size: var(--fs-sm); font-weight: 700; color: var(--muted); }
 .is-photo { width: 100%; aspect-ratio: 16 / 10; border-radius: var(--r-lg); }
 .is-name { margin: 0; font: 800 28px/1 var(--font-head); text-transform: uppercase; overflow-wrap: anywhere; }
 .is-where { display: flex; align-items: center; gap: 5px; font-size: var(--fs-sm); font-weight: 700; color: var(--muted); }

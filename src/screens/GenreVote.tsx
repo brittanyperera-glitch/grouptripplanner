@@ -6,6 +6,7 @@ import { useApp } from '../state';
 import { PEOPLE } from '../types';
 import type { Genre, Item, Knockout, Person } from '../types';
 import './GenreVote.css';
+import './Knockouts.css';
 
 export const GENRES = genresJson.genres as Genre[];
 export const genreOf = (id: string) => GENRES.find(g => g.id === id);
@@ -22,6 +23,9 @@ export default function GenreVote({ k }: { k: Knockout & { genre: NonNullable<Kn
   const [ticks, setTicks] = useState<Record<string, boolean>>(() => Object.fromEntries(k.a.map(id => [id, mineStored(id)])));
   const [saved, setSaved] = useState<Record<string, boolean> | null>(() => (me && k.a.every(id => storedChoice(id) !== undefined) ? Object.fromEntries(k.a.map(id => [id, mineStored(id)])) : null));
   const [busy, setBusy] = useState(false);
+  // Only answers stored before this visit fold; a save made now stays open so its result shows.
+  const [reopened, setReopened] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
   if (!genre) return null;
 
   const keep = (id: string) => ticks[id] ?? true;
@@ -34,6 +38,7 @@ export default function GenreVote({ k }: { k: Knockout & { genre: NonNullable<Kn
       // One at a time: each write reads the stored votes first.
       for (const id of k.a) await store.vote({ forkId: `genre:${genre.id}:${id}`, name: me, choice: picks[id] ? 'a' : 'b' });
       setSaved(picks);
+      setJustSaved(true);
     } finally { setBusy(false); }
   };
   // The stored tally, with my saved ticks in place of any older ones until the group result catches up.
@@ -67,6 +72,16 @@ export default function GenreVote({ k }: { k: Knockout & { genre: NonNullable<Kn
       </li>
     );
   };
+
+  if (!!me && !reopened && !justSaved && k.a.every(id => storedChoice(id) !== undefined)) {
+    return (
+      <div role="group" aria-label={title} className="ko ko-done gv-card">
+        <span className="ko-pick"><b>{title}</b></span>
+        <span className="gv-saved"><IconCheck size={16} />Saved</span>
+        <button type="button" className="ko-change" aria-expanded="false" onClick={() => setReopened(true)}>Change</button>
+      </div>
+    );
+  }
 
   return (
     <div role="group" aria-label={title} className="ko gv-card">

@@ -6,10 +6,10 @@ import { factPills } from '../screens/Rate';
 import type { Item } from '../types';
 import './ItemSheet.css';
 
-interface Props { items: Item[]; title: string; onClose(): void; onVote?(): void; voted?: boolean }
+interface Props { items: Item[]; title: string; fit?: string; onClose(): void; onVote?(): void; voted?: boolean }
 
 // Full-screen detail page for one option: every place in it, with the vote button when there is something to vote on.
-export default function ItemSheet({ items, title, onClose, onVote, voted = false }: Props) {
+export default function ItemSheet({ items, title, fit, onClose, onVote, voted = false }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const closeNow = useRef(onClose);
   closeNow.current = onClose;
@@ -28,6 +28,7 @@ export default function ItemSheet({ items, title, onClose, onVote, voted = false
         <button ref={closeRef} type="button" className="is-close" onClick={onClose}>Close</button>
       </header>
       <div className="is-scroll">
+        {fit && <p className="is-fit" data-testid="is-fit">{fit}</p>}
         {items.map(item => (
           <article key={item.id} className="is-item">
             <Cover item={item} className="is-photo" named={false} credit />

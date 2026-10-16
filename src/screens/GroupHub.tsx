@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 import CrewStrip from '../components/CrewStrip';
 import { IconGroup, IconList, IconRight, IconSpark } from '../components/Icons';
 import { motion, MOTION, navigate } from '../components/motion';
+import { friendStats } from '../lib/friendship';
 import { outstanding } from '../lib/outstanding';
+import { tierOf } from '../lib/ranking';
 import { useApp } from '../state';
 import { isGuest, PEOPLE } from '../types';
 import type { GroupResult } from '../types';
@@ -37,9 +39,11 @@ function Block({ icon, title, lines, onOpen, alert, pulse }: { icon: JSX.Element
 }
 
 export default function GroupHub({ group, view, onView }: { group: GroupResult; view: GroupView; onView(v: GroupView): void }) {
-  const { state, me } = useApp();
+  const { state, me, sandbox, items } = useApp();
   const { open, mine, others } = outstanding(group, state.votes, me);
   const stats = !isGuest(me) && PEOPLE.every(p => state.responses[p]?.submitted);
+  const twin = me && !isGuest(me) ? friendStats(state.responses, me).twin : null;
+  const withMust = items.filter(i => PEOPLE.some(p => { const r = state.responses[p]; return r && tierOf(r.ranking, i.id) === 'must'; })).length;
   const [pulse, setPulse] = useState(false);
 
   // One buzz when the hub opens, then a nudge every few seconds while I still owe a vote.
@@ -72,9 +76,17 @@ export default function GroupHub({ group, view, onView }: { group: GroupResult; 
   return (
     <>
       <section className="body gh-hub" aria-label="Group">
-        {stats && <Block icon={<IconGroup size={26} />} title="Group stats" lines={['Who travels like who']} onOpen={() => go('stats')} />}
+        {sandbox && <div className="sub">Example picks for the demo, not the real group's.</div>}
+        {stats && <Block icon={<IconGroup size={26} />} title="Group stats" lines={[twin ? `Travel twin: ${twin.name} ${twin.pct}%` : 'Who travels like who']} onOpen={() => go('stats')} />}
         <Block icon={<IconSpark size={26} />} title="Group knockouts" lines={koLines(open, mine, others)} onOpen={() => go('knockouts')} alert={owing} pulse={pulse} />
-        <Block icon={<IconList size={26} />} title="Everyone's picks" lines={['Every place, every tier']} onOpen={() => go('picks')} />
+        <Block icon={<IconList size={26} />} title="Everyone's picks" lines={[`${items.length} places, ${withMust} Musts`]} onOpen={() => go('picks')} />
+        {/* Brittany 2026-10-16: a teaser once the plan is locked; the real feature comes later. */}
+        {group.locked && (
+          <div className="gh-block gh-soon" role="status">
+            <span className="gh-icon" aria-hidden="true"><IconSpark size={26} /></span>
+            <span className="gh-text"><b>Accommodation battles</b><small>Loading. Coming soon.</small></span>
+          </div>
+        )}
       </section>
       <div className="gh-crew"><CrewStrip /></div>
     </>

@@ -52,10 +52,11 @@ describe('U2 decided list', () => {
       { forkId: 'r2', a: [ids[4]], b: [ids[5]], winner: 'b' },
       { forkId: 'r3', a: [ids[6]], b: [], winner: 'displaced' },
     ] }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Decided 3' }));
     await screen.findByText(`${nm(ids[0])} beat ${byIdOrder([ids[1], ids[2], ids[3]].sort().slice(0, 2))} and 1 more`);
     expect(screen.getByText(`${nm(ids[5])} beat ${nm(ids[4])}`)).toBeInTheDocument();
     expect(screen.getByText(new RegExp(`${nm(ids[6])} dropped out`))).toBeInTheDocument();
-    expect(screen.getAllByText('Decided')).toHaveLength(1);
+    expect(screen.getAllByText(/^Decided/)).toHaveLength(1);
     expect(screen.queryByText(/Decided:/)).toBeNull();
   });
 });

@@ -196,7 +196,7 @@ const voteThrough = (s: AppState, its: Item[], pick?: (forkId: string) => 'a' | 
 };
 const lostIn = (g: ReturnType<typeof groupResult>) =>
   new Set(g.results.flatMap(r => !r.forkId.startsWith('ko:') ? [] : r.winner === 'a' ? r.b : r.winner === 'b' ? [r.a[0]] : []));
-const LIVE = liveCatalogue.items as Item[];
+const LIVE = (liveCatalogue.items as Item[]).filter(i => !i.late); // late items are asked after the ratings close
 
 describe('knocked down, not out (D5)', () => {
   it('a Must that lost a head to head can come back when a later result makes room', () => {

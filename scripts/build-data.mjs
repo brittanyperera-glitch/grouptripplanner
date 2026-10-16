@@ -88,6 +88,7 @@ const SIDE_TRIP = {
   rekawa: 2 * legHours('Weligama', /Rekawa/),
   tea: 2 * legHours('Nuwara Eliya', /Labookellie/),
   pidurangala: 0.3,
+  scuba: 1.5, // Weligama to Unawatuna and back (44-46 min each way), docs/research/scuba-south-coast.md 8.2
 };
 
 // Raw catalogue timing text -> planner Slot. The raw text is kept as `when` for display.
@@ -114,8 +115,8 @@ const items = cat.items.map((it) => {
   return out;
 });
 
-// Sanity: 37 items, all hubs connected.
-if (items.length !== 33) throw new Error(`expected 33 items, got ${items.length}`);
+// Sanity: 34 items (33 plus the late scuba entry), all hubs connected.
+if (items.length !== 34) throw new Error(`expected 34 items, got ${items.length}`);
 const hubs = ['AIR', 'Colombo', 'Jaffna', 'Trincomalee', 'Sigiriya', 'Kandy', 'Kitulgala', 'Nuwara Eliya', 'Ella', 'Tissa', 'Udawalawe', 'Weligama'];
 const d = Object.fromEntries(hubs.map((a) => [a, Object.fromEntries(hubs.map((b) => [b, a === b ? 0 : Infinity]))]));
 for (const l of legs) { d[l.a][l.b] = Math.min(d[l.a][l.b], l.hours); d[l.b][l.a] = Math.min(d[l.b][l.a], l.hours); }

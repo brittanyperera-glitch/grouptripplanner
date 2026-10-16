@@ -27,7 +27,7 @@
 .pf-c-art img { position: absolute; bottom: 0; left: 50%; height: 100%; width: auto; max-width: 100%; object-fit: contain; object-position: bottom; transform: translateX(-50%); filter: drop-shadow(0 calc(10 * var(--p)) calc(8 * var(--p)) rgba(0, 0, 0, .35)); }
 .pf-c-initial { position: absolute; left: 0; right: 0; bottom: calc(60 * var(--p)); text-align: center; font: 800 calc(320 * var(--p))/1 var(--font-head); color: #fff; }
 
-.pf-c-no { left: calc(52 * var(--p)); top: calc(48 * var(--p)); font: 800 calc(22 * var(--p))/1 var(--font-body); text-transform: uppercase; text-shadow: 0 calc(2 * var(--p)) calc(6 * var(--p)) rgba(0, 0, 0, .35); }
+.pf-c-no { left: calc(52 * var(--p)); top: calc(48 * var(--p)); font: 800 max(11px, calc(28 * var(--p)))/1 var(--font-head); letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 calc(2 * var(--p)) calc(6 * var(--p)) rgba(0, 0, 0, .35); }
 .pf-c-stars { right: calc(52 * var(--p)); top: calc(42 * var(--p)); display: flex; font: 400 calc(32 * var(--p))/1 var(--font-body); }
 .pf-c-stars > span { width: calc(36 * var(--p)); text-align: right; color: rgba(255, 255, 255, .3); }
 .pf-c-stars > span.on { color: #f2b632; text-shadow: 0 calc(2 * var(--p)) 0 rgba(0, 0, 0, .3); }
@@ -43,8 +43,8 @@
 .pf-c-stat { position: relative; height: calc(36 * var(--p)); --pf-fill: var(--pf-lo); }
 .pf-c-stat[data-tier="mid"] { --pf-fill: var(--pf-mid); }
 .pf-c-stat[data-tier="hi"] { --pf-fill: var(--pf-hi); }
-.pf-c-label { position: absolute; left: 0; top: 0; bottom: 0; width: calc(372 * var(--p)); display: flex; align-items: center; font: 800 calc(26 * var(--p))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pf-c-bar { position: absolute; left: calc(388 * var(--p)); top: calc(11 * var(--p)); width: calc(220 * var(--p)); height: calc(14 * var(--p)); border-radius: calc(7 * var(--p)); background: rgba(255, 255, 255, .16); overflow: hidden; }
+.pf-c-label { position: absolute; left: 0; top: 0; bottom: 0; width: calc(422 * var(--p)); display: flex; align-items: center; font: 800 max(11px, calc(28 * var(--p)))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-c-bar { position: absolute; left: calc(438 * var(--p)); top: calc(11 * var(--p)); width: calc(170 * var(--p)); height: calc(14 * var(--p)); border-radius: calc(7 * var(--p)); background: rgba(255, 255, 255, .16); overflow: hidden; }
 .pf-c-bar > span { display: block; height: 100%; width: calc(var(--v) * 100%); background: var(--pf-fill); transform-origin: left; }
 .pf-c-bar::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1.5 * var(--p)), var(--pf-plate) calc(10% - 1.5 * var(--p)) calc(10% + 1.5 * var(--p)), transparent calc(10% + 1.5 * var(--p)) 10%); }
 .pf-c-val { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; font: 800 calc(34 * var(--p))/1 var(--font-head); font-variant-numeric: tabular-nums; }
@@ -55,16 +55,16 @@
 .pf-c-friends { display: grid; grid-template-columns: 1fr 1fr; column-gap: calc(16 * var(--p)); }
 .pf-c-friend { position: relative; min-width: 0; }
 .pf-c-friend[data-kind="clash"] { grid-column: 2; }
-.pf-c-friend > i { position: absolute; left: 0; top: calc(2 * var(--p)); width: calc(48 * var(--p)); height: calc(48 * var(--p)); border-radius: 50%; overflow: hidden; background: var(--pf-fc); }
+.pf-c-friend > i { position: absolute; left: 0; top: calc(8 * var(--p)); width: calc(48 * var(--p)); height: calc(48 * var(--p)); border-radius: 50%; overflow: hidden; background: var(--pf-fc); }
 .pf-c-friend > i svg { display: block; width: 100%; height: 100%; }
-.pf-c-friend > small { position: absolute; left: calc(60 * var(--p)); top: calc(3 * var(--p)); right: calc(90 * var(--p)); color: var(--pf-tint); font: 800 calc(17 * var(--p))/1 var(--font-body); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pf-c-friend > b { position: absolute; left: calc(60 * var(--p)); top: calc(24 * var(--p)); right: calc(90 * var(--p)); font: 800 calc(26 * var(--p))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-c-friend > small { position: absolute; left: calc(60 * var(--p)); top: calc(2 * var(--p)); right: calc(76 * var(--p)); color: var(--pf-tint); font: 800 max(11px, calc(28 * var(--p)))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-c-friend > b { position: absolute; left: calc(60 * var(--p)); top: calc(32 * var(--p)); right: calc(76 * var(--p)); font: 800 max(11px, calc(28 * var(--p)))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pf-c-friend > em { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; font: 800 calc(34 * var(--p))/1 var(--font-head); font-style: normal; font-variant-numeric: tabular-nums; }
 
 .pf-c-fact { display: flex; align-items: center; gap: calc(12 * var(--p)); }
-.pf-c-fact > span { flex: none; width: calc(104 * var(--p)); color: #f2b632; font: 800 calc(18 * var(--p))/1 var(--font-body); text-transform: uppercase; white-space: nowrap; }
-.pf-c-fact > b { flex: 1; min-width: 0; font: 800 calc(24 * var(--p))/1.05 var(--font-head); text-transform: uppercase; overflow-wrap: anywhere; }
-.pf-c-in > .pf-c-meta { left: calc(40 * var(--p)); right: calc(40 * var(--p)); display: flex; align-items: center; justify-content: center; gap: calc(28 * var(--p)); font: 700 calc(20 * var(--p))/1 var(--font-body); text-transform: uppercase; color: var(--pf-meta); white-space: nowrap; }
+.pf-c-fact > span { flex: none; width: calc(122 * var(--p)); color: #f2b632; font: 800 max(11px, calc(28 * var(--p)))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; }
+.pf-c-fact > b { flex: 1; min-width: 0; font: 800 max(11px, calc(28 * var(--p)))/1.05 var(--font-head); text-transform: uppercase; overflow-wrap: anywhere; }
+.pf-c-in > .pf-c-meta { left: calc(40 * var(--p)); right: calc(40 * var(--p)); display: flex; align-items: center; justify-content: center; gap: calc(28 * var(--p)); font: 700 max(11px, calc(28 * var(--p)))/1 var(--font-head); letter-spacing: .03em; text-transform: uppercase; color: var(--pf-meta); white-space: nowrap; }
 .pf-c-meta > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .pf-c-meta > span + span { position: relative; }
 .pf-c-meta > span + span::before { content: "|"; position: absolute; left: calc(-17 * var(--p)); opacity: .6; }

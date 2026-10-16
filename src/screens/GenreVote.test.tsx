@@ -61,6 +61,7 @@ describe('same-type keep vote card', () => {
   it('lists a settled keep vote in Decided', async () => {
     const g = group(fork(), { knockouts: [], results: [{ forkId: 'genre:safari', a: ['yala'], b: ['udawalawe'], winner: 'a' }] });
     render(<AppProvider store={new SpyStore()}><Knockouts group={g} /></AppProvider>);
+    await userEvent.click(await screen.findByRole('button', { name: 'Decided 1' }));
     expect(await screen.findByText('Safari: kept Yala leopard safari, dropped Udawalawe elephants and Transit Home')).toBeInTheDocument();
   });
 });

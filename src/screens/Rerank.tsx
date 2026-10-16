@@ -14,6 +14,8 @@ import './Rerank.css';
 const PLURAL: Record<Tier, string> = { must: 'Musts', keen: 'Keens', meh: 'Mehs', skip: 'Skips' };
 const SINGLE: Record<Tier, string> = { must: 'Must', keen: 'Keen', meh: 'Meh', skip: 'Skip' };
 const HELP = 'Press and hold a row, then drag it. With a keyboard: focus a row, press Space to pick it up, Up and Down arrows to move it, Space to drop, Escape to cancel.';
+// The tab bar is 71px tall and 12px off the bottom (styles.css .tabs, measured), so a pinned footer sits just above it.
+const TABS_CLEARANCE = 84;
 const zone = (t: Tier) => `tier:${t}`;
 // Where the pointer is now: its position when the drag began plus how far it has moved since.
 function pointerY(e: Event): number {
@@ -26,11 +28,13 @@ type Flat = Record<Tier, string[]>;
 
 // Two uses: "Your picks" before submitting (drag to order inside a tier or across tiers, no draws) and
 // "Finalize your list" after the head to heads (draws=true: up to MAX_TIE rows can share a spot).
-export default function Rerank({ ranking, byId, onChange, draws = false, onSubmit, title, kicker, sub, cta, tag, sticky = true }: {
+export default function Rerank({ ranking, byId, onChange, draws = false, onSubmit, title, kicker, sub, cta, tag, sticky = true, aboveTabs = false }: {
   ranking: Ranking; byId: Record<string, Item>;
   /** The whole ranking after one drag, drop, keyboard move or draw toggle, and the id that moved. */
   onChange: (next: Ranking, id: string) => void; draws?: boolean; onSubmit: () => void;
   title: string; kicker?: string; sub: string; cta?: string; tag?: (id: string) => string | undefined; sticky?: boolean;
+  /** The tab bar is showing, so a sticky footer pins above it instead of under it. */
+  aboveTabs?: boolean;
 }) {
   const known = (id: string) => !!byId[id];
   const flatOf = (r: Ranking): Flat => Object.fromEntries(TIERS.map(t => [t, r[t].flat().filter(known)])) as Flat;
@@ -38,6 +42,7 @@ export default function Rerank({ ranking, byId, onChange, draws = false, onSubmi
   const [activeId, setActiveId] = useState<string | null>(null);
   const [lift, setLift] = useState<{ id: string; view: Ranking } | null>(null);
   const [said, setSaid] = useState('');
+  const [mehOpen, setMehOpen] = useState(false);
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
@@ -168,7 +173,9 @@ export default function Rerank({ ranking, byId, onChange, draws = false, onSubmi
             },
           }}>
           {TIERS.map(t => (
-            <TierList key={t} tier={t} ids={flat[t]} dragging={activeId !== null || lift !== null}>
+            <TierList key={t} tier={t} ids={flat[t]} dragging={activeId !== null || lift !== null}
+              // Mehs fold behind their count; a keyboard-lifted row inside them keeps the group open so it keeps focus.
+              fold={t === 'meh' && flat.meh.length > 0 ? { open: mehOpen || (lift !== null && flat.meh.includes(lift.id)), toggle: () => setMehOpen(o => !o) } : undefined}>
               {flat[t].map((id, i) => (
                 <PickRow key={id} id={id} item={byId[id]} rank={lab[id]} tier={t} pos={i} total={flat[t].length} tag={tag?.(id)}
                   drawn={drawnAt(t, i)} joinNext={drawnAt(t, i + 1)} lifted={lift?.id === id} onKey={onKey}
@@ -182,21 +189,31 @@ export default function Rerank({ ranking, byId, onChange, draws = false, onSubmi
         </DndContext>
         <div className="sr-only" role="status" aria-live="polite">{said}</div>
       </section>
-      {cta && <div className={`foot${sticky ? ' sticky' : ''}`}><button className="cta" onClick={onSubmit}>{cta}</button></div>}
+      {cta && <div className={`foot${sticky ? ' sticky' : ''}`} style={sticky && aboveTabs ? { bottom: TABS_CLEARANCE } : undefined}><button className="cta" onClick={onSubmit}>{cta}</button></div>}
     </>
   );
 }
 
-function TierList({ tier, ids, dragging, children }: { tier: Tier; ids: string[]; dragging: boolean; children: React.ReactNode }) {
+function TierList({ tier, ids, dragging, fold, children }: {
+  tier: Tier; ids: string[]; dragging: boolean; fold?: { open: boolean; toggle: () => void }; children: React.ReactNode;
+}) {
   const { setNodeRef } = useDroppable({ id: zone(tier) });
+  const folded = !!fold && !fold.open;
+  // A folded group has no list, so the whole group is the drop target and a dropped row joins the end.
   return (
-    <div className={`tiergroup tier-${tier}`}>
-      <div className="tierhead"><span className="tierdot" aria-hidden="true" />{PLURAL[tier]}<span>{ids.length}</span></div>
+    <div ref={folded ? setNodeRef : undefined} className={`tiergroup tier-${tier}${folded ? ' is-folded' : ''}`}>
+      {fold ? (
+        <button type="button" className="tierfold" aria-expanded={fold.open} onClick={fold.toggle}>
+          <span className="tierfold-dot" aria-hidden="true" />{PLURAL[tier]}{' '}<span>{ids.length}</span><em aria-hidden="true">{fold.open ? 'Hide' : 'Show'}</em>
+        </button>
+      ) : (
+        <div className="tierhead"><span className="tierdot" aria-hidden="true" />{PLURAL[tier]}<span>{ids.length}</span></div>
+      )}
       <SortableContext id={zone(tier)} items={ids} strategy={verticalListSortingStrategy}>
-        <ul ref={setNodeRef} className={`picklist${ids.length === 0 ? ' empty' : ''}${dragging ? ' live' : ''}`} aria-label={PLURAL[tier]}>
+        {!folded && <ul ref={setNodeRef} className={`picklist${ids.length === 0 ? ' empty' : ''}${dragging ? ' live' : ''}`} aria-label={PLURAL[tier]}>
           {children}
           {ids.length === 0 && <li className="none" aria-hidden="true">Drag a pick here</li>}
-        </ul>
+        </ul>}
       </SortableContext>
     </div>
   );

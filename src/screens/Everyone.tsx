@@ -1,16 +1,17 @@
 import { labels, tierOf } from '../lib/ranking';
 import Avatar from '../components/Avatar';
 import { useApp } from '../state';
-import { AREAS, PEOPLE } from '../types';
+import { PEOPLE } from '../types';
 import type { Tier } from '../types';
 
 const LETTER: Record<Tier, string> = { must: 'M', keen: 'K', meh: 'm', skip: 'S' };
 
 export default function Everyone({ open }: { open: boolean }) {
-  const { state, items } = useApp();
+  const { state, items, sandbox } = useApp();
   if (!open) {
     return (
       <section className="body" aria-label="Everyone">
+      {sandbox && <div className="sub">Example picks for the demo, not the real group's.</div>}
         <div className="big display">Everyone</div>
         <div className="sub">Picks show once all five have submitted.</div>
         {PEOPLE.map(p => {
@@ -21,9 +22,11 @@ export default function Everyone({ open }: { open: boolean }) {
     );
   }
   const lab = Object.fromEntries(PEOPLE.map(p => [p, labels(state.responses[p]?.ranking ?? { must: [], keen: [], meh: [], skip: [] })]));
-  const rows = [...items].sort((a, b) => AREAS.indexOf(a.area) - AREAS.indexOf(b.area));
+  const count = (id: string, t: Tier) => PEOPLE.filter(p => { const r = state.responses[p]; return r && tierOf(r.ranking, id) === t; }).length;
+  const rows = [...items].sort((a, b) => count(b.id, 'must') - count(a.id, 'must') || count(b.id, 'keen') - count(a.id, 'keen') || a.name.localeCompare(b.name));
   return (
     <section className="body" aria-label="Everyone">
+      {sandbox && <div className="sub">Example picks for the demo, not the real group's.</div>}
       <div className="big display">Everyone</div>
       <div className="sub">M Must, K Keen, m Meh, S Skip. The number is each person's own rank.</div>
       <div className="scrollx">

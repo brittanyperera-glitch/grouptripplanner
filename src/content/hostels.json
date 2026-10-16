@@ -1,0 +1,1259 @@
+{
+ "checked": "2026-10-16",
+ "priceDate": "2026-12-08",
+ "groups": [
+  {
+   "hub": "AIR",
+   "label": "Negombo (airport)",
+   "vibe": "Easy arrivals and departures: a first or last night near the airport, with beach and cafes."
+  },
+  {
+   "hub": "Colombo",
+   "label": "Colombo",
+   "vibe": "City nightlife and easy arrivals; a good first or last stop."
+  },
+  {
+   "hub": "Jaffna",
+   "label": "Jaffna and Delft",
+   "vibe": "Few hostels in the north. Delft Island is a boat trip, and Tony's is a guesthouse."
+  },
+  {
+   "hub": "Trincomalee",
+   "label": "Trincomalee",
+   "vibe": "Beach hostels at Uppuveli, a short walk from the sand."
+  },
+  {
+   "hub": "Sigiriya",
+   "label": "Sigiriya and Pidurangala",
+   "vibe": "Nature and calm. Britt's list says the Pidurangala side is cheaper and quieter than Sigiriya town."
+  },
+  {
+   "hub": "Kandy",
+   "label": "Kandy",
+   "vibe": "Cultural and a bit cooler than the coast."
+  },
+  {
+   "hub": "Kitulgala",
+   "label": "Kitulgala",
+   "vibe": "River and jungle stop."
+  },
+  {
+   "hub": "Nuwara Eliya",
+   "label": "Nuwara Eliya",
+   "vibe": "Cool tea country with cosy hostels, a couple very social."
+  },
+  {
+   "hub": "Ella",
+   "label": "Ella",
+   "vibe": "Backpacker central: hikes, sunset bars and plenty of other travellers."
+  },
+  {
+   "hub": "Tissa",
+   "label": "Tissa and Yala",
+   "vibe": "Safari and nature base; hostels sit out of town on farms and the park edge."
+  },
+  {
+   "hub": "Udawalawe",
+   "label": "Udawalawe",
+   "vibe": "Elephant park stop.",
+   "note": "No hostels here, guesthouses only."
+  },
+  {
+   "hub": "Weligama",
+   "label": "Weligama and the south coast",
+   "vibe": "Surf and beach parties in Weligama and Mirissa; Tangalle is slower; Galle and Madiha are mellow."
+  },
+  {
+   "hub": "Off route",
+   "label": "Off route: Arugam Bay",
+   "vibe": "Surf town on the east coast.",
+   "note": "December is off-season here; the surf season runs roughly May to September."
+  }
+ ],
+ "hostels": [
+  {
+   "id": "ceylon-glory-negombo",
+   "name": "Ceylon Glory Hostel",
+   "hub": "AIR",
+   "area": "Negombo",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Ceylon%20Glory%20Hostel%20Negombo%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.5,
+    "outOf": 10,
+    "reviews": 321,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/325230/ceylon-glory-hostel/"
+   },
+   "about": "Social, easy hostel with a small cafe in Negombo, close to the airport and the beach.",
+   "groupFit": "Dorms of 6 to 8 beds; largest private room sleeps 2.",
+   "bunkGbp": 8.83,
+   "roomGbp": 16.3,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/325230/ceylon-glory-hostel/",
+   "photo": {
+    "file": "ceylon-glory-negombo.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/325230/ceylon-glory-hostel/"
+   },
+   "tag": "Social",
+   "tagSource": "Hostelworld description"
+  },
+  {
+   "id": "marine-guesthouse-negombo",
+   "name": "Marine Tourist Guest House @ Negombo Beach",
+   "hub": "AIR",
+   "area": "Negombo Beach",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Marine%20Tourist%20Guest%20House%20%40%20Negombo%20Beach%20Negombo%20Beach%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.3,
+    "outOf": 10,
+    "reviews": 858,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/42719/marine-tourist-guest-house-negombo-beach/"
+   },
+   "about": "Beachside hostel in Negombo with free activities, cafes and bars nearby and quick airport access.",
+   "groupFit": "Dorms of 6 beds; largest private room sleeps 3.",
+   "bunkGbp": 8.15,
+   "roomGbp": 19.69,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/42719/marine-tourist-guest-house-negombo-beach/",
+   "photo": {
+    "file": "marine-guesthouse-negombo.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/42719/marine-tourist-guest-house-negombo-beach/"
+   },
+   "tag": "Social",
+   "tagSource": "Hostelworld description"
+  },
+  {
+   "id": "alma-colombo",
+   "name": "Alma Hostel - Colombo",
+   "hub": "Colombo",
+   "area": "Colombo",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Alma%20Hostel%20-%20Colombo%20Colombo%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.4,
+    "outOf": 10,
+    "reviews": 318,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/332282/alma-hostel-colombo/"
+   },
+   "about": "Boutique hostel on School Lane in central Colombo, with restaurants nearby and a laid-back feel.",
+   "groupFit": "Dorms of 6 to 8 beds; largest private room sleeps 2.",
+   "bunkGbp": 12.07,
+   "roomGbp": 41.5,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/332282/alma-hostel-colombo/",
+   "photo": {
+    "file": "alma-colombo.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/332282/alma-hostel-colombo/"
+   }
+  },
+  {
+   "id": "drop-inn-colombo",
+   "name": "Drop Inn Hostels",
+   "hub": "Colombo",
+   "area": "Colombo 5",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Drop%20Inn%20Hostels%20Colombo%205%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.1,
+    "outOf": 10,
+    "reviews": 698,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/294182/drop-inn-hostels/"
+   },
+   "about": "Modern air-conditioned dorms and private rooms off Park Road in central Colombo, with free linen and toiletries.",
+   "groupFit": "Dorms of 4 to 8 beds; largest private room sleeps 3.",
+   "bunkGbp": 10.26,
+   "roomGbp": 33.7,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/294182/drop-inn-hostels/",
+   "photo": {
+    "file": "drop-inn-colombo.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/294182/drop-inn-hostels/"
+   }
+  },
+  {
+   "id": "c1-colombo-fort",
+   "name": "C1 Colombo Fort",
+   "hub": "Colombo",
+   "area": "Colombo Fort",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=C1%20Colombo%20Fort%20Colombo%20Fort%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 7.2,
+    "outOf": 10,
+    "reviews": 498,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/286107/c1-colombo-fort/"
+   },
+   "about": "Garden hostel in Colombo Fort, about 7 minutes on foot from the Khan Clock Tower and near Pettah market.",
+   "groupFit": "Dorms of 4 to 8 beds; largest private room sleeps 4.",
+   "bunkGbp": 11.79,
+   "roomGbp": 37.39,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/286107/c1-colombo-fort/",
+   "photo": {
+    "file": "c1-colombo-fort.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/286107/c1-colombo-fort/"
+   }
+  },
+  {
+   "id": "clock-inn-colombo",
+   "name": "Clock Inn Colombo",
+   "hub": "Colombo",
+   "area": "Colpetty, Colombo 3",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Clock%20Inn%20Colombo%20Colpetty%2C%20Colombo%203%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.1,
+    "outOf": 10,
+    "reviews": 455,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/71081/clock-inn-colombo/"
+   },
+   "about": "Budget hostel on Galle Road in Colpetty, a short walk from the sea, with 4 to 6 bed dorms.",
+   "groupFit": "Dorms of 4 to 6 beds; largest private room sleeps 4.",
+   "bunkGbp": 8.84,
+   "roomGbp": 27.21,
+   "roomFor": 1,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/71081/clock-inn-colombo/",
+   "photo": {
+    "file": "clock-inn-colombo.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/71081/clock-inn-colombo/"
+   }
+  },
+  {
+   "id": "colombo-beach-hostel",
+   "name": "Colombo Beach Hostel",
+   "hub": "Colombo",
+   "area": "Mount Lavinia, Colombo",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Colombo%20Beach%20Hostel%20Mount%20Lavinia%2C%20Colombo%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.1,
+    "outOf": 10,
+    "reviews": 1670,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/81992/colombo-beach-hostel/"
+   },
+   "about": "Sri Lanka's oldest running hostel, in Mount Lavinia, with a lively common area and staff who share local tips.",
+   "groupFit": "Dorms of 6 to 16 beds; largest private room sleeps 2.",
+   "bunkGbp": 6.86,
+   "roomGbp": 27.64,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/81992/colombo-beach-hostel/",
+   "photo": {
+    "file": "colombo-beach-hostel.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/81992/colombo-beach-hostel/"
+   }
+  },
+  {
+   "id": "yaarl-jaffna",
+   "name": "Yaarl Hostels",
+   "hub": "Jaffna",
+   "area": "Jaffna town",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Yaarl%20Hostels%20Jaffna%20town%20Sri%20Lanka",
+   "rating": {
+    "source": "Booking.com",
+    "score": 7.0,
+    "outOf": 10,
+    "reviews": 364,
+    "checked": "2026-10-16",
+    "url": "https://www.kayak.com/Jaffna-Hotels-Yaarl-Hostels.3764689.ksp"
+   },
+   "about": "Hostel on Stanley Road in Jaffna town with double rooms; ratings are modest.",
+   "groupFit": "Double rooms only on the listing I could read.",
+   "bunkGbp": null,
+   "roomGbp": null,
+   "roomFor": null,
+   "priceDate": null,
+   "priceChecked": "2026-10-16",
+   "priceNote": "Not on Hostelworld. Kayak shows about US$15 to 17 for a double (Oct 18), not converted.",
+   "bookUrl": "https://www.kayak.com/Jaffna-Hotels-Yaarl-Hostels.3764689.ksp",
+   "photo": {
+    "file": "yaarl-jaffna.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Jaffna_Fort_(1).jpg"
+   },
+   "note": "Not on Hostelworld. Rating and rooms are from Booking.com and Kayak listings. Photo is Jaffna Fort (Rehman Abubakr, CC BY-SA 4.0)."
+  },
+  {
+   "id": "delft-village-stay",
+   "name": "Delft Village Stay",
+   "hub": "Jaffna",
+   "area": "Delft Island",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Delft%20Village%20Stay%20Delft%20Island%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 10.0,
+    "outOf": 10,
+    "reviews": 87,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/326148/delft-village-stay/"
+   },
+   "about": "Community-style stay on Delft Island, Sri Lanka's most remote inhabited island, a boat trip from Jaffna.",
+   "groupFit": "Dorms of 4 beds; largest private room sleeps 4.",
+   "bunkGbp": 7.64,
+   "roomGbp": 10.42,
+   "roomFor": 1,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/326148/delft-village-stay/",
+   "photo": {
+    "file": "delft-village-stay.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/326148/delft-village-stay/"
+   }
+  },
+  {
+   "id": "tonys-garden-house-jaffna",
+   "name": "Tony's Garden House Inn",
+   "hub": "Jaffna",
+   "area": "Jaffna town",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Tony%27s%20Garden%20House%20Inn%20Jaffna%20town%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.7,
+    "outOf": 10,
+    "reviews": 109,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/286297/tony-s-garden-house-inn/"
+   },
+   "about": "Family-run guesthouse on Old Park Road in Jaffna town with a friendly host and private rooms.",
+   "groupFit": "Private rooms only; no dorm listed.",
+   "bunkGbp": null,
+   "roomGbp": null,
+   "roomFor": null,
+   "priceDate": null,
+   "priceChecked": "2026-10-16",
+   "priceNote": "Nothing listed for Dec 8 to 10 on Hostelworld (sold out or closed). Check the page.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/286297/tony-s-garden-house-inn/",
+   "photo": {
+    "file": "tonys-garden-house-jaffna.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/286297/tony-s-garden-house-inn/"
+   },
+   "note": "Guesthouse, not a hostel."
+  },
+  {
+   "id": "wanderers-trinco",
+   "name": "Wanderers Hostel",
+   "hub": "Trincomalee",
+   "area": "Uppuveli",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Wanderers%20Hostel%20Uppuveli%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 8.8,
+    "outOf": 10,
+    "reviews": 389,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/297704/wanderers-hostel/"
+   },
+   "about": "Backpacker hostel in Uppuveli, a few minutes on foot from the beach, with a 10-bed air-conditioned dorm.",
+   "groupFit": "Has a 10-bed mixed dorm per its description.",
+   "bunkGbp": null,
+   "roomGbp": null,
+   "roomFor": null,
+   "priceDate": null,
+   "priceChecked": "2026-10-16",
+   "priceNote": "Nothing listed for Dec 8 to 10 on Hostelworld (sold out or closed). Check the page.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/297704/wanderers-hostel/",
+   "photo": {
+    "file": "wanderers-trinco.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/297704/wanderers-hostel/"
+   }
+  },
+  {
+   "id": "cu-hostel-trinco",
+   "name": "CU Hostel",
+   "hub": "Trincomalee",
+   "area": "Uppuveli",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=CU%20Hostel%20Uppuveli%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.5,
+    "outOf": 10,
+    "reviews": 46,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/333199/cu-hostel/"
+   },
+   "about": "Relaxed garden hostel steps from Uppuveli beach, with hammocks, a fire pit and a small bar.",
+   "groupFit": "Dorms of 4 beds; no private room listed.",
+   "bunkGbp": 5.79,
+   "roomGbp": null,
+   "roomFor": null,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "priceNote": "No private rooms listed for Dec 8 on Hostelworld.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/333199/cu-hostel/",
+   "photo": {
+    "file": "cu-hostel-trinco.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/333199/cu-hostel/"
+   }
+  },
+  {
+   "id": "tree-house-sigiriya",
+   "name": "Tree House Hostel Sigiriya",
+   "hub": "Sigiriya",
+   "area": "Pidurangala, Sigiriya",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Tree%20House%20Hostel%20Sigiriya%20Pidurangala%2C%20Sigiriya%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.5,
+    "outOf": 10,
+    "reviews": 1429,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/304624/tree-house-hostel-sigiriya/"
+   },
+   "about": "Jungle hostel on the Pidurangala side of Sigiriya, with treehouse-style rooms, a pool and small free trips.",
+   "groupFit": "Dorms of 5 to 6 beds; largest private room sleeps 2.",
+   "bunkGbp": 17.35,
+   "roomGbp": 22.63,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/304624/tree-house-hostel-sigiriya/",
+   "photo": {
+    "file": "tree-house-sigiriya.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/304624/tree-house-hostel-sigiriya/"
+   }
+  },
+  {
+   "id": "another-world-sigiriya",
+   "name": "Another World Hostel",
+   "hub": "Sigiriya",
+   "area": "Sigiriya",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Another%20World%20Hostel%20Sigiriya%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.6,
+    "outOf": 10,
+    "reviews": 383,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/326099/another-world-hostel/"
+   },
+   "about": "Social jungle hostel in Sigiriya that runs group activities and shared meals.",
+   "groupFit": "Dorms of 6 to 12 beds; largest private room sleeps 2.",
+   "bunkGbp": 13.89,
+   "roomGbp": 34.72,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/326099/another-world-hostel/",
+   "photo": {
+    "file": "another-world-sigiriya.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/326099/another-world-hostel/"
+   },
+   "tag": "Social",
+   "tagSource": "Hostelworld description"
+  },
+  {
+   "id": "roys-villa-sigiriya",
+   "name": "Roy's Villa",
+   "hub": "Sigiriya",
+   "area": "Kimbissa, Sigiriya",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Roy%27s%20Villa%20Kimbissa%2C%20Sigiriya%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.8,
+    "outOf": 10,
+    "reviews": 1824,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/278093/roy-s-villa/"
+   },
+   "about": "Social villa hostel near Sigiriya, known for family dinners and group activities like cooking.",
+   "groupFit": "Dorms of 4 to 8 beds; largest private room sleeps 3.",
+   "bunkGbp": 26.41,
+   "roomGbp": 105.63,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/278093/roy-s-villa/",
+   "photo": {
+    "file": "roys-villa-sigiriya.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/278093/roy-s-villa/"
+   },
+   "tag": "Social",
+   "tagSource": "Hostelworld description"
+  },
+  {
+   "id": "bunkalow-kandy",
+   "name": "Bunkalow",
+   "hub": "Kandy",
+   "area": "Kandy",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Bunkalow%20Kandy%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.5,
+    "outOf": 10,
+    "reviews": 454,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/325726/bunkalow/"
+   },
+   "about": "Riverside hostel on the Mahaweli in Kandy with air-conditioned rooms and a shared workspace.",
+   "groupFit": "Dorms and private rooms listed on the page.",
+   "bunkGbp": null,
+   "roomGbp": null,
+   "roomFor": null,
+   "priceDate": null,
+   "priceChecked": "2026-10-16",
+   "priceNote": "Nothing listed for Dec 8 to 10 on Hostelworld (sold out or closed). Check the page.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/325726/bunkalow/",
+   "photo": {
+    "file": "bunkalow-kandy.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/325726/bunkalow/"
+   }
+  },
+  {
+   "id": "white-rose-kandy",
+   "name": "White Rose Hostel",
+   "hub": "Kandy",
+   "area": "Kandy city",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=White%20Rose%20Hostel%20Kandy%20city%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.3,
+    "outOf": 10,
+    "reviews": 377,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/301427/white-rose-hostel/"
+   },
+   "about": "Family-run hostel in Kandy city, a few minutes from the railway and bus stations.",
+   "groupFit": "Dorms of 4 beds; largest private room sleeps 2.",
+   "bunkGbp": 6.79,
+   "roomGbp": 20.37,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "priceNote": "Bunk price is for a women's dorm.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/301427/white-rose-hostel/",
+   "photo": {
+    "file": "white-rose-kandy.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/301427/white-rose-hostel/"
+   }
+  },
+  {
+   "id": "eden-kandy",
+   "name": "Eden Kandy",
+   "hub": "Kandy",
+   "area": "Bahirawakanda, Kandy",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Eden%20Kandy%20Bahirawakanda%2C%20Kandy%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.8,
+    "outOf": 10,
+    "reviews": 315,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/333094/eden-kandy/"
+   },
+   "about": "Boutique hostel on a green hill under 1 km from Kandy centre, walkable to the Temple of the Tooth.",
+   "groupFit": "Dorms of 6 beds; largest private room sleeps 2.",
+   "bunkGbp": 7.77,
+   "roomGbp": 23.3,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/333094/eden-kandy/",
+   "photo": {
+    "file": "eden-kandy.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/333094/eden-kandy/"
+   }
+  },
+  {
+   "id": "kandy-city-hostel-281",
+   "name": "281 Kandy City Hostel",
+   "hub": "Kandy",
+   "area": "Peradeniya Road, Kandy",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=281%20Kandy%20City%20Hostel%20Peradeniya%20Road%2C%20Kandy%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 4.0,
+    "outOf": 10,
+    "reviews": 224,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/286096/281-kandy-city-hostel/"
+   },
+   "about": "Basic hostel on Peradeniya Road in Kandy with a 14-bed dorm and twin rooms; reviews are mixed.",
+   "groupFit": "Dorms of 2 beds; largest private room sleeps 2.",
+   "bunkGbp": 6.92,
+   "roomGbp": 10.77,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "priceNote": "Bunk price is for a women's dorm.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/286096/281-kandy-city-hostel/",
+   "photo": {
+    "file": "kandy-city-hostel-281.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/286096/281-kandy-city-hostel/"
+   },
+   "note": "Matched from \"Kandy City...\" in the pasted list."
+  },
+  {
+   "id": "ceylon-nature-kitulgala",
+   "name": "Ceylon Nature Hostel Kitulgala",
+   "hub": "Kitulgala",
+   "area": "Kitulgala",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Ceylon%20Nature%20Hostel%20Kitulgala%20Kitulgala%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 10.0,
+    "outOf": 10,
+    "reviews": 28,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/317751/ceylon-nature-hostel-kitulgala/"
+   },
+   "about": "Eco hostel by the Kelani river in Kitulgala, with a short footpath in from the main entrance.",
+   "groupFit": "Dorms of 4 beds; largest private room sleeps 2.",
+   "bunkGbp": 4.89,
+   "roomGbp": 13.45,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/317751/ceylon-nature-hostel-kitulgala/",
+   "photo": {
+    "file": "ceylon-nature-kitulgala.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/317751/ceylon-nature-hostel-kitulgala/"
+   }
+  },
+  {
+   "id": "laughing-leopard-ne",
+   "name": "Laughing Leopard Hostel",
+   "hub": "Nuwara Eliya",
+   "area": "Nuwara Eliya",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Laughing%20Leopard%20Hostel%20Nuwara%20Eliya%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 8.0,
+    "outOf": 10,
+    "reviews": 924,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/292703/laughing-leopard-hostel/"
+   },
+   "about": "Lively hostel in Nuwara Eliya that bills itself as Sri Lanka's most social, with cheap beer and family dinners.",
+   "groupFit": "Dorms of 4 to 8 beds; largest private room sleeps 2.",
+   "bunkGbp": 6.33,
+   "roomGbp": 15.83,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/292703/laughing-leopard-hostel/",
+   "photo": {
+    "file": "laughing-leopard-ne.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/292703/laughing-leopard-hostel/"
+   },
+   "tag": "Social",
+   "tagSource": "Hostelworld description"
+  },
+  {
+   "id": "cest-la-vie-ne",
+   "name": "C'est La Vie",
+   "hub": "Nuwara Eliya",
+   "area": "Nuwara Eliya",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=C%27est%20La%20Vie%20Nuwara%20Eliya%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.3,
+    "outOf": 10,
+    "reviews": 150,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/335751/c-est-la-vie/"
+   },
+   "about": "Cosy hostel on Lady McCallums Drive in Nuwara Eliya with hill and tea estate views.",
+   "groupFit": "Dorms of 4 to 6 beds; no private room listed.",
+   "bunkGbp": 5.43,
+   "roomGbp": null,
+   "roomFor": null,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "priceNote": "No private rooms listed for Dec 8 on Hostelworld.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/335751/c-est-la-vie/",
+   "photo": {
+    "file": "cest-la-vie-ne.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/335751/c-est-la-vie/"
+   },
+   "tag": "Social",
+   "tagSource": "Hostelworld reviews (\"very social\")"
+  },
+  {
+   "id": "gregory-house-ne",
+   "name": "Gregory House",
+   "hub": "Nuwara Eliya",
+   "area": "Gregory Lake, Nuwara Eliya",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Gregory%20House%20Gregory%20Lake%2C%20Nuwara%20Eliya%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.4,
+    "outOf": 10,
+    "reviews": 111,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/317272/gregory-house/"
+   },
+   "about": "Quiet homestay-style hostel overlooking Gregory Lake, a short tuk-tuk from the centre.",
+   "groupFit": "One 6-bed mixed dorm and 4 private rooms, per its description.",
+   "bunkGbp": null,
+   "roomGbp": null,
+   "roomFor": null,
+   "priceDate": null,
+   "priceChecked": "2026-10-16",
+   "priceNote": "Nothing listed for Dec 8 to 10 on Hostelworld (sold out or closed). Check the page.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/317272/gregory-house/",
+   "photo": {
+    "file": "gregory-house-ne.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/317272/gregory-house/"
+   },
+   "tag": "Quiet",
+   "tagSource": "Hostelworld review (\"nice and quiet\")"
+  },
+  {
+   "id": "tomorrowland-ella",
+   "name": "Tomorrowland Hostel Ella",
+   "hub": "Ella",
+   "area": "Passara Road, Ella",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Tomorrowland%20Hostel%20Ella%20Passara%20Road%2C%20Ella%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.5,
+    "outOf": 10,
+    "reviews": 854,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/273648/tomorrowland-hostel-ella/"
+   },
+   "about": "Alpine-villa style hostel about 15 minutes outside Ella town, with free transport and big mountain views.",
+   "groupFit": "Dorms of 8 to 9 beds; largest private room sleeps 2.",
+   "bunkGbp": 14.04,
+   "roomGbp": 18.32,
+   "roomFor": 1,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/273648/tomorrowland-hostel-ella/",
+   "photo": {
+    "file": "tomorrowland-ella.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/273648/tomorrowland-hostel-ella/"
+   }
+  },
+  {
+   "id": "ella-escapade",
+   "name": "Ella Escapade Hostel (by Nomadic)",
+   "hub": "Ella",
+   "area": "Ratmalkanda, Ella",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Ella%20Escapade%20Hostel%20%28by%20Nomadic%29%20Ratmalkanda%2C%20Ella%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.3,
+    "outOf": 10,
+    "reviews": 525,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/290014/ella-escapade-hostel/"
+   },
+   "about": "Converted planter's bungalow in pine forest outside Ella, with a pool and mountain views.",
+   "groupFit": "Dorms of 4 to 10 beds; largest private room sleeps 2.",
+   "bunkGbp": 6.04,
+   "roomGbp": 21.13,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/290014/ella-escapade-hostel/",
+   "photo": {
+    "file": "ella-escapade.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/290014/ella-escapade-hostel/"
+   }
+  },
+  {
+   "id": "avocado-ella",
+   "name": "Avocado Hostel",
+   "hub": "Ella",
+   "area": "Ella",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Avocado%20Hostel%20Ella%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.4,
+    "outOf": 10,
+    "reviews": 496,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/320140/avocado-hostel/"
+   },
+   "about": "Top-floor hostel in Ella with ensuite dorms, two balconies and a cafe downstairs.",
+   "groupFit": "Dorms of 4 to 5 beds; largest private room sleeps 2.",
+   "bunkGbp": 10.94,
+   "roomGbp": 22.63,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/320140/avocado-hostel/",
+   "photo": {
+    "file": "avocado-ella.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/320140/avocado-hostel/"
+   }
+  },
+  {
+   "id": "bunk-station-ella",
+   "name": "Bunk Station Hostel",
+   "hub": "Ella",
+   "area": "3rd Mile Post, Ella",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Bunk%20Station%20Hostel%203rd%20Mile%20Post%2C%20Ella%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.9,
+    "outOf": 10,
+    "reviews": 382,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/295105/bunk-station-hostel/"
+   },
+   "about": "Laid-back hostel about 1 km from Ella town, handy for Nine Arch Bridge and Little Adam's Peak.",
+   "groupFit": "Dorms of 8 to 10 beds; no private room listed.",
+   "bunkGbp": 12.0,
+   "roomGbp": null,
+   "roomFor": null,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "priceNote": "No private rooms listed for Dec 8 on Hostelworld.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/295105/bunk-station-hostel/",
+   "photo": {
+    "file": "bunk-station-ella.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/295105/bunk-station-hostel/"
+   },
+   "tag": "Quiet",
+   "tagSource": "Hostelworld description (\"quiet and peaceful\")"
+  },
+  {
+   "id": "go-yala-tissa",
+   "name": "Go Yala Hostel",
+   "hub": "Tissa",
+   "area": "Julpallama, near Tissa",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Go%20Yala%20Hostel%20Julpallama%2C%20near%20Tissa%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.2,
+    "outOf": 10,
+    "reviews": 32,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/333098/go-yala-hostel/"
+   },
+   "about": "Eco-farm hostel near Yala National Park that runs cheap shared jeep safaris.",
+   "groupFit": "Dorms of 6 to 10 beds; largest private room sleeps 4.",
+   "bunkGbp": 6.79,
+   "roomGbp": 30.18,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/333098/go-yala-hostel/",
+   "photo": {
+    "file": "go-yala-tissa.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/333098/go-yala-hostel/"
+   },
+   "tag": "Social",
+   "tagSource": "Hostelworld description"
+  },
+  {
+   "id": "river-face-inn-tissa",
+   "name": "River Face Inn",
+   "hub": "Tissa",
+   "area": "Debarawewa, near Tissa",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=River%20Face%20Inn%20Debarawewa%2C%20near%20Tissa%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.9,
+    "outOf": 10,
+    "reviews": 21,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/326513/river-face-inn/"
+   },
+   "about": "Calm riverside inn near Tissamaharama overlooking the Kirindi Oya, with fan-cooled ensuite rooms and a barbecue.",
+   "groupFit": "Dorms of 4 beds; largest private room sleeps 5.",
+   "bunkGbp": 9.26,
+   "roomGbp": 44.62,
+   "roomFor": 5,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "priceNote": "Bunk price is for a men's dorm.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/326513/river-face-inn/",
+   "photo": {
+    "file": "river-face-inn-tissa.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/326513/river-face-inn/"
+   },
+   "tag": "Quiet",
+   "tagSource": "Hostelworld description (\"peaceful\")"
+  },
+  {
+   "id": "funky-leopard-yala",
+   "name": "Funky Leopard Safari Lodge Bordering Yala National",
+   "hub": "Tissa",
+   "area": "Yala National Park edge",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Funky%20Leopard%20Safari%20Lodge%20Bordering%20Yala%20National%20Yala%20National%20Park%20edge%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 10.0,
+    "outOf": 10,
+    "reviews": 14,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/285330/funky-leopard-safari-lodge-bordering-yala-national/"
+   },
+   "about": "Two-storey lodge on the edge of Yala National Park with shared lounges and a kitchenette.",
+   "groupFit": "Largest private room sleeps 6.",
+   "bunkGbp": null,
+   "roomGbp": 15.21,
+   "roomFor": 3,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "priceNote": "No dorm beds listed for Dec 8 on Hostelworld.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/285330/funky-leopard-safari-lodge-bordering-yala-national/",
+   "photo": {
+    "file": "funky-leopard-yala.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/285330/funky-leopard-safari-lodge-bordering-yala-national/"
+   },
+   "note": "Listed on Hostelworld as Funky Leopard Safari Lodge."
+  },
+  {
+   "id": "spindrift-weligama",
+   "name": "The Spindrift Hostel",
+   "hub": "Weligama",
+   "area": "Weligama",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=The%20Spindrift%20Hostel%20Weligama%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.9,
+    "outOf": 10,
+    "reviews": 586,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/292497/the-spindrift-hostel/"
+   },
+   "about": "Social hostel in Weligama built for solo travellers, with a shared kitchen and daily activities.",
+   "groupFit": "Dorms of 4 to 6 beds; no private room listed.",
+   "bunkGbp": 7.54,
+   "roomGbp": null,
+   "roomFor": null,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "priceNote": "No private rooms listed for Dec 8 on Hostelworld.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/292497/the-spindrift-hostel/",
+   "photo": {
+    "file": "spindrift-weligama.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/292497/the-spindrift-hostel/"
+   },
+   "tag": "Social",
+   "tagSource": "Hostelworld description"
+  },
+  {
+   "id": "happy-hammocks-weligama",
+   "name": "Happy Hammocks, Weligama Beach",
+   "hub": "Weligama",
+   "area": "Weligama",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Happy%20Hammocks%2C%20Weligama%20Beach%20Weligama%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.8,
+    "outOf": 10,
+    "reviews": 392,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/321018/happy-hammocks-weligama-beach/"
+   },
+   "about": "Social Weligama hostel with ensuite dorms and daily activities that non-guests can join.",
+   "groupFit": "4-bed fan dorms and 6-bed air-conditioned mixed dorms, per its description.",
+   "bunkGbp": null,
+   "roomGbp": null,
+   "roomFor": null,
+   "priceDate": null,
+   "priceChecked": "2026-10-16",
+   "priceNote": "Nothing listed for Dec 8 to 10 on Hostelworld (sold out or closed). Check the page.",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/321018/happy-hammocks-weligama-beach/",
+   "photo": {
+    "file": "happy-hammocks-weligama.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/321018/happy-hammocks-weligama-beach/"
+   },
+   "tag": "Social",
+   "tagSource": "Hostelworld description"
+  },
+  {
+   "id": "hangtime-weligama",
+   "name": "Hangtime Hostel",
+   "hub": "Weligama",
+   "area": "Weligama bypass road",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Hangtime%20Hostel%20Weligama%20bypass%20road%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.4,
+    "outOf": 10,
+    "reviews": 567,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/267355/hangtime-hostel/"
+   },
+   "about": "Surf and yoga hostel on the Weligama bypass road, with good food, coffee and balcony rooms.",
+   "groupFit": "Dorms of 4 to 6 beds; largest private room sleeps 2.",
+   "bunkGbp": 9.42,
+   "roomGbp": 30.53,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/267355/hangtime-hostel/",
+   "photo": {
+    "file": "hangtime-weligama.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/267355/hangtime-hostel/"
+   }
+  },
+  {
+   "id": "aurora-weligama",
+   "name": "Aurora Hostel",
+   "hub": "Weligama",
+   "area": "Weligama",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Aurora%20Hostel%20Weligama%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 10.0,
+    "outOf": 10,
+    "reviews": 150,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/317598/aurora-hostel/"
+   },
+   "about": "Laid-back hostel 200 m from Weligama beach, with new private rooms and plenty of green.",
+   "groupFit": "Dorms of 8 beds; largest private room sleeps 2.",
+   "bunkGbp": 6.04,
+   "roomGbp": 30.18,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/317598/aurora-hostel/",
+   "photo": {
+    "file": "aurora-weligama.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/317598/aurora-hostel/"
+   },
+   "note": "Reviews say it is not very social."
+  },
+  {
+   "id": "wake-n-flow-weligama",
+   "name": "Wake N Flow, Weligama",
+   "hub": "Weligama",
+   "area": "Weligama",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Wake%20N%20Flow%2C%20Weligama%20Weligama%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 8.8,
+    "outOf": 10,
+    "reviews": 111,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/328999/wake-n-flow-weligama/"
+   },
+   "about": "Hostel with a swimming pool on the A2 in Weligama, close to cafes.",
+   "groupFit": "Dorms of 4 to 6 beds; largest private room sleeps 3.",
+   "bunkGbp": 8.66,
+   "roomGbp": 34.63,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/328999/wake-n-flow-weligama/",
+   "photo": {
+    "file": "wake-n-flow-weligama.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/328999/wake-n-flow-weligama/"
+   }
+  },
+  {
+   "id": "jjs-mirissa",
+   "name": "JJ's Hostel",
+   "hub": "Weligama",
+   "area": "Mirissa",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=JJ%27s%20Hostel%20Mirissa%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.6,
+    "outOf": 10,
+    "reviews": 606,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/267561/jj-s-hostel/"
+   },
+   "about": "Award-winning boutique hostel with a pool in Mirissa, with air-conditioned dorms and a little luxury.",
+   "groupFit": "Dorms of 8 beds; largest private room sleeps 2.",
+   "bunkGbp": 11.32,
+   "roomGbp": 31.12,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/267561/jj-s-hostel/",
+   "photo": {
+    "file": "jjs-mirissa.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/267561/jj-s-hostel/"
+   }
+  },
+  {
+   "id": "wake-n-flow-hiriketiya",
+   "name": "Wake N Flow, Hiriketiya",
+   "hub": "Weligama",
+   "area": "Hiriketiya",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Wake%20N%20Flow%2C%20Hiriketiya%20Hiriketiya%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.1,
+    "outOf": 10,
+    "reviews": 117,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/334726/wake-n-flow-hiriketiya/"
+   },
+   "about": "Stylish surf hostel just off Hiriketiya Road, built around the bay's waves.",
+   "groupFit": "Dorms of 4 beds; largest private room sleeps 3.",
+   "bunkGbp": 14.19,
+   "roomGbp": 25.8,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/334726/wake-n-flow-hiriketiya/",
+   "photo": {
+    "file": "wake-n-flow-hiriketiya.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/334726/wake-n-flow-hiriketiya/"
+   },
+   "note": "Hiriketiya is social but not full-on, per Britt's list."
+  },
+  {
+   "id": "nest-residence-tangalle",
+   "name": "Nest Residence",
+   "hub": "Weligama",
+   "area": "Tangalle",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Nest%20Residence%20Tangalle%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 7.1,
+    "outOf": 10,
+    "reviews": 128,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/277765/nest-residence/"
+   },
+   "about": "Family-run hostel in a quiet Tangalle village, 10 minutes on foot to the bay and 1.2 km to Goyambokka Beach.",
+   "groupFit": "Dorms of 4 beds; largest private room sleeps 7.",
+   "bunkGbp": 7.5,
+   "roomGbp": 10.71,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/277765/nest-residence/",
+   "photo": {
+    "file": "nest-residence-tangalle.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/277765/nest-residence/"
+   },
+   "tag": "Quiet",
+   "tagSource": "Hostelworld description (quiet village)"
+  },
+  {
+   "id": "snooze-station-galle",
+   "name": "Snooze Station by Sydney Galle",
+   "hub": "Weligama",
+   "area": "Galle",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Snooze%20Station%20by%20Sydney%20Galle%20Galle%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 8.9,
+    "outOf": 10,
+    "reviews": 72,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/329199/snooze-station-by-sydney-galle/"
+   },
+   "about": "Hostel in central Galle, sharing a building with the 100-year-old Sydney Hotel bar.",
+   "groupFit": "Dorms of 4 to 6 beds; largest private room sleeps 2.",
+   "bunkGbp": 17.85,
+   "roomGbp": 33.65,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/329199/snooze-station-by-sydney-galle/",
+   "photo": {
+    "file": "snooze-station-galle.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/329199/snooze-station-by-sydney-galle/"
+   }
+  },
+  {
+   "id": "spindrift-madiha",
+   "name": "Spindrift Madiha",
+   "hub": "Weligama",
+   "area": "Madiha, near Matara",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Spindrift%20Madiha%20Madiha%2C%20near%20Matara%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 9.9,
+    "outOf": 10,
+    "reviews": 149,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/313147/spindrift-madiha/"
+   },
+   "about": "Boutique sister of Spindrift Weligama in Madiha, with a big pool.",
+   "groupFit": "Dorms of 4 to 6 beds; largest private room sleeps 2.",
+   "bunkGbp": 15.62,
+   "roomGbp": 60.74,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/313147/spindrift-madiha/",
+   "photo": {
+    "file": "spindrift-madiha.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/313147/spindrift-madiha/"
+   },
+   "tag": "Social",
+   "tagSource": "Hostelworld description"
+  },
+  {
+   "id": "doctors-house-madiha",
+   "name": "The Doctor's House",
+   "hub": "Weligama",
+   "area": "Madiha, near Matara",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=The%20Doctor%27s%20House%20Madiha%2C%20near%20Matara%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 8.6,
+    "outOf": 10,
+    "reviews": 230,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/275411/the-doctor-s-house/"
+   },
+   "about": "Social hostel in the Madiha surf village with air-conditioned dorms and private bungalows.",
+   "groupFit": "Dorms of 6 beds; largest private room sleeps 2.",
+   "bunkGbp": 9.81,
+   "roomGbp": 43.76,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/275411/the-doctor-s-house/",
+   "photo": {
+    "file": "doctors-house-madiha.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/275411/the-doctor-s-house/"
+   },
+   "tag": "Social",
+   "tagSource": "Hostelworld description (\"buzzing social atmosphere\")"
+  },
+  {
+   "id": "fins-arugam-bay",
+   "name": "Fins Arugambay",
+   "hub": "Off route",
+   "area": "Arugam Bay",
+   "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Fins%20Arugambay%20Arugam%20Bay%20Sri%20Lanka",
+   "rating": {
+    "source": "Hostelworld",
+    "score": 8.6,
+    "outOf": 10,
+    "reviews": 45,
+    "checked": "2026-10-16",
+    "url": "https://www.hostelworld.com/hostels/p/327446/fins-arugambay/"
+   },
+   "about": "Beach-road hostel with a restaurant and bar, 50 m from Arugam Bay beach.",
+   "groupFit": "Dorms of 4 to 6 beds; largest private room sleeps 2.",
+   "bunkGbp": 9.05,
+   "roomGbp": 37.72,
+   "roomFor": 2,
+   "priceDate": "2026-12-08",
+   "priceChecked": "2026-10-16",
+   "bookUrl": "https://www.hostelworld.com/hostels/p/327446/fins-arugambay/",
+   "photo": {
+    "file": "fins-arugam-bay.jpg",
+    "source": "https://www.hostelworld.com/hostels/p/327446/fins-arugambay/"
+   }
+  }
+ ]
+}

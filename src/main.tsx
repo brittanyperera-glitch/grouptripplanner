@@ -3,7 +3,9 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
 import { freshStartForEpoch, freshStartFromUrl } from './store/fresh';
+import { recoverGuestOnBoot } from './guest/deviceState';
 
+recoverGuestOnBoot(window.location.hash);
 freshStartForEpoch();
 const cleaned = freshStartFromUrl(window.location.href);
 if (cleaned) window.history.replaceState(null, '', cleaned);

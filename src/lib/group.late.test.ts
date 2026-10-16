@@ -9,7 +9,7 @@ import { groupResult, VOTES_TO_RESOLVE } from './group';
 import { plan } from './planner';
 import { score } from './ranking';
 
-const ITEMS = (catalogue as unknown as { items: Item[] }).items;
+const ITEMS = (catalogue as unknown as { items: Item[] }).items.filter(i => !i.late); // the real late entry would add a second late fork
 const L = legs as Leg[];
 const G = genres as unknown as Genre[];
 const hiri = ITEMS.find(i => i.id === 'hiriketiya')!;

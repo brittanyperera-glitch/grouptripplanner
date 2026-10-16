@@ -79,6 +79,8 @@ svg { flex: none; }
 .top button.who:focus-visible { outline: 2px solid var(--coconut); outline-offset: 3px; }
 .avatar { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--sunset); color: var(--on-red); font-weight: 800; font-size: 13px; flex: none; }
 .hmenu { position: relative; flex: none; }
+.hmenu > .link { position: relative; }
+.oi-dot { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 2px var(--bg); }
 .hmenu-list { position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; display: flex; flex-direction: column; min-width: 200px; padding: 6px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-card); }
 .hmenu-list button { all: unset; cursor: pointer; padding: 11px 12px; border-radius: var(--r-sm); font-size: var(--fs-md); font-weight: 700; color: var(--ink); white-space: nowrap; }
 .hmenu-list button:hover, .hmenu-list button:focus-visible { background: var(--chip); }
@@ -131,7 +133,10 @@ h1.big { margin: 0; }
 .sub.locked { margin: 0; text-align: center; }
 
 /* welcome: a cinematic photo intro, then a character select */
-.welcome { view-transition-name: screen; display: flex; flex-direction: column; flex: 1; background: var(--paper); color: var(--ink); }
+.welcome { view-transition-name: screen; display: flex; flex-direction: column; flex: 1; background: var(--paper); color: var(--ink); position: relative; }
+.name-out { position: absolute; right: 20px; top: calc(24px + env(safe-area-inset-top)); z-index: 3; }
+/* The picker heading keeps clear of Log out at any width (it sits on one line on wide screens). */
+.welcome:has(> .name-out) .select-head { padding-right: 84px; }
 .intro { position: relative; height: 100dvh; overflow: hidden; container-type: inline-size; background: #1a1511; flex: none; font-family: var(--font-body); }
 .slides img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 2200ms var(--ease-in-out); }
 .slides img.on { opacity: 1; }
@@ -238,7 +243,7 @@ h1.big { margin: 0; }
 .pick .ph { position: absolute; inset: 0; }
 .pick-copy { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 12px 14px; display: flex; flex-direction: column; gap: 4px; background: linear-gradient(180deg, rgba(5, 6, 8, 0), rgba(5, 6, 8, .92) 45%); }
 .pick .tag { color: var(--coconut-text); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; }
-.pick b { font-family: var(--font-head); font-size: 22px; font-weight: 800; text-transform: uppercase; line-height: .98; overflow-wrap: anywhere; }
+.pick b { font-family: var(--font-head); font-size: 22px; font-weight: 800; text-transform: uppercase; line-height: .98; overflow-wrap: break-word; hyphens: auto; }
 .pick b.line { font-family: var(--font-body); font-size: 14px; font-weight: 700; text-transform: none; line-height: 1.2; }
 /* Head to head cards grow with their text so nothing is cut off; the inner edge clears the VS badge that straddles the gap. */
 .pick.tall.list { height: auto; min-height: clamp(250px, 42dvh, 380px); }
@@ -299,6 +304,9 @@ h1.big { margin: 0; }
 .tabs button[aria-selected="true"] { color: var(--on-red); background: var(--red-deep); box-shadow: var(--shadow-btn); }
 .tabs button[aria-selected="true"] svg { color: var(--on-red); }
 .tabs button:not([aria-selected="true"]):hover { color: var(--ink); background: var(--chip); }
+.tabs button { position: relative; }
+.tabs .badge-count { position: absolute; top: 2px; left: calc(50% + 2px); min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: var(--r-pill); background: var(--red); color: var(--on-red); font-size: 10px; font-weight: 800; line-height: 16px; text-align: center; box-shadow: 0 0 0 2px var(--white); pointer-events: none; }
+.tabs button[aria-selected="true"] .badge-count { background: var(--white); color: var(--red-deep); box-shadow: 0 0 0 2px var(--red-deep); }
 .tabs .tab-me { display: grid; place-items: center; width: 24px; height: 24px; }
 .tabs button[aria-selected="true"] .tab-me .avatar, .tabs button[aria-selected="true"] .tab-me img { box-shadow: 0 0 0 2px var(--on-red); border-radius: 50%; }
 .tabs button:focus-visible { outline: 2px solid var(--coconut); outline-offset: -2px; }

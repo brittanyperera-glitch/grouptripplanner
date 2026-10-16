@@ -2,12 +2,15 @@ import { useState } from 'react';
 import guide from '../content/guide.json';
 import Avatar from '../components/Avatar';
 import PhrasePanel, { type Phrase } from './PhraseCards';
+import Hostels from './Hostels';
 
 type Entry = { title?: string; body?: string; list?: string[]; after?: string };
-type Section = { id: string; label: string; intro?: string; entries?: Entry[]; phrases?: Phrase[] };
+type Section = { id: string; label: string; intro?: string; entries?: Entry[]; phrases?: Phrase[]; hostels?: boolean };
 
 // Phrases leads and opens first (Brittany 2026-10-16); the rest keep the guide's own order.
-const SECTIONS = [...(guide.sections as Section[])].sort((a, b) => Number(b.id === 'Phrases') - Number(a.id === 'Phrases'));
+// Hostels is the guide's last tab; its data lives in hostels.json, not guide.json (which mirrors docs/guide).
+const SECTIONS: Section[] = [...(guide.sections as Section[])].sort((a, b) => Number(b.id === 'Phrases') - Number(a.id === 'Phrases'))
+  .concat({ id: 'Hostels', label: 'Hostels', hostels: true });
 
 /** "Elawolu roti (roti parcels...)": the name before the bracket is bold (Brittany 2026-10-15), the rest stays as written. */
 function Named({ text }: { text: string }) {
@@ -32,7 +35,9 @@ export default function Guide() {
       <div className="guide-section" role="region" aria-label={section.id}>
         <h2 className="big guide-title">{section.label}</h2>
         {section.intro && <p className="guide-intro">{section.intro}</p>}
-        {section.phrases ? (
+        {section.hostels ? (
+          <Hostels />
+        ) : section.phrases ? (
           <PhrasePanel phrases={section.phrases} />
         ) : (
           section.entries?.map((e, i) => (

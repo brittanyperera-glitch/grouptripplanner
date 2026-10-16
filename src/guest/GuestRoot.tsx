@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { AppProvider } from '../state';
 import { IdleWarning } from './IdleWarning';
 import { MemoryStore } from './MemoryStore';
-import { clearStaleTp, restoreTp, snapshotTp } from './deviceState';
+import { beginGuest, endGuest } from './deviceState';
 import { GUEST_IDLE_MS, GUEST_WARN_MS } from './timing';
 import { useIdleReset } from './useIdleReset';
 
@@ -15,10 +15,9 @@ export default function GuestRoot({ onExit, children }: { onExit(): void; childr
 
   // Children wait for ready so they never read the real visitor's tp: keys; restore only on unmount.
   useEffect(() => {
-    const snap = snapshotTp();
-    clearStaleTp();
+    beginGuest();
     setReady(true);
-    return () => restoreTp(snap);
+    return () => endGuest();
   }, []);
 
   const exit = useCallback(() => {

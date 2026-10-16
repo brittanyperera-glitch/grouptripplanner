@@ -155,6 +155,7 @@ describe('my own vote shows for a guest too', () => {
     };
     render(<AppProvider store={new LocalStore()} sandbox={{ onFinish: () => {} }}><AsGuest><Knockouts group={group({ knockouts: [k] })} /></AsGuest></AppProvider>);
     const card = await screen.findByRole('group', { name: '2 safaris on the shortlist' });
+    await userEvent.click(within(card).getByRole('button', { name: 'Change' }));
     expect(within(card).getByText('Saved')).toBeInTheDocument();
     expect(within(card).getByRole('button', { name: 'Keep Yala leopard safari' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(card).getByRole('button', { name: 'Keep Udawalawe elephants and Transit Home' })).toHaveAttribute('aria-pressed', 'false');

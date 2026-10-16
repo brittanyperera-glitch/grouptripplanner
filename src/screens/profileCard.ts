@@ -88,8 +88,10 @@ export const FIG_TOP = 84;
 export const ROW_H = 36;
 export const FEET_ON_PLATE = 34;
 export const STAMP = { cx: 134, cy: 124, w: 176, h: 48, rot: -8, size: 30 };
-export const STAT_X = { label: 56, labelW: 372, bar: 444, barW: 220, barH: 14, val: 744 };
-export const FACT_X = { tag: 56, text: 172, textW: 572, size: 24 };
+export const STAT_X = { label: 56, labelW: 422, bar: 494, barW: 170, barH: 14, val: 744 };
+export const FACT_X = { tag: 56, text: 190, textW: 554, size: 28 };
+/** No text on the card is drawn under this many canvas pixels: 28 is 11 CSS px on the narrowest phone column (about 320 wide). */
+export const MIN_TEXT = 28;
 export const FRIEND = { half: 336, gap: 16, dot: 48 };
 // Avatar.tsx's bust crop, repeated so the PNG frames the friend's head the same way: figure height 211 of a 214 baseline, 72 unit square.
 const BUST = { figure: 211, base: 214, box: 72, left: 16, centre: 52, above: 6 };
@@ -100,10 +102,10 @@ export interface CardLayout { figTop: number; figBottom: number; plateTop: numbe
 export function cardLayout(d: Pick<CardData, 'title' | 'stats' | 'fact'> & { friends?: CardFriends | null }): CardLayout {
   let y = CARD_H - FACE - 10;
   const take = (h: number, gap = 0): Box => { y -= h; const b = { y, h }; y -= gap; return b; };
-  const meta = take(24, 8);
-  const fact = d.fact ? take(54, 10) : null;
-  const friends = d.friends ? take(52, 10) : null;
-  const stats = d.stats.length ? take(d.stats.length * ROW_H, 12) : null;
+  const meta = take(30, 6);
+  const fact = d.fact ? take(62, 6) : null;
+  const friends = d.friends ? take(64, 8) : null;
+  const stats = d.stats.length ? take(d.stats.length * ROW_H, 8) : null;
   const title = d.title ? take(44) : null;
   const name = take(100);
   const figBottom = name.y;
@@ -111,7 +113,7 @@ export function cardLayout(d: Pick<CardData, 'title' | 'stats' | 'fact'> & { fri
 }
 
 /** Font size that keeps a line of condensed capitals inside the card width: `max` px, smaller for long text (about 0.47em a letter). */
-export const textSize = (text: string, max: number, width: number) => Math.min(max, Math.floor(width / (Math.max(text.length, 1) * 0.47)));
+export const textSize = (text: string, max: number, width: number) => Math.max(MIN_TEXT, Math.min(max, Math.floor(width / (Math.max(text.length, 1) * 0.47))));
 
 // The Postcard tokens from src/styles.css, repeated: a canvas cannot read the stylesheet's variables.
 const C = { gold: '#f2b632', cream: '#fffaf0', white: '#ffffff' };
@@ -214,8 +216,8 @@ export function drawCard(ctx: Ctx, d: CardData, art: HTMLImageElement | null, fr
   }
 
   // Top row: card number and rarity stars, then the small rarity stamp in the player's colour.
-  ctx.fillStyle = C.white; ctx.textAlign = 'left'; ctx.font = `800 22px ${BODY}`;
-  ctx.fillText(cardNo(d).toUpperCase(), 52, 68);
+  ctx.fillStyle = C.white; ctx.textAlign = 'left'; ctx.font = `800 ${MIN_TEXT}px ${HEAD}`;
+  ctx.fillText(cardNo(d).toUpperCase(), 52, 72);
   ctx.textAlign = 'right'; ctx.font = `400 32px ${BODY}`;
   for (let i = 0; i < 5; i++) { ctx.fillStyle = i < d.stars ? C.gold : 'rgba(255,255,255,.3)'; ctx.fillText('★', CARD_W - 52 - (4 - i) * 36, 72); }
   ctx.save();
@@ -234,7 +236,7 @@ export function drawCard(ctx: Ctx, d: CardData, art: HTMLImageElement | null, fr
   if (L.title) {
     const s = textSize(d.title, 46, 720);
     ctx.fillStyle = col.tint;
-    fitText(ctx, d.title.toUpperCase(), CARD_W / 2, mid(L.title, s), 720, 800, s, 20, HEAD);
+    fitText(ctx, d.title.toUpperCase(), CARD_W / 2, mid(L.title, s), 720, 800, s, MIN_TEXT, HEAD);
   }
 
   // Stats: a compact strip, one row each: label, a segmented bar in the player's tint, the number.
@@ -242,7 +244,7 @@ export function drawCard(ctx: Ctx, d: CardData, art: HTMLImageElement | null, fr
     d.stats.forEach((s, i) => {
       const row = { y: L.stats!.y + i * ROW_H, h: ROW_H }, over = s.value > 10;
       ctx.fillStyle = C.white; ctx.textAlign = 'left';
-      fitText(ctx, s.label.toUpperCase(), STAT_X.label, mid(row, 26), STAT_X.labelW, 800, 26, 14, HEAD);
+      fitText(ctx, s.label.toUpperCase(), STAT_X.label, mid(row, 28), STAT_X.labelW, 800, 28, MIN_TEXT, HEAD);
       const by = row.y + (ROW_H - STAT_X.barH) / 2, { bar: bx, barW: bw, barH: bh } = STAT_X;
       ctx.save(); rrect(ctx, bx, by, bw, bh, bh / 2); ctx.clip();
       ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fillRect(bx, by, bw, bh);
@@ -272,9 +274,9 @@ export function drawCard(ctx: Ctx, d: CardData, art: HTMLImageElement | null, fr
       ctx.restore();
       const tx = x0 + FRIEND.dot + 12;
       ctx.textAlign = 'left'; ctx.fillStyle = col.tint;
-      fitText(ctx, FRIEND_LABELS[k].toUpperCase(), tx, L.friends!.y + 19, FRIEND.half - FRIEND.dot - 90, 800, 17, 10, BODY);
+      fitText(ctx, FRIEND_LABELS[k].toUpperCase(), tx, L.friends!.y + 26, FRIEND.half - FRIEND.dot - 88, 800, 28, MIN_TEXT, HEAD);
       ctx.fillStyle = C.white;
-      fitText(ctx, f.name.toUpperCase(), tx, L.friends!.y + 45, FRIEND.half - FRIEND.dot - 90, 800, 26, 16, HEAD);
+      fitText(ctx, f.name.toUpperCase(), tx, L.friends!.y + 56, FRIEND.half - FRIEND.dot - 88, 800, 28, MIN_TEXT, HEAD);
       ctx.textAlign = 'right';
       fitText(ctx, `${f.pct}%`, x0 + FRIEND.half, mid(L.friends!, 34), 76, 800, 34, 20, HEAD);
     });
@@ -283,9 +285,9 @@ export function drawCard(ctx: Ctx, d: CardData, art: HTMLImageElement | null, fr
   // Fun fact, only when there is one: a gold tag and up to two lines, shrunk until it fits so it is never clipped.
   if (L.fact && d.fact) {
     ctx.fillStyle = C.gold; ctx.textAlign = 'left';
-    fitText(ctx, profile.funFact.toUpperCase(), FACT_X.tag, mid(L.fact, 18), FACT_X.text - FACT_X.tag - 12, 800, 18, 10, BODY);
+    fitText(ctx, profile.funFact.toUpperCase(), FACT_X.tag, mid(L.fact, 28), FACT_X.text - FACT_X.tag - 12, 800, 28, MIN_TEXT, HEAD);
     let size = FACT_X.size, lines = [d.fact];
-    for (; size >= 16; size -= 2) {
+    for (; size >= MIN_TEXT; size -= 2) {
       ctx.font = `800 ${size}px ${HEAD}`;
       lines = wrap(ctx, d.fact, FACT_X.textW);
       if (lines.length <= 2) break;
@@ -296,7 +298,7 @@ export function drawCard(ctx: Ctx, d: CardData, art: HTMLImageElement | null, fr
   }
 
   ctx.fillStyle = col.meta; ctx.textAlign = 'center';
-  fitText(ctx, metaText(d).join('  |  ').toUpperCase(), CARD_W / 2, mid(L.meta, 20), 720, 700, 20, 11, BODY);
+  fitText(ctx, metaText(d).join('  |  ').toUpperCase(), CARD_W / 2, mid(L.meta, 28), 720, 700, 28, MIN_TEXT, HEAD);
 
   // Foil: a static rainbow sheen across the face (it sweeps on screen).
   ctx.save();

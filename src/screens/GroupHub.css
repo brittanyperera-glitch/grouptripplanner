@@ -8,6 +8,7 @@
 .gh-text b { font-family: var(--font-head); font-size: 28px; font-weight: 800; line-height: 1; text-transform: uppercase; }
 .gh-text small { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
 .gh-go { color: var(--muted); display: grid; place-items: center; }
+.gh-soon { cursor: default; grid-template-columns: auto minmax(0, 1fr); opacity: .72; }
 .gh-alert { box-shadow: var(--shadow-card), 0 0 0 2px var(--red-deep); }
 .gh-alert .gh-text small:first-of-type { color: var(--red-ink); font-weight: 700; }
 @media (prefers-reduced-motion: no-preference) { .gh-alert[data-pulse="1"] { animation: gh-nudge var(--dur-slow) var(--ease); } }

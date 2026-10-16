@@ -6,7 +6,8 @@ import { groupResult } from './group';
 import { score } from './ranking';
 import { PEOPLE, emptyRanking, type AppState, type Genre, type Item, type Leg, type Person, type Response, type Tier } from '../types';
 
-const LIVE = catalogue.items as Item[];
+// Late items are asked after the ratings close; the keep-vote tests run on the ordinary catalogue.
+const LIVE = (catalogue.items as Item[]).filter(i => !i.late);
 const L = legs as Leg[];
 const GENRES = genresJson.genres as Genre[];
 const nameOf = (id: string) => LIVE.find(i => i.id === id)?.name;
