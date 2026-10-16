@@ -37,7 +37,7 @@ import { clearLocalProgress } from './store/fresh';
 import { isLocalStoreKey } from './store/local';
 import { useGroupResult, usePersonPlan } from './workers/usePlan';
 import { AREAS, emptyRanking, PEOPLE } from './types';
-import type { Item, Pace as PaceT, Person, Ranking, Response, Store, Tier } from './types';
+import type { Item, Pace as PaceT, Player, Ranking, Response, Store, Tier } from './types';
 
 type Step = 'days' | 'pace' | 'howto' | 'rate' | 'tabs';
 const howtoCopy = () => (copyData as unknown as { howto?: HowToCopy }).howto;
@@ -92,7 +92,7 @@ function SuggestTab() {
 // Picks is drawn inside Flow, which holds my draft ranking.
 const PANELS: Record<Exclude<Tab, 'Picks' | 'Profile'>, () => JSX.Element> = { 'My trip': MyTripTab, 'Group': GroupTab, 'Suggest': SuggestTab, 'Guide': Guide };
 
-const blank = (name: Person): Response => ({
+const blank = (name: Player): Response => ({
   name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: new Date().toISOString(),
 });
 
@@ -138,7 +138,7 @@ function HeaderMenu({ onProfile, onChange, onNotYou, onStartOver }: { onProfile(
   );
 }
 
-function Flow({ me, say, onStartOver }: { me: Person; say: Say; onStartOver(): void }) {
+function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): void }) {
   const { state, store, items, copy, clearMe } = useApp();
   const [draft, setDraft] = useState<Response>(() => {
     const saved = state.responses[me];

@@ -7,7 +7,7 @@ import PasswordGate from './components/PasswordGate';
 import { getStore, supabaseConfigured } from './store';
 import { useTripAccess } from './store/useTripAccess';
 import { WriteQueue } from './store/queue';
-import { emptyRanking, PEOPLE } from './types';
+import { emptyRanking, GUEST, PEOPLE } from './types';
 import type { AppState, Item, Leg, Person, Player, Response, Store } from './types';
 
 // A quip is one line, or a list the app picks from at random so it doesn't repeat.
@@ -24,8 +24,9 @@ export interface Copy {
 }
 
 interface AppValue {
-  state: AppState; me: Person | null; setMe(p: Person): void; clearMe(): void; store: Store;
+  state: AppState; me: Player | null; setMe(p: Player): void; clearMe(): void; store: Store;
   items: Item[]; legs: Leg[]; copy: Copy; error: string | null; retry(): void;
+  sandbox: boolean; finishSandbox?: () => void;
 }
 
 export const ME_KEY = 'tp:me';
@@ -95,7 +96,7 @@ export function useApp(): AppValue {
   return v;
 }
 
-export function AppProvider({ children, store: injected }: { children: ReactNode; store?: Store }) {
+export function AppProvider({ children, store: injected, sandbox }: { children: ReactNode; store?: Store; sandbox?: { onFinish(): void } }) {
   const [attempt, setAttempt] = useState(0);
   // The password gate stands in front of the shared database only; an injected or local store skips it.
   const access = useTripAccess(!injected && supabaseConfigured());
@@ -107,12 +108,12 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
   }, [injected, attempt, open, access.password]);
   const [error, setError] = useState<string | null>(null);
   const [server, setServer] = useState<AppState | null>(null);
-  const [local, setLocal] = useState<Rows>(readUnsaved);
+  const [local, setLocal] = useState<Rows>(() => (sandbox ? {} : readUnsaved()));
   const serverRef = useRef(server);
   serverRef.current = server;
   const localRef = useRef(local);
   localRef.current = local;
-  const [me, setMeState] = useState<Person | null>(readMe);
+  const [me, setMeState] = useState<Player | null>(() => (sandbox ? GUEST : readMe()));
   const queue = useMemo(() => base && new WriteQueue(base, {
     onFail: () => setError("Couldn't save"),
     onClear: () => setError(e => (e === "Couldn't save" ? null : e)),
@@ -142,19 +143,19 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
       return Object.keys(kept).length === Object.keys(l).length ? l : kept;
     });
   }, [server]);
-  useEffect(() => writeUnsaved(local), [local]);
+  useEffect(() => { if (!sandbox) writeUnsaved(local); }, [local, sandbox]);
 
   // Saves left over from an earlier visit go back into the queue once, after the first server read.
   const replayed = useRef(false);
   useEffect(() => {
-    if (!server || !queue || replayed.current) return;
+    if (sandbox || !server || !queue || replayed.current) return;
     replayed.current = true;
     for (const r of Object.values(localRef.current)) {
       if (!r || !ahead(r, server.responses[r.name])) continue;
       const { name, updatedAt: _at, ...patch } = r;
       void queue.store.saveResponse(name, patch);
     }
-  }, [server, queue]);
+  }, [server, queue, sandbox]);
 
   const store = useMemo<Store | null>(() => queue && {
     ...queue.store,
@@ -173,15 +174,15 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
     void queue.flush().then(ok => (ok ? load() : undefined));
   }, [queue, load]);
 
-  const setMe = useCallback((p: Person) => {
-    try { localStorage.setItem(ME_KEY, p); } catch { /* storage unavailable: the pick lasts this visit */ }
+  const setMe = useCallback((p: Player) => {
+    if (!sandbox) try { localStorage.setItem(ME_KEY, p); } catch { /* storage unavailable: the pick lasts this visit */ }
     setMeState(p);
-  }, []);
+  }, [sandbox]);
 
   const clearMe = useCallback(() => {
-    try { localStorage.removeItem(ME_KEY); } catch { /* storage unavailable: the switch lasts this visit */ }
+    if (!sandbox) try { localStorage.removeItem(ME_KEY); } catch { /* storage unavailable: the switch lasts this visit */ }
     setMeState(null);
-  }, []);
+  }, [sandbox]);
 
   if (access.status === 'gate') return createElement(PasswordGate, { onAccept: access.accept });
   if (access.status === 'checking') return createElement('div', { className: 'app' }, createElement('div', { className: 'body' }, createElement('div', { className: 'sub' }, 'Loading')));
@@ -193,6 +194,6 @@ export function AppProvider({ children, store: injected }: { children: ReactNode
         : createElement('div', { className: 'body' }, createElement('div', { className: 'sub' }, 'Loading')));
   }
 
-  const value: AppValue = { state, me, setMe, clearMe, store: store as Store, items: liveItems(state), legs, copy, error, retry };
+  const value: AppValue = { state, me, setMe, clearMe, store: store as Store, items: liveItems(state), legs, copy, error, retry, sandbox: !!sandbox, finishSandbox: sandbox?.onFinish };
   return createElement(Ctx.Provider, { value }, children);
 }

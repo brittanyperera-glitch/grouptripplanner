@@ -5,7 +5,7 @@ import { motion } from '../components/motion';
 import profile from '../content/profile.json';
 import type { Copy } from '../state';
 import { PEOPLE } from '../types';
-import type { Person } from '../types';
+import type { Player } from '../types';
 import { artSrc, cardData, cardNo, kitText, PALETTE, renderCardBlob, selfieSrc, tierOf } from './profileCard';
 import type { CardData } from './profileCard';
 import './Profile.css';
@@ -33,9 +33,9 @@ export function canShareImage() {
   } catch { return false; }
 }
 
-const fileName = (name: Person) => `the-homecoming-${name.toLowerCase()}.png`;
+const fileName = (name: Player) => `the-homecoming-${name.toLowerCase()}.png`;
 
-function Picture({ name }: { name: Person }) {
+function Picture({ name }: { name: Player }) {
   // Selfie first, then the character art, then the initial: a missing file never leaves a hole in the card.
   const [stage, setStage] = useState<'selfie' | 'art' | 'none'>('selfie');
   if (stage === 'none') return <span className="pf-c-initial" aria-hidden="true">{name.charAt(0)}</span>;
@@ -103,7 +103,7 @@ function Card({ d, tilt }: { d: CardData; tilt: boolean }) {
   );
 }
 
-export default function Profile({ name, players = {}, onBack }: { name: Person; players?: Players; onBack: () => void }) {
+export default function Profile({ name, players = {}, onBack }: { name: Player; players?: Players; onBack: () => void }) {
   const [mode] = useState(motion);
   // Each tap remounts the figure, which restarts its one jump; nothing animates until the first tap.
   const [jumps, setJumps] = useState(0);
@@ -112,7 +112,7 @@ export default function Profile({ name, players = {}, onBack }: { name: Person; 
     setViewState(v);
     try { localStorage.setItem(VIEW_KEY, v); } catch { /* storage unavailable: the choice lasts this visit */ }
   };
-  const d = useMemo(() => cardData(name, PEOPLE.indexOf(name) + 1, PEOPLE.length, players[name]), [name, players]);
+  const d = useMemo(() => cardData(name, Math.max((PEOPLE as Player[]).indexOf(name), 0) + 1, PEOPLE.length, players[name]), [name, players]);
   const [done, setDone] = useState<Done | null>(null);
   const [busy, setBusy] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);

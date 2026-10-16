@@ -13,7 +13,7 @@ import TukTuk from '../components/TukTuk';
 import { compromises, MAX_CARDS, routeStops, type Compromise } from '../lib/compromises';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
-import type { GroupResult, Hub, Item, Leg, Person, Plan } from '../types';
+import type { GroupResult, Hub, Item, Leg, Plan, Player } from '../types';
 import Poster from './Poster';
 
 export const INTRO_MS = 3000; // HUD stamps, title, then the island fades in
@@ -267,7 +267,7 @@ function DayRow({ d }: { d: DayLine }) {
   );
 }
 
-function MissionComplete({ plan, items, legs, animate, voice, crew, onDone }: { plan: Plan; items: Item[]; legs: Leg[]; animate: boolean; voice: Voice; crew: Person[]; onDone: () => void }) {
+function MissionComplete({ plan, items, legs, animate, voice, crew, onDone }: { plan: Plan; items: Item[]; legs: Leg[]; animate: boolean; voice: Voice; crew: Player[]; onDone: () => void }) {
   const byId = useMemo(() => new Map(items.map(i => [i.id, i])), [items]);
   const days = useMemo(() => dayLine(plan, byId, legs), [plan, byId, legs]);
   // Switching to the Guide tab unmounts this tab and the reveal with it (Brittany 2026-10-15: the guide needs a way in here).
@@ -319,7 +319,7 @@ function MissionComplete({ plan, items, legs, animate, voice, crew, onDone }: { 
  * Full-screen GTA-style route reveal on the Postcard paper: stamp-label HUD intro, the island, the tuk-tuk drives stop to stop with a day card at each,
  * then Mission Complete and the poster. With `who` it is that person's own plan: no compromise lines, just their selfie, no poster.
  */
-export function Reveal({ plan, cards = NO_CARDS, who, onClose }: { plan: Plan; cards?: Compromise[]; who?: Person; onClose: () => void }) {
+export function Reveal({ plan, cards = NO_CARDS, who, onClose }: { plan: Plan; cards?: Compromise[]; who?: Player; onClose: () => void }) {
   const { items, legs: roadLegs } = useApp();
   const voice = who ? MINE : GROUP;
   const crew = useMemo(() => (who ? [who] : PEOPLE), [who]);

@@ -1,11 +1,11 @@
 import { IMAGE_CM, LOOKS } from '../components/Avatar';
-import type { Person } from '../types';
+import type { Player } from '../types';
 import profile from '../content/profile.json';
 
 export interface CardStat { label: string; value: number }
 export type Tier = 'lo' | 'mid' | 'hi';
 export interface CardData {
-  name: Person; no: number; total: number; title: string; stats: CardStat[]; heightCm: number; kit: string[];
+  name: Player; no: number; total: number; title: string; stats: CardStat[]; heightCm: number; kit: string[];
   /** Rarity: always 5 stars, the top label. */
   stars: number; rarity: string;
   /** Brittany's one-line fun fact for the player, from profile.json. */
@@ -16,18 +16,19 @@ export const CARD_W = 800;
 export const CARD_H = 1056;
 
 const GEAR = ['glasses', 'earrings', 'bangle', 'watch', 'ring'] as const;
-export const kitFor = (name: Person): string[] => {
+export const kitFor = (name: Player): string[] => {
   const look = LOOKS[name];
   return GEAR.filter(g => look?.[g]).map(g => profile.gear[g]);
 };
 
 /** A card colour per player (dark ray, light ray), picked from the Postcard palette; a design choice, not data. */
-export const PALETTE: Record<Person, [string, string]> = {
+export const PALETTE: Record<Player, [string, string]> = {
   Brittany: ['#a8301b', '#c9432a'],
   Alex: ['#17524f', '#1f6f6b'],
   Antek: ['#8a5a0c', '#a56a10'],
   Lazza: ['#6b2f55', '#853c69'],
   Saulie: ['#2d3f7a', '#3b4f94'],
+  Guest: ['#4a5560', '#69737f'],
 };
 const FALLBACK: [string, string] = PALETTE.Brittany;
 
@@ -42,7 +43,7 @@ export function rarityOf(_stats: CardStat[]) {
 }
 
 /** Everything the card shows, from the character select data. Stats with no label or a non-number are dropped, as on the select screen. */
-export function cardData(name: Person, no: number, total: number, card?: { title?: string; stats?: CardStat[] }): CardData {
+export function cardData(name: Player, no: number, total: number, card?: { title?: string; stats?: CardStat[] }): CardData {
   const stats = (card?.stats ?? []).filter(s => s.label && Number.isFinite(s.value)).map(s => ({ label: s.label, value: Math.max(0, s.value) }));
   return { name, no, total, title: card?.title ?? '', stats, heightCm: IMAGE_CM[name], kit: kitFor(name), ...rarityOf(stats), fact: (profile.facts as Record<string, string>)[name] ?? null };
 }
@@ -242,8 +243,8 @@ export function drawCard(ctx: Ctx, d: CardData, selfie: HTMLImageElement | null,
   ctx.restore();
 }
 
-export const selfieSrc = (n: Person) => `/img/players/${n.toLowerCase()}-selfie.png`;
-export const artSrc = (n: Person) => `/img/players/${n.toLowerCase()}.png`;
+export const selfieSrc = (n: Player) => `/img/players/${n.toLowerCase()}-selfie.png`;
+export const artSrc = (n: Player) => `/img/players/${n.toLowerCase()}.png`;
 
 /** Renders the card to a PNG, after the fonts and both pictures have loaded so none is missing from the file. */
 export async function renderCardBlob(d: CardData): Promise<Blob> {

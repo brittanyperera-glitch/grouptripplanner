@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Person } from '../types';
+import type { Player } from '../types';
 
 // Flat full-body characters, drawn on a 100 x 220 grid with the feet on y = 214 and a slight 3/4 turn
 // to the right. Each friend is built from Brittany's description; height scales the whole figure from the feet.
@@ -12,19 +12,20 @@ interface Look {
   glasses?: boolean; narrowEyes?: boolean; earrings?: boolean; bangle?: boolean; watch?: boolean; ring?: boolean;
 }
 
-export const LOOKS: Record<Person, Look> = {
+export const LOOKS: Record<Player, Look> = {
   Brittany: { height: 164, build: 0.96, skin: '#8D5A3B', hair: '#22150E', hairStyle: 'curly-shoulder', top: '#F4F1EA', legs: 'wide', denim: '#5B7DB1', shoes: 'chunky', earrings: true, bangle: true },
   Alex: { height: 200, build: 0.9, skin: '#C9A27A', hair: '#3B2416', hairStyle: 'short-swept', narrowEyes: true, top: '#1F2F5C', legs: 'camo', denim: '#CDB98F', shoes: 'af1' },
   Antek: { height: 189, build: 1.1, skin: '#EBC3A0', hair: '#4A3020', hairStyle: 'curly-mullet', top: '#F4F1EA', legs: 'wide', denim: '#17181C', shoes: 'loafer', glasses: true, watch: true, ring: true },
   Lazza: { height: 181, build: 0.88, skin: '#E6BC97', hair: '#4B2E1C', hairStyle: 'high-ponytail', top: '#F2EEE8', longSleeves: true, legs: 'flared', denim: '#4E6E9E', shoes: 'flat' },
+  Guest: { height: 175, build: 1, skin: '#D9B99B', hair: '#8A8A8A', hairStyle: 'short-light', top: '#C9CED6', legs: 'straight', denim: '#7A8494', shoes: 'flat' },
   Saulie: { height: 191, build: 1, skin: '#F0CDB0', hair: '#9C6B42', hairStyle: 'short-light', top: '#F4F1EA', legs: 'straight', denim: '#3E5F94', shoes: 'af1', glasses: true },
 };
 
 // Friends whose generated full-body PNG is in public/img/players/<lowercase name>.png. Add a name here once
 // the file is committed; a static list means no request is made to probe for a missing file.
-export const IMAGE_AVATARS: ReadonlySet<Person> = new Set<Person>(['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie']);
+export const IMAGE_AVATARS: ReadonlySet<Player> = new Set<Player>(['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie']);
 // Real heights in cm for the PNG figures, measured from each figure's own pixel height (the crops differ).
-export const IMAGE_CM: Record<Person, number> = { Alex: 188, Saulie: 183, Antek: 178, Lazza: 170, Brittany: 160 };
+export const IMAGE_CM: Record<Player, number> = { Alex: 188, Saulie: 183, Antek: 178, Lazza: 170, Brittany: 160, Guest: 175 };
 // Top of the SVG figure's head above the feet at 200 cm, in grid units; the PNG is fitted to the same height.
 const FIGURE_H = 211;
 
@@ -138,7 +139,7 @@ function head(l: Look): ReactNode {
  * A friend as a flat character. `crop="bust"` frames head and shoulders for small uses such as the header.
  * Decorative: the control beside it carries the name.
  */
-export default function Avatar({ name, size = 80, crop = 'bust', bob = false, image = IMAGE_AVATARS.has(name) }: { name: Person; size?: number; crop?: 'bust' | 'full' | 'stage'; bob?: boolean; image?: boolean }) {
+export default function Avatar({ name, size = 80, crop = 'bust', bob = false, image = IMAGE_AVATARS.has(name) }: { name: Player; size?: number; crop?: 'bust' | 'full' | 'stage'; bob?: boolean; image?: boolean }) {
   const l = LOOKS[name] ?? LOOKS.Saulie;
   const cm = image ? IMAGE_CM[name] : l.height;
   const s = cm / 200;

@@ -29,6 +29,7 @@
       "Alex": "solo wolf joins the team - what's left on your list?",
       "Antek": "hello there. ready to meet the family?",
       "Lazza": "post-blounge activities must be chosen",
+      "Guest": "Welcome, guest. Have a look around.",
       "Saulie": "sadly no 5-star-resorts on the cards for mr money-bags, hope that's okay"
     },
     "days": {},
@@ -235,6 +236,12 @@
           "label": "Yank",
           "value": 100
         }
+      ]
+    },
+    "Guest": {
+      "title": "Guest",
+      "stats": [
+        { "label": "Curiosity", "value": 7 }
       ]
     },
     "Saulie": {

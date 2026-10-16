@@ -4,7 +4,7 @@ import { IconCheck } from '../components/Icons';
 import { Cover } from '../components/PhotoCard';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
-import type { Genre, Item, Knockout, Person } from '../types';
+import type { Genre, Item, Knockout, Person, Player } from '../types';
 import './GenreVote.css';
 
 export const GENRES = genresJson.genres as Genre[];
@@ -16,9 +16,9 @@ export default function GenreVote({ k }: { k: Knockout & { genre: NonNullable<Kn
   const { me, store, items } = useApp();
   const genre = genreOf(k.genre.id);
   const byId = new Map(items.map(i => [i.id, i] as const));
-  const mineStored = (id: string) => (me && k.genre.tally[id]?.drop.includes(me) ? false : true);
+  const mineStored = (id: string) => (me && (k.genre.tally[id]?.drop as Player[] | undefined)?.includes(me) ? false : true);
   const [ticks, setTicks] = useState<Record<string, boolean>>(() => Object.fromEntries(k.a.map(id => [id, mineStored(id)])));
-  const [saved, setSaved] = useState<Record<string, boolean> | null>(() => (me && k.votes.a.includes(me) ? Object.fromEntries(k.a.map(id => [id, mineStored(id)])) : null));
+  const [saved, setSaved] = useState<Record<string, boolean> | null>(() => (me && (k.votes.a as Player[]).includes(me) ? Object.fromEntries(k.a.map(id => [id, mineStored(id)])) : null));
   const [busy, setBusy] = useState(false);
   if (!genre) return null;
 

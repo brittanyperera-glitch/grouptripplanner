@@ -4,7 +4,7 @@ import { VOTES_TO_RESOLVE } from '../lib/group';
 import { score, tierOf } from '../lib/ranking';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
-import type { GroupResult, Item, Knockout } from '../types';
+import type { GroupResult, Item, Knockout, Player } from '../types';
 import GenreVote, { genreOf } from './GenreVote';
 
 const SHOWN_NAMES = 2;
@@ -32,7 +32,7 @@ export default function Knockouts({ group }: { group: GroupResult }) {
   const side = (k: Knockout, s: 'a' | 'b') => {
     const ids = s === 'a' ? k.a : k.b;
     const first = byId[ids[0]];
-    const mine = me !== null && k.votes[s].includes(me);
+    const mine = me !== null && (k.votes[s] as Player[]).includes(me);
     return (
       <button className="pick tall scene" aria-pressed={mine} disabled={me === null} onClick={() => { if (me) void store.vote({ forkId: k.forkId, name: me, choice: s }); }}>
         {first && <Cover item={first} className="ph" named={false} />}
@@ -66,7 +66,7 @@ export default function Knockouts({ group }: { group: GroupResult }) {
         {(['a', 'b'] as const).map(s => {
           const ids = s === 'a' ? k.a : k.b;
           const first = byId[ids[0]];
-          const mine = me !== null && k.votes[s].includes(me);
+          const mine = me !== null && (k.votes[s] as Player[]).includes(me);
           return (
             <button key={s} className="pick tall list scene" aria-pressed={mine} disabled={me === null} onClick={() => { if (me) void store.vote({ forkId: k.forkId, name: me, choice: s }); }}>
               {first && <Cover item={first} className="ph" named={false} />}
@@ -100,7 +100,7 @@ export default function Knockouts({ group }: { group: GroupResult }) {
   // Once I have voted on every open question, say what we are waiting for: the votes that settle the leading one
   // (Brittany 2026-10-15: "say waiting on votes to move onto next knockout").
   // A keep vote needs every place settled, so the place furthest from three decides it.
-  const mine = (k: Knockout) => !!me && (k.votes.a.includes(me) || k.votes.b.includes(me));
+  const mine = (k: Knockout) => !!me && ((k.votes.a as Player[]).includes(me) || (k.votes.b as Player[]).includes(me));
   const short = (n: number) => VOTES_TO_RESOLVE - n;
   const need = (k: Knockout) => (k.genre
     ? Math.max(...k.a.map(id => { const t = k.genre!.tally[id]; return short(Math.max(t?.keep.length ?? 0, t?.drop.length ?? 0)); }))
