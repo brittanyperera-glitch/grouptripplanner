@@ -1,6 +1,8 @@
 {
   "welcome": "The Homecoming.",
   "welcomeSub": "Britt's solution to group chat debates",
+  "guestWelcome": "Pick your guest character",
+  "guestWelcomeSub": "Try the whole thing. Nothing you do is saved.",
   "howto": {
     "intro": [
       "You're about to see a series of some serious Sri Lanka classics.",

@@ -31,12 +31,16 @@ import Waiting from './screens/Waiting';
 import HowTo, { howtoWanted, markHowtoSeen } from './screens/HowTo';
 import type { HowToCopy } from './screens/HowTo';
 import copyData from './content/copy.json';
-import { AppProvider, ME_KEY, pickQuip, useApp } from './state';
-import { connectionMissingNow } from './store';
+import GuestRoot from './guest/GuestRoot';
+import Landing from './screens/Landing';
+import { AppProvider, liveItems, ME_KEY, pickQuip, useApp } from './state';
+import type { Copy } from './state';
+import { connectionMissingNow, supabaseConfigured } from './store';
+import { readTripKey } from './store/tripKey';
 import { clearLocalProgress } from './store/fresh';
 import { isLocalStoreKey } from './store/local';
 import { useGroupResult, usePersonPlan } from './workers/usePlan';
-import { AREAS, emptyRanking, PEOPLE } from './types';
+import { AREAS, emptyRanking, GUESTS, PEOPLE } from './types';
 import type { Item, Pace as PaceT, Player, Ranking, Response, Store, Tier } from './types';
 
 type Step = 'days' | 'pace' | 'howto' | 'rate' | 'tabs';
@@ -102,7 +106,7 @@ const START_OVER_ARMED_MS = 4000;
  * The header's one Menu: Change days or pace (while rating), Not you? and Start over, so the header stays one row
  * on a phone (Brittany 2026-10-15). Start over takes two taps; the first arms it for a few seconds, no browser dialog.
  */
-function HeaderMenu({ onProfile, onChange, onNotYou, onStartOver }: { onProfile(): void; onChange?(): void; onNotYou(): void; onStartOver(): void }) {
+function HeaderMenu({ onProfile, onChange, onNotYou, onStartOver, onFinish }: { onProfile(): void; onChange?(): void; onNotYou(): void; onStartOver(): void; onFinish?(): void }) {
   const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -129,6 +133,7 @@ function HeaderMenu({ onProfile, onChange, onNotYou, onStartOver }: { onProfile(
           <button onClick={pick(onProfile)}>{profileCopy.menuItem}</button>
           {onChange && <button onClick={pick(onChange)}>Change days or pace</button>}
           <button onClick={pick(onNotYou)}>Not you?</button>
+          {onFinish && <button onClick={pick(onFinish)}>Finish and reset</button>}
           <button className={armed ? 'armed' : undefined} onClick={armed ? pick(onStartOver) : () => setArmed(true)}>
             {armed ? 'Tap again to start over' : 'Start over'}
           </button>
@@ -139,7 +144,7 @@ function HeaderMenu({ onProfile, onChange, onNotYou, onStartOver }: { onProfile(
 }
 
 function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): void }) {
-  const { state, store, items, copy, clearMe } = useApp();
+  const { state, store, items, copy, clearMe, finishSandbox } = useApp();
   const [draft, setDraft] = useState<Response>(() => {
     const saved = state.responses[me];
     return saved ? structuredClone(saved) : blank(me);
@@ -192,7 +197,8 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const unrated = items
     .filter(i => !draft.rated.includes(i.id))
     .sort((a, b) => Number(b.id === undone) - Number(a.id === undone) || AREAS.indexOf(a.area) - AREAS.indexOf(b.area));
-  const locked = PEOPLE.every(p => (p === me ? draft.submitted : state.responses[p]?.submitted));
+  // Only the five trip members are in the group: a guest is never locked out by the seeded crew.
+  const locked = (PEOPLE as readonly string[]).includes(me) && PEOPLE.every(p => (p === me ? draft.submitted : state.responses[p]?.submitted));
   const shown: Step = locked ? 'tabs' : step;
 
   const changeDays = () => navigate('back', () => { setProfileOpen(false); setEditing(true); setStep('days'); });
@@ -296,7 +302,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
           <Avatar name={me} size={30} />
           <b>{me}</b>
         </button>
-        <HeaderMenu onProfile={openProfile} onChange={(shown === 'rate' || shown === 'tabs') && !locked ? changeDays : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} />
+        <HeaderMenu onProfile={openProfile} onChange={(shown === 'rate' || shown === 'tabs') && !locked ? changeDays : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} onFinish={finishSandbox} />
       </header>
       <div className={`screen${enter ? ` enter-${enter}` : ''}`} key={screenKey}>{content}</div>
       {shown === 'tabs' && !profileOpen && (
@@ -312,8 +318,23 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   );
 }
 
+// Intro slideshow: Brittany-approved places first; Name puts the most scenic first and keeps six.
+const coverItems = (items: Item[], copy: Copy) => [...items.filter(i => i.photo && copy.items[i.id]?.approved), ...items.filter(i => i.photo && !copy.items[i.id]?.approved)];
+
+type Entry = 'landing' | 'trip' | 'guest';
+
+function firstEntry(store?: Store): Entry {
+  const hash = window.location.hash;
+  if (hash === '#/guest') return 'guest';
+  if (hash === '#/landing') return 'landing';
+  if (store || !supabaseConfigured()) return 'trip';
+  let me: string | null = null;
+  try { me = localStorage.getItem(ME_KEY); } catch { /* storage unavailable: treated as a new visitor */ }
+  return !readTripKey() && !me ? 'landing' : 'trip';
+}
+
 function Shell() {
-  const { me, setMe, copy, error, retry, items, store } = useApp();
+  const { me, setMe, copy, error, retry, items, store, sandbox } = useApp();
   const [resets, setResets] = useState(0);
   // My row goes back to blank on the server (the choice log keeps its history), this browser forgets my
   // progress but not who I am or the mute switch, and Flow remounts on the first step.
@@ -328,15 +349,15 @@ function Shell() {
   const say = useCallback<Say>((text, kind = 'hi') => {
     if (text) setToast({ text, kind, id: ++seq.current });
   }, []);
-  // Intro slideshow: Brittany-approved places first; Name puts the most scenic first and keeps six.
-  const covers = [...items.filter(i => i.photo && copy.items[i.id]?.approved), ...items.filter(i => i.photo && !copy.items[i.id]?.approved)];
+  const covers = coverItems(items, copy);
   const clear = useCallback(() => setToast(null), []);
   return (
     <div className="app">
       {error && <button className="errbar" onClick={retry}>{error}. Tap to retry</button>}
       {me
         ? <Flow key={`${me}:${resets}`} me={me} say={say} onStartOver={startOver} />
-        : <Name welcome={copy.welcome} welcomeSub={copy.welcomeSub} covers={covers} players={copy.players} onPick={p => { setMe(p); say(pickQuip(copy.quips.name[p])); }} />}
+        : <Name welcome={sandbox ? copy.guestWelcome ?? copy.welcome : copy.welcome} welcomeSub={sandbox ? copy.guestWelcomeSub : copy.welcomeSub} covers={covers} players={copy.players}
+            roster={sandbox ? GUESTS : PEOPLE} onPick={p => { setMe(p); say(pickQuip(copy.quips.name[p])); }} />}
       {toast && <QuipBurst key={toast.id} text={toast.text} kind={toast.kind} onDone={clear} />}
     </div>
   );
@@ -344,7 +365,11 @@ function Shell() {
 
 export default function App({ store }: { store?: Store }) {
   useEffect(() => { document.title = 'The Homecoming'; }, []);
+  const [entry, setEntry] = useState<Entry>(() => firstEntry(store));
   if (wantsRaw(window.location.hash)) return <Raw store={store} />;
+  // The two hash switches skip the connection check: a guest never touches the shared database.
+  if (entry === 'landing') return <Landing covers={coverItems(liveItems({ responses: {}, suggestions: [], votes: [] }), copyData as unknown as Copy)} onTrip={() => setEntry('trip')} onGuest={() => setEntry('guest')} />;
+  if (entry === 'guest') return <GuestRoot onExit={() => setEntry('landing')}><Shell /></GuestRoot>;
   if (!store && connectionMissingNow()) {
     return (
       <div className="app">
