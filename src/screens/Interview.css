@@ -1,7 +1,28 @@
+.iv-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; }
+.iv-back { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--r-pill); color: var(--ink); }
+.iv-link { all: unset; box-sizing: border-box; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; padding: 0 8px; font-size: 14px; font-weight: 700; color: var(--teal-deep); text-decoration: underline; }
+.iv-back:focus-visible, .iv-link:focus-visible, .iv-night:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }
+.iv-confirm { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0 4px; font-size: 14px; }
+.iv-banner { padding: 10px 12px; border-radius: var(--r-btn); box-shadow: inset 0 0 0 1.5px var(--line-strong); font-size: 14px; font-weight: 700; }
+.iv-host { display: flex; align-items: center; gap: 12px; }
+.iv-host > :first-child { flex: 0 0 auto; }
+.iv-host-say { min-width: 0; }
+.iv-host-name { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.iv-quip { font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.iv-lock { display: flex; align-items: center; gap: 6px; margin-top: 0; }
 .iv-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.iv-chip { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: var(--r-pill); background: var(--chip); color: var(--ink); font-size: 14px; font-weight: 700; max-width: 100%; }
+.iv-chips.stack { flex-direction: column; align-items: flex-start; }
+.iv-opt { display: flex; flex-direction: column; gap: 6px; max-width: 100%; }
+.iv-chip { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 14px; border-radius: var(--r-pill); background: var(--chip); color: var(--ink); font-size: 14px; font-weight: 700; max-width: 100%; }
+.iv-chip-text { display: flex; flex-direction: column; min-width: 0; }
+.iv-hint { font-size: 12px; font-weight: 400; opacity: .8; }
 .iv-chip:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }
 .iv-chip[aria-pressed='true'] { background: var(--teal-deep); color: var(--on-teal); }
 .iv-chip.no[aria-pressed='true'] { background: transparent; color: var(--red-ink); box-shadow: inset 0 0 0 1.5px var(--red-ink); }
+.iv-nights { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-left: 14px; font-size: 13px; }
+.iv-night { all: unset; box-sizing: border-box; cursor: pointer; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; border-radius: var(--r-pill); background: var(--chip); font-size: 14px; font-weight: 700; }
+.iv-night[aria-pressed='true'] { background: var(--teal-deep); color: var(--on-teal); }
+.iv-sum-h { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.iv-list { margin: 4px 0 0; padding-left: 18px; font-size: 15px; }
 .iv-nav { display: flex; gap: 10px; margin-top: auto; }
-.iv-nav .cta { flex: 1 1 0; min-width: 0; }
+.iv-nav .iv-cta { flex: 1 1 0; min-width: 0; }

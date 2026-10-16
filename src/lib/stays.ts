@@ -1,5 +1,5 @@
 import { PEOPLE, isGuest, stayForkId } from '../types';
-import type { Area, CrewStays, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, StayType, Vote } from '../types';
+import type { Area, CrewStays, Hub, Leg, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, StayType, Vote } from '../types';
 import { VOTES_TO_RESOLVE } from './group';
 
 // A 'noway' on a budget band caps the price at that band's upper edge; 100plus caps nothing.
@@ -10,10 +10,29 @@ const TYPE_WORDS: Record<StayType, string> = { hostel: 'hostels', guesthouse: 'g
 
 // noPreference and skipped never speak, so their picks are ignored even if stale.
 const speaks = (p: PrefAnswer) => !p.noPreference && !p.skipped;
+// The quiz packs extra answers into picks as `nights:<type>:<n>` and `stretch:<level>`; they are not options, so the
+// generic readers skip keys with a colon and the dedicated readers below parse them.
 const noways = (prefs: PrefAnswer[], topic: PrefAnswer['topic']): string[] =>
-  prefs.filter(p => p.topic === topic && speaks(p)).flatMap(p => Object.entries(p.picks).filter(([, s]) => s === 'noway').map(([k]) => k));
+  prefs.filter(p => p.topic === topic && speaks(p)).flatMap(p => Object.entries(p.picks).filter(([k, s]) => s === 'noway' && !k.includes(':')).map(([k]) => k));
 const happies = (prefs: PrefAnswer[], topic: PrefAnswer['topic']): string[] =>
-  prefs.filter(p => p.topic === topic && speaks(p)).flatMap(p => Object.entries(p.picks).filter(([, s]) => s === 'happy').map(([k]) => k));
+  prefs.filter(p => p.topic === topic && speaks(p)).flatMap(p => Object.entries(p.picks).filter(([k, s]) => s === 'happy' && !k.includes(':')).map(([k]) => k));
+const rawKeys = (prefs: PrefAnswer[], topic: PrefAnswer['topic']): string[] =>
+  prefs.filter(p => p.topic === topic && speaks(p)).flatMap(p => Object.keys(p.picks));
+
+const STRETCH_GBP: Record<string, number> = { same: 0, plus20: 20, plus50: 50, anything: Infinity };
+
+/** Most nights this person wants per stay type, from the quiz's `nights:<type>:<n>` picks. */
+export function maxNightsOf(prefs: PrefAnswer[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const k of rawKeys(prefs, 'stayType')) {
+    const m = /^nights:([a-z]+):(\d+)$/.exec(k);
+    if (m) out[m[1]] = Number(m[2]);
+  }
+  return out;
+}
+
+/** The longest-journey answer ('under2h' | '2to3h' | '3to4h' | 'bigday'), for journeyFlags limits. */
+export const journeyLimitOf = (prefs: PrefAnswer[]): string | undefined => happies(prefs, 'journey')[0];
 
 /** Keys like `rooms:dorm`, `stayType:hostel`, `budget:under30`. */
 export function hardNos(prefs: PrefAnswer[]): Set<string> {
@@ -22,17 +41,46 @@ export function hardNos(prefs: PrefAnswer[]): Set<string> {
   return out;
 }
 
-const budgetCap = (prefs: PrefAnswer[]) => Math.min(Infinity, ...noways(prefs, 'budget').map(k => BUDGET_CAP_GBP[k] ?? Infinity));
+// The quiz asks a band (a happy pick) and how far they would stretch; the price they can take is band + stretch.
+// A 'noway' band still caps as before.
+export const budgetCap = (prefs: PrefAnswer[]): number => {
+  const band = happies(prefs, 'budget')[0];
+  const stretchKey = rawKeys(prefs, 'budget').find(k => k.startsWith('stretch:'))?.slice('stretch:'.length);
+  const fromBand = band === undefined ? Infinity : (BUDGET_CAP_GBP[band] ?? Infinity) + (STRETCH_GBP[stretchKey ?? 'same'] ?? 0);
+  return Math.min(fromBand, ...noways(prefs, 'budget').map(k => BUDGET_CAP_GBP[k] ?? Infinity));
+};
 
-export function eligible(stay: PlaceSuggestion, crew: CrewStays[]): { ok: boolean; reasons: string[] } {
-  const reasons: string[] = [];
+export interface StayWarnings { count: number; messages: string[] }
+
+const people = (n: number) => (n === 1 ? '1 person' : `${n} people`);
+
+/** Dealbreakers warn, never exclude, and counts only: no message may identify who objected. */
+export function warnings(stay: PlaceSuggestion, crew: CrewStays[]): StayWarnings {
+  let type = 0, room = 0, budget = 0;
   for (const c of crew) {
-    if (stay.stayType && noways(c.prefs, 'stayType').includes(stay.stayType)) reasons.push(`${c.name} won't do ${TYPE_WORDS[stay.stayType]}`);
-    if (stay.rooms && noways(c.prefs, 'rooms').includes(stay.rooms)) reasons.push(`${c.name} won't do ${ROOM_WORDS[stay.rooms]}`);
-    const cap = budgetCap(c.prefs);
-    if (stay.priceGbp !== undefined && stay.priceGbp > cap) reasons.push(`${c.name} won't pay over £${cap}`);
+    if (stay.stayType && noways(c.prefs, 'stayType').includes(stay.stayType)) type++;
+    if (stay.rooms && noways(c.prefs, 'rooms').includes(stay.rooms)) room++;
+    if (stay.priceGbp !== undefined && stay.priceGbp > budgetCap(c.prefs)) budget++;
   }
-  return { ok: reasons.length === 0, reasons };
+  const messages: string[] = [];
+  if (type) messages.push(`${people(type)} won't do ${TYPE_WORDS[stay.stayType!]}`);
+  if (room) messages.push(`${people(room)} won't do ${ROOM_WORDS[stay.rooms!]}`);
+  if (budget) messages.push(budget === 1 ? "1 person's budget is under this" : `${budget} people's budgets are under this`);
+  return { count: type + room + budget, messages };
+}
+
+const TYPE_SINGULAR: Record<StayType, string> = { hostel: 'a hostel', guesthouse: 'a guesthouse', boutique: 'a boutique stay', hotel: 'a hotel', villa: 'a villa', other: 'another kind of stay' };
+
+/** maxNightsByPerson is person -> stay type -> most nights they want there; nights over it warn. */
+export function nightsWarnings(stay: PlaceSuggestion, nightsInArea: number, maxNightsByPerson: Record<string, Record<string, number>>): StayWarnings {
+  if (!stay.stayType) return { count: 0, messages: [] };
+  const byLimit = new Map<number, number>();
+  for (const limits of Object.values(maxNightsByPerson)) {
+    const max = limits[stay.stayType];
+    if (max !== undefined && nightsInArea > max) byLimit.set(max, (byLimit.get(max) ?? 0) + 1);
+  }
+  const messages = [...byLimit].sort((x, y) => x[0] - y[0]).map(([max, n]) => `${people(n)} ${n === 1 ? 'wants' : 'want'} max ${max} ${max === 1 ? 'night' : 'nights'} in ${TYPE_SINGULAR[stay.stayType!]}`);
+  return { count: [...byLimit.values()].reduce((a, b) => a + b, 0), messages };
 }
 
 /** The five crew, plus the guest using the sandbox. */
@@ -77,20 +125,29 @@ export function rankPoints(suggestions: PlaceSuggestion[], ranks: RanksByPerson,
     .sort((a, b) => b.points - a.points || (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : a.id < b.id ? -1 : 1));
 }
 
-export type Finalists = { empty: true } | { auto: string } | { finalists: [string, string]; tieBreak: string | null };
+// `warnings` holds only finalists that carry at least one; absent means none do.
+type Warned = { warnings?: Record<string, StayWarnings> };
+export type Finalists = { empty: true } | ({ auto: string } & Warned) | ({ finalists: [string, string]; tieBreak: string | null } & Warned);
 
 export function finalists(suggestions: PlaceSuggestion[], ranks: RanksByPerson, area: Area, crew: CrewStays[]): Finalists {
-  const ok = suggestions.filter(s => eligible(s, crew).ok);
-  const scored = rankPoints(ok, ranks, area);
+  const scored = rankPoints(suggestions, ranks, area);
+  const attach = (ids: string[]): Warned => {
+    const w: Record<string, StayWarnings> = {};
+    for (const id of ids) {
+      const found = warnings(suggestions.find(s => s.id === id)!, crew);
+      if (found.count > 0) w[id] = found;
+    }
+    return Object.keys(w).length ? { warnings: w } : {};
+  };
   if (scored.length === 0) return { empty: true };
-  if (scored.length === 1) return { auto: scored[0].id };
+  if (scored.length === 1) return { auto: scored[0].id, ...attach([scored[0].id]) };
   if (scored.length === 2) {
     const [a, b] = [...scored].sort((x, y) => (x.createdAt < y.createdAt ? -1 : x.createdAt > y.createdAt ? 1 : x.id < y.id ? -1 : 1));
-    return { finalists: [a.id, b.id], tieBreak: null };
+    return { finalists: [a.id, b.id], tieBreak: null, ...attach([a.id, b.id]) };
   }
   const [a, b, c] = scored;
   const tieBreak = b.points === c.points ? `Tied on ${b.points} points, "${b.title}" goes through because it was suggested first` : null;
-  return { finalists: [a.id, b.id], tieBreak };
+  return { finalists: [a.id, b.id], tieBreak, ...attach([a.id, b.id]) };
 }
 
 export function stayResult(area: Area, pair: [string, string], votes: Vote[], participants: Player[]): { winner: string | null; a: Player[]; b: Player[] } {
@@ -135,4 +192,27 @@ export function groupSummary(crew: CrewStays[]): GroupSummary {
     .filter(k => (happy[k]?.length ?? 0) * 2 > crew.length)
     .map(k => ({ key: k, no: nos[k], happy: happy[k] }));
   return { total: crew.length, happy, hardNos: nos, conflicts };
+}
+
+/** Nights spent per area: each day counts once, travel days (null area) count nowhere. */
+export function nightsByArea(plan: Plan): Partial<Record<Area, number>> {
+  const out: Partial<Record<Area, number>> = {};
+  for (const d of plan.days) if (d.area !== null) out[d.area] = (out[d.area] ?? 0) + 1;
+  return out;
+}
+
+const DRIVE_CAP_H: Record<string, number> = { under2h: 2, '2to3h': 3, '3to4h': 4 };
+
+/** Drives longer than someone's cap, as counts of people; bigday and unknown answers cap nothing. */
+export function journeyFlags(plan: Plan, legs: Leg[], limits: Partial<Record<Player, string>>): { from: Hub; to: Hub; hours: number; over: number }[] {
+  const caps = Object.values(limits).map(a => DRIVE_CAP_H[a ?? ''] ?? Infinity);
+  const out: { from: Hub; to: Hub; hours: number; over: number }[] = [];
+  for (let i = 0; i + 1 < plan.route.length; i++) {
+    const from = plan.route[i], to = plan.route[i + 1];
+    const leg = legs.find(l => (l.a === from && l.b === to) || (l.a === to && l.b === from));
+    if (!leg) continue;
+    const over = caps.filter(c => leg.hours > c).length;
+    if (over > 0) out.push({ from, to, hours: leg.hours, over });
+  }
+  return out;
 }

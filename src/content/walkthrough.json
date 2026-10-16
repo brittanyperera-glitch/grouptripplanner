@@ -1,0 +1,51 @@
+{
+ "open": "Greetings, {name}. It seems you have some {travel admin} to do.",
+ "close": "That's the lot, {name}. Off you go.",
+ "skip": "Skip, I'll do it later",
+ "next": "Next",
+ "done": "Done",
+ "items": {
+  "votes": {
+   "line": "The group awaits your verdict on {3 head-to-heads}. Choose wisely.",
+   "button": "Vote now"
+  },
+  "final": {
+   "line": "Kindly present your {final list}. The itinerary is waiting on you.",
+   "button": "Save my list"
+  },
+  "rate": {
+   "line": "There are still {12 places} you have not judged. Rude.",
+   "button": "Rate them",
+   "lineOne": "There is still {1 place} you have not judged. Rude."
+  },
+  "approve": {
+   "line": "{2 ideas} are awaiting your royal approval.",
+   "button": "Review",
+   "lineOne": "{1 idea} is awaiting your royal approval."
+  },
+  "awards": {
+   "line": "The {awards} are in. Come and see who embarrassed themselves.",
+   "button": "Show me"
+  },
+  "stayQuiz": {
+   "line": "Before you pick a bed, we need your {travel profile}. Three minutes.",
+   "button": "Start the quiz"
+  },
+  "stayAdd": {
+   "line": "Time to put your {stays} on the table. Or none, we won't judge.",
+   "button": "Add a stay"
+  },
+  "stayLock": {
+   "line": "Happy with your list? {Lock in} your stays so the voting can start.",
+   "button": "Lock in"
+  },
+  "stayRank": {
+   "line": "Pick your {top 2} stays in each place.",
+   "button": "Rank them"
+  },
+  "stayVote": {
+   "line": "It's a head to head for the {stays}. Pick a side.",
+   "button": "Vote"
+  }
+ }
+}

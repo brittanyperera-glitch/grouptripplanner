@@ -1,0 +1,9 @@
+/* Welcome-back walkthrough. Layout and big type come from HowTo.css (.hw, .hw-top, .hw-stage, .hw-sentence); this adds only the accent word. */
+.wt-accent { color: var(--red-ink); }
+.wt-stage { justify-content: center; }
+.wt-actions { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+.wt-actions .wt-cta { flex: none; }
+.wt-actions .wt-link { align-self: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .wt-screen { animation: rise var(--dur-slow) var(--ease) backwards; }
+}

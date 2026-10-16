@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { PEOPLE, stayForkId } from '../types';
-import type { Area, CrewStays, Day, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, Vote } from '../types';
+import type { Area, CrewStays, Day, Hub, Leg, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, Vote } from '../types';
 import { VOTES_TO_RESOLVE } from './group';
-import { BUDGET_CAP_GBP, eligible, finalStay, finalists, groupSummary, hardNos, rankPoints, scoutAssignments, stayAreas, stayParticipants, stayResult, voteOpen } from './stays';
+import legsJson from '../data/legs.json';
+import { BUDGET_CAP_GBP, finalStay, finalists, groupSummary, hardNos, journeyFlags, nightsByArea, nightsWarnings, rankPoints, scoutAssignments, stayAreas, stayParticipants, stayResult, voteOpen, warnings } from './stays';
 
 const AREAS: Area[] = ['Colombo', 'Ella', 'Kitulgala', 'Hill country'];
 const TYPES = ['hostel', 'guesthouse', 'boutique', 'hotel', 'villa', 'other'] as const;
@@ -43,41 +44,64 @@ function randomRanks(r: () => number, stays: PlaceSuggestion[]) {
 }
 const idsOf = (f: ReturnType<typeof finalists>): string[] => ('finalists' in f ? f.finalists : 'auto' in f ? [f.auto] : []);
 
-describe('hardNos and eligible', () => {
-  it('maps stay type, rooms and budget to a group exclusion naming who and what', () => {
+describe('hardNos and warnings', () => {
+  it('maps stay type, rooms and budget to anonymous counted warnings', () => {
     const crew = [person('Lazza', [pref('rooms', { dorm: 'noway' })]), person('Alex', [pref('stayType', { hostel: 'noway' })]), person('Antek', [pref('budget', { '30to60': 'noway' })])];
-    expect(eligible(stay('s1', { rooms: 'dorm' }), crew)).toEqual({ ok: false, reasons: ["Lazza won't do dorms"] });
-    expect(eligible(stay('s2', { stayType: 'hostel' }), crew).reasons).toEqual(["Alex won't do hostels"]);
-    expect(eligible(stay('s3', { priceGbp: 61 }), crew).reasons).toEqual(["Antek won't pay over £60"]);
-    expect(eligible(stay('s4', { priceGbp: 60, rooms: 'private', stayType: 'villa' }), crew).ok).toBe(true);
+    expect(warnings(stay('s1', { rooms: 'dorm' }), crew)).toEqual({ count: 1, messages: ["1 person won't do dorms"] });
+    expect(warnings(stay('s2', { stayType: 'hostel' }), crew).messages).toEqual(["1 person won't do hostels"]);
+    expect(warnings(stay('s3', { priceGbp: 61 }), crew).messages).toEqual(["1 person's budget is under this"]);
+    expect(warnings(stay('s4', { priceGbp: 60, rooms: 'private', stayType: 'villa' }), crew).count).toBe(0);
+    const two = [...crew, person('Saulie', [pref('stayType', { hostel: 'noway' })])];
+    expect(warnings(stay('s5', { stayType: 'hostel' }), two)).toEqual({ count: 2, messages: ["2 people won't do hostels"] });
   });
   it('a hard NO applies only to the decision it concerns', () => {
     const crew = [person('Lazza', [pref('rooms', { dorm: 'noway' })])];
-    expect(eligible(stay('s1', { stayType: 'hostel', rooms: 'private', priceGbp: 500 }), crew).ok).toBe(true);
-    expect(eligible(stay('s2'), crew).ok).toBe(true);
+    expect(warnings(stay('s1', { stayType: 'hostel', rooms: 'private', priceGbp: 500 }), crew).count).toBe(0);
+    expect(warnings(stay('s2'), crew).count).toBe(0);
   });
   it('budget bands map to caps and 100plus excludes nothing', () => {
     expect(BUDGET_CAP_GBP).toEqual({ under30: 30, '30to60': 60, '60to100': 100, '100plus': Infinity });
-    expect(eligible(stay('s1', { priceGbp: 9999 }), [person('Alex', [pref('budget', { '100plus': 'noway' })])]).ok).toBe(true);
+    expect(warnings(stay('s1', { priceGbp: 9999 }), [person('Alex', [pref('budget', { '100plus': 'noway' })])]).count).toBe(0);
   });
   it('happy picks are not hard NOs', () => {
     expect([...hardNos([pref('stayType', { hostel: 'happy', villa: 'noway' })])]).toEqual(['stayType:villa']);
   });
-  it('property (a): an ineligible stay is never a finalist', () => {
+  // Deliberate change (2026-10-16 interview): dealbreakers warn instead of excluding, so a warned stay may be a finalist.
+  it('property (a): a warned stay may be a finalist and its warning count is always attached', () => {
     const r = rng(11);
+    let warnedFinalists = 0;
     for (let i = 0; i < 200; i++) {
       const crew = randomCrew(r, true), stays = randomStays(r), ranks = randomRanks(r, stays);
-      const bad = new Set(stays.filter(s => !eligible(s, crew).ok).map(s => s.id));
-      // A merged duplicate may be represented by a different id, so check eligibility of the representative.
-      for (const id of idsOf(finalists(stays, ranks, 'Ella', crew))) expect(bad.has(id)).toBe(false);
+      const f = finalists(stays, ranks, 'Ella', crew);
+      const w = 'empty' in f ? undefined : f.warnings;
+      for (const id of idsOf(f)) {
+        const expected = warnings(stays.find(s => s.id === id)!, crew);
+        expect(w?.[id]?.count ?? 0).toBe(expected.count);
+        if (expected.count > 0) { warnedFinalists++; expect(w![id]).toEqual(expected); }
+      }
     }
+    expect(warnedFinalists).toBeGreaterThan(0);
+  });
+  it('no message ever names a person', () => {
+    const r = rng(77);
+    const names = [...PEOPLE, 'Tuktuk', 'Aunty', 'Groom'];
+    let seen = 0;
+    for (let i = 0; i < 200; i++) {
+      const crew = randomCrew(r, true);
+      const maxes = Object.fromEntries(PEOPLE.map(n => [n, { hostel: 1, guesthouse: 2 }]));
+      for (const s of randomStays(r)) for (const m of [...warnings(s, crew).messages, ...nightsWarnings(s, 5, maxes).messages]) {
+        seen++;
+        for (const n of names) expect(m).not.toContain(n);
+      }
+    }
+    expect(seen).toBeGreaterThan(0);
   });
   it('property (b): noPreference and skipped never change eligibility or points', () => {
     const r = rng(22);
     for (let i = 0; i < 200; i++) {
       const crew = randomCrew(r, false), stays = randomStays(r), ranks = randomRanks(r, stays);
       const muted = crew.map(c => ({ ...c, prefs: [...c.prefs, pref('stayType', Object.fromEntries(TYPES.map(t => [t, 'noway' as const])), { noPreference: true }), pref('rooms', Object.fromEntries(ROOMS.map(t => [t, 'noway' as const])), { skipped: true })] }));
-      for (const s of stays) expect(eligible(s, muted)).toEqual(eligible(s, crew));
+      for (const s of stays) expect(warnings(s, muted)).toEqual(warnings(s, crew));
       expect(finalists(stays, ranks, 'Ella', muted)).toEqual(finalists(stays, ranks, 'Ella', crew));
     }
   });
@@ -129,13 +153,13 @@ describe('ranking and finalists', () => {
     const stays = [stay('s1', { title: 'X' }), stay('s2', { title: 'x' })];
     expect(rankPoints(stays, ranks({ Alex: { first: 's1', second: 's2' } }), 'Ella')[0].points).toBe(2);
   });
-  it('0 stays is empty, 1 is auto, 2 skip ranking, ineligible stays do not count', () => {
+  it('0 stays is empty, 1 is auto, 2 skip ranking, warned stays still count', () => {
     expect(finalists([], {}, 'Ella', crew)).toEqual({ empty: true });
     expect(finalists([stay('s1')], {}, 'Ella', crew)).toEqual({ auto: 's1' });
     expect(finalists([stay('s1'), stay('s2')], {}, 'Ella', crew)).toEqual({ finalists: ['s1', 's2'], tieBreak: null });
     const nodorm = [person('Lazza', [pref('rooms', { dorm: 'noway' })])];
-    expect(finalists([stay('s1', { rooms: 'dorm' }), stay('s2')], {}, 'Ella', nodorm)).toEqual({ auto: 's2' });
-    expect(finalists([stay('s1', { rooms: 'dorm' })], {}, 'Ella', nodorm)).toEqual({ empty: true });
+    expect(finalists([stay('s1', { rooms: 'dorm' }), stay('s2')], {}, 'Ella', nodorm)).toEqual({ finalists: ['s1', 's2'], tieBreak: null, warnings: { s1: { count: 1, messages: ["1 person won't do dorms"] } } });
+    expect(finalists([stay('s1', { rooms: 'dorm' })], {}, 'Ella', nodorm)).toEqual({ auto: 's1', warnings: { s1: { count: 1, messages: ["1 person won't do dorms"] } } });
   });
   it('a tie for the second finalist is broken by earliest createdAt then id, and said out loud', () => {
     const stays = [stay('s1'), stay('s2'), stay('s3'), stay('s4', { createdAt: stay('s3').createdAt })];
@@ -151,7 +175,7 @@ describe('ranking and finalists', () => {
       const stays = randomStays(r), rk = randomRanks(r, stays), c = randomCrew(r, true);
       const f = finalists(stays, rk, 'Ella', c);
       expect(finalists([...stays].reverse(), rk, 'Ella', c)).toEqual(f);
-      const pts = rankPoints(stays.filter(s => eligible(s, c).ok), rk, 'Ella');
+      const pts = rankPoints(stays, rk, 'Ella');
       if (pts.length >= 3 && 'finalists' in f) {
         const top = pts.slice(0, 2).map(p => p.id).sort();
         expect([...f.finalists].sort()).toEqual(top);
@@ -235,5 +259,49 @@ describe('groupSummary', () => {
   it('no conflict when the NO is against something only a minority likes', () => {
     const crew = [person('Alex', [pref('rooms', { dorm: 'happy' })]), person('Lazza', [pref('rooms', { dorm: 'noway' })]), person('Antek'), person('Saulie')];
     expect(groupSummary(crew).conflicts).toEqual([]);
+  });
+});
+
+describe('nights and journeys', () => {
+  const day = (n: number, area: Area | null): Day => ({ n, area, entries: [], spare: 0, rainSlack: false });
+  it('nightsByArea counts each day once, skips null travel days, and sums a repeated area', () => {
+    const plan = { days: [day(1, 'Colombo'), day(2, null), day(3, 'Ella'), day(4, 'Ella'), day(5, null), day(6, 'Colombo')] } as Plan;
+    expect(nightsByArea(plan)).toEqual({ Colombo: 2, Ella: 2 });
+    expect(nightsByArea({ days: [day(1, null)] } as Plan)).toEqual({});
+  });
+  it('nightsWarnings counts people whose max for this stay type is exceeded, anonymously', () => {
+    const maxes = { Alex: { hostel: 2 }, Lazza: { hostel: 3, hotel: 1 }, Antek: { hostel: 2 } };
+    expect(nightsWarnings(stay('s1', { stayType: 'hostel' }), 3, maxes)).toEqual({ count: 2, messages: ['2 people want max 2 nights in a hostel'] });
+    expect(nightsWarnings(stay('s1', { stayType: 'hostel' }), 4, maxes)).toEqual({ count: 3, messages: ['2 people want max 2 nights in a hostel', '1 person wants max 3 nights in a hostel'] });
+    expect(nightsWarnings(stay('s1', { stayType: 'hostel' }), 2, maxes).count).toBe(0);
+    expect(nightsWarnings(stay('s1'), 9, maxes).count).toBe(0);
+    expect(nightsWarnings(stay('s1', { stayType: 'villa' }), 9, maxes).count).toBe(0);
+  });
+  const legs = legsJson as Leg[];
+  const everyone = (a: string) => Object.fromEntries(PEOPLE.map(p => [p, a])) as Record<Player, string>;
+  const route: Hub[] = ['AIR', 'Colombo', 'Sigiriya', 'Kandy', 'Nuwara Eliya', 'Ella', 'Weligama', 'AIR'];
+  const planOf = (r: Hub[]) => ({ route: r } as Plan);
+  it('flags exactly the real legs on the route over 2 hours when everyone is under2h', () => {
+    const raw = legsJson as { a: string; b: string; hours: number }[];
+    let expected = 0;
+    for (let i = 0; i + 1 < route.length; i++) {
+      const hit = raw.find(l => (l.a === route[i] && l.b === route[i + 1]) || (l.b === route[i] && l.a === route[i + 1]));
+      expect(hit).toBeDefined();
+      if (hit!.hours > 2) expected++;
+    }
+    expect(expected).toBeGreaterThan(0);
+    const flags = journeyFlags(planOf(route), legs, everyone('under2h'));
+    expect(flags).toHaveLength(expected);
+    for (const f of flags) expect(f.over).toBe(5);
+  });
+  it('counts people per leg, reads legs undirected, and ignores bigday', () => {
+    const limits = { Brittany: 'under2h', Alex: '3to4h', Antek: 'bigday', Lazza: '2to3h', Saulie: '3to4h' } as Record<Player, string>;
+    const flags = journeyFlags(planOf(['Sigiriya', 'Colombo', 'Ella', 'Sigiriya']), legs, limits);
+    expect(flags).toEqual([
+      { from: 'Sigiriya', to: 'Colombo', hours: 4.33, over: 4 },
+      { from: 'Ella', to: 'Sigiriya', hours: 4.43, over: 4 },
+    ]);
+    expect(journeyFlags(planOf(route), legs, everyone('bigday'))).toEqual([]);
+    expect(JSON.stringify(flags)).not.toMatch(/Brittany|Alex|Antek|Lazza|Saulie/);
   });
 });
