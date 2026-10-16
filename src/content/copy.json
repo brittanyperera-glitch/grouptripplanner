@@ -243,25 +243,25 @@
     "Tuktuk": {
       "title": "The local legend",
       "stats": [
-        { "label": "Charm", "value": 7 },
-        { "label": "Local knowledge", "value": 7 },
-        { "label": "Energy", "value": 7 }
+        { "label": "Road knowledge", "value": 10 },
+        { "label": "Fare negotiation", "value": 9 },
+        { "label": "Shortcut honesty", "value": 2 }
       ]
     },
     "Aunty": {
       "title": "The TownCCTV",
       "stats": [
-        { "label": "Charm", "value": 7 },
-        { "label": "Local knowledge", "value": 7 },
-        { "label": "Energy", "value": 7 }
+        { "label": "Knows your business", "value": 10 },
+        { "label": "Feeding power", "value": 9 },
+        { "label": "Poker face", "value": 1 }
       ]
     },
     "Groom": {
       "title": "The bachelor",
       "stats": [
-        { "label": "Charm", "value": 7 },
-        { "label": "Local knowledge", "value": 7 },
-        { "label": "Energy", "value": 7 }
+        { "label": "Main character energy", "value": 10 },
+        { "label": "Sleep", "value": 2 },
+        { "label": "Chill", "value": 3 }
       ]
     },
     "Saulie": {
