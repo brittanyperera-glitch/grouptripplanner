@@ -77,6 +77,7 @@ export const COPY = {
   anonymous: 'anonymous',
   next: 'Next',
   done: 'Done',
+  close: 'Close',
   back: 'Back',
   startAgain: 'Start again',
   confirmAsk: 'Clear all your answers?',

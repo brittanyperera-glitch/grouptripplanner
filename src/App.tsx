@@ -416,7 +416,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const enter = cssEnter() ? lastNav() : null;
   if (itemsOpen && shown === 'tabs') content = <OpenItems items={todo} onGo={goItem} onBack={closeItems} />;
   if (walking) content = <Walkthrough name={me} items={todo} onGo={goItem} onDone={finishWalk} />;
-  if (quizOpen && shown === 'tabs') content = <Interview me={me} initial={state.stays?.crew[me]?.prefs} onSave={prefs => { void store.saveCrewStays(me, { prefs, quizDone: true }); }} onDone={() => setQuizOpen(false)} />;
+  if (quizOpen && shown === 'tabs') content = <Interview me={me} initial={state.stays?.crew[me]?.prefs} onSave={prefs => { void store.saveCrewStays(me, { prefs, quizDone: prefs.some(a => !a.skipped && (a.noPreference || Object.keys(a.picks).length > 0)) }); }} onDone={() => setQuizOpen(false)} onClose={() => setQuizOpen(false)} />;
   if (profileOpen) content = <Profile name={me} players={copy.players} onBack={closeProfile} onQuiz={() => { setProfileOpen(false); setQuizOpen(true); }} />;
   const screenKey = walking ? 'walkthrough' : quizOpen && shown === 'tabs' ? 'quiz' : profileOpen ? 'profile' : itemsOpen && shown === 'tabs' ? 'items' : shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
   useLayoutEffect(() => {
@@ -436,7 +436,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
           todo={todo.length} onItems={shown === 'tabs' ? () => { if (profileOpen) setProfileOpen(false); openItemsPage(); } : undefined} onAwards={shown === 'tabs' && awardList.length > 0 ? () => setAwardsOpen(true) : undefined} />
       </header>
       <div className={`screen${enter ? ` enter-${enter}` : ''}`} key={screenKey}>{content}</div>
-      {shown === 'tabs' && !profileOpen && !walking && (
+      {shown === 'tabs' && !profileOpen && !walking && !quizOpen && !itemsOpen && (
         <nav className="tabs" role="tablist" aria-label="Sections">
           {TABS.map(t => {
             const Icon = TAB_ICON[t];
