@@ -7,7 +7,7 @@ import { CreditButton } from '../components/PhotoCard';
 import type { Copy } from '../state';
 import './Lockin.css';
 import { PEOPLE } from '../types';
-import type { Item, Person } from '../types';
+import type { Item, Player } from '../types';
 
 const SLIDE_MS = 6000;
 // Lock-in: ease in, stay readable, ease out, then continue.
@@ -57,8 +57,8 @@ function FlashName({ name }: { name: string }) {
   return <span ref={ref} className="flash-name">{name}</span>;
 }
 
-export default function Name({ welcome, welcomeSub, covers = [], players = {}, onPick }: {
-  welcome: string; welcomeSub?: string; covers?: Item[]; players?: Players; onPick: (p: Person) => void;
+export default function Name({ welcome, welcomeSub, covers = [], players = {}, roster = PEOPLE, onPick }: {
+  welcome: string; welcomeSub?: string; covers?: Item[]; players?: Players; roster?: readonly Player[]; onPick: (p: Player) => void;
 }) {
   const [mode] = useState(motion);
   const still = mode === 'still';
@@ -67,7 +67,7 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
   const [slide, setSlide] = useState(0);
   const [broken, setBroken] = useState<Set<string>>(new Set());
   const [idx, setIdx] = useState(0);
-  const [flash, setFlash] = useState<Person | null>(null);
+  const [flash, setFlash] = useState<Player | null>(null);
   const lockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (lockTimer.current) clearTimeout(lockTimer.current); }, []);
   const [selfie, setSelfie] = useState(false);
@@ -75,7 +75,7 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
   const shots = covers.filter(c => c.photo && !broken.has(c.id))
     .map((c, i) => ({ c, i })).sort((a, b) => scenicRank(a.c.id) - scenicRank(b.c.id) || a.i - b.i)
     .slice(0, 6).map(x => x.c);
-  const chosen = PEOPLE[idx];
+  const chosen = roster[idx];
 
   useEffect(() => {
     if (mode !== 'full' || shots.length < 2 || page !== 'intro') return;
@@ -90,7 +90,7 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
     el.scrollTo?.({ left: item.offsetLeft - (el.clientWidth - item.offsetWidth) / 2, behavior: bobOk ? 'smooth' : 'auto' });
   }, [bobOk]);
   const goTo = useCallback((i: number) => {
-    const n = Math.max(0, Math.min(PEOPLE.length - 1, i));
+    const n = Math.max(0, Math.min(roster.length - 1, i));
     setIdx(n);
     centre(n);
   }, [centre]);
@@ -121,20 +121,20 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
   };
 
   // Under tests one tap picks and continues; people centre a character first, then pick with Select.
-  const go = (p: Person) => {
+  const go = (p: Player) => {
     if (flash) return;
     if (still) { onPick(p); return; }
     setFlash(p);
     lockTimer.current = setTimeout(() => finish(p), FLASH.in + FLASH.hold + FLASH.out);
   };
   // The selfie lock-in continues on its own, or straight away on a tap; onPick fires once either way.
-  const finish = (p: Person) => {
+  const finish = (p: Player) => {
     if (lockTimer.current === null) return;
     clearTimeout(lockTimer.current);
     lockTimer.current = null;
     onPick(p);
   };
-  const tap = (p: Person, i: number) => {
+  const tap = (p: Player, i: number) => {
     if (still || i === idx) go(p);
     else goTo(i);
   };
@@ -179,14 +179,14 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, o
           <div className="carousel-wrap">
             <button className="nav prev" aria-label="Previous character" disabled={idx === 0} onClick={() => goTo(idx - 1)}><IconLeft size={20} /></button>
             <div className="carousel" ref={lane} onScroll={onScroll}>
-              {PEOPLE.map((n, i) => (
+              {roster.map((n, i) => (
                 <button key={n} className={`char${i === idx ? ' on' : ''}`} aria-label={n} aria-current={i === idx} onClick={() => tap(n, i)}
                   style={{ '--bop-delay': `${(i * 0.31).toFixed(2)}s` } as CSSProperties}>
                   <Avatar name={n} crop="stage" size={220} bob={bobOk} />
                 </button>
               ))}
             </div>
-            <button className="nav next" aria-label="Next character" disabled={idx === PEOPLE.length - 1} onClick={() => goTo(idx + 1)}><IconRight size={20} /></button>
+            <button className="nav next" aria-label="Next character" disabled={idx === roster.length - 1} onClick={() => goTo(idx + 1)}><IconRight size={20} /></button>
           </div>
           <div className="player-card" key={chosen}>
             <div className="pc-id">

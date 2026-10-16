@@ -149,3 +149,35 @@ describe('selfie', () => {
     expect(screen.getByRole('img', { name: 'Alex selfie' })).toHaveAttribute('src', '/img/players/alex-selfie.png');
   });
 });
+
+describe('roster', () => {
+  const roster = PEOPLE.slice(0, 2);
+  const openWith = async (onPick = vi.fn(), r?: readonly (typeof PEOPLE)[number][]) => {
+    setMotion(true);
+    const user = userEvent.setup();
+    render(<Name welcome="The Homecoming." players={players} roster={r} onPick={onPick} />);
+    await user.click(screen.getByRole('button', { name: 'Choose your character' }));
+    return { user, onPick };
+  };
+
+  it('shows only the roster names and none of the other trip names', async () => {
+    await openWith(vi.fn(), roster);
+    for (const p of roster) expect(screen.getByRole('button', { name: p })).toBeInTheDocument();
+    for (const p of PEOPLE.slice(2)) expect(screen.queryByRole('button', { name: p })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next character' })).not.toBeDisabled();
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(screen.getByRole('button', { name: 'Next character' })).toBeDisabled();
+  });
+
+  it('picking one calls onPick with that exact name', async () => {
+    const flipped = [roster[1], roster[0]];
+    const { user, onPick } = await openWith(vi.fn(), flipped);
+    await user.click(screen.getByRole('button', { name: 'Select' }));
+    await vi.waitFor(() => expect(onPick).toHaveBeenCalledWith(roster[1]), { timeout: 3500 });
+  });
+
+  it('with no roster all five show', async () => {
+    await openWith();
+    for (const p of PEOPLE) expect(screen.getByRole('button', { name: p })).toBeInTheDocument();
+  });
+});
