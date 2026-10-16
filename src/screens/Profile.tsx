@@ -120,7 +120,7 @@ function Card({ d, tilt }: { d: CardData; tilt: boolean }) {
   );
 }
 
-type ProfileProps = { name: Player; players?: Players; onBack: () => void };
+type ProfileProps = { name: Player; players?: Players; onBack: () => void; onQuiz?: () => void };
 
 /** The Profile screen inside the app: reads the group's friendship stats for the card. */
 export default function Profile(props: ProfileProps) {
@@ -132,10 +132,10 @@ export default function Profile(props: ProfileProps) {
     const { twin, clash } = friendStats(state.responses, name);
     return twin || clash ? { twin, clash } : null;
   }, [name, state.responses]);
-  return <ProfileView {...props} friends={friends} />;
+  return <ProfileView {...props} friends={friends} quizDone={!!state.stays?.crew[name]?.quizDone} />;
 }
 
-export function ProfileView({ name, players = {}, onBack, friends }: ProfileProps & { friends?: CardFriends | null }) {
+export function ProfileView({ name, players = {}, onBack, friends, onQuiz, quizDone = false }: ProfileProps & { friends?: CardFriends | null; quizDone?: boolean }) {
   const [mode] = useState(motion);
   // Each tap remounts the figure, which restarts its one jump; nothing animates until the first tap.
   const [jumps, setJumps] = useState(0);
@@ -190,6 +190,12 @@ export function ProfileView({ name, players = {}, onBack, friends }: ProfileProp
           <button aria-pressed={view === 'character'} onClick={() => setView('character')}>{profile.viewCharacter}</button>
         </div>
       </div>
+      {onQuiz && view === 'card' && (
+        <div className="pf-quiz">
+          <span>Travel profile</span>
+          <button className="link pf-quiz-go" onClick={onQuiz}>{quizDone ? 'Retake' : 'Do it, 3 minutes'}</button>
+        </div>
+      )}
       {view === 'card' ? (
         <>
           <Card d={d} tilt={mode === 'full'} />

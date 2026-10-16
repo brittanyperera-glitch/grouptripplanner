@@ -128,6 +128,8 @@ export default function Interview({ initial, onSave, onDone }: { me: Person | st
     setAnswers(done);
     if (!last) { goTo(idx + 1); return; }
     setConfirming(false);
+    // Saved the moment the last card is done, so leaving the reveal any other way loses nothing.
+    onSave(done);
     setReveal(true);
   };
   const back = () => {
@@ -135,7 +137,7 @@ export default function Interview({ initial, onSave, onDone }: { me: Person | st
     goTo(idx - 1);
   };
   const startAgain = () => { setAnswers(blanks()); setReveal(false); goTo(0); };
-  const finish = () => { onSave(answers); onDone(); };
+  const finish = onDone;
 
   const stateWord = (s?: PrefStance) => (card.single ? (s ? 'picked' : 'not picked') : s === 'happy' ? 'happy' : s === 'noway' ? 'no way' : 'not set');
   const noLabel = card.noOnly ? COPY.none : COPY.noPref;

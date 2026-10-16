@@ -91,7 +91,7 @@ export const COPY = {
     happy: 'Up for',
     noway: 'No way',
     nothing: 'Nothing yet',
-    cta: 'Now add your stays',
+    cta: 'Done',
   },
   titles: {
     backpacker: 'The Budget Backpacker',

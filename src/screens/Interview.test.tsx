@@ -89,19 +89,20 @@ describe('Interview quiz', () => {
     expect(chip('30 to 60, picked')).toBeInTheDocument();
   });
 
-  it('the last card leads to the reveal, and its button saves in card order, then finishes', async () => {
+  // Changed deliberately (Brittany 2026-10-16): answers save when the last card is done, and the reveal button only closes.
+  it('the last card leads to the reveal, which saves in card order; its button then finishes', async () => {
     const { user, onSave, onDone } = setup();
     await user.click(chip('Hostel dorm, not set'));
     await user.click(chip('Hostel dorm, happy'));
     await toReveal(user);
-    expect(onSave).not.toHaveBeenCalled();
+    expect(onSave).toHaveBeenCalledTimes(1);
     expect(onDone).not.toHaveBeenCalled();
-    await user.click(chip(COPY.reveal.cta));
     const a: PrefAnswer[] = onSave.mock.calls[0][0];
     expect(a.map((x) => x.topic)).toEqual(['stayType', 'rooms', 'budget', 'transport', 'journey', 'nos']);
     expect(a[0]).toEqual({ topic: 'stayType', picks: { hostel: 'noway' }, noPreference: false, skipped: false });
+    await user.click(chip(COPY.reveal.cta));
     expect(onDone).toHaveBeenCalledTimes(1);
-    expect(onSave.mock.invocationCallOrder[0]).toBeLessThan(onDone.mock.invocationCallOrder[0]);
+    expect(onSave).toHaveBeenCalledTimes(1);
   });
 
   it('Back from the reveal returns to the last card with answers kept', async () => {
@@ -250,7 +251,9 @@ describe('Interview quiz', () => {
       expect(screen.getByText(COPY.banner)).toBeInTheDocument();
     });
 
-    it('also works from the reveal and leaves nothing saved', async () => {
+    // Changed deliberately: the reveal is only reached after the answers were saved, so Start again resets the screen but the
+    // saved set stays until the next completion replaces it.
+    it('also works from the reveal: the screen resets and the earlier completion stays saved once', async () => {
       const { user, onSave } = setup();
       await user.click(chip('Hotel, not set'));
       await toReveal(user);
@@ -258,7 +261,7 @@ describe('Interview quiz', () => {
       await user.click(chip(COPY.confirmYes));
       expect(screen.getByText('1 of 6')).toBeInTheDocument();
       expect(chip('Hotel, not set')).toBeInTheDocument();
-      expect(onSave).not.toHaveBeenCalled();
+      expect(onSave).toHaveBeenCalledTimes(1);
     });
   });
 });
@@ -329,7 +332,8 @@ describe('interview copy', () => {
     expect(COPY.legend).toBe("Tap once if you're up for it. Twice if it's a no way.");
     expect(COPY.skip).toBe('Skip, no answer');
     expect(COPY.noPref).toBe("No preference, I'm easy");
-    expect(COPY.reveal.cta).toBe('Now add your stays');
+    // Changed deliberately (Brittany 2026-10-16): Stays is not live yet, so the button just says Done.
+    expect(COPY.reveal.cta).toBe('Done');
     expect(CARD_COPY.stayType.ask).toBe('Where are you willing to lay your head?');
     expect(CARD_COPY.nos.ask).toBe('Any dealbreakers? Things you would never do on this trip.');
   });

@@ -178,7 +178,7 @@ const START_OVER_ARMED_MS = 4000;
  * on a phone (Brittany 2026-10-15). Start over takes two taps; the first arms it for a few seconds, no browser dialog.
  */
 // Log out is the same item for everyone: a trip member forgets the password, a guest's demo resets; both land on the entry screen.
-function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLogout, todo = 0, onItems, onAwards, onQuiz }: { onProfile(): void; onChange?(): void; onStats?(): void; onNotYou(): void; onStartOver(): void; onLogout?(): void; todo?: number; onItems?(): void; onAwards?(): void; onQuiz?(): void }) {
+function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLogout, todo = 0, onItems, onAwards }: { onProfile(): void; onChange?(): void; onStats?(): void; onNotYou(): void; onStartOver(): void; onLogout?(): void; todo?: number; onItems?(): void; onAwards?(): void }) {
   const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -208,7 +208,6 @@ function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLog
         <div className="hmenu-list" role="group" aria-label="Menu">
           {onItems && <button onClick={pick(onItems)}>Open items</button>}
           {onAwards && <button onClick={pick(onAwards)}>Awards</button>}
-          {onQuiz && <button onClick={pick(onQuiz)}>Travel profile</button>}
           <button onClick={pick(onProfile)}>{profileCopy.menuItem}</button>
           {onStats && <button onClick={pick(onStats)}>Group stats</button>}
           {onChange && <button onClick={pick(onChange)}>Change days or pace</button>}
@@ -404,7 +403,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     );
   } else if (tab === 'Profile') {
     // Back goes to the tab I came from: tab switches are history entries.
-    content = <div role="tabpanel" aria-label="Profile" className="panel"><Profile name={me} players={copy.players} onBack={() => history.back()} /></div>;
+    content = <div role="tabpanel" aria-label="Profile" className="panel"><Profile name={me} players={copy.players} onBack={() => history.back()} onQuiz={() => setQuizOpen(true)} /></div>;
   } else {
     const Panel = tab === 'Group' || tab === 'My trip' ? null : PANELS[tab];
     content = (
@@ -418,7 +417,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   if (itemsOpen && shown === 'tabs') content = <OpenItems items={todo} onGo={goItem} onBack={closeItems} />;
   if (walking) content = <Walkthrough name={me} items={todo} onGo={goItem} onDone={finishWalk} />;
   if (quizOpen && shown === 'tabs') content = <Interview me={me} initial={state.stays?.crew[me]?.prefs} onSave={prefs => { void store.saveCrewStays(me, { prefs, quizDone: true }); }} onDone={() => setQuizOpen(false)} />;
-  if (profileOpen) content = <Profile name={me} players={copy.players} onBack={closeProfile} />;
+  if (profileOpen) content = <Profile name={me} players={copy.players} onBack={closeProfile} onQuiz={() => { setProfileOpen(false); setQuizOpen(true); }} />;
   const screenKey = walking ? 'walkthrough' : quizOpen && shown === 'tabs' ? 'quiz' : profileOpen ? 'profile' : itemsOpen && shown === 'tabs' ? 'items' : shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
   useLayoutEffect(() => {
     const overlay = screenKey === 'profile' || screenKey === 'items';
@@ -434,7 +433,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
           <b>{me}</b>
         </button>
         <HeaderMenu onProfile={openProfile} onChange={(shown === 'rate' || shown === 'tabs') && !locked ? changeDays : undefined} onStats={shown === 'tabs' && statsOpen ? () => { if (profileOpen) setProfileOpen(false); openGroup('stats'); } : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} onLogout={finishSandbox ?? logout ?? undefined}
-          todo={todo.length} onItems={shown === 'tabs' ? () => { if (profileOpen) setProfileOpen(false); openItemsPage(); } : undefined} onAwards={shown === 'tabs' && awardList.length > 0 ? () => setAwardsOpen(true) : undefined} onQuiz={shown === 'tabs' ? () => { if (profileOpen) setProfileOpen(false); setQuizOpen(true); } : undefined} />
+          todo={todo.length} onItems={shown === 'tabs' ? () => { if (profileOpen) setProfileOpen(false); openItemsPage(); } : undefined} onAwards={shown === 'tabs' && awardList.length > 0 ? () => setAwardsOpen(true) : undefined} />
       </header>
       <div className={`screen${enter ? ` enter-${enter}` : ''}`} key={screenKey}>{content}</div>
       {shown === 'tabs' && !profileOpen && !walking && (
