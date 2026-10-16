@@ -94,7 +94,8 @@
     "reviews": "1,170",
     "url": "https://www.google.com/maps/search/Pilawoos%20Hotel%20restaurant%20Colombo"
    },
-   "warn": "Rated 3.4 on Google; it's about the 3am kottu, not the service"
+   "warn": "Rated 3.4 on Google; it's about the 3am kottu, not the service",
+   "britt": "The GOAT of Sri Lankan food, on my Last Supper menu. Veggies, get the egg or cheese kottu."
   },
   {
    "id": "sigiriya",
@@ -111,7 +112,8 @@
     "rating": "4.7",
     "reviews": "24,355",
     "url": "https://www.google.com/maps/search/Sigiriya%20Rock%20Fortress,%20Sri%20Lanka"
-   }
+   },
+   "britt": "The kings used it to hide from and attack enemies. Loads of stairs, takes a couple of hours. The ponds round it used to be full of crocodiles."
   },
   {
    "id": "pidurangala",
@@ -145,7 +147,8 @@
     "rating": "4.5",
     "reviews": "17,020",
     "url": "https://www.google.com/maps/search/Dambulla%20Cave%20Temple,%20Sri%20Lanka"
-   }
+   },
+   "britt": "Massive gold Buddha on top, and super old caves with ancient paintings. Loads of monkeys that steal food and accessories straight out of your hands, so keep an eye out."
   },
   {
    "id": "polonnaruwa",
@@ -161,7 +164,8 @@
     "rating": "4.5",
     "reviews": "1,424",
     "url": "https://www.google.com/maps/search/Polonnaruwa%20Ancient%20City,%20Sri%20Lanka"
-   }
+   },
+   "britt": "One of the oldest towns in Sri Lanka, with ruins of palaces from thousands of years ago."
   },
   {
    "id": "elephants",
@@ -178,7 +182,9 @@
     "rating": "4.6",
     "reviews": "227",
     "url": "https://www.google.com/maps/search/Kaudulla%20National%20Park,%20Sri%20Lanka"
-   }
+   },
+   "britt": "Go early in the morning or in the evening while they're drinking at the lakes. Not the afternoon: it's super hot, the animals sleep and you see a lot of trees.",
+   "when": "early morning"
   },
   {
    "id": "anuradhapura",
@@ -195,7 +201,8 @@
     "rating": "4.9",
     "reviews": "15,071",
     "url": "https://www.google.com/maps/search/Anuradhapura%20sacred%20city,%20Sri%20Lanka"
-   }
+   },
+   "britt": "Every temple here has a story. You can walk between sites or take the cheap buses. Ruwanwelisaya is the famous ruin, and Jaya Sri Maha Bodhi has the sacred tree."
   },
   {
    "id": "tooth",
@@ -212,7 +219,8 @@
     "rating": "4.7",
     "reviews": "33,680",
     "url": "https://www.google.com/maps/search/Temple%20of%20the%20Sacred%20Tooth%20Relic,%20Kandy,%20Sri%20Lanka"
-   }
+   },
+   "britt": "One of the most sacred temples. The city is nice too: touristy, with a nice walk round the temple grounds and the lake."
   },
   {
    "id": "knuckles",
@@ -259,7 +267,8 @@
    "book": "seats open 30 days ahead",
    "warn": "The Kandy section is shut until at least early 2027, so we drive to Nanu Oya",
    "photo": "train",
-   "about": "The best-scenery stretch of the hill country railway, tea fields all the way."
+   "about": "The best-scenery stretch of the hill country railway, tea fields all the way.",
+   "britt": "The train through the Ella tea country is quite nice."
   },
   {
    "id": "horton",
@@ -276,7 +285,8 @@
     "rating": "4.6",
     "reviews": "10,690",
     "url": "https://www.google.com/maps/search/Horton%20Plains%20National%20Park,%20Sri%20Lanka"
-   }
+   },
+   "britt": "One of the coldest parts of Sri Lanka, pretty much like England: super rainy, kinda chilly."
   },
   {
    "id": "tea",
@@ -293,7 +303,8 @@
     "rating": "4.4",
     "reviews": "7,934",
     "url": "https://www.google.com/maps/search/Labookellie+Tea+Lounge,+Sri+Lanka"
-   }
+   },
+   "britt": "They walk you through the whole tea process. Mine was Mackwoods, but there are loads."
   },
   {
    "id": "ellarock",
@@ -327,7 +338,8 @@
     "rating": "4.6",
     "reviews": "461",
     "url": "https://www.google.com/maps/search/Nine%20Arch%20Bridge,%20Ella,%20Sri%20Lanka"
-   }
+   },
+   "britt": "Very famous bridge. Takes a little hike to get there but worth it, and very pretty."
   },
   {
    "id": "diyaluma",
@@ -344,7 +356,8 @@
     "rating": "4.8",
     "reviews": "4,942",
     "url": "https://www.google.com/maps/search/Diyaluma%20Falls,%20Sri%20Lanka"
-   }
+   },
+   "britt": "Loads of waterfalls round Ella. On out-of-the-way hikes, look out for leeches in the rivers and falls!"
   },
   {
    "id": "yala",
@@ -361,7 +374,8 @@
     "rating": "4.2",
     "reviews": "6,308",
     "url": "https://www.google.com/maps/search/Yala%20National%20Park,%20Sri%20Lanka"
-   }
+   },
+   "britt": "A bit more touristy than the other safari, Minneriya. Still nice, with a beach at the end of the jungle. It was cheaper when I went, so double check."
   },
   {
    "id": "udawalawe",
@@ -537,7 +551,8 @@
     "rating": "4.8",
     "reviews": "2,187",
     "url": "https://www.google.com/maps/search/Avukana+Buddha+Statue,+Sri+Lanka"
-   }
+   },
+   "britt": "It's huge. A bit far out: tuk-tuks will take you but will try to rip you off, and it's all there is to see, so it might not be worth the hassle."
   },
   {
    "id": "rekawa",

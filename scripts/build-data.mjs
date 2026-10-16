@@ -109,7 +109,7 @@ const items = cat.items.map((it) => {
   // A name that promises sunset or night must be scheduled then, or the planner drives straight after it.
   if (/sunset|evening|night|dinner/i.test(it.name) && !['sunset', 'evening', 'late'].includes(SLOT[it.slot]))
     throw new Error(`${it.id} "${it.name}" is named for the evening but slotted "${it.slot}"`);
-  const out = { ...it, fee: withGbp(it.fee ?? ''), when: it.slot, slot: SLOT[it.slot], sideTrip: Math.round((SIDE_TRIP[it.id] ?? 0) * 100) / 100 };
+  const out = { ...it, fee: withGbp(it.fee ?? ''), when: it.when ?? it.slot, slot: SLOT[it.slot], sideTrip: Math.round((SIDE_TRIP[it.id] ?? 0) * 100) / 100 };
   if (it.id === 'yala') out.hub = 'Tissa';
   if (it.photo && credits[it.photo]) out.credit = `${credits[it.photo].artist}, ${credits[it.photo].license}`;
   return out;
