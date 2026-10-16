@@ -54,7 +54,7 @@ export type ChoiceKind = 'tier' | 'rerank' | 'knockout' | 'days' | 'pace' | 'sug
 // ref is the item id (tier), the fork id (knockout), the area (suggest) or null.
 export interface ChoiceInput { name: Player; kind: ChoiceKind; ref: string | null; value: unknown }
 export interface ChoiceEntry extends ChoiceInput { id: string; at: string }
-export interface AppState { responses: Partial<Record<Player, Response>>; suggestions: Suggestion[]; votes: Vote[] }
+export interface AppState { responses: Partial<Record<Player, Response>>; suggestions: Suggestion[]; votes: Vote[]; stays?: StaysState }
 export interface Store {
   load(): Promise<AppState>;
   saveResponse(name: Player, patch: Partial<Omit<Response, 'name'>>): Promise<void>;
@@ -90,3 +90,28 @@ export const AREA_HUB: Record<Area, Hub> = {
   'Colombo': 'Colombo', 'North': 'Jaffna', 'East coast': 'Trincomalee', 'Cultural Triangle': 'Sigiriya', 'Kandy and Knuckles': 'Kandy', 'Kitulgala': 'Kitulgala',
   'Hill country': 'Nuwara Eliya', 'Ella': 'Ella', 'Wild south': 'Udawalawe', 'South coast': 'Weligama',
 };
+
+// Post-route "Stays" phase. Keyed by Area, never by day number, so a re-lock that moves days cannot orphan a board.
+export type PrefTopic = 'transport' | 'stayType' | 'budget' | 'rooms' | 'journey' | 'pace' | 'matters' | 'nos';
+// happy = fine with it, noway = hard NO. An option not in `picks` is unanswered for that option.
+export type PrefStance = 'happy' | 'noway';
+// noPreference and skipped are different: skipped means no answer was given, noPreference means they genuinely do not mind.
+export interface PrefAnswer { topic: PrefTopic; picks: Record<string, PrefStance>; noPreference: boolean; skipped: boolean }
+export interface CrewPrefs { name: Player; answers: PrefAnswer[]; done: boolean; updatedAt: string }
+export type PlaceKind = 'stay' | 'eat' | 'do' | 'gem';
+// Only kind 'stay' goes through lock-in, ranking and the head to head; the others take reactions.
+export interface PlaceSuggestion {
+  id: string; name: Player; area: Area; kind: PlaceKind; title: string; link?: string; priceGbp?: number;
+  why?: string; photo?: string; hostelId?: string; createdAt: string;
+}
+export interface PlaceReaction { suggestionId: string; name: Player; reaction: 'interested' | 'not' }
+export interface StayLock { name: Player; locked: boolean; at: string }
+// round 'rank': first and second are suggestion ids (2 and 1 points). round 'final': choice picks a or b of the two finalists.
+export interface StayVote { area: Area; round: 'rank' | 'final'; name: Player; first?: string; second?: string; choice?: 'a' | 'b' }
+// Brittany's overrides: a pinned stay skips the vote; nights replaces the count derived from the locked plan.
+export interface StayPin { area: Area; suggestionId: string; by: 'Brittany'; at: string }
+export interface StaysState {
+  prefs: CrewPrefs[]; suggestions: PlaceSuggestion[]; reactions: PlaceReaction[]; locks: StayLock[];
+  votes: StayVote[]; scouts: Partial<Record<Area, Player>>; pins: StayPin[]; nights: Partial<Record<Area, number>>;
+}
+export const EMPTY_STAYS: StaysState = { prefs: [], suggestions: [], reactions: [], locks: [], votes: [], scouts: {}, pins: [], nights: {} };
