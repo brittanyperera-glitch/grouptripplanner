@@ -92,26 +92,39 @@ export const AREA_HUB: Record<Area, Hub> = {
 };
 
 // Post-route "Stays" phase. Keyed by Area, never by day number, so a re-lock that moves days cannot orphan a board.
+// Anon can never delete rows, so every "remove" is a state change: a withdrawn suggestion, a null pin, a cleared rank.
 export type PrefTopic = 'transport' | 'stayType' | 'budget' | 'rooms' | 'journey' | 'pace' | 'matters' | 'nos';
 // happy = fine with it, noway = hard NO. An option not in `picks` is unanswered for that option.
 export type PrefStance = 'happy' | 'noway';
-// noPreference and skipped are different: skipped means no answer was given, noPreference means they genuinely do not mind.
+// noPreference and skipped differ: skipped = no answer given, noPreference = genuinely does not mind.
 export interface PrefAnswer { topic: PrefTopic; picks: Record<string, PrefStance>; noPreference: boolean; skipped: boolean }
-export interface CrewPrefs { name: Player; answers: PrefAnswer[]; done: boolean; updatedAt: string }
 export type PlaceKind = 'stay' | 'eat' | 'do' | 'gem';
-// Only kind 'stay' goes through lock-in, ranking and the head to head; the others take reactions.
+// What a stay is, so hard NOs (dorm, shared bathroom, own bed) can be checked against it.
+export type StayType = 'hostel' | 'guesthouse' | 'boutique' | 'hotel' | 'villa' | 'other';
+export type RoomType = 'dorm' | 'shared' | 'private';
+// Only kind 'stay' goes through lock-in, ranking and the head to head; eat, do and gem take reactions.
+// hostelId links a guide hostel (src/content/hostels.json) so its price and photo are not retyped.
 export interface PlaceSuggestion {
   id: string; name: Player; area: Area; kind: PlaceKind; title: string; link?: string; priceGbp?: number;
-  why?: string; photo?: string; hostelId?: string; createdAt: string;
+  stayType?: StayType; rooms?: RoomType; why?: string; photo?: string; hostelId?: string;
+  status: 'live' | 'withdrawn'; createdAt: string;
 }
-export interface PlaceReaction { suggestionId: string; name: Player; reaction: 'interested' | 'not' }
-export interface StayLock { name: Player; locked: boolean; at: string }
-// round 'rank': first and second are suggestion ids (2 and 1 points). round 'final': choice picks a or b of the two finalists.
-export interface StayVote { area: Area; round: 'rank' | 'final'; name: Player; first?: string; second?: string; choice?: 'a' | 'b' }
-// Brittany's overrides: a pinned stay skips the vote; nights replaces the count derived from the locked plan.
-export interface StayPin { area: Area; suggestionId: string; by: 'Brittany'; at: string }
-export interface StaysState {
-  prefs: CrewPrefs[]; suggestions: PlaceSuggestion[]; reactions: PlaceReaction[]; locks: StayLock[];
-  votes: StayVote[]; scouts: Partial<Record<Area, Player>>; pins: StayPin[]; nights: Partial<Record<Area, number>>;
+// One tap on a ranking card: first = 2 points, second = 1. Cleared by saving with both unset.
+export interface StayRank { first?: string; second?: string }
+// Travel Bingo: 3x3, private to the owner (UI only: one shared password means rows are readable by key holders).
+export interface BingoSquare { text: string; about?: Person; ticked: boolean }
+export interface BingoCard { id: string; title: string; squares: BingoSquare[]; createdAt: string }
+// One row per person: their quiz, lock-in, ranks and bingo cards.
+export interface CrewStays {
+  name: Player; prefs: PrefAnswer[]; quizDone: boolean; locked: boolean;
+  ranks: Partial<Record<Area, StayRank>>; bingo: BingoCard[]; updatedAt: string;
 }
-export const EMPTY_STAYS: StaysState = { prefs: [], suggestions: [], reactions: [], locks: [], votes: [], scouts: {}, pins: [], nights: {} };
+// Brittany's overrides: a pin skips the vote (suggestionId null = unpinned); scouts name who fills which destination.
+export interface StayPin { area: Area; suggestionId: string | null; at: string }
+export interface StaysAdmin { pins: StayPin[]; scouts: Partial<Record<Area, Player>> }
+// Reactions (kind eat/do/gem) and the stay head to head ride the existing knockout votes:
+// forkId `react:<suggestionId>` (choice a = interested, b = not) and `stay:<area>:<idA>:<idB>` (a or b).
+export interface StaysState { crew: Partial<Record<Player, CrewStays>>; suggestions: PlaceSuggestion[]; admin: StaysAdmin }
+export const EMPTY_STAYS: StaysState = { crew: {}, suggestions: [], admin: { pins: [], scouts: {} } };
+export const stayForkId = (area: Area, a: string, b: string) => `stay:${area}:${a}:${b}`;
+export const reactForkId = (suggestionId: string) => `react:${suggestionId}`;
