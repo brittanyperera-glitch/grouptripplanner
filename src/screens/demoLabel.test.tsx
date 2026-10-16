@@ -1,8 +1,9 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { emptyRanking, PEOPLE, type GroupResult, type Person, type Response } from '../types';
+import { PEOPLE, type GroupResult } from '../types';
 import App from '../App';
+import { quizDone, mkItem as mk, submittedResp as submitted } from '../__fixtures__/seed';
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const copy = vi.hoisted(() => ({
@@ -16,14 +17,9 @@ const grp: GroupResult = { open: true, days: 9, pace: 1, base: null, final: null
 vi.mock('../workers/usePlan', async orig => ({ ...(await orig<typeof import('../workers/usePlan')>()), useGroupResult: () => ({ data: grp, loading: false }) }));
 
 const LINE = "Example picks for the demo, not the real group's.";
-const mk = (id: string, name: string, area: string) => ({
-  id, name, area, about: `About ${name}`, hours: 3, slot: 'morning', fee: 'free', sideTrip: 0, photo: id, when: 'morning', credit: `Credit ${id}`,
-});
-const submitted = (name: Person): Response => ({ name, days: 9, flex: false, pace: 1, ranking: emptyRanking(), rated: [], submitted: true, updatedAt: '2026-10-14T00:00:00Z' });
 
 // Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
 // Changed deliberately (Brittany 2026-10-16): Bingo is now a to-do, so a person with nothing to do also has one card.
-const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [{ id: 'b1', title: 't', squares: Array.from({ length: 9 }, () => ({ text: 's', ticked: false })), createdAt: '' }], updatedAt: '2026-10-14T00:00:00Z' }));
 beforeEach(() => { localStorage.clear(); window.location.hash = ''; cat.items = [mk('a', 'Alpha Rock', 'Cultural Triangle'), mk('b', 'Beta Falls', 'Cultural Triangle'), mk('c', 'Gamma Beach', 'South coast')]; });
 afterEach(() => { cleanup(); window.location.hash = ''; });
 

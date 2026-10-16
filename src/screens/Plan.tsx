@@ -6,6 +6,7 @@ import { sideQuests } from '../lib/sideQuests';
 import { PEOPLE } from '../types';
 import type { GroupResult } from '../types';
 import BookCard, { tipsOf } from './BookCard';
+import { SaveItinerary } from './Itinerary';
 import { DayRows } from './MyTrip';
 
 export default function Plan({ group, reveal }: { group: GroupResult; reveal?: ReactNode }) {
@@ -30,6 +31,7 @@ export default function Plan({ group, reveal }: { group: GroupResult; reveal?: R
       {reveal}
       <BookCard chosen={chosen} plan={plan} />
       <RouteMap route={plan.route} />
+      <SaveItinerary plan={plan} kind="Group" provisional={!(reopened || (group.final && group.locked))} />
       <DayRows plan={plan} items={items} legs={legs} quests={sideQuests(plan, me, state, items)} tips={tips} skippedBy={id => PEOPLE.filter(p => { const r = state.responses[p]; return !!r && tierOf(r.ranking, id) === 'skip'; })} />
     </section>
   );

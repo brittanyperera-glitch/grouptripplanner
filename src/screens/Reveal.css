@@ -114,7 +114,6 @@
 .rv-picks img, .rv-pick-blank { flex: none; width: 36px; height: 36px; border-radius: 8px; object-fit: cover; background: var(--paper-deep); }
 .rv-picks span { min-width: 0; overflow-wrap: anywhere; }
 .rv-done .rv-btn { align-self: center; margin-top: 16px; }
-.rv-foot { align-self: center; margin-top: 8px; }
 .rv-foot-line { align-self: center; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-align: center; }
 .rv[data-stage="poster"] { align-items: center; justify-content: center; }
 

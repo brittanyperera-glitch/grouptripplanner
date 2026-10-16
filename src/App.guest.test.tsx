@@ -1,11 +1,10 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { emptyRanking, PEOPLE, type Person, type Response } from './types';
+import { PEOPLE } from './types';
 import App from './App';
-import { WALKTHROUGH_KEY, todayKey } from './lib/walkthrough';
+import { seenWalkToday, mkItem as mk, submittedResp as submitted } from './__fixtures__/seed';
 // Test (h) is a returning member exercising the locked tabs, not the once-a-day welcome-back walkthrough (own tests), so it counts as seen today.
-const seenWalkToday = () => localStorage.setItem(WALKTHROUGH_KEY, todayKey(new Date()));
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const copy = vi.hoisted(() => ({
@@ -18,11 +17,7 @@ const copy = vi.hoisted(() => ({
 vi.mock('./data/catalogue.json', () => ({ default: cat }));
 vi.mock('./content/copy.json', () => ({ default: copy }));
 
-const mk = (id: string, name: string, area: string) => ({
-  id, name, area, about: `About ${name}`, hours: 3, slot: 'morning', fee: 'free', sideTrip: 0, photo: id, when: 'morning', credit: `Credit ${id}`,
-});
 const THREE = [mk('a', 'Alpha Rock', 'Cultural Triangle'), mk('b', 'Beta Falls', 'Cultural Triangle'), mk('c', 'Gamma Beach', 'South coast')];
-const submitted = (name: Person): Response => ({ name, days: 9, flex: false, pace: 1, ranking: emptyRanking(), rated: [], submitted: true, updatedAt: '2026-10-14T00:00:00Z' });
 
 beforeEach(() => { localStorage.clear(); seenWalkToday(); window.location.hash = ''; cat.items = THREE; });
 afterEach(() => { cleanup(); window.location.hash = ''; });
@@ -76,7 +71,8 @@ describe('guest mode in the app shell', () => {
     const user = userEvent.setup();
     window.location.hash = '#/landing';
     render(<App />);
-    expect(await screen.findByRole('heading', { name: 'The Homecoming' })).toBeInTheDocument();
+    // Changed deliberately (Brittany 2026-10-16): the landing heading is now the brand, GROUP TRIP HERO.
+    expect(await screen.findByRole('heading', { name: 'Group Trip Hero' })).toBeInTheDocument();
     expect(screen.getAllByRole('button')).toHaveLength(2);
     await user.click(screen.getByRole('button', { name: /Try it as a guest/ }));
     expect(await screen.findByText('Pick your guest character')).toBeInTheDocument();
@@ -90,7 +86,7 @@ describe('guest mode in the app shell', () => {
     await pickGuest(user);
     await user.click(await screen.findByRole('button', { name: 'Menu' }));
     await user.click(await screen.findByRole('button', { name: 'Log out' }));
-    expect(await screen.findByRole('heading', { name: 'The Homecoming' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Group Trip Hero' })).toBeInTheDocument();
     expect(JSON.stringify(Object.entries(localStorage).sort())).toBe(before);
   });
 

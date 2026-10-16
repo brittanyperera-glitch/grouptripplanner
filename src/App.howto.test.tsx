@@ -5,6 +5,7 @@ import { emptyRanking, type Person, type Response } from './types';
 import { readFileSync } from 'node:fs';
 import App from './App';
 import { openMenu } from './__fixtures__/menu';
+import { quizDone } from './__fixtures__/seed';
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const copy = vi.hoisted(() => ({
@@ -27,7 +28,6 @@ const seed = (r: Response) => localStorage.setItem(`tp:resp:${r.name}`, JSON.str
 
 // Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
 // Changed deliberately (Brittany 2026-10-16): Bingo is now a to-do, so a person with nothing to do also has one card.
-const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [{ id: 'b1', title: 't', squares: Array.from({ length: 9 }, () => ({ text: 's', ticked: false })), createdAt: '' }], updatedAt: '2026-10-14T00:00:00Z' }));
 beforeEach(() => {
   localStorage.clear();
   window.history.replaceState({}, '', '/?howto=1');

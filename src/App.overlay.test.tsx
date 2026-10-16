@@ -4,9 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyRanking, PEOPLE, type GroupResult, type Person, type Plan, type Response } from './types';
 import App from './App';
 import { openMenu } from './__fixtures__/menu';
-import { WALKTHROUGH_KEY, todayKey } from './lib/walkthrough';
+import { seenWalkToday, quizDone, mkItem as mk } from './__fixtures__/seed';
 // These tests exercise the tabs, not the once-a-day welcome-back walkthrough (it has its own tests), so it counts as seen today.
-const seenWalkToday = () => localStorage.setItem(WALKTHROUGH_KEY, todayKey(new Date()));
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const grp = vi.hoisted(() => ({ current: null as unknown }));
@@ -20,9 +19,6 @@ vi.mock('./content/copy.json', () => ({ default: copy }));
 // The group result is fixed so the test controls which knockouts are open and whether the plan is locked.
 vi.mock('./workers/usePlan', async orig => ({ ...(await orig<typeof import('./workers/usePlan')>()), useGroupResult: () => ({ data: grp.current, loading: false }) }));
 
-const mk = (id: string, name: string, area: string) => ({
-  id, name, area, about: `About ${name}`, hours: 3, slot: 'morning', fee: 'free', sideTrip: 0, photo: id, when: 'morning', credit: `Credit ${id}`,
-});
 const THREE = [mk('a', 'Alpha Rock', 'Cultural Triangle'), mk('b', 'Beta Falls', 'Cultural Triangle'), mk('c', 'Gamma Beach', 'South coast')];
 
 const plan: Plan = {
@@ -46,7 +42,6 @@ const seed = (r: Response) => localStorage.setItem(`tp:resp:${r.name}`, JSON.str
 // One person rates a place Keen, so the "most enthusiastic" award has a single winner.
 // Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
 // Changed deliberately (Brittany 2026-10-16): Bingo is now a to-do, so a person with nothing to do also has one card.
-const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [{ id: 'b1', title: 't', squares: Array.from({ length: 9 }, () => ({ text: 's', ticked: false })), createdAt: '' }], updatedAt: '2026-10-14T00:00:00Z' }));
 const seedCrew = (me: Person, keener: Person = 'Alex') => {
   for (const p of PEOPLE) seed(row(p, p === keener ? { ranking: { ...emptyRanking(), must: [['b'], ['c']], keen: [['a']] } } : {}));
   localStorage.setItem('tp:me', me);

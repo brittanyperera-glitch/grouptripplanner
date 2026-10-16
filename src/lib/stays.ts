@@ -1,6 +1,8 @@
 import { PEOPLE, isGuest, stayForkId } from '../types';
 import type { Area, CrewStays, Hub, Leg, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, StayType, Vote } from '../types';
 import { VOTES_TO_RESOLVE } from './group';
+import { isExtraKey, parseNights, stretchLevel } from './prefs';
+import { tallySides } from './votes';
 
 // A 'noway' on a budget band caps the price at that band's upper edge; 85plus caps nothing. Keys from the retired
 // four-band quiz (under30...) are absent on purpose: they are ignored, never remapped.
@@ -11,12 +13,11 @@ const TYPE_WORDS: Record<StayType, string> = { hostel: 'hostels', guesthouse: 'g
 
 // noPreference and skipped never speak, so their picks are ignored even if stale.
 const speaks = (p: PrefAnswer) => !p.noPreference && !p.skipped;
-// The quiz packs extra answers into picks as `nights:<type>:<n>` and `stretch:<level>`; they are not options, so the
-// generic readers skip keys with a colon and the dedicated readers below parse them.
+// The quiz's extra pick keys (see prefs.ts) are not options, so the generic readers skip them.
 const noways = (prefs: PrefAnswer[], topic: PrefAnswer['topic']): string[] =>
-  prefs.filter(p => p.topic === topic && speaks(p)).flatMap(p => Object.entries(p.picks).filter(([k, s]) => s === 'noway' && !k.includes(':')).map(([k]) => k));
+  prefs.filter(p => p.topic === topic && speaks(p)).flatMap(p => Object.entries(p.picks).filter(([k, s]) => s === 'noway' && !isExtraKey(k)).map(([k]) => k));
 const happies = (prefs: PrefAnswer[], topic: PrefAnswer['topic']): string[] =>
-  prefs.filter(p => p.topic === topic && speaks(p)).flatMap(p => Object.entries(p.picks).filter(([k, s]) => s === 'happy' && !k.includes(':')).map(([k]) => k));
+  prefs.filter(p => p.topic === topic && speaks(p)).flatMap(p => Object.entries(p.picks).filter(([k, s]) => s === 'happy' && !isExtraKey(k)).map(([k]) => k));
 const rawKeys = (prefs: PrefAnswer[], topic: PrefAnswer['topic']): string[] =>
   prefs.filter(p => p.topic === topic && speaks(p)).flatMap(p => Object.keys(p.picks));
 
@@ -26,8 +27,8 @@ const STRETCH_GBP: Record<string, number> = { same: 0, plus20: 20, plus50: 50, a
 export function maxNightsOf(prefs: PrefAnswer[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const k of rawKeys(prefs, 'stayType')) {
-    const m = /^nights:([a-z]+):(\d+)$/.exec(k);
-    if (m) out[m[1]] = Number(m[2]);
+    const nights = parseNights(k);
+    if (nights) out[nights.type] = nights.n;
   }
   return out;
 }
@@ -46,7 +47,7 @@ export function hardNos(prefs: PrefAnswer[]): Set<string> {
 // A 'noway' band still caps as before.
 export const budgetCap = (prefs: PrefAnswer[]): number => {
   const band = happies(prefs, 'budget').find(k => k in BUDGET_CAP_GBP);
-  const stretchKey = rawKeys(prefs, 'budget').find(k => k.startsWith('stretch:'))?.slice('stretch:'.length);
+  const stretchKey = rawKeys(prefs, 'budget').map(stretchLevel).find(l => l !== undefined);
   const fromBand = band === undefined ? Infinity : (BUDGET_CAP_GBP[band] ?? Infinity) + (STRETCH_GBP[stretchKey ?? 'same'] ?? 0);
   return Math.min(fromBand, ...noways(prefs, 'budget').map(k => BUDGET_CAP_GBP[k] ?? Infinity));
 };
@@ -153,10 +154,7 @@ export function finalists(suggestions: PlaceSuggestion[], ranks: RanksByPerson, 
 
 export function stayResult(area: Area, pair: [string, string], votes: Vote[], participants: Player[]): { winner: string | null; a: Player[]; b: Player[] } {
   const fork = stayForkId(area, pair[0], pair[1]);
-  const latest = new Map<Player, 'a' | 'b'>();
-  for (const v of votes) if (v.forkId === fork && participants.includes(v.name)) latest.set(v.name, v.choice);
-  const side = (c: 'a' | 'b') => participants.filter(p => latest.get(p) === c);
-  const a = side('a'), b = side('b');
+  const { a, b } = tallySides(votes, fork, participants);
   const winner = a.length >= VOTES_TO_RESOLVE ? pair[0] : b.length >= VOTES_TO_RESOLVE ? pair[1] : null;
   return { winner, a, b };
 }

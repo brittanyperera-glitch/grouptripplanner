@@ -3,12 +3,13 @@ import Avatar from '../components/Avatar';
 import { divisive, friendStats } from '../lib/friendship';
 import { useApp } from '../state';
 import { isGuest, PEOPLE } from '../types';
+import { allSubmitted } from '../lib/group';
 import type { Response } from '../types';
 
 /** Friendship stats. Rendered only after all five have submitted. */
 export default function Friends() {
   const { state, me, items } = useApp();
-  if (isGuest(me) || !PEOPLE.every(p => state.responses[p]?.submitted)) return null;
+  if (isGuest(me) || !allSubmitted(state.responses)) return null;
   const viewer = me ?? PEOPLE[0];
   const rs = PEOPLE.map(p => state.responses[p]).filter((r): r is Response => !!r);
   const stats = friendStats(state.responses, viewer);

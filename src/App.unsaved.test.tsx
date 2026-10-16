@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ServerLike } from './store/__fixtures__/serverLike';
 import App from './App';
+import { mkItem as mk, crewQuizDone } from './__fixtures__/seed';
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const copy = vi.hoisted(() => ({
@@ -13,9 +14,6 @@ const copy = vi.hoisted(() => ({
 vi.mock('./data/catalogue.json', () => ({ default: cat }));
 vi.mock('./content/copy.json', () => ({ default: copy }));
 
-const mk = (id: string, name: string, area: string) => ({
-  id, name, area, about: `About ${name}`, hours: 3, slot: 'morning', fee: 'free', sideTrip: 0, photo: id, when: 'morning', credit: `Credit ${id}`,
-});
 
 beforeEach(() => {
   localStorage.clear();
@@ -56,7 +54,7 @@ describe('a save the server rejects', () => {
   it('a page reload keeps my unsaved ratings, and retry then stores them', async () => {
     const store = new ServerLike();
     // Quiz done on the server, so this exercises what it did before the stayQuiz to-do existed.
-    store.stays = { crew: { Alex: { name: 'Alex', prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [{ id: 'b1', title: 't', squares: Array.from({ length: 9 }, () => ({ text: 's', ticked: false })), createdAt: '' }], updatedAt: '2026-10-14T00:00:00Z' } }, suggestions: [], admin: { pins: [], scouts: {} } };
+    store.stays = { crew: { Alex: crewQuizDone('Alex') }, suggestions: [], admin: { pins: [], scouts: {} } };
     store.failResp = true;
     const user = userEvent.setup();
     const first = render(<App store={store} />);

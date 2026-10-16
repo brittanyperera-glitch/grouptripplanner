@@ -1,8 +1,14 @@
 import { PEOPLE, type AppState, type Genre, type GroupResult, type Item, type Knockout, type Leg, type Pace, type Player, type Plan, type Response } from '../types';
 import { mustFitDays, plan } from './planner';
 import { KNOCKED_MUST, score, scoresFor, tierOf } from './ranking';
+import { genreForkId, genreRoundForkId, NORTH_AREAS, REGION_FORK, tallySides } from './votes';
 
 export const VOTES_TO_RESOLVE = 3; // majority of 5
+
+/** All five have submitted. `draft` counts one person's unsent draft instead of their stored row. */
+export const allSubmitted = (responses: AppState['responses'], draft?: { name: Player; submitted: boolean }): boolean =>
+  PEOPLE.every(p => (draft && p === draft.name ? draft.submitted : responses[p]?.submitted));
+
 // The plan the open questions were measured on, for tests: every drop side must be a subset of it.
 export const measuredOn = new WeakMap<GroupResult, Plan>();
 
@@ -15,8 +21,6 @@ export const fitLine = (f: NonNullable<Knockout['fit']>): string => {
 };
 const MAX_CONTESTED = 5;
 const EXTRAS_DAYS = 14;
-const NORTH_AREAS = new Set<string>(['North', 'East coast']);
-const REGION_FORK = 'region:north';
 const EPS = 1e-9;
 
 // The Days screen offers 5 to 21 (src/screens/Days.tsx); anything stored outside that is clamped.
@@ -41,7 +45,7 @@ function medianPace(paces: Pace[]): Pace {
 // genres: src/data/genres.json in the app; none means no same-type keep vote.
 export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genres: Genre[] = []): GroupResult {
   const rs = PEOPLE.map(p => state.responses[p]).filter((r): r is Response => !!r);
-  const open = PEOPLE.every(p => state.responses[p]?.submitted);
+  const open = allSubmitted(state.responses);
   const days = rs.length ? Math.min(...rs.map(daysOf)) : 9;
   const pace = medianPace(rs.flatMap(r => (r.pace === null ? [] : [r.pace])));
   if (!open) return { open, days, pace, base: null, knockouts: [], results: [], final: null, extras: [], knocked: [], finalized: [], locked: false };
@@ -73,12 +77,7 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
   const settle = (picked: Plan) => { const next = run(F, O); return next.score > picked.score + EPS ? next : picked; };
   const baseP = run(F, O);
   const rated = (id: string, t: 'must' | 'keen') => rs.filter(r => tierOf(r.ranking, id) === t).length;
-  const tallyFor = (forkId: string) => {
-    const latest = new Map<Player, 'a' | 'b'>();
-    for (const v of state.votes) if (v.forkId === forkId) latest.set(v.name, v.choice);
-    const who = (side: 'a' | 'b') => PEOPLE.filter(p => latest.get(p) === side);
-    return { a: who('a'), b: who('b') };
-  };
+  const tallyFor = (forkId: string) => tallySides(state.votes, forkId, PEOPLE);
   const contested = ids
     .filter(id => !baseP.chosen.includes(id) && (rated(id, 'must') >= 1 || rated(id, 'keen') >= 2))
     .sort((x, y) => scores[y] - scores[x] || (x < y ? -1 : 1));
@@ -188,9 +187,8 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
     const settledIn = new Set(results.flatMap(r => (r.forkId.startsWith('ko:') && r.winner === 'a' ? [r.a[0]] : [])));
     const rounds = new Map<string, number>(); // keep votes resolved per genre
     const tallyOf = (gid: string, id: string) => {
-      const latest = new Map<Player, 'a' | 'b'>();
-      for (const v of state.votes) if (v.forkId === `genre:${gid}:${id}`) latest.set(v.name, v.choice);
-      return { keep: PEOPLE.filter(p => latest.get(p) === 'a'), drop: PEOPLE.filter(p => latest.get(p) === 'b') };
+      const { a, b } = tallySides(state.votes, genreForkId(gid, id), PEOPLE);
+      return { keep: a, drop: b };
     };
     for (let settled = true; settled;) {
       settled = false;
@@ -201,7 +199,7 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
         const ask = inPlan.filter(id => !settledIn.has(id)).sort(byScore);
         if (inPlan.filter(wanted).length < 2 || !ask.some(wanted) || ask.some(id => claimed.has(id))) continue;
         const already = inPlan.filter(id => settledIn.has(id)).sort(byScore);
-        const n = rounds.get(g.id) ?? 0, forkId = n ? `genre:${g.id}#${n + 1}` : `genre:${g.id}`;
+        const n = rounds.get(g.id) ?? 0, forkId = genreRoundForkId(g.id, n);
         const tally = Object.fromEntries(ask.map(id => [id, tallyOf(g.id, id)]));
         const verdict = (id: string) => {
           const { keep, drop } = tally[id];

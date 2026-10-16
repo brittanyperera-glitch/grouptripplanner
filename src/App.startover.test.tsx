@@ -5,6 +5,7 @@ import { ServerLike } from './store/__fixtures__/serverLike';
 import { emptyRanking, type Person, type Response } from './types';
 import App from './App';
 import { openMenu } from './__fixtures__/menu';
+import { quizDone, mkItem as mk, crewQuizDone } from './__fixtures__/seed';
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const copy = vi.hoisted(() => ({
@@ -15,9 +16,6 @@ const copy = vi.hoisted(() => ({
 vi.mock('./data/catalogue.json', () => ({ default: cat }));
 vi.mock('./content/copy.json', () => ({ default: copy }));
 
-const mk = (id: string, name: string, area: string) => ({
-  id, name, area, about: `About ${name}`, hours: 3, slot: 'morning', fee: 'free', sideTrip: 0, photo: id, when: 'morning', credit: `Credit ${id}`,
-});
 const done = (name: Person): Response => ({
   name, days: 9, flex: false, pace: 1, ranking: { ...emptyRanking(), must: [['a'], ['b'], ['c']] }, final: { ...emptyRanking(), must: [['a']] },
   rated: ['a', 'b', 'c'], submitted: true, updatedAt: '2026-10-14T00:00:00Z',
@@ -25,7 +23,6 @@ const done = (name: Person): Response => ({
 
 // Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
 // Changed deliberately (Brittany 2026-10-16): Bingo is now a to-do, so a person with nothing to do also has one card.
-const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [{ id: 'b1', title: 't', squares: Array.from({ length: 9 }, () => ({ text: 's', ticked: false })), createdAt: '' }], updatedAt: '2026-10-14T00:00:00Z' }));
 beforeEach(() => {
   localStorage.clear();
   cat.items = [mk('a', 'Alpha Rock', 'Cultural Triangle'), mk('b', 'Beta Falls', 'Cultural Triangle'), mk('c', 'Gamma Beach', 'South coast')];
@@ -83,7 +80,7 @@ describe('Start over', () => {
     const store = new ServerLike();
     store.rows = { Alex: done('Alex'), Lazza: done('Lazza') };
     // Quiz done on the server, so this still lands on My trip as before the stayQuiz to-do existed.
-    store.stays = { crew: { Alex: { name: 'Alex', prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [{ id: 'b1', title: 't', squares: Array.from({ length: 9 }, () => ({ text: 's', ticked: false })), createdAt: '' }], updatedAt: '2026-10-14T00:00:00Z' } }, suggestions: [], admin: { pins: [], scouts: {} } };
+    store.stays = { crew: { Alex: crewQuizDone('Alex') }, suggestions: [], admin: { pins: [], scouts: {} } };
     localStorage.setItem('tp:me', 'Alex');
     render(<App store={store} />);
     await screen.findByRole('tab', { name: 'My trip' });

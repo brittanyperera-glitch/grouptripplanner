@@ -4,8 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyRanking, PEOPLE, type GroupResult, type Person, type Plan, type Response } from './types';
 import App from './App';
 import { openMenu } from './__fixtures__/menu';
-import { WALKTHROUGH_KEY, todayKey } from './lib/walkthrough';
-const seenWalkToday = () => localStorage.setItem(WALKTHROUGH_KEY, todayKey(new Date()));
+import { seenWalkToday, quizDone } from './__fixtures__/seed';
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const grp = vi.hoisted(() => ({ current: null as unknown }));
@@ -36,7 +35,6 @@ const row = (name: Person, over: Partial<Response> = {}): Response => ({
 });
 const seed = (r: Response) => localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
 // Changed deliberately (Brittany 2026-10-16): Bingo is now a to-do, so a person with nothing to do also has one card.
-const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [{ id: 'b1', title: 't', squares: Array.from({ length: 9 }, () => ({ text: 's', ticked: false })), createdAt: '' }], updatedAt: '2026-10-14T00:00:00Z' }));
 const seedCrew = (me: Person, lacking?: Person) => {
   for (const p of PEOPLE) seed(row(p, p === lacking ? { submitted: false } : {}));
   localStorage.setItem('tp:me', me);

@@ -7,6 +7,7 @@ import { friendStats } from '../lib/friendship';
 import { useApp } from '../state';
 import type { Copy } from '../state';
 import { GUESTS, isGuest, PEOPLE } from '../types';
+import { allSubmitted } from '../lib/group';
 import type { Player } from '../types';
 import { artSrc, cardColours, cardData, cardLayout, cardNo, FRIEND_LABELS, metaText, PALETTE, renderCardBlob, textSize, tierOf } from './profileCard';
 import type { Box, CardData, CardFriends } from './profileCard';
@@ -128,7 +129,7 @@ export default function Profile(props: ProfileProps) {
   const { name } = props;
   // Same gate as the Group stats page (Friends.tsx): a trip member, once all five have submitted.
   const friends = useMemo<CardFriends | null>(() => {
-    if (isGuest(name) || !PEOPLE.every(p => state.responses[p]?.submitted)) return null;
+    if (isGuest(name) || !allSubmitted(state.responses)) return null;
     const { twin, clash } = friendStats(state.responses, name);
     return twin || clash ? { twin, clash } : null;
   }, [name, state.responses]);

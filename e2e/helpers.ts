@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { WALKTHROUGH_KEY, todayKey } from '../src/lib/walkthroughKey';
 
 // A late catalogue item adds an open fork once the region fork settles, and it needs 3 votes of its own.
 // Switches to `who`, opens the knockouts and votes the first option on every expanded fork they have not
@@ -20,7 +21,6 @@ export async function voteThroughOpenForks(page: Page, who: string) {
 
 // Returning members now get a once-a-day welcome-back walkthrough. These specs test the screens behind it, so
 // every load starts with today's walkthrough already seen (an init script survives the specs' own storage clears).
-export const seenWalkthroughToday = (page: Page) => page.addInitScript(() => {
-  const d = new Date(), p = (n: number) => String(n).padStart(2, '0');
-  if (localStorage.getItem('tp:walkthrough-day') === null) localStorage.setItem('tp:walkthrough-day', `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`);
-});
+export const seenWalkthroughToday = (page: Page) => page.addInitScript(([key, day]) => {
+  if (localStorage.getItem(key) === null) localStorage.setItem(key, day);
+}, [WALKTHROUGH_KEY, todayKey(new Date())]);

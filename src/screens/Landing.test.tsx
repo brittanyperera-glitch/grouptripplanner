@@ -3,17 +3,18 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import Landing from './Landing';
 
-const covers = [{ id: 'a', photo: 'a' }] as never;
 const setup = () => {
   const onTrip = vi.fn(), onGuest = vi.fn();
-  render(<Landing covers={covers} onTrip={onTrip} onGuest={onGuest} />);
+  render(<Landing onTrip={onTrip} onGuest={onGuest} />);
   return { onTrip, onGuest };
 };
 
 describe('Landing', () => {
   it('shows the title and two real buttons with accessible names', () => {
     setup();
-    expect(screen.getByRole('heading', { name: 'The Homecoming' })).toBeInTheDocument();
+    // Changed deliberately (Brittany 2026-10-16): brand is now GROUP TRIP HERO, with "Sri Lanka: The Homecoming" beneath.
+    expect(screen.getByRole('heading', { name: 'Group Trip Hero' })).toBeInTheDocument();
+    expect(screen.getByText('Sri Lanka: The Homecoming')).toBeInTheDocument();
     const buttons = screen.getAllByRole('button');
     expect(buttons).toHaveLength(2);
     expect(buttons.every(b => b.tagName === 'BUTTON')).toBe(true);

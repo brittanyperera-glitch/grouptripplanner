@@ -1,6 +1,7 @@
 import type { Knockout } from '../types';
+import { REGION_FORK } from './votes';
 
-export const REGION_FORK = 'region:north';
+export { REGION_FORK };
 
 export type KoEntry =
   | { kind: 'fork'; k: Knockout }

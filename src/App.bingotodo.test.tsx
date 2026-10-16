@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyRanking, PEOPLE, type GroupResult, type Person, type Plan, type Response } from './types';
 import App from './App';
 import { openMenu } from './__fixtures__/menu';
-import { WALKTHROUGH_KEY, todayKey } from './lib/walkthrough';
+import { seenWalkToday, mkItem as mk } from './__fixtures__/seed';
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const grp = vi.hoisted(() => ({ current: null as unknown }));
@@ -18,9 +18,6 @@ vi.mock('./content/copy.json', () => ({ default: copy }));
 // The group result is fixed so the test controls which knockouts are open and whether the plan is locked.
 vi.mock('./workers/usePlan', async orig => ({ ...(await orig<typeof import('./workers/usePlan')>()), useGroupResult: () => ({ data: grp.current, loading: false }) }));
 
-const mk = (id: string, name: string, area: string) => ({
-  id, name, area, about: `About ${name}`, hours: 3, slot: 'morning', fee: 'free', sideTrip: 0, photo: id, when: 'morning', credit: `Credit ${id}`,
-});
 const THREE = [mk('a', 'Alpha Rock', 'Cultural Triangle'), mk('b', 'Beta Falls', 'Cultural Triangle'), mk('c', 'Gamma Beach', 'South coast')];
 
 const plan: Plan = {
@@ -49,7 +46,6 @@ const seedCrew = (me: Person, bingo: unknown[] = []) => {
   localStorage.setItem('tp:me', me);
   crew(me, bingo);
 };
-const seenWalkToday = () => localStorage.setItem(WALKTHROUGH_KEY, todayKey(new Date()));
 const bingoPage = () => screen.findByRole('button', { name: /New card/ });
 
 beforeEach(() => { localStorage.clear(); window.location.hash = ''; cat.items = THREE; grp.current = group(NONE); });

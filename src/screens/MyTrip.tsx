@@ -1,6 +1,7 @@
 import './MyTrip.css';
-import { IconCar, IconPin, IconSun, IconTrain } from '../components/Icons';
-import { useEffect, useState } from 'react';
+import { IconCar, IconDown, IconPin, IconSun, IconTrain, IconWarn } from '../components/Icons';
+import { useEffect, useId, useState } from 'react';
+import ItemSheet from '../components/ItemSheet';
 import RouteMap from '../components/Map';
 import { motion } from '../components/motion';
 import { Cover } from '../components/PhotoCard';
@@ -11,7 +12,9 @@ import { unlock } from '../components/sound';
 import TransportLine, { transportOf } from '../components/TransportLine';
 import BookCard, { type DayTip } from './BookCard';
 import { useJourneyNotes } from './GroupAnswers';
+import { factPills } from './Rate';
 import { Reveal } from './Reveal';
+import { SaveItinerary } from './Itinerary';
 
 // A day with this many driving hours or more gets a "Long driving day" note.
 const LONG_DRIVE_HOURS = 5;
@@ -29,11 +32,29 @@ const ICON = { drive: IconCar, train: IconTrain, free: IconSun, activity: IconPi
 
 const andList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
 
+// What a tapped activity shows in place: the same facts as the full-screen sheet, which one button away has the rest.
+function EntryFacts({ id, item, onFull }: { id: string; item: Item; onFull(): void }) {
+  return (
+    <span className="it-panel" id={id}>
+      <span className="pills">{factPills(item).map(([icon, text]) => <span key={text} className="pill">{icon}<span>{text}</span></span>)}</span>
+      {item.about && <span className="it-line">{item.about}</span>}
+      {item.book && <span className="it-line"><b>Book:</b> {item.book}</span>}
+      {item.warn && <span className="fact-warn"><IconWarn size={16} /><span><b>Heads up:</b> {item.warn}</span></span>}
+      {item.britt && <span className="it-line"><b>Britt says:</b> {item.britt}</span>}
+      <button type="button" className="it-full" onClick={onFull}>Full details</button>
+    </span>
+  );
+}
+
 // One card per day. The header strip is the day's first activity photo when we have one.
 // skippedBy is for the group plan only (D7): a Skip is a strong minus, not a veto, so it is named.
 export function DayRows({ plan, items = [], legs = [], skippedBy, quests = [], tips = [], journey = true }: { plan: Plan; items?: Item[]; legs?: Leg[]; skippedBy?: (id: string) => string[]; quests?: SideQuest[]; tips?: DayTip[]; journey?: boolean }) {
   const notes = useJourneyNotes(plan, legs, journey);
   const byId = new Map(items.map(i => [i.id, i]));
+  const uid = useId();
+  // One row open at a time, keyed by day and position.
+  const [open, setOpen] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<Item | null>(null);
   return (
     <div role="list" aria-label="Days" className="days">
       {plan.days.map(d => {
@@ -55,15 +76,28 @@ export function DayRows({ plan, items = [], legs = [], skippedBy, quests = [], t
                 const Icon = ICON[e.kind];
                 const move = transportOf(e, legs);
                 const skipped = e.kind === 'activity' && e.itemId && skippedBy ? skippedBy(e.itemId) : [];
+                const item = e.kind === 'activity' && e.itemId ? byId.get(e.itemId) : undefined;
+                const key = `${d.n}-${i}`, panel = `${uid}${key}`, isOpen = open === key;
+                const text = (
+                  <>
+                    {move ? <TransportLine t={move} /> : entryText(e)}
+                    {e.kind === 'activity' && (e.roundTrip ?? 0) >= MIN_ROUND_TRIP && (
+                      <small>plus about {hrs(e.roundTrip ?? 0)} h there and back</small>
+                    )}
+                    {skipped.length > 0 && <small>Skipped by {andList(skipped)}</small>}
+                  </>
+                );
                 return (
                   <span key={i} className={`entry ${e.kind}`}>
                     <span className="dot" aria-hidden="true"><Icon size={13} /></span>
                     <span className="entry-txt">
-                      {move ? <TransportLine t={move} /> : entryText(e)}
-                      {e.kind === 'activity' && (e.roundTrip ?? 0) >= MIN_ROUND_TRIP && (
-                        <small>plus about {hrs(e.roundTrip ?? 0)} h there and back</small>
-                      )}
-                      {skipped.length > 0 && <small>Skipped by {andList(skipped)}</small>}
+                      {item ? (
+                        <button type="button" className="it-row" aria-expanded={isOpen} aria-controls={isOpen ? panel : undefined} onClick={() => setOpen(isOpen ? null : key)}>
+                          <span className="it-row-txt">{text}</span>
+                          <span className="it-chev" aria-hidden="true"><IconDown size={16} /></span>
+                        </button>
+                      ) : text}
+                      {item && isOpen && <EntryFacts id={panel} item={item} onFull={() => setSheet(item)} />}
                     </span>
                   </span>
                 );
@@ -81,6 +115,7 @@ export function DayRows({ plan, items = [], legs = [], skippedBy, quests = [], t
           </div>
         );
       })}
+      {sheet && <ItemSheet items={[sheet]} title={sheet.name} onClose={() => setSheet(null)} />}
     </div>
   );
 }
@@ -111,6 +146,7 @@ export default function MyTrip({ plan, days, showBook = false }: { plan: Plan & 
       <RouteMap route={plan.route} drive={!revealing} />
       {me && <button type="button" className="cta mytrip-reveal" onClick={() => { unlock(); setRevealing(true); }}>Play my route reveal</button>}
       {revealing && me && <Reveal plan={plan} who={me} onClose={() => setRevealing(false)} />}
+      <SaveItinerary plan={plan} kind="My" />
       <DayRows plan={plan} items={items} legs={legs} journey={false} />
     </section>
   );

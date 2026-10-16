@@ -3,9 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyRanking, PEOPLE, type GroupResult, type Person, type Plan, type Response } from './types';
 import App from './App';
-import { WALKTHROUGH_KEY, todayKey } from './lib/walkthrough';
+import { seenWalkToday, mkItem as mk } from './__fixtures__/seed';
 // These tests exercise the tabs, not the once-a-day welcome-back walkthrough (it has its own tests), so it counts as seen today.
-const seenWalkToday = () => localStorage.setItem(WALKTHROUGH_KEY, todayKey(new Date()));
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const grp = vi.hoisted(() => ({ current: null as unknown }));
@@ -18,9 +17,6 @@ vi.mock('./data/catalogue.json', () => ({ default: cat }));
 vi.mock('./content/copy.json', () => ({ default: copy }));
 vi.mock('./workers/usePlan', async orig => ({ ...(await orig<typeof import('./workers/usePlan')>()), useGroupResult: () => ({ data: grp.current, loading: false }) }));
 
-const mk = (id: string, name: string, area: string, extra = {}) => ({
-  id, name, area, about: `About ${name}`, hours: 3, slot: 'morning', fee: 'free', sideTrip: 0, photo: id, when: 'morning', credit: `Credit ${id}`, ...extra,
-});
 const ITEMS = [
   mk('a', 'Alpha Rock', 'Cultural Triangle', { book: 'Book a week ahead', warn: 'Steep climb' }),
   mk('b', 'Beta Falls', 'Cultural Triangle', { book: 'Permit needed' }),

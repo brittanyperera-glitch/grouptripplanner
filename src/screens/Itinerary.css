@@ -1,0 +1,36 @@
+/* The saved itinerary: mounted on demand, never shown in the app, and the only thing that prints. */
+.it-print { display: none; }
+
+/* The screen button: plain text, secondary to the plan itself. */
+.it-save { all: unset; box-sizing: border-box; align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; cursor: pointer; font-weight: 800; font-size: 14px; color: var(--teal); text-decoration: underline; text-underline-offset: 3px; }
+.it-save:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; border-radius: 6px; }
+
+@page { margin: 12mm; }
+
+@media print {
+  /* Everything the app renders sits under #root or in a portal on body: hide all of it, so the fixed header and tab bar go too. */
+  body > *:not(.it-print) { display: none !important; }
+  html, body { background: #fff !important; overflow: visible !important; height: auto !important; }
+  .it-print { display: block; background: #fff; color: #111; font: 10pt/1.4 var(--font-body, sans-serif); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .it-print * { box-sizing: border-box; }
+  .it-print b { font-weight: 800; }
+
+  .it-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8mm; margin-bottom: 6mm; }
+  .it-titles { min-width: 0; flex: 1 1 auto; }
+  .it-title { margin: 0 0 2mm; font: 800 26pt/1 var(--font-head, sans-serif); }
+  .it-kind { margin: 0 0 3mm; font: 800 12pt/1.2 var(--font-head, sans-serif); color: #b8381f; }
+  .it-meta { margin: 0 0 1.5mm; color: #333; }
+  .it-map { flex: none; width: 64mm; }
+  .it-map svg { display: block; width: 100%; height: auto; }
+
+  .it-day, .it-block { break-inside: avoid; page-break-inside: avoid; margin: 0 0 5mm; padding-top: 2mm; border-top: 0.4mm solid #111; }
+  .it-dayhead { margin: 0 0 2mm; display: flex; align-items: baseline; gap: 3mm; font: 800 15pt/1.1 var(--font-head, sans-serif); }
+  .it-area { font-size: 9.5pt; font-weight: 700; color: #333; }
+  .it-list { list-style: none; margin: 0; padding: 0; }
+  .it-list > li { margin: 0 0 1.8mm; }
+  .it-name { font-weight: 800; overflow-wrap: anywhere; }
+  .it-dur { margin-left: 2mm; font-variant-numeric: tabular-nums; color: #333; white-space: nowrap; }
+  .it-sub { display: block; color: #222; font-size: 9.5pt; overflow-wrap: anywhere; }
+  .it-url { font-size: 8.5pt; word-break: break-all; }
+  .it-move { color: #444; font-size: 9pt; padding-left: 3mm; border-left: 0.5mm dashed #888; }
+}

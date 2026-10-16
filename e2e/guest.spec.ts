@@ -48,7 +48,8 @@ test('guest flow: play through, reset, start clean', async ({ page }) => {
   await page.getByRole('group', { name: /^Knockout:/ }).first().getByRole('button', { name: /^Vote for/ }).first().click();
 
   await finishAndReset(page);
-  await expect(page.getByRole('heading', { name: 'The Homecoming' })).toBeVisible();
+  // Changed deliberately (Brittany 2026-10-16): the landing heading is now the brand, GROUP TRIP HERO.
+  await expect(page.getByRole('heading', { name: 'Group Trip Hero' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Try it as a guest/ })).toBeVisible();
   expect(new URL(page.url()).hash).toBe('');
 
@@ -70,7 +71,7 @@ test('guest session restores real device keys and leaves no new data keys', asyn
   await enterAunty(page);
   await runToTabs(page);
   await finishAndReset(page);
-  await expect(page.getByRole('heading', { name: 'The Homecoming' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Group Trip Hero' })).toBeVisible();
   const after = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage)));
   expect(after['tp:me']).toBe('Alex');
   expect(after['tp:resp:Alex']).toBe(resp);

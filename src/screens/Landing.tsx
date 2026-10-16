@@ -1,35 +1,16 @@
-import { useEffect, useState } from 'react';
-import { motion } from '../components/motion';
-import type { Item } from '../types';
+import TukTuk from '../components/TukTuk';
 import './Landing.css';
 
-const SLIDE_MS = 6000;
-
-/** Entry screen: the cover slideshow behind two big cards. Slideshow markup and CSS (.intro, .slides) are Name's. */
-export default function Landing({ covers = [], onTrip, onGuest }: { covers?: Item[]; onTrip(): void; onGuest(): void }) {
-  const [mode] = useState(motion);
-  const [slide, setSlide] = useState(0);
-  const [broken, setBroken] = useState<Set<string>>(new Set());
-  const shots = covers.filter(c => c.photo && !broken.has(c.id)).slice(0, 6);
-  const current = shots.length ? shots[slide % shots.length] : undefined;
-
-  useEffect(() => {
-    if (mode !== 'full' || shots.length < 2) return;
-    const t = setInterval(() => setSlide(s => s + 1), SLIDE_MS);
-    return () => clearInterval(t);
-  }, [mode, shots.length]);
-
+/** Entry screen: the Group Trip Hero postcard, with the trip and guest doors. */
+export default function Landing({ onTrip, onGuest }: { onTrip(): void; onGuest(): void }) {
   return (
     <div className="intro landing">
-      <div className="slides" aria-hidden="true">
-        {shots.map(c => (
-          <img key={c.id} src={`/img/${c.photo}.jpg`} alt="" className={c === current ? 'on' : ''}
-            onError={() => setBroken(b => new Set(b).add(c.id))} />
-        ))}
-      </div>
-      <div className="landing-scrim" />
       <main className="landing-body">
-        <h1 className="landing-title">The Homecoming</h1>
+        <div className="landing-top">
+          <p className="landing-stamp"><span>Postcard</span><span>Sri Lanka</span></p>
+          <h1 className="landing-title"><span>Group</span> <span>Trip</span> <span>Hero</span></h1>
+          <p className="landing-trip">Sri Lanka: The Homecoming</p>
+        </div>
         <div className="landing-cards">
           <button type="button" className="landing-card primary" onClick={onTrip}>
             <span className="landing-h">I'm on the trip</span>
@@ -41,6 +22,9 @@ export default function Landing({ covers = [], onTrip, onGuest }: { covers?: Ite
           </button>
         </div>
       </main>
+      <div className="landing-road" aria-hidden="true">
+        <div className="landing-tuk"><TukTuk width={104} driving /></div>
+      </div>
     </div>
   );
 }

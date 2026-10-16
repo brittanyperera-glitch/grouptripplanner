@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import Avatar from './components/Avatar';
 import { GuideNav } from './components/GuideNav';
 import { MUTE_KEY } from './components/sound';
-import { IconBook, IconGroup, IconList, IconRoute, IconSpark } from './components/Icons';
+import { IconBook, IconGroup, IconList, IconPin, IconRoute, IconSpark } from './components/Icons';
 import { cssEnter, lastNav, navigate } from './components/motion';
 import QuipBurst from './components/QuipBurst';
 import type { QuipKind } from './components/QuipBurst';
@@ -44,7 +44,8 @@ import copyData from './content/copy.json';
 import genresJson from './data/genres.json';
 import GuestRoot from './guest/GuestRoot';
 import Landing from './screens/Landing';
-import { AppProvider, liveItems, ME_KEY, pickQuip, useApp } from './state';
+import Stays from './screens/Stays';
+import { AppProvider, ME_KEY, pickQuip, useApp } from './state';
 import type { Copy } from './state';
 import { connectionMissingNow, supabaseConfigured } from './store';
 import { clearTripKey, readTripKey } from './store/tripKey';
@@ -56,13 +57,13 @@ import type { Genre, GroupResult, Item, Pace as PaceT, Player, Ranking, Response
 
 type Step = 'days' | 'pace' | 'howto' | 'rate' | 'tabs';
 const howtoCopy = () => (copyData as unknown as { howto?: HowToCopy }).howto;
-type Tab = 'My trip' | 'Picks' | 'Group' | 'Suggest' | 'Guide' | 'Profile';
+type Tab = 'My trip' | 'Picks' | 'Group' | 'Stays' | 'Suggest' | 'Guide' | 'Profile';
 // The tab bar only renders once I have submitted, so Guide is never offered before that.
-const TABS: Tab[] = ['My trip', 'Picks', 'Group', 'Suggest', 'Guide', 'Profile'];
+const TABS: Tab[] = ['My trip', 'Picks', 'Group', 'Stays', 'Suggest', 'Guide', 'Profile'];
 const GENRES = genresJson.genres as Genre[];
 const AWARDS_SEEN_KEY = 'tp:awards-seen';
 const readSeen = (): string | null => { try { return localStorage.getItem(AWARDS_SEEN_KEY); } catch { return null; } };
-const TAB_ICON: Record<Tab, (p: { size?: number }) => JSX.Element> = { 'My trip': IconRoute, 'Picks': IconList, 'Group': IconGroup, 'Suggest': IconSpark, 'Guide': IconBook, 'Profile': IconGroup };
+const TAB_ICON: Record<Tab, (p: { size?: number }) => JSX.Element> = { 'My trip': IconRoute, 'Picks': IconList, 'Group': IconGroup, 'Stays': IconPin, 'Suggest': IconSpark, 'Guide': IconBook, 'Profile': IconGroup };
 type Say = (t?: string, kind?: QuipKind) => void;
 
 type TripView = 'mine' | 'group';
@@ -142,7 +143,7 @@ function SuggestTab() {
 }
 
 // Picks is drawn inside Flow, which holds my draft ranking.
-const PANELS: Record<Exclude<Tab, 'My trip' | 'Picks' | 'Profile' | 'Group'>, () => JSX.Element> = { 'Suggest': SuggestTab, 'Guide': Guide };
+const PANELS: Record<Exclude<Tab, 'My trip' | 'Picks' | 'Profile' | 'Group' | 'Stays'>, () => JSX.Element> = { 'Suggest': SuggestTab, 'Guide': Guide };
 
 const blank = (name: Player): Response => ({
   name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: new Date().toISOString(),
@@ -303,8 +304,10 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const awardList = useMemo(() => (group?.locked ? groupAwards(state, items, GENRES, [...group.results, ...group.knockouts]) : []), [group, state, items]);
   const awardsUnseen = awardList.length > 0 && awardsSeen !== awardsKey(awardList);
   // Once ratings lock, Picks has nothing left to offer: the bar drops it and a stale visit lands on Group.
-  const tab: Tab = locked && rawTab === 'Picks' ? 'Group' : rawTab;
-  const tabs = locked ? TABS.filter(t => t !== 'Picks') : TABS;
+  // Stays opens once the route is final, and takes Picks' slot so the bar stays at six tabs (a seventh clips at 320).
+  const routeFinal = !!(group?.locked && group.final);
+  const tab: Tab = locked && rawTab === 'Picks' ? 'Group' : rawTab === 'Stays' && !routeFinal ? 'My trip' : rawTab;
+  const tabs = TABS.filter(t => !(t === 'Picks' && (locked || routeFinal)) && !(t === 'Stays' && !routeFinal));
   tabRef.current = tab;
   const todo = shown === 'tabs' ? openItems({ me, group, state, unrated: unrated.length, ratingsLocked: locked, awardsUnseen }) : [];
   const badges = tabBadges(todo);
@@ -392,6 +395,8 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
         <div className="foot stack">{changeLink}</div>
       </div>
     );
+  } else if (tab === 'Stays') {
+    content = <div role="tabpanel" aria-label="Stays" className="panel"><Stays onQuiz={() => showOverlay('quiz')} /></div>;
   } else if (tab === 'Profile') {
     // Back goes to the tab I came from: tab switches are history entries.
     content = <div role="tabpanel" aria-label="Profile" className="panel"><Profile name={me} players={copy.players} onBack={() => history.back()} onQuiz={() => showOverlay('quiz')} onBingo={() => showOverlay('bingo')} /></div>;
@@ -497,7 +502,7 @@ export default function App({ store }: { store?: Store }) {
   const [entry, setEntry] = useState<Entry>(() => firstEntry(store));
   if (wantsRaw(window.location.hash)) return <Raw store={store} />;
   // The two hash switches skip the connection check: a guest never touches the shared database.
-  if (entry === 'landing') return <Landing covers={coverItems(liveItems({ responses: {}, suggestions: [], votes: [] }), copyData as unknown as Copy)} onTrip={() => setEntry('trip')} onGuest={() => setEntry('guest')} />;
+  if (entry === 'landing') return <Landing onTrip={() => setEntry('trip')} onGuest={() => setEntry('guest')} />;
   // Clear the #/guest hash too, or a reload would drop straight back into guest mode.
   const leaveGuest = () => { history.replaceState(null, '', window.location.pathname + window.location.search); setEntry('landing'); };
   if (entry === 'guest') return <GuestRoot onExit={leaveGuest}><Shell /></GuestRoot>;

@@ -4,9 +4,16 @@ import type { Item, Plan } from '../types';
 
 export interface DayTip { day: number; name: string; text: string }
 
+const firstDay = (plan: Plan, id: string): number | null => plan.days.find(d => d.entries.some(e => e.itemId === id))?.n ?? null;
+
 /** Each chosen item's Good to know tip, with the first day it is visited (null when no day carries it). */
 export function tipsOf(plan: Plan, chosen: Item[]): { item: Item; day: number | null }[] {
-  return chosen.filter(i => i.warn).map(item => ({ item, day: plan.days.find(d => d.entries.some(e => e.itemId === item.id))?.n ?? null }));
+  return chosen.filter(i => i.warn).map(item => ({ item, day: firstDay(plan, item.id) }));
+}
+
+/** Each chosen item with a booking note, with the first day it is visited. */
+export function bookOf(plan: Plan, chosen: Item[]): { item: Item; day: number | null }[] {
+  return chosen.filter(i => i.book).map(item => ({ item, day: firstDay(plan, item.id) }));
 }
 
 /** "Before you go" on Group trip: one folded card; tips that sit on a day show there, the rest stay here. */

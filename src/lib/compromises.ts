@@ -1,11 +1,10 @@
 import { AREA_HUB, PEOPLE } from '../types';
-import type { AppState, GroupResult, Hub, Item, Player } from '../types';
+import type { AppState, GroupResult, Hub, Item } from '../types';
 import { tierOf } from './ranking';
+import { latestVotes, NORTH_AREAS, REGION_FORK } from './votes';
 
 export const MAX_CARDS = 5;
 const MAX_CHARS = 48; // "about 45": the two-name skipped line is 47
-const REGION_FORK = 'region:north';
-const NORTH_AREAS = new Set<string>(['North', 'East coast']);
 
 export type CompromiseKind = 'region' | 'headToHead' | 'skipped' | 'back' | 'missed';
 export interface Compromise { kind: CompromiseKind; text: string; stop: Hub }
@@ -34,10 +33,9 @@ export function compromises(group: GroupResult, state: Pick<AppState, 'responses
 
   // Latest vote per person on a fork, as counts for each side.
   const tally = (forkId: string) => {
-    const latest = new Map<Player, 'a' | 'b'>();
-    for (const v of state.votes) if (v.forkId === forkId) latest.set(v.name, v.choice);
+    // Everyone who voted counts, guests included (unlike group.ts, which counts the five).
     const n = { a: 0, b: 0 };
-    latest.forEach(c => { n[c]++; });
+    latestVotes(state.votes, forkId, null).forEach(c => { n[c]++; });
     return n;
   };
 

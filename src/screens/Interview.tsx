@@ -3,6 +3,7 @@ import type { Person, PrefAnswer, PrefStance, PrefTopic } from '../types';
 import Avatar from '../components/Avatar';
 import { IconCheck, IconCross, IconLeft } from '../components/Icons';
 import { CARD_COPY, COPY, QUIPS, STRETCH, STRETCH_ASK, type CardCopy, type Opt } from './interviewCopy';
+import { isStretchKey, nightsKey, nightsOf, stretchKey, withoutNights } from '../lib/prefs';
 import './Interview.css';
 
 type Topic = keyof typeof CARD_COPY;
@@ -19,24 +20,7 @@ export const CARDS: Card[] = [
   { topic: 'nos', ...CARD_COPY.nos, noOnly: true },
 ];
 
-/*
- * Extra keys stored inside PrefAnswer.picks (src/types.ts is not ours to change):
- *   stretch:<same|plus20|plus50|anything>  budget card, second question, stance 'happy'.
- *   nights:<stayTypeKey>:<1|2|3>           stayType card, stance 'happy'; present only when a limit other than
- *                                          "any" is chosen, so absent means any. Setting a new limit removes the old
- *                                          key; leaving 'happy' on the type removes it too.
- * Readers that iterate picks as stay types must skip keys containing ':'.
- */
-const STRETCH_PREFIX = 'stretch:';
-const NIGHTS_PREFIX = 'nights:';
 const NIGHT_CHOICES = [1, 2, 3] as const;
-const nightsKey = (type: string, n: number) => `${NIGHTS_PREFIX}${type}:${n}`;
-const nightsOf = (picks: Record<string, PrefStance>, type: string): number | undefined => {
-  const k = Object.keys(picks).find((x) => x.startsWith(`${NIGHTS_PREFIX}${type}:`));
-  return k ? Number(k.split(':')[2]) : undefined;
-};
-const withoutNights = (picks: Record<string, PrefStance>, type: string) =>
-  Object.fromEntries(Object.entries(picks).filter(([k]) => !k.startsWith(`${NIGHTS_PREFIX}${type}:`)));
 
 const blank = (topic: PrefTopic): PrefAnswer => ({ topic, picks: {}, noPreference: false, skipped: false });
 const blanks = () => CARDS.map((c) => blank(c.topic));
@@ -66,7 +50,7 @@ export function personality(answers: PrefAnswer[]): { title: string; happy: stri
   let title = T.easy;
   if (noPrefCount * 2 >= CARDS.length || nothing) title = T.easy;
   else if (transport.tuktuk === 'happy' && stay.guesthouse === 'happy') title = T.local;
-  else if (budget['85plus'] || budget[`${STRETCH_PREFIX}anything`]) title = T.spender;
+  else if (budget['85plus'] || budget[stretchKey('anything')]) title = T.spender;
   else if (budget.under10 || stay.hostel === 'happy') title = T.backpacker;
   else if (stay.hotel === 'happy' || stay.villa === 'happy' || stay.boutique === 'happy' || rooms.dorm === 'noway' || nos.dorm === 'noway') title = T.comfort;
 
@@ -74,9 +58,9 @@ export function personality(answers: PrefAnswer[]): { title: string; happy: stri
   const noway: string[] = [];
   for (const c of CARDS) {
     const picks = by(c.topic);
-    for (const [key, label] of [...c.opts, ...(c.topic === 'budget' ? STRETCH.map(([k, l]): Opt => [`${STRETCH_PREFIX}${k}`, `Stretch ${l}`]) : [])]) {
+    for (const [key, label] of [...c.opts, ...(c.topic === 'budget' ? STRETCH.map(([k, l]): Opt => [stretchKey(k), `Stretch ${l}`]) : [])]) {
       const s = picks[key];
-      const text = c.topic === 'budget' && !key.startsWith(STRETCH_PREFIX) ? `${label} a night` : label;
+      const text = c.topic === 'budget' && !isStretchKey(key) ? `${label} a night` : label;
       if (s === 'happy') happy.push(text);
       if (s === 'noway') noway.push(text);
     }
@@ -111,11 +95,11 @@ export default function Interview({ initial, onSave, onDone, onClose }: { me: Pe
 
   const tap = (key: string) => {
     const cur = ans.picks[key];
-    const isStretch = key.startsWith(STRETCH_PREFIX);
+    const isStretch = isStretchKey(key);
     let picks = { ...ans.picks };
     if (card.single) {
       // One pick per group: bands and stretch are separate groups on the budget card.
-      for (const k of Object.keys(picks)) if (k.startsWith(STRETCH_PREFIX) === isStretch) delete picks[k];
+      for (const k of Object.keys(picks)) if (isStretchKey(k) === isStretch) delete picks[k];
     } else delete picks[key];
     const nx = card.single ? (cur ? undefined : 'happy') : next(cur, card.noOnly);
     if (nx) picks[key] = nx;
@@ -235,7 +219,7 @@ export default function Interview({ initial, onSave, onDone, onClose }: { me: Pe
         <>
           <div className="big display small">{STRETCH_ASK}</div>
           <div className="iv-chips" role="group" aria-label={STRETCH_ASK}>
-            {STRETCH.map(([k, label]) => <div key={k} className="iv-opt">{chip(`${STRETCH_PREFIX}${k}`, label, `Stretch ${label}`)}</div>)}
+            {STRETCH.map(([k, label]) => <div key={k} className="iv-opt">{chip(stretchKey(k), label, `Stretch ${label}`)}</div>)}
           </div>
         </>
       )}

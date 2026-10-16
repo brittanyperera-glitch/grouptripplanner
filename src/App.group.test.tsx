@@ -4,9 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyRanking, PEOPLE, type GroupResult, type Person, type Plan, type Response } from './types';
 import App from './App';
 import { openMenu } from './__fixtures__/menu';
-import { WALKTHROUGH_KEY, todayKey } from './lib/walkthrough';
+import { seenWalkToday, quizDoneNoBingo as quizDone, mkItem as mk } from './__fixtures__/seed';
 // These tests exercise the tabs, not the once-a-day welcome-back walkthrough (it has its own tests), so it counts as seen today.
-const seenWalkToday = () => localStorage.setItem(WALKTHROUGH_KEY, todayKey(new Date()));
 
 const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
 const grp = vi.hoisted(() => ({ current: null as unknown }));
@@ -20,9 +19,6 @@ vi.mock('./content/copy.json', () => ({ default: copy }));
 // The group result is fixed here so the test controls which knockouts are open; the guest's own votes still come from the real store.
 vi.mock('./workers/usePlan', async orig => ({ ...(await orig<typeof import('./workers/usePlan')>()), useGroupResult: () => ({ data: grp.current, loading: false }) }));
 
-const mk = (id: string, name: string, area: string, extra = {}) => ({
-  id, name, area, about: `About ${name}`, hours: 3, slot: 'morning', fee: 'free', sideTrip: 0, photo: id, when: 'morning', credit: `Credit ${id}`, ...extra,
-});
 const THREE = [mk('a', 'Alpha Rock', 'Cultural Triangle', { book: 'Book a week ahead' }), mk('b', 'Beta Falls', 'Cultural Triangle'), mk('c', 'Gamma Beach', 'South coast')];
 
 const plan: Plan = {
@@ -43,7 +39,6 @@ const row = (name: Person, over: Partial<Response> = {}): Response => ({
 });
 const seed = (r: Response) => localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
 // Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
-const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z' }));
 const seedCrew = (me: Person, lacking?: Person) => {
   for (const p of PEOPLE) seed(row(p, p === lacking ? { submitted: false } : {}));
   localStorage.setItem('tp:me', me);
@@ -201,7 +196,8 @@ describe('guest exit', () => {
     expect(window.location.hash).toBe('#/guest');
     openMenu();
     await user.click(await screen.findByRole('button', { name: 'Log out' }));
-    await screen.findByRole('heading', { name: 'The Homecoming' });
+    // Changed deliberately (Brittany 2026-10-16): the landing heading is now the brand, GROUP TRIP HERO.
+    await screen.findByRole('heading', { name: 'Group Trip Hero' });
     expect(window.location.hash).toBe('');
   });
 });

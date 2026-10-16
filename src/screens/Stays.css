@@ -1,0 +1,88 @@
+/* Stays screens (Stays, StayBoard, StayRank, StayVote, StayAddSheet). Only st- classes lead a rule here; shared classes are used in markup, never restyled. */
+.st { min-width: 0; }
+.st-top-bar { display: flex; align-items: center; min-height: 44px; }
+.st-back { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--r-pill); color: var(--ink); }
+.st-back:focus-visible, .st-link:focus-visible, .st-ghost:focus-visible, .st-pill:focus-visible, .st-row:focus-visible, .st-pick:focus-visible, .st-fold:focus-visible, .st-x:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }
+.st-h { margin: 0; overflow-wrap: anywhere; }
+
+/* Steps strip: five equal cells, so nothing can run past the column at 320. */
+.st-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+.st-step { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; text-align: center; }
+.st-dot { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 800 12px/1 var(--font-body); color: var(--muted); box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.st-step[data-state='done'] .st-dot { background: var(--teal-deep); color: var(--on-teal); box-shadow: none; }
+.st-step[data-state='now'] .st-dot { background: var(--red-deep); color: var(--on-red); box-shadow: none; }
+.st-step-name { max-width: 100%; font-size: 10px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); overflow-wrap: anywhere; }
+.st-step[data-state='now'] .st-step-name { color: var(--ink); }
+
+.st-card { min-width: 0; overflow: hidden; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow-card); }
+.st-step-card { display: flex; flex-direction: column; gap: 10px; padding: 16px; overflow: visible; }
+.st-step-card > button { flex: none; }
+.st-step-title { margin: 0; font: 800 28px/1 var(--font-head); text-transform: uppercase; overflow-wrap: anywhere; }
+.st-step-card .st-scout { margin: 0; }
+.st-scout { font-size: 13px; font-weight: 700; color: var(--teal); }
+
+/* Destinations: one line each, tap for its board. */
+.st-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.st-row { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; min-height: 56px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 10px 14px; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow-card); }
+.st-row-main { flex: 1 1 150px; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+.st-row-res { flex: 1 0 100%; order: 3; font-size: 13px; font-weight: 700; color: var(--teal); overflow-wrap: anywhere; }
+.st-scout-av { flex: none; display: inline-flex; border-radius: 50%; overflow: hidden; }
+
+/* Board */
+.st-kinds { display: flex; flex-wrap: wrap; gap: 8px; }
+.st-pill { all: unset; box-sizing: border-box; cursor: pointer; min-height: 44px; padding: 0 16px; display: inline-flex; align-items: center; gap: 4px; border-radius: var(--r-pill); background: var(--chip); color: var(--ink); font: 700 14px/1 var(--font-body); }
+.st-pill[aria-pressed='true'] { background: var(--teal-deep); color: var(--on-teal); }
+.st-add { flex: none; }
+.st-gate { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.st-reason { text-align: left; }
+.st-link { all: unset; box-sizing: border-box; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; padding: 0 8px; font-size: 14px; font-weight: 700; color: var(--teal-deep); text-decoration: underline; }
+.st-list { display: flex; flex-direction: column; gap: 14px; }
+.st-face { display: flex; flex-direction: column; min-width: 0; }
+.st-photo-wrap { position: relative; }
+.st-photo { width: 100%; aspect-ratio: 16 / 10; }
+.st-body { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 14px; min-width: 0; overflow-wrap: anywhere; }
+.st-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.st-name { margin: 0; min-width: 0; font: 800 22px/1.05 var(--font-head); text-transform: uppercase; }
+.st-by { flex: none; display: inline-flex; border-radius: 50%; overflow: hidden; }
+.st-price { margin: 0; font-size: 14.5px; font-weight: 800; }
+.st-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.st-chip { padding: 3px 9px; border-radius: var(--r-pill); background: var(--chip); font: 700 12px/1.4 var(--font-body); }
+.st-why { margin: 0; font-size: 14px; color: var(--muted); }
+.st-warn { margin: 0; font-size: 12.5px; line-height: 1.35; color: var(--coconut-text); }
+.st-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 14px 12px; }
+.st-react .st-actions { padding: 0; }
+.st-ghost { all: unset; box-sizing: border-box; cursor: pointer; min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1.5px var(--line-strong); font: 700 14px/1 var(--font-body); color: var(--ink); }
+.st-n { font-weight: 800; }
+.st-voters { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* Ranking grid: tap a card, the badge says 1st or 2nd. */
+.st-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+.st-pick { all: unset; box-sizing: border-box; cursor: pointer; display: block; position: relative; min-width: 0; overflow: hidden; border-radius: var(--r-photo); background: var(--card); box-shadow: var(--shadow-card); text-align: left; }
+.st-pick[aria-pressed='true'] { box-shadow: 0 0 0 3px var(--red-deep); }
+.st-pick .st-name { font-size: 18px; }
+.st-pick .st-body { padding: 10px; }
+.st-badge { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--red-deep); color: var(--on-red); font: 800 18px/1 var(--font-head); }
+
+/* Head to head: results fold */
+.st-fold { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 800; }
+.st-decided { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 0; font-size: 14px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.st-lines { margin: 0; padding-left: 18px; font-size: 15px; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+
+/* Add sheet: one scroll region (the form), head and foot stay put. */
+.st-sheet-wrap { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; justify-content: flex-end; }
+.st-backdrop { position: absolute; inset: 0; background: rgba(30, 42, 38, .45); }
+.st-sheet { position: relative; display: flex; flex-direction: column; width: 100%; max-width: 440px; margin: 0 auto; max-height: 92dvh; background: var(--bg); color: var(--ink); border-radius: var(--r-card) var(--r-card) 0 0; box-shadow: 0 -10px 30px rgba(60, 40, 20, .18); outline: none; }
+.st-sheet-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.st-sheet-title { margin: 0; min-width: 0; font: 800 22px/1 var(--font-head); text-transform: uppercase; }
+.st-x { all: unset; box-sizing: border-box; cursor: pointer; flex: none; min-height: 44px; padding: 0 16px; display: grid; place-items: center; border-radius: var(--r-pill); font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.st-form { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+.st-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.st-label { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.st-select { box-sizing: border-box; width: 100%; min-height: 44px; padding: 0 10px; border-radius: var(--r-btn); border: 0; background: var(--chip); color: var(--ink); font: inherit; font-weight: 700; text-overflow: ellipsis; }
+.st-hint { font-size: 12px; color: var(--muted); }
+.st-err { font-size: 12.5px; font-weight: 700; color: var(--red-ink); }
+.st-sheet-foot { flex: none; display: flex; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--bg); }
+.st-sheet-foot > button { flex: 1; }
+
+/* Head to head cards sit in two narrow columns: long names clamp to three lines, the full name is on the detail page. */
+.st-pk-wrap > b.st-pk-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; font-size: 18px; overflow-wrap: anywhere; hyphens: manual; }

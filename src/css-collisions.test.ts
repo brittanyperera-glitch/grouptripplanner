@@ -17,6 +17,10 @@ const KNOWN = new Set<string>([
   `stamp: ${SC('HowTo')} / ${SC('Rate')}`, `t: ${SC('HowTo')} / ${S}`, `tline: components/TransportLine.css / ${SC('Reveal')}`,
 ]);
 
+// Same-file repeats that existed on 2026-10-16 and only add declarations. Fold them when the file is next touched.
+// Not folded: moving a declaration across the rules between the two copies could change which one wins.
+const SAME_FILE_KNOWN = new Set<string>(['.char', '.pick b.line', '.select .play', '.tabs button'].map(c => `styles.css: ${c}`));
+
 function cssFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => {
     const p = path.join(dir, e.name);
@@ -38,5 +42,35 @@ describe('global CSS', () => {
     const clashes = [...leads].flatMap(([c, files]) =>
       [...files].flatMap(f => [...(uses.get(c) ?? [])].filter(o => o !== f).map(o => `${c}: ${[f, o].sort().join(' / ')}`)));
     expect([...new Set(clashes)].filter(c => !KNOWN.has(c)).sort()).toEqual([]);
+  });
+
+  it('no selector is defined twice in one stylesheet', () => {
+    // The later copy silently overrides the first, so the earlier declarations are dead (PasswordGate.css had five).
+    // Same selector under a different at-rule (a media query) is not a repeat. Keyframe steps are not rules.
+    const dupes: string[] = [];
+    for (const f of cssFiles('src')) {
+      const css = fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+      const stack: { prelude: string; leaf: boolean }[] = [];
+      const seen = new Set<string>();
+      let start = 0;
+      for (let i = 0; i < css.length; i++) {
+        const ch = css[i];
+        if (ch === '{') {
+          if (stack.length) stack[stack.length - 1].leaf = false;
+          stack.push({ prelude: css.slice(start, i).trim().replace(/\s+/g, ' '), leaf: true });
+          start = i + 1;
+        } else if (ch === '}') {
+          const top = stack.pop()!;
+          const ctx = stack.map(x => x.prelude);
+          if (top.leaf && !top.prelude.startsWith('@') && !ctx.some(c => c.startsWith('@keyframes') || c.startsWith('@font-face'))) {
+            const key = [...ctx, top.prelude].join(' > ');
+            if (seen.has(key)) dupes.push(`${path.relative('src', f)}: ${key}`);
+            seen.add(key);
+          }
+          start = i + 1;
+        } else if (ch === ';' && !stack.length) start = i + 1;
+      }
+    }
+    expect([...new Set(dupes)].filter(d => !SAME_FILE_KNOWN.has(d)).sort()).toEqual([]);
   });
 });

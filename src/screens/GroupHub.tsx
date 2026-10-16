@@ -8,6 +8,7 @@ import { outstanding } from '../lib/outstanding';
 import { tierOf } from '../lib/ranking';
 import { useApp } from '../state';
 import { isGuest, PEOPLE } from '../types';
+import { allSubmitted } from '../lib/group';
 import type { GroupResult } from '../types';
 import Everyone from './Everyone';
 import GroupAnswers from './GroupAnswers';
@@ -42,7 +43,7 @@ function Block({ icon, title, lines, onOpen, alert, pulse }: { icon: JSX.Element
 export default function GroupHub({ group, view, onView }: { group: GroupResult; view: GroupView; onView(v: GroupView): void }) {
   const { state, me, sandbox, items } = useApp();
   const { open, mine, others } = outstanding(group, state.votes, me);
-  const stats = !isGuest(me) && PEOPLE.every(p => state.responses[p]?.submitted);
+  const stats = !isGuest(me) && allSubmitted(state.responses);
   const twin = me && !isGuest(me) ? friendStats(state.responses, me).twin : null;
   const withMust = items.filter(i => PEOPLE.some(p => { const r = state.responses[p]; return r && tierOf(r.ranking, i.id) === 'must'; })).length;
   const [pulse, setPulse] = useState(false);
