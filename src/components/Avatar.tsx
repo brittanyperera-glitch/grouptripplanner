@@ -25,7 +25,7 @@ export const LOOKS: Record<Player, Look> = {
 
 // Friends whose generated full-body PNG is in public/img/players/<lowercase name>.png. Add a name here once
 // the file is committed; a static list means no request is made to probe for a missing file.
-export const IMAGE_AVATARS: ReadonlySet<Player> = new Set<Player>(['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie']);
+export const IMAGE_AVATARS: ReadonlySet<Player> = new Set<Player>(['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie', 'Tuktuk', 'Aunty', 'Groom']);
 // Real heights in cm for the PNG figures, measured from each figure's own pixel height (the crops differ).
 export const IMAGE_CM: Record<Player, number> = { Alex: 188, Saulie: 183, Antek: 178, Lazza: 170, Brittany: 160, Tuktuk: 172, Aunty: 160, Groom: 178 };
 // Top of the SVG figure's head above the feet at 200 cm, in grid units; the PNG is fitted to the same height.
