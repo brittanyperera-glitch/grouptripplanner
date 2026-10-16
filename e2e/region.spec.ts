@@ -22,6 +22,7 @@ test('one North or South question, settled by three votes', async ({ page }) => 
   await page.evaluate(fr => { localStorage.clear(); for (const f of fr) localStorage.setItem(`tp:resp:${f.name}`, JSON.stringify(f)); localStorage.setItem('tp:me', 'Brittany'); }, FRIENDS);
   await page.reload();
   await page.getByRole('tab', { name: 'Group' }).click();
+  await page.getByRole('button', { name: /Group knockouts/ }).click();
   await expect(page.getByText('North or South?')).toBeVisible();
   await page.waitForTimeout(600);
   await shot(page, 'region-open');
@@ -31,12 +32,14 @@ test('one North or South question, settled by three votes', async ({ page }) => 
     await page.getByRole('button', { name: 'Choose your character' }).click();
     await page.getByRole('button', { name: who, exact: true }).click();
     await page.getByRole('tab', { name: 'Group' }).click();
+    await page.getByRole('button', { name: /Group knockouts/ }).click();
     const region = page.getByRole('group', { name: /North or South/i });
-    await region.locator('button').nth(1).click();
+    await region.getByRole('button', { name: 'Vote for South' }).click();
   }
   await expect(page.getByText('North or South?')).toHaveCount(0);
   await page.getByRole('tab', { name: 'Group' }).click();
   await page.getByRole('button', { name: 'Save my list' }).click();
+  await page.getByRole('button', { name: /Group knockouts/ }).click();
   await expect(page.getByText(/South beat North/)).toBeVisible();
   await shot(page, 'region-decided');
 });

@@ -42,17 +42,17 @@ const nineDays = (): Plan & { mustFit: number | null } => ({
 beforeEach(() => localStorage.clear());
 
 describe('Knockouts', () => {
-  it('tapping side a votes a for me', async () => {
+  it('the Vote pill on side a votes a for me, and no per-person chip is shown', async () => {
     seedMe('Alex');
     seedResp(resp('Brittany', [A.id]));
     const store = new SpyStore();
     const user = userEvent.setup();
     render(<AppProvider store={store}><Knockouts group={group()} /></AppProvider>);
     expect(await screen.findByText('1 of 5 voted')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: new RegExp(A.name) }));
+    await user.click(screen.getByRole('button', { name: new RegExp(`^Vote for ${A.name}`) }));
     expect(store.vote).toHaveBeenCalledWith({ forkId: 'ko:fixture', name: 'Alex', choice: 'a' });
     const card = screen.getByRole('group', { name: /Knockout/ });
-    expect(within(card).getByText('Brittany Must')).toBeInTheDocument();
+    expect(within(card).queryByText('Brittany Must')).toBeNull();
   });
 });
 
@@ -75,14 +75,14 @@ describe('Suggest', () => {
     await screen.findByText('Tea factory tour');
   };
 
-  it('shows Approve only to Brittany and only before the group opens', async () => {
+  it('shows Approve to Brittany before the group opens', async () => {
     await show('Brittany', false);
     expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument();
   });
-  it('hides Approve for Brittany once open and says so', async () => {
+  it('keeps Approve for Brittany once open and says approved ideas go to the vote', async () => {
     await show('Brittany', true);
-    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
-    expect(screen.getByText("New ideas won't change this plan")).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument();
+    expect(screen.getByText('Approved ideas go to the group vote.')).toBeInTheDocument();
   });
   it('hides Approve from everyone else', async () => {
     await show('Alex', false);

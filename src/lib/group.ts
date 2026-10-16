@@ -58,14 +58,20 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[], genres:
   const settle = (picked: Plan) => { const next = run(F, O); return next.score > picked.score + EPS ? next : picked; };
   const baseP = run(F, O);
   const rated = (id: string, t: 'must' | 'keen') => rs.filter(r => tierOf(r.ranking, id) === t).length;
-  const contested = ids
-    .filter(id => !baseP.chosen.includes(id) && (rated(id, 'must') >= 1 || rated(id, 'keen') >= 2))
-    .sort((x, y) => scores[y] - scores[x] || (x < y ? -1 : 1));
+  // Late items skip the rating round: they are always asked, before the rated ones, outside the cap.
+  const late = new Set(items.filter(i => i.late === true).map(i => i.id));
+  const contested = [
+    ...ids.filter(id => late.has(id) && !baseP.chosen.includes(id)).sort(),
+    ...ids
+      .filter(id => !late.has(id) && !baseP.chosen.includes(id) && (rated(id, 'must') >= 1 || rated(id, 'keen') >= 2))
+      .sort((x, y) => scores[y] - scores[x] || (x < y ? -1 : 1)),
+  ];
 
   const knockouts: Knockout[] = [];
   const results: GroupResult['results'] = [];
   let P = baseP;
   const covered = new Set<string>(); // a-sides of open forks: one question per item
+  const lateTaken = new Set<string>(); // a-sides of open late forks: kept apart so a late fork never hides an ordinary one
 
   // "North or South?" is settled first, once, instead of one item knockout per northern item.
   const north = ids.filter(id => NORTH_AREAS.has(items.find(i => i.id === id)!.area));
@@ -107,7 +113,7 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[], genres:
   // question, items that fit for free or ride on another question) do not use up a place.
   let asked = 0;
   for (const c of regionOpen ? [] : contested) {
-    if (asked >= MAX_CONTESTED) break;
+    if (!late.has(c) && asked >= MAX_CONTESTED) break;
     if (skipNorth && northSet.has(c)) continue;
     if (P.chosen.includes(c)) continue;
     if (covered.has(c)) continue;
@@ -117,18 +123,29 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[], genres:
     if (Q.forceFailed) continue;
     const b = P.chosen.filter(id => !Q.chosen.includes(id) && !F.has(id));
     if (!b.length) { F.add(c); P = Q; continue; }
-    const a = [c, ...Q.chosen.filter(id => !P.chosen.includes(id) && id !== c)];
-    if (a.some(id => covered.has(id))) continue; // overlaps an open fork: it rides on that one
+    const added = Q.chosen.filter(id => !P.chosen.includes(id) && id !== c);
+    // A late item is never dropped for overlapping an open fork; it leaves the shared places to that fork.
+    if (!late.has(c) && added.some(id => covered.has(id))) continue; // overlaps an open fork: it rides on that one
+    const a = [c, ...added.filter(id => !late.has(c) || !(covered.has(id) || lateTaken.has(id)))];
     // Keyed on c alone: a vote for 'a' means "add c", which stays true when b shifts after an earlier result.
     const forkId = `ko:${c}`;
-    asked++;
+    if (!late.has(c)) asked++;
     const latest = new Map<Player, 'a' | 'b'>();
     for (const v of state.votes) if (v.forkId === forkId) latest.set(v.name, v.choice);
     const who = (side: 'a' | 'b') => PEOPLE.filter(p => latest.get(p) === side);
     const votes = { a: who('a'), b: who('b') };
     if (votes.a.length >= VOTES_TO_RESOLVE) { F.add(c); b.forEach(knockDown); results.push({ forkId, a, b, winner: 'a' }); P = settle(Q); }
     else if (votes.b.length >= VOTES_TO_RESOLVE) { knockDown(c); results.push({ forkId, a, b, winner: 'b' }); P = settle(P); }
-    else { knockouts.push({ forkId, a, b, votes }); a.forEach(id => covered.add(id)); }
+    else {
+      const k: Knockout = { forkId, a, b, votes };
+      if (late.has(c)) {
+        const day = Q.days.findIndex(d => d.entries.some(e => e.itemId === c));
+        k.fit = { day: day < 0 ? null : day + 1, hub: day < 0 ? null : Q.days[day].area, travelBefore: P.travelHours, travelAfter: Q.travelHours };
+      }
+      knockouts.push(k);
+      (late.has(c) ? [c] : a).forEach(id => covered.add(id));
+      if (late.has(c)) a.forEach(id => lateTaken.add(id));
+    }
   }
 
   // Same-type keep vote (Brittany 2026-10-15): once the head to heads are done, two or more places of one

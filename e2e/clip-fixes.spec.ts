@@ -82,6 +82,7 @@ for (const vp of VIEWPORTS) {
     await page.evaluate(fr => { localStorage.clear(); for (const f of fr) localStorage.setItem(`tp:resp:${f.name}`, JSON.stringify(f)); localStorage.setItem('tp:me', 'Brittany'); }, FRIENDS);
     await page.reload();
     await page.getByRole('tab', { name: 'Group' }).click();
+    await page.getByRole('button', { name: /Group knockouts/ }).click();
     const ko = page.getByRole('group', { name: /North or South/i });
     await expect(ko).toBeVisible();
     await page.waitForTimeout(800);

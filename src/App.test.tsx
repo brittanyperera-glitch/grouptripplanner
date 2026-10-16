@@ -282,24 +282,33 @@ describe('submit, lock and errors', () => {
     expect(screen.queryByLabelText('Route reveal')).toBeNull();
   });
 
-  it('after I save, the plan shows and Edit my list reopens the Finalize step until the lock', async () => {
+  // Brittany 2026-10-16: the group plan moved off the Group tab into My trip > Group trip.
+  const groupTrip = async (user: Awaited<ReturnType<typeof openGroup>>) => {
+    await user.click(screen.getByRole('tab', { name: 'My trip' }));
+    await user.click(await screen.findByRole('button', { name: 'Group trip' }));
+  };
+
+  it('after I save, Edit my list reopens the Finalize step until the lock, and the plan is under My trip > Group trip', async () => {
     const user = await openGroup(['Alex']);
-    expect(await screen.findByText(/Provisional until all five finalize/)).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Edit my list' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Finalize your list' })).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Edit my list' }));
     expect(await screen.findByRole('region', { name: 'Finalize your list' })).toBeInTheDocument();
-    expect(screen.queryByText(/Provisional until all five finalize/)).toBeNull();
+    await groupTrip(user);
+    expect(await screen.findByText(/Provisional until all five finalize/)).toBeInTheDocument();
   });
 
   it('shows no Play route reveal button before the lock', async () => {
-    await openGroup(['Alex', 'Lazza']);
+    const user = await openGroup(['Alex', 'Lazza']);
+    await groupTrip(user);
     expect(await screen.findByText(/The route reveal drops once all five lock their lists/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Play route reveal' })).toBeNull();
     expect(screen.getByRole('list', { name: 'Still to go' }).children).toHaveLength(3);
   });
 
   it('offers Play route reveal, and no Edit my list, once the plan is locked', async () => {
-    await openGroup([...PEOPLE]);
+    const user = await openGroup([...PEOPLE]);
+    await groupTrip(user);
     expect(await screen.findByRole('button', { name: 'Play route reveal' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Edit my list' })).toBeNull();
     expect(screen.queryByText(/The route reveal drops once/)).toBeNull();

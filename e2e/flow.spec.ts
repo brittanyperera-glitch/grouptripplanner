@@ -25,7 +25,10 @@ const BRITTANY_MUSTS = new Set(['Sigiriya Rock', 'Elephant safari', 'Nanu Oya to
 test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
   const groupTab = async () => {
     await page.getByRole('tab', { name: 'Group' }).click();
-    await expect(page.getByRole('region', { name: /^(The trip|Finalize your list)$/ })).toBeVisible();
+    const block = page.getByRole('button', { name: /Group knockouts/ });
+    await expect(block.or(page.getByRole('region', { name: 'Finalize your list' }))).toBeVisible();
+    // The hub's Group knockouts block opens the votes; once they are done Finalize stands alone instead.
+    if (await block.count()) await block.click();
   };
   test.setTimeout(240_000);
   await page.setViewportSize({ width: 390, height: 844 });
@@ -66,7 +69,7 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
         await groupTab();
       }
       const f = page.getByRole('group', { name: /^Knockout:/ });
-      for (let i = 0; i < await f.count(); i++) await f.nth(i).locator('button.pick').first().click();
+      for (let i = 0; i < await f.count(); i++) await f.nth(i).getByRole('button', { name: /^Vote for/ }).first().click();
     }
     await page.getByRole('button', { name: 'Menu' }).click();
     await page.getByRole('button', { name: 'Not you?' }).click();
@@ -81,15 +84,19 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
   await expect(page.getByRole('region', { name: 'The trip' })).toHaveCount(0);
   await shot(page, 'finalize');
   await page.getByRole('button', { name: 'Save my list' }).click();
+  await expect(page.getByText(/Your list is saved\. 1 of 5 done/)).toBeVisible();
+  await shot(page, 'saved-not-locked');
+  // The group plan now lives under My trip > Group trip (Brittany 2026-10-16).
+  await page.getByRole('tab', { name: 'My trip' }).click();
+  await page.getByRole('button', { name: 'Group trip' }).click();
   await expect(page.getByText(/^Day 9\b/).first()).toBeVisible();
   await expect(page.getByText(/^Day 10\b/)).toHaveCount(0);
   await shot(page, 'group-final');
-  await expect(page.getByText(/Your list is saved\. 1 of 5 done/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Play route reveal' })).toHaveCount(0);
-  await shot(page, 'saved-not-locked');
   await expect(page.getByText(/Provisional until all five finalize their lists \(1 of 5 done\)/)).toBeVisible();
 
-  await page.getByText("See everyone's votes").click();
+  await page.getByRole('tab', { name: 'Group' }).click();
+  await page.getByRole('button', { name: /Everyone's picks/ }).click();
   await expect(page.getByRole('region', { name: 'Everyone' })).toBeVisible();
   await shot(page, 'everyone');
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

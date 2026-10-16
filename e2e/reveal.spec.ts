@@ -30,7 +30,8 @@ async function openReveal(page: Page, w: number, h: number, quips: boolean, rout
     for (const r of rs as { name: string }[]) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
   }, [rows, votes] as const);
   await page.reload();
-  await page.getByRole('tab', { name: 'Group' }).click();
+  await page.getByRole('tab', { name: 'My trip' }).click();
+  await page.getByRole('button', { name: 'Group trip' }).click();
   await page.getByRole('button', { name: 'Play route reveal' }).click();
   return page.getByRole('dialog', { name: 'Route reveal' });
 }

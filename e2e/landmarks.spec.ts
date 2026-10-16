@@ -93,7 +93,8 @@ for (const [w, h] of SIZES) {
   test(`Group plan: every stop has a landmark and none covers a name at ${w}x${h}`, async ({ page }) => {
     test.setTimeout(60_000);
     await land(page, w, h, true, true);
-    await page.getByRole('tab', { name: 'Group' }).click();
+    await page.getByRole('tab', { name: 'My trip' }).click();
+    await page.getByRole('button', { name: 'Group trip' }).click();
     await expect(page.getByRole('region', { name: 'The trip' })).toBeVisible();
     await expect.poll(async () => (await measure(page, 'The trip')).landmarks.length, { timeout: 10_000 }).toBeGreaterThan(0);
     await expect.poll(async () => (await measure(page, 'The trip')).landmarks.every(l => l.animations === 0 && l.opacity === 1), { timeout: 8000 }).toBe(true);

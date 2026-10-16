@@ -4,7 +4,7 @@ import { IconCheck } from '../components/Icons';
 import { Cover } from '../components/PhotoCard';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
-import type { Genre, Item, Knockout, Person, Player } from '../types';
+import type { Genre, Item, Knockout, Person } from '../types';
 import './GenreVote.css';
 
 export const GENRES = genresJson.genres as Genre[];
@@ -13,12 +13,14 @@ const article = (noun: string) => (/^[aeiou]/i.test(noun) ? 'an' : 'a');
 
 // Same-type keep vote (group.ts): tick keep or skip for each place, saved together as one vote per place.
 export default function GenreVote({ k }: { k: Knockout & { genre: NonNullable<Knockout['genre']> } }) {
-  const { me, store, items } = useApp();
+  const { me, store, items, state } = useApp();
   const genre = genreOf(k.genre.id);
   const byId = new Map(items.map(i => [i.id, i] as const));
-  const mineStored = (id: string) => (me && (k.genre.tally[id]?.drop as Player[] | undefined)?.includes(me) ? false : true);
+  // My stored tick per place, read from the votes themselves so a guest (never in the group tally) gets it back too.
+  const storedChoice = (id: string) => state.votes.filter(v => v.forkId === `genre:${k.genre.id}:${id}` && v.name === me).at(-1)?.choice;
+  const mineStored = (id: string) => storedChoice(id) !== 'b';
   const [ticks, setTicks] = useState<Record<string, boolean>>(() => Object.fromEntries(k.a.map(id => [id, mineStored(id)])));
-  const [saved, setSaved] = useState<Record<string, boolean> | null>(() => (me && (k.votes.a as Player[]).includes(me) ? Object.fromEntries(k.a.map(id => [id, mineStored(id)])) : null));
+  const [saved, setSaved] = useState<Record<string, boolean> | null>(() => (me && k.a.every(id => storedChoice(id) !== undefined) ? Object.fromEntries(k.a.map(id => [id, mineStored(id)])) : null));
   const [busy, setBusy] = useState(false);
   if (!genre) return null;
 

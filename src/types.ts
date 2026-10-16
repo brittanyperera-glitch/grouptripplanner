@@ -13,6 +13,8 @@ export interface Item {
   id: string; name: string; area: Area; about: string; hours: number; slot: Slot; fee: string;
   category?: Category; sideTrip: number; book?: string; warn?: string; photo?: string; hub?: Hub;
   google?: { rating: string; reviews: string; url: string }; suggestedBy?: Player; credit?: string; when?: string;
+  // Added after the ratings closed: goes straight to the head to head, never rated.
+  late?: boolean;
 }
 export interface Leg { a: Hub; b: Hub; hours: number; km?: number; src: string }
 export type Pace = 0 | 1 | 2; // pack, balanced, slow
@@ -67,6 +69,8 @@ export interface Knockout {
   // A same-type keep vote: a = the places to tick, b = places of that type already in for good,
   // votes.a = everyone who has ticked every place in a. One stored vote per place: 'a' keep, 'b' drop.
   genre?: { id: string; tally: Record<string, { keep: Person[]; drop: Person[] }> };
+  // Late items only: 1-based day of the forced plan holding a[0], that day's area, travel hours before and after forcing it in.
+  fit?: { day: number | null; hub: string | null; travelBefore: number; travelAfter: number };
 }
 // A finer type than Category, for spotting two of the same kind on the group shortlist (src/data/genres.json).
 export interface Genre { id: string; label: string; one: string; many: string; items: string[] }

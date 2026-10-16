@@ -1,3 +1,12 @@
 /* A day with no photo: paper strip, so its labels take ink, not the white used over photos. */
 .strip.plain { --ink: var(--card-ink); --muted: var(--card-muted); --line: rgba(30, 42, 38, .12); --chip: rgba(30, 42, 38, .07); color: var(--ink); }
 .strip.plain .day-area { color: var(--ink); }
+
+/* My trip / Group trip switch. */
+.mt-sub { display: flex; flex-direction: column; gap: 6px; padding: 14px 20px 0; }
+.mt-seg { display: flex; padding: 3px; border-radius: var(--r-pill); background: var(--chip); box-shadow: inset 0 0 0 1px var(--line); }
+.mt-seg button { all: unset; box-sizing: border-box; flex: 1 1 0; min-width: 0; min-height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: var(--r-pill); font: 800 14px/1 var(--font-body); color: var(--muted); transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
+.mt-seg button[aria-pressed="true"] { background: var(--red-deep); color: var(--on-red); box-shadow: var(--shadow-btn); }
+.mt-seg button[aria-disabled="true"] { opacity: .55; cursor: default; }
+.mt-seg button:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
+.mt-sub small { color: var(--muted); font-size: 12.5px; text-align: center; }

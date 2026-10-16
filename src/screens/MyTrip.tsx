@@ -8,6 +8,7 @@ import { useApp } from '../state';
 import type { DayEntry, Item, Leg, Plan } from '../types';
 import { unlock } from '../components/sound';
 import TransportLine, { transportOf } from '../components/TransportLine';
+import BookCard from './BookCard';
 import { Reveal } from './Reveal';
 
 // A day with this many driving hours or more gets a "Long driving day" note.
@@ -100,6 +101,7 @@ export default function MyTrip({ plan, days }: { plan: Plan & { mustFit: number 
           {plan.missingMusts.length > 0 && `. Left out: ${plan.missingMusts.map(name).join(', ')}`}
         </div>
       )}
+      <BookCard chosen={items.filter(i => plan.chosen.includes(i.id))} />
       <RouteMap route={plan.route} drive={!revealing} />
       {me && <button type="button" className="cta mytrip-reveal" onClick={() => { unlock(); setRevealing(true); }}>Play my route reveal</button>}
       {revealing && me && <Reveal plan={plan} who={me} onClose={() => setRevealing(false)} />}

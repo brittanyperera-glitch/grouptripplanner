@@ -76,7 +76,7 @@ export function liveItems(state: AppState): Item[] {
   const base = (catalogue as unknown as { items: Item[] }).items;
   const suggested: Item[] = state.suggestions.filter(s => s.status === 'live').map(s => ({
     id: `s:${s.id}`, name: s.title, area: s.area, about: s.note, hours: 2, sideTrip: 0,
-    slot: 'any', fee: '', suggestedBy: s.name,
+    slot: 'any', fee: '', suggestedBy: s.name, late: true,
   }));
   return [...base, ...suggested];
 }

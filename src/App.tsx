@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Avatar from './components/Avatar';
-import CrewStrip from './components/CrewStrip';
 import { GuideNav } from './components/GuideNav';
 import { MUTE_KEY } from './components/sound';
 import { IconBook, IconGroup, IconList, IconRoute, IconSpark } from './components/Icons';
@@ -8,14 +7,14 @@ import { cssEnter, lastNav, navigate } from './components/motion';
 import QuipBurst from './components/QuipBurst';
 import type { QuipKind } from './components/QuipBurst';
 import { QuipGate } from './components/quipRate';
+import { outstanding } from './lib/outstanding';
 import { removeId, setTier } from './lib/ranking';
 import Days from './screens/Days';
-import Everyone from './screens/Everyone';
 import Extras from './screens/Extras';
 import Finalize, { EditListRow } from './screens/Finalize';
-import Friends from './screens/Friends';
 import Guide from './screens/Guide';
-import Knockouts from './screens/Knockouts';
+import GroupHub from './screens/GroupHub';
+import type { GroupView } from './screens/GroupHub';
 import MyTrip from './screens/MyTrip';
 import Name from './screens/Name';
 import Pace from './screens/Pace';
@@ -40,8 +39,8 @@ import { readTripKey } from './store/tripKey';
 import { clearLocalProgress } from './store/fresh';
 import { isLocalStoreKey } from './store/local';
 import { useGroupResult, usePersonPlan } from './workers/usePlan';
-import { AREAS, emptyRanking, GUESTS, PEOPLE } from './types';
-import type { Item, Pace as PaceT, Player, Ranking, Response, Store, Tier } from './types';
+import { AREAS, emptyRanking, GUESTS, isGuest, PEOPLE } from './types';
+import type { GroupResult, Item, Pace as PaceT, Player, Ranking, Response, Store, Tier } from './types';
 
 type Step = 'days' | 'pace' | 'howto' | 'rate' | 'tabs';
 const howtoCopy = () => (copyData as unknown as { howto?: HowToCopy }).howto;
@@ -51,40 +50,81 @@ const TABS: Tab[] = ['My trip', 'Picks', 'Group', 'Suggest', 'Guide', 'Profile']
 const TAB_ICON: Record<Tab, (p: { size?: number }) => JSX.Element> = { 'My trip': IconRoute, 'Picks': IconList, 'Group': IconGroup, 'Suggest': IconSpark, 'Guide': IconBook, 'Profile': IconGroup };
 type Say = (t?: string, kind?: QuipKind) => void;
 
-function MyTripTab() {
-  const { state, me, items, legs } = useApp();
-  const resp = me ? state.responses[me] : undefined;
-  const { data: plan } = usePersonPlan(resp, items, legs);
-  if (!resp) return <div className="body"><div className="sub">Loading</div></div>;
-  if (!plan) return <div className="body"><div className="sub">Working out the plan...</div></div>;
-  return <MyTrip plan={plan} days={resp.flex ? 14 : resp.days ?? 9} />;
+type TripView = 'mine' | 'group';
+
+/** The group plan, shown under My trip once all five have rated. */
+function GroupTrip() {
+  const { state, items, legs } = useApp();
+  const { data: group } = useGroupResult(state, items, legs);
+  if (!group) return <div className="body"><div className="sub">Working out the plan...</div></div>;
+  return (
+    <>
+      <Plan group={group} />
+      <Extras group={group} />
+      <Premiere group={group} />
+    </>
+  );
 }
 
-function GroupTab() {
+function MyTripTab() {
+  const { state, me, items, legs } = useApp();
+  const [view, setView] = useState<TripView>('mine');
+  const resp = me ? state.responses[me] : undefined;
+  const { data: plan } = usePersonPlan(resp, items, legs);
+  // Same test as group.open in lib/group.ts: all five trip members have submitted.
+  const open = PEOPLE.every(p => state.responses[p]?.submitted);
+  let content;
+  if (view === 'group' && open) content = <GroupTrip />;
+  else if (!resp) content = <div className="body"><div className="sub">Loading</div></div>;
+  else if (!plan) content = <div className="body"><div className="sub">Working out the plan...</div></div>;
+  else content = <MyTrip plan={plan} days={resp.flex ? 14 : resp.days ?? 9} />;
+  const shown: TripView = view === 'group' && open ? 'group' : 'mine';
+  return (
+    <>
+      <div className="mt-sub">
+        <div className="mt-seg">
+          <button type="button" aria-pressed={shown === 'mine'} onClick={() => setView('mine')}>My trip</button>
+          <button type="button" aria-pressed={shown === 'group'} aria-disabled={!open} onClick={() => { if (open) setView('group'); }}>Group trip</button>
+        </div>
+        {!open && <small>Opens when all five have finished rating</small>}
+      </div>
+      {content}
+    </>
+  );
+}
+
+function GroupTab({ view, onView }: { view: GroupView; onView(v: GroupView): void }) {
   const { state, me, items, legs } = useApp();
   const { data: group } = useGroupResult(state, items, legs);
   const [editing, setEditing] = useState(false);
+  // Until I have saved my final list, that step stands alone; the hub returns after saving.
+  const finalizing = !!group && group.open && group.knockouts.length === 0 && !!group.final && !group.locked;
+  const saved = !!(me && state.responses[me]?.final);
+  const stage = !group ? 'loading' : !group.open ? 'waiting' : finalizing && (!saved || editing) ? 'finalize' : view;
+  // The tab's content swaps without a tab change (a deciding vote opens Finalize, a hub block opens), so start it at the top.
+  useLayoutEffect(() => { if (!/jsdom/.test(navigator.userAgent)) window.scrollTo(0, 0); }, [stage]);
   if (!group) return <div className="body"><div className="sub">Working out the plan...</div></div>;
   if (!group.open) return <Waiting />;
-  // Until I have saved my final list, that step stands alone; the plan returns after saving.
-  const finalizing = group.knockouts.length === 0 && !!group.final && !group.locked;
-  const saved = !!(me && state.responses[me]?.final);
-  if (finalizing && (!saved || editing)) return <Finalize group={group} editing={editing} onSaved={() => setEditing(false)} />;
+  if (stage === 'finalize') return <Finalize group={group} editing={editing} onSaved={() => setEditing(false)} />;
   return (
     <>
-      <CrewStrip />
-      {(group.knockouts.length > 0 || group.results.length > 0) && <Knockouts group={group} />}
-      {finalizing && <EditListRow group={group} onEdit={() => setEditing(true)} />}
-      <Plan group={group} />
-      <Extras group={group} />
-      <Friends />
-      {/* Everyone's tier for every place: the one view the old Everyone tab had that Group lacked (Brittany 2026-10-15). */}
-      <details className="everyone-more">
-        <summary className="cta alt">See everyone's votes</summary>
-        <Everyone open />
-      </details>
-      <Premiere group={group} />
+      {finalizing && view === 'hub' && <EditListRow group={group} onEdit={() => setEditing(true)} />}
+      <GroupHub group={group} view={view} onView={onView} />
     </>
+  );
+}
+
+/** Replaces the small "Ratings are locked" line on Picks: one headline and one button to the group stage. */
+function LockedBlock({ onGo }: { onGo(): void }) {
+  const { state, me, items, legs } = useApp();
+  const { data: group } = useGroupResult(state, items, legs);
+  const mine = group ? outstanding(group as GroupResult, state.votes, me).mine : 0;
+  return (
+    <section className="body gh-locked" aria-label="Ratings locked">
+      <h2 className="big display">Ratings are locked</h2>
+      <div className="sub">The group stage is open. Your votes settle the plan.</div>
+      <button type="button" className="cta" onClick={onGo}>{mine > 0 ? `Vote now (${mine})` : 'See the group stage'}</button>
+    </section>
   );
 }
 
@@ -94,7 +134,7 @@ function SuggestTab() {
 }
 
 // Picks is drawn inside Flow, which holds my draft ranking.
-const PANELS: Record<Exclude<Tab, 'Picks' | 'Profile'>, () => JSX.Element> = { 'My trip': MyTripTab, 'Group': GroupTab, 'Suggest': SuggestTab, 'Guide': Guide };
+const PANELS: Record<Exclude<Tab, 'Picks' | 'Profile' | 'Group'>, () => JSX.Element> = { 'My trip': MyTripTab, 'Suggest': SuggestTab, 'Guide': Guide };
 
 const blank = (name: Player): Response => ({
   name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: new Date().toISOString(),
@@ -106,7 +146,7 @@ const START_OVER_ARMED_MS = 4000;
  * The header's one Menu: Change days or pace (while rating), Not you? and Start over, so the header stays one row
  * on a phone (Brittany 2026-10-15). Start over takes two taps; the first arms it for a few seconds, no browser dialog.
  */
-function HeaderMenu({ onProfile, onChange, onNotYou, onStartOver, onFinish }: { onProfile(): void; onChange?(): void; onNotYou(): void; onStartOver(): void; onFinish?(): void }) {
+function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onFinish }: { onProfile(): void; onChange?(): void; onStats?(): void; onNotYou(): void; onStartOver(): void; onFinish?(): void }) {
   const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -131,6 +171,7 @@ function HeaderMenu({ onProfile, onChange, onNotYou, onStartOver, onFinish }: { 
       {open && (
         <div className="hmenu-list" role="group" aria-label="Menu">
           <button onClick={pick(onProfile)}>{profileCopy.menuItem}</button>
+          {onStats && <button onClick={pick(onStats)}>Group stats</button>}
           {onChange && <button onClick={pick(onChange)}>Change days or pace</button>}
           <button onClick={pick(onNotYou)}>Not you?</button>
           {onFinish && <button onClick={pick(onFinish)}>Finish and reset</button>}
@@ -152,6 +193,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const ref = useRef(draft);
   const [step, setStep] = useState<Step>(() => (draft.days === null ? 'days' : draft.pace === null ? 'pace' : draft.submitted ? 'tabs' : 'rate'));
   const [tab, setTabState] = useState<Tab>('My trip');
+  const [groupView, setGroupView] = useState<GroupView>('hub');
   const [editing, setEditing] = useState(false);
   // The profile card sits over whatever step or tab I was on; Back closes it and that screen is still there.
   const [profileOpen, setProfileOpen] = useState(false);
@@ -164,6 +206,11 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     navigate('fwd', () => setProfileOpen(true));
   };
   const closeProfile = () => navigate('back', () => setProfileOpen(false));
+  // Jump to a Group view from anywhere (the Menu, the locked Picks block).
+  const openGroup = (v: GroupView) => navigate('tab', () => {
+    setGroupView(v);
+    if (tabRef.current !== 'Group') setTab('Group');
+  });
 
   // Each tab switch is a history entry with the same URL, so a phone's Back returns to the previous tab
   // instead of leaving the app. The hash is left alone because the raw page routes on it.
@@ -198,6 +245,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     .filter(i => !draft.rated.includes(i.id))
     .sort((a, b) => Number(b.id === undone) - Number(a.id === undone) || AREAS.indexOf(a.area) - AREAS.indexOf(b.area));
   // Only the five trip members are in the group: a guest is never locked out by the seeded crew.
+  const statsOpen = !isGuest(me) && PEOPLE.every(p => state.responses[p]?.submitted);
   const locked = (PEOPLE as readonly string[]).includes(me) && PEOPLE.every(p => (p === me ? draft.submitted : state.responses[p]?.submitted));
   const shown: Step = locked ? 'tabs' : step;
 
@@ -264,7 +312,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     // Your picks lives in the tab bar (Brittany 2026-10-15); after submitting, a reorder saves as you go.
     content = (
       <div role="tabpanel" aria-label="Picks" className="panel">
-        {locked && <div className="sub locked">Ratings are locked, the group stage is open.</div>}
+        {locked && <LockedBlock onGo={() => openGroup('knockouts')} />}
         {!locked && unrated.length > 0 && (
           <button className="cta" onClick={() => navigate('back', () => setStep('rate'))}>{unrated.length} new to rate</button>
         )}
@@ -281,9 +329,11 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     // Back goes to the tab I came from: tab switches are history entries.
     content = <div role="tabpanel" aria-label="Profile" className="panel"><Profile name={me} players={copy.players} onBack={() => history.back()} /></div>;
   } else {
-    const Panel = PANELS[tab];
+    const Panel = tab === 'Group' ? null : PANELS[tab];
     content = (
-      <div role="tabpanel" aria-label={tab} className="panel"><GuideNav.Provider value={() => navigate('tab', () => setTab('Guide'))}><Panel /></GuideNav.Provider></div>
+      <div role="tabpanel" aria-label={tab} className="panel"><GuideNav.Provider value={() => navigate('tab', () => setTab('Guide'))}>
+        {Panel ? <Panel /> : <GroupTab view={groupView} onView={setGroupView} />}
+      </GuideNav.Provider></div>
     );
   }
 
@@ -302,7 +352,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
           <Avatar name={me} size={30} />
           <b>{me}</b>
         </button>
-        <HeaderMenu onProfile={openProfile} onChange={(shown === 'rate' || shown === 'tabs') && !locked ? changeDays : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} onFinish={finishSandbox} />
+        <HeaderMenu onProfile={openProfile} onChange={(shown === 'rate' || shown === 'tabs') && !locked ? changeDays : undefined} onStats={shown === 'tabs' && statsOpen ? () => { if (profileOpen) setProfileOpen(false); openGroup('stats'); } : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} onFinish={finishSandbox} />
       </header>
       <div className={`screen${enter ? ` enter-${enter}` : ''}`} key={screenKey}>{content}</div>
       {shown === 'tabs' && !profileOpen && (
@@ -310,7 +360,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
           {TABS.map(t => {
             const Icon = TAB_ICON[t];
             const icon = t === 'Profile' ? <span className="tab-me" aria-hidden="true"><Avatar name={me} size={22} /></span> : <Icon />;
-            return <button key={t} role="tab" aria-selected={tab === t} onClick={() => { if (t !== tab) navigate('tab', () => setTab(t)); }}>{icon}<span>{t}</span></button>;
+            return <button key={t} role="tab" aria-selected={tab === t} onClick={() => { if (t !== tab) navigate('tab', () => { if (t === 'Group') setGroupView('hub'); setTab(t); }); else if (t === 'Group' && groupView !== 'hub') navigate('back', () => setGroupView('hub')); }}>{icon}<span>{t}</span></button>;
           })}
         </nav>
       )}
@@ -369,7 +419,9 @@ export default function App({ store }: { store?: Store }) {
   if (wantsRaw(window.location.hash)) return <Raw store={store} />;
   // The two hash switches skip the connection check: a guest never touches the shared database.
   if (entry === 'landing') return <Landing covers={coverItems(liveItems({ responses: {}, suggestions: [], votes: [] }), copyData as unknown as Copy)} onTrip={() => setEntry('trip')} onGuest={() => setEntry('guest')} />;
-  if (entry === 'guest') return <GuestRoot onExit={() => setEntry('landing')}><Shell /></GuestRoot>;
+  // Clear the #/guest hash too, or a reload would drop straight back into guest mode.
+  const leaveGuest = () => { history.replaceState(null, '', window.location.pathname + window.location.search); setEntry('landing'); };
+  if (entry === 'guest') return <GuestRoot onExit={leaveGuest}><Shell /></GuestRoot>;
   if (!store && connectionMissingNow()) {
     return (
       <div className="app">

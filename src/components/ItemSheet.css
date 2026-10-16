@@ -1,0 +1,24 @@
+/* Full-screen place page (ItemSheet.tsx) and the photo row that opens it (Extras.tsx). */
+.is-sheet { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); }
+.is-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.is-title { margin: 0; min-width: 0; font: 800 22px/1 var(--font-head); text-transform: uppercase; overflow-wrap: anywhere; }
+.is-close { all: unset; box-sizing: border-box; cursor: pointer; flex: none; min-height: 44px; padding: 0 16px; display: grid; place-items: center; border-radius: var(--r-pill); font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.is-close:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.is-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 16px 24px; display: flex; flex-direction: column; gap: 22px; }
+.is-item { display: flex; flex-direction: column; gap: 8px; max-width: 520px; width: 100%; margin: 0 auto; }
+.is-photo { width: 100%; aspect-ratio: 16 / 10; border-radius: var(--r-lg); }
+.is-name { margin: 0; font: 800 28px/1 var(--font-head); text-transform: uppercase; overflow-wrap: anywhere; }
+.is-where { display: flex; align-items: center; gap: 5px; font-size: var(--fs-sm); font-weight: 700; color: var(--muted); }
+.is-foot { flex: none; display: flex; justify-content: center; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--bg); }
+.is-foot > button { max-width: 520px; }
+.is-voted { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; font-weight: 800; color: var(--teal); }
+
+/* A tappable photo row: thumbnail, name, small facts. */
+.is-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.is-row { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 12px; padding: 8px; border-radius: var(--r-md); background: var(--white); box-shadow: var(--shadow-card); }
+.is-row:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.is-thumb { width: 64px; height: 64px; border-radius: 12px; flex: none; }
+.is-thumb > small { display: none; }
+.is-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.is-rname { font-size: 15px; font-weight: 750; line-height: 1.2; overflow-wrap: anywhere; }
+.is-meta { font-size: var(--fs-xs); font-weight: 700; color: var(--muted); }

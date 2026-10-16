@@ -1,0 +1,22 @@
+/* Group hub blocks and the folded Book card. Every class starts gh- because all CSS is global (src/css-collisions.test.ts). */
+.gh-hub { gap: 12px; }
+.gh-block { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; min-height: 92px; padding: 16px 18px; border-radius: var(--r-card); background: var(--card); color: var(--ink); box-shadow: var(--shadow-card); transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease); }
+.gh-block:active { transform: scale(.98); }
+.gh-block:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
+.gh-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: var(--r-md); background: var(--chip); color: var(--coconut-text); }
+.gh-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.gh-text b { font-family: var(--font-head); font-size: 28px; font-weight: 800; line-height: 1; text-transform: uppercase; }
+.gh-text small { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.gh-go { color: var(--muted); display: grid; place-items: center; }
+.gh-alert { box-shadow: var(--shadow-card), 0 0 0 2px var(--red-deep); }
+.gh-alert .gh-text small:first-of-type { color: var(--red-ink); font-weight: 700; }
+@media (prefers-reduced-motion: no-preference) { .gh-alert[data-pulse="1"] { animation: gh-nudge var(--dur-slow) var(--ease); } }
+@keyframes gh-nudge { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { .gh-block { transition: none; } }
+.gh-top { flex: none; padding-bottom: 0; align-items: flex-start; }
+.gh-back { min-height: 32px; display: inline-flex; align-items: center; font-size: 13px; padding: 4px 14px; }
+.gh-locked h2 { margin: 0; }
+.gh-book > summary { cursor: pointer; list-style: none; }
+.gh-book > summary::-webkit-details-marker { display: none; }
+.gh-book > summary:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
+.gh-crew { padding: 0 20px; }

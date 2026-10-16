@@ -106,11 +106,14 @@ test('Finalize: drag reorders, = makes a draw shown as a shared rank on joined r
     await page.getByRole('button', { name: 'Choose your character' }).click();
     await page.getByRole('button', { name: who, exact: true }).click();
     await page.getByRole('tab', { name: 'Group' }).click();
-    await page.getByRole('group', { name: /North or South/i }).locator('button').nth(1).click();
+    await page.getByRole('button', { name: /Group knockouts/ }).click();
+    await page.getByRole('group', { name: /North or South/i }).getByRole('button', { name: 'Vote for South' }).click();
   }
   await page.getByRole('tab', { name: 'Group' }).click();
   const list = page.getByRole('region', { name: 'Finalize your list' });
   await expect(list).toBeVisible();
+  // The deciding vote swaps the tab's content: Finalize must open at the top, not where the vote card was scrolled.
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   const musts = list.locator('ul[aria-label="Musts"] .item');
   const first = await musts.evaluateAll(els => els.map(e => (e as HTMLElement).dataset.id!));
   expect(first.length).toBeGreaterThanOrEqual(3);

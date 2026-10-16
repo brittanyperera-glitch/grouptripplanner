@@ -34,15 +34,15 @@ describe('region knockout card', () => {
     render(<AppProvider store={store}><Knockouts group={group()} /></AppProvider>);
     const card = await screen.findByRole('group', { name: /North or South\?/ });
     expect(within(card).getByText('North or South?')).toBeInTheDocument();
-    const picks = within(card).getAllByRole('button');
+    const picks = Array.from(card.querySelectorAll<HTMLElement>('.pick'));
     expect(picks).toHaveLength(2);
     for (const id of NORTH) expect(within(picks[0]).getByText(byId(id).name)).toBeInTheDocument();
     for (const id of SOUTH) expect(within(picks[1]).getByText(byId(id).name)).toBeInTheDocument();
     expect(within(picks[0]).queryByText(byId(SOUTH[0]).name)).toBeNull();
     expect(within(card).getByText('1 of 5 voted')).toBeInTheDocument();
-    await user.click(picks[0]);
+    await user.click(within(picks[0]).getByRole('button', { name: /^Vote for/ }));
     expect(store.vote).toHaveBeenCalledWith({ forkId: 'region:north', name: 'Alex', choice: 'a' });
-    await user.click(picks[1]);
+    await user.click(within(picks[1]).getByRole('button', { name: /^Vote for/ }));
     expect(store.vote).toHaveBeenCalledWith({ forkId: 'region:north', name: 'Alex', choice: 'b' });
   });
   it('shows a decided region result', async () => {

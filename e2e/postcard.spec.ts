@@ -98,7 +98,8 @@ for (const [w, h] of [[390, 844], [1280, 800]] as const) {
       for (const r of rs) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
     }, rows);
     await page.reload();
-    await page.getByRole('tab', { name: 'Group' }).click();
+    await page.getByRole('tab', { name: 'My trip' }).click();
+    await page.getByRole('button', { name: 'Group trip' }).click();
     await page.getByRole('button', { name: 'Play route reveal' }).click();
     const list = page.getByRole('list', { name: 'Itinerary' });
     await list.scrollIntoViewIfNeeded();
@@ -157,7 +158,8 @@ test('key movements run on the motion scale: character sheet, swipe card, Missio
     for (const r of rs) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
   }, rows);
   await page.reload();
-  await page.getByRole('tab', { name: 'Group' }).click();
+  await page.getByRole('tab', { name: 'My trip' }).click();
+  await page.getByRole('button', { name: 'Group trip' }).click();
   await page.getByRole('button', { name: 'Play route reveal' }).click();
   await page.getByRole('button', { name: 'Skip' }).click();
   const title = page.getByRole('region', { name: 'Mission complete' }).locator('.rv-done-title');

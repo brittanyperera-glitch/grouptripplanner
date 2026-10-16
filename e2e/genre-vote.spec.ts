@@ -20,6 +20,7 @@ const open = async (page: Page, width: number, height: number) => {
   await page.evaluate(fr => { localStorage.clear(); for (const f of fr) localStorage.setItem(`tp:resp:${f.name}`, JSON.stringify(f)); localStorage.setItem('tp:me', 'Brittany'); }, FRIENDS);
   await page.reload();
   await page.getByRole('tab', { name: 'Group' }).click();
+  await page.getByRole('button', { name: /Group knockouts/ }).click();
   const card = page.getByRole('group', { name: '2 safaris on the shortlist' });
   await expect(card).toBeVisible();
   return card;
