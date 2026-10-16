@@ -97,9 +97,10 @@ describe('waiting screen', () => {
     seedResp(resp('Alex', [ids[0]]));
     render(<AppProvider store={new LocalStore()}><Waiting /></AppProvider>);
     await screen.findByText('1 of 5 done');
-    const tiles = document.querySelectorAll('.wait-person');
+    // Changed deliberately (Brittany 2026-10-16): the crew strip is now the shared BigState one, so its tiles are .bs-p.
+    const tiles = document.querySelectorAll('.bs-p');
     expect(tiles).toHaveLength(5);
-    expect(document.querySelectorAll('.wait-person svg.avatar-art')).toHaveLength(5);
+    expect(document.querySelectorAll('.bs-p svg.avatar-art')).toHaveLength(5);
     for (const p of PEOPLE) {
       const tile = screen.getByRole('listitem', { name: new RegExp(`^${p}`) });
       const done = p === 'Alex';

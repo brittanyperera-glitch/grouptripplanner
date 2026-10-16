@@ -140,6 +140,7 @@ describe('Travel Bingo screen', () => {
 
   it('shows the lock line', async () => {
     mount();
-    expect(await screen.findByText('Only you can see your cards.')).toBeInTheDocument();
+    // Changed deliberately (Brittany 2026-10-16): the old line claimed more than the data guarantees.
+    expect(await screen.findByText('Your cards are only shown to you in the app.')).toBeInTheDocument();
   });
 });

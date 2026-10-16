@@ -1,0 +1,882 @@
+{
+ "source": "backups/2026-10-16: responses from tables.json, votes and suggestions from pre-crew-stays-counts.json",
+ "responses": [
+  {
+   "name": "Alex",
+   "days": 20,
+   "flex": false,
+   "pace": 0,
+   "ranking": {
+    "meh": [
+     [
+      "rooftop"
+     ],
+     [
+      "hiriketiya"
+     ],
+     [
+      "junglebeach"
+     ],
+     [
+      "kottu"
+     ],
+     [
+      "jaffna"
+     ],
+     [
+      "aukana"
+     ],
+     [
+      "rafting"
+     ]
+    ],
+    "keen": [
+     [
+      "pettah"
+     ],
+     [
+      "galleface"
+     ],
+     [
+      "anuradhapura"
+     ],
+     [
+      "tooth"
+     ],
+     [
+      "ellarock"
+     ],
+     [
+      "diyaluma"
+     ],
+     [
+      "udawalawe"
+     ],
+     [
+      "galle"
+     ],
+     [
+      "coconut"
+     ],
+     [
+      "rekawa"
+     ],
+     [
+      "crab"
+     ]
+    ],
+    "must": [
+     [
+      "delft"
+     ],
+     [
+      "nainativu"
+     ],
+     [
+      "sigiriya"
+     ],
+     [
+      "pidurangala"
+     ],
+     [
+      "dambulla"
+     ],
+     [
+      "polonnaruwa"
+     ],
+     [
+      "elephants"
+     ],
+     [
+      "knuckles"
+     ],
+     [
+      "surf"
+     ],
+     [
+      "train"
+     ],
+     [
+      "horton"
+     ],
+     [
+      "tea"
+     ],
+     [
+      "ninearch"
+     ],
+     [
+      "yala"
+     ]
+    ],
+    "skip": [
+     [
+      "beachday"
+     ]
+    ]
+   },
+   "rated": [
+    "pettah",
+    "galleface",
+    "crab",
+    "rooftop",
+    "kottu",
+    "jaffna",
+    "delft",
+    "nainativu",
+    "sigiriya",
+    "pidurangala",
+    "dambulla",
+    "polonnaruwa",
+    "elephants",
+    "anuradhapura",
+    "aukana",
+    "tooth",
+    "knuckles",
+    "rafting",
+    "train",
+    "horton",
+    "tea",
+    "ellarock",
+    "ninearch",
+    "diyaluma",
+    "yala",
+    "udawalawe",
+    "surf",
+    "galle",
+    "coconut",
+    "hiriketiya",
+    "junglebeach",
+    "beachday",
+    "rekawa"
+   ]
+  },
+  {
+   "name": "Antek",
+   "days": 14,
+   "flex": true,
+   "pace": 1,
+   "ranking": {
+    "meh": [
+     [
+      "delft"
+     ],
+     [
+      "nainativu"
+     ],
+     [
+      "tea"
+     ]
+    ],
+    "keen": [
+     [
+      "pettah"
+     ],
+     [
+      "rooftop"
+     ],
+     [
+      "jaffna"
+     ],
+     [
+      "pidurangala"
+     ],
+     [
+      "dambulla"
+     ],
+     [
+      "polonnaruwa"
+     ],
+     [
+      "elephants"
+     ],
+     [
+      "anuradhapura"
+     ],
+     [
+      "aukana"
+     ],
+     [
+      "knuckles"
+     ],
+     [
+      "train"
+     ],
+     [
+      "horton"
+     ],
+     [
+      "ellarock"
+     ],
+     [
+      "diyaluma"
+     ],
+     [
+      "yala"
+     ],
+     [
+      "udawalawe"
+     ],
+     [
+      "surf"
+     ],
+     [
+      "galle"
+     ],
+     [
+      "coconut"
+     ],
+     [
+      "hiriketiya"
+     ],
+     [
+      "junglebeach"
+     ],
+     [
+      "rekawa"
+     ]
+    ],
+    "must": [
+     [
+      "kottu"
+     ],
+     [
+      "galleface"
+     ],
+     [
+      "ninearch"
+     ],
+     [
+      "crab"
+     ],
+     [
+      "sigiriya"
+     ],
+     [
+      "rafting"
+     ],
+     [
+      "tooth"
+     ],
+     [
+      "beachday"
+     ]
+    ],
+    "skip": []
+   },
+   "rated": [
+    "pettah",
+    "galleface",
+    "crab",
+    "rooftop",
+    "kottu",
+    "jaffna",
+    "delft",
+    "nainativu",
+    "sigiriya",
+    "pidurangala",
+    "dambulla",
+    "polonnaruwa",
+    "elephants",
+    "anuradhapura",
+    "aukana",
+    "tooth",
+    "knuckles",
+    "rafting",
+    "train",
+    "horton",
+    "tea",
+    "ellarock",
+    "ninearch",
+    "diyaluma",
+    "yala",
+    "udawalawe",
+    "surf",
+    "galle",
+    "coconut",
+    "hiriketiya",
+    "junglebeach",
+    "beachday",
+    "rekawa"
+   ]
+  },
+  {
+   "name": "Brittany",
+   "days": 14,
+   "flex": true,
+   "pace": 0,
+   "ranking": {
+    "meh": [
+     [
+      "pettah"
+     ],
+     [
+      "rooftop"
+     ],
+     [
+      "jaffna"
+     ],
+     [
+      "knuckles"
+     ],
+     [
+      "train"
+     ],
+     [
+      "yala"
+     ],
+     [
+      "hiriketiya"
+     ]
+    ],
+    "keen": [
+     [
+      "galleface"
+     ],
+     [
+      "crab"
+     ],
+     [
+      "kottu"
+     ],
+     [
+      "delft"
+     ],
+     [
+      "nainativu"
+     ],
+     [
+      "pidurangala"
+     ],
+     [
+      "dambulla"
+     ],
+     [
+      "polonnaruwa"
+     ],
+     [
+      "aukana"
+     ],
+     [
+      "rafting"
+     ],
+     [
+      "horton"
+     ],
+     [
+      "ellarock"
+     ],
+     [
+      "diyaluma"
+     ],
+     [
+      "udawalawe"
+     ],
+     [
+      "surf"
+     ],
+     [
+      "coconut"
+     ],
+     [
+      "junglebeach"
+     ],
+     [
+      "rekawa"
+     ]
+    ],
+    "must": [
+     [
+      "sigiriya"
+     ],
+     [
+      "elephants"
+     ],
+     [
+      "anuradhapura"
+     ],
+     [
+      "tooth"
+     ],
+     [
+      "tea"
+     ],
+     [
+      "ninearch"
+     ],
+     [
+      "galle"
+     ]
+    ],
+    "skip": [
+     [
+      "beachday"
+     ]
+    ]
+   },
+   "rated": [
+    "pettah",
+    "galleface",
+    "crab",
+    "rooftop",
+    "kottu",
+    "jaffna",
+    "delft",
+    "nainativu",
+    "sigiriya",
+    "pidurangala",
+    "dambulla",
+    "polonnaruwa",
+    "elephants",
+    "anuradhapura",
+    "aukana",
+    "tooth",
+    "knuckles",
+    "rafting",
+    "train",
+    "horton",
+    "tea",
+    "ellarock",
+    "ninearch",
+    "diyaluma",
+    "yala",
+    "udawalawe",
+    "surf",
+    "galle",
+    "coconut",
+    "hiriketiya",
+    "junglebeach",
+    "beachday",
+    "rekawa"
+   ]
+  },
+  {
+   "name": "Lazza",
+   "days": 9,
+   "flex": false,
+   "pace": 0,
+   "ranking": {
+    "meh": [
+     [
+      "pettah"
+     ],
+     [
+      "anuradhapura"
+     ],
+     [
+      "tea"
+     ],
+     [
+      "beachday"
+     ]
+    ],
+    "keen": [
+     [
+      "rafting"
+     ],
+     [
+      "surf"
+     ],
+     [
+      "elephants"
+     ],
+     [
+      "galleface"
+     ],
+     [
+      "crab"
+     ],
+     [
+      "rooftop"
+     ],
+     [
+      "delft"
+     ],
+     [
+      "kottu"
+     ],
+     [
+      "jaffna"
+     ],
+     [
+      "knuckles"
+     ],
+     [
+      "horton"
+     ],
+     [
+      "nainativu"
+     ],
+     [
+      "polonnaruwa"
+     ],
+     [
+      "aukana"
+     ],
+     [
+      "tooth"
+     ],
+     [
+      "train"
+     ],
+     [
+      "ellarock"
+     ],
+     [
+      "ninearch"
+     ],
+     [
+      "diyaluma"
+     ],
+     [
+      "udawalawe"
+     ],
+     [
+      "galle"
+     ],
+     [
+      "coconut"
+     ],
+     [
+      "junglebeach"
+     ]
+    ],
+    "must": [
+     [
+      "sigiriya"
+     ],
+     [
+      "pidurangala"
+     ],
+     [
+      "dambulla"
+     ],
+     [
+      "hiriketiya"
+     ],
+     [
+      "rekawa"
+     ],
+     [
+      "yala"
+     ]
+    ],
+    "skip": []
+   },
+   "rated": [
+    "pettah",
+    "galleface",
+    "crab",
+    "rooftop",
+    "kottu",
+    "jaffna",
+    "delft",
+    "nainativu",
+    "sigiriya",
+    "pidurangala",
+    "dambulla",
+    "polonnaruwa",
+    "elephants",
+    "anuradhapura",
+    "aukana",
+    "tooth",
+    "knuckles",
+    "rafting",
+    "train",
+    "horton",
+    "tea",
+    "ellarock",
+    "ninearch",
+    "diyaluma",
+    "yala",
+    "udawalawe",
+    "surf",
+    "galle",
+    "coconut",
+    "hiriketiya",
+    "junglebeach",
+    "beachday",
+    "rekawa"
+   ]
+  },
+  {
+   "name": "Saulie",
+   "days": 10,
+   "flex": false,
+   "pace": 0,
+   "ranking": {
+    "meh": [
+     [
+      "rekawa"
+     ],
+     [
+      "aukana"
+     ],
+     [
+      "crab"
+     ],
+     [
+      "beachday"
+     ]
+    ],
+    "keen": [
+     [
+      "pettah"
+     ],
+     [
+      "jaffna"
+     ],
+     [
+      "rafting"
+     ],
+     [
+      "nainativu"
+     ],
+     [
+      "polonnaruwa"
+     ],
+     [
+      "rooftop"
+     ],
+     [
+      "anuradhapura"
+     ],
+     [
+      "tooth"
+     ],
+     [
+      "delft"
+     ],
+     [
+      "train"
+     ],
+     [
+      "tea"
+     ],
+     [
+      "surf"
+     ],
+     [
+      "ellarock"
+     ],
+     [
+      "ninearch"
+     ],
+     [
+      "galleface"
+     ],
+     [
+      "diyaluma"
+     ],
+     [
+      "elephants"
+     ],
+     [
+      "udawalawe"
+     ],
+     [
+      "galle"
+     ],
+     [
+      "coconut"
+     ],
+     [
+      "hiriketiya"
+     ],
+     [
+      "junglebeach"
+     ]
+    ],
+    "must": [
+     [
+      "sigiriya"
+     ],
+     [
+      "kottu"
+     ],
+     [
+      "yala"
+     ],
+     [
+      "horton"
+     ],
+     [
+      "knuckles"
+     ],
+     [
+      "pidurangala"
+     ],
+     [
+      "dambulla"
+     ]
+    ],
+    "skip": []
+   },
+   "rated": [
+    "pettah",
+    "galleface",
+    "crab",
+    "rooftop",
+    "kottu",
+    "jaffna",
+    "delft",
+    "nainativu",
+    "sigiriya",
+    "pidurangala",
+    "dambulla",
+    "polonnaruwa",
+    "elephants",
+    "anuradhapura",
+    "aukana",
+    "tooth",
+    "knuckles",
+    "rafting",
+    "train",
+    "horton",
+    "tea",
+    "ellarock",
+    "ninearch",
+    "diyaluma",
+    "yala",
+    "udawalawe",
+    "surf",
+    "galle",
+    "coconut",
+    "hiriketiya",
+    "junglebeach",
+    "beachday",
+    "rekawa"
+   ]
+  }
+ ],
+ "votes": [
+  {
+   "forkId": "ko:anuradhapura",
+   "name": "Brittany",
+   "choice": "a"
+  },
+  {
+   "forkId": "ko:diyaluma",
+   "name": "Alex",
+   "choice": "b"
+  },
+  {
+   "forkId": "ko:diyaluma",
+   "name": "Brittany",
+   "choice": "b"
+  },
+  {
+   "forkId": "ko:diyaluma",
+   "name": "Saulie",
+   "choice": "a"
+  },
+  {
+   "forkId": "ko:horton",
+   "name": "Brittany",
+   "choice": "a"
+  },
+  {
+   "forkId": "ko:knuckles",
+   "name": "Alex",
+   "choice": "a"
+  },
+  {
+   "forkId": "ko:knuckles",
+   "name": "Brittany",
+   "choice": "a"
+  },
+  {
+   "forkId": "ko:knuckles",
+   "name": "Saulie",
+   "choice": "a"
+  },
+  {
+   "forkId": "ko:polonnaruwa",
+   "name": "Brittany",
+   "choice": "b"
+  },
+  {
+   "forkId": "ko:rooftop",
+   "name": "Alex",
+   "choice": "a"
+  },
+  {
+   "forkId": "ko:rooftop",
+   "name": "Lazza",
+   "choice": "b"
+  },
+  {
+   "forkId": "ko:rooftop",
+   "name": "Saulie",
+   "choice": "a"
+  },
+  {
+   "forkId": "ko:scuba",
+   "name": "Brittany",
+   "choice": "b"
+  },
+  {
+   "forkId": "ko:udawalawe",
+   "name": "Alex",
+   "choice": "b"
+  },
+  {
+   "forkId": "ko:udawalawe",
+   "name": "Saulie",
+   "choice": "b"
+  },
+  {
+   "forkId": "ko:yala",
+   "name": "Alex",
+   "choice": "a"
+  },
+  {
+   "forkId": "ko:yala",
+   "name": "Lazza",
+   "choice": "a"
+  },
+  {
+   "forkId": "ko:yala",
+   "name": "Saulie",
+   "choice": "a"
+  },
+  {
+   "forkId": "region:north",
+   "name": "Alex",
+   "choice": "b"
+  },
+  {
+   "forkId": "region:north",
+   "name": "Lazza",
+   "choice": "b"
+  },
+  {
+   "forkId": "region:north",
+   "name": "Saulie",
+   "choice": "b"
+  }
+ ],
+ "suggestions": [
+  {
+   "id": "54966768-daf9-45ae-9c18-fe60633dabc2",
+   "name": "Alex",
+   "title": "Scuba diving",
+   "area": "South coast",
+   "status": "live"
+  },
+  {
+   "id": "eb734f6a-8f62-4e9c-9179-fc1b52001e16",
+   "name": "Lazza",
+   "title": "Scuba diving",
+   "area": "South coast",
+   "status": "rejected"
+  },
+  {
+   "id": "e1c19580-2d5c-409f-8a68-e12e47d871b7",
+   "name": "Saulie",
+   "title": "Scuba Diving",
+   "area": "South coast",
+   "status": "rejected"
+  }
+ ]
+}

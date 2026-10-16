@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import BigState from '../components/BigState';
 import { ideaKey } from '../lib/openItems';
 import { useApp } from '../state';
 import { AREAS } from '../types';
@@ -33,8 +34,14 @@ export default function Suggest({ open }: { open: boolean }) {
 
   return (
     <section className="body" aria-label="Ideas">
-      <div className="kicker">Suggest</div>
-      <div className="big display">Something missing?</div>
+      {pending.length === 0 && live.length === 0
+        ? <BigState compact headline="Got an idea?" sub="Nobody has suggested anything yet. Be the first." />
+        : (
+          <>
+            <div className="kicker">Suggest</div>
+            <div className="big display">Something missing?</div>
+          </>
+        )}
       {open && <div className="sub">Approved ideas go to the group vote.</div>}
       <input className="field" aria-label="Title" placeholder="Tea factory tour near Nuwara Eliya" maxLength={80} value={title} onChange={e => setTitle(e.target.value)} />
       <select className="field" aria-label="Area" value={area} onChange={e => setArea(e.target.value as Area)}>

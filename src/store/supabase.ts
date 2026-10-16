@@ -3,9 +3,10 @@ import { tripClient } from './tripKey';
 import { applyAdmin, EMPTY_STAYS, emptyRanking } from '../types';
 import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
 
-interface RespRow {
+type RankingCol = Response['ranking'] & { final?: Response['final'] };
+export interface RespRow {
   name: Person; days: number | null; flex?: boolean | null; pace: Response['pace'];
-  ranking: (Response['ranking'] & { final?: Response['final'] }) | null; rated: string[] | null; submitted: boolean | null; updated_at: string | null;
+  ranking: RankingCol | null; rated: string[] | null; submitted: boolean | null; updated_at: string | null;
 }
 interface SuggRow {
   id: string; name: Person; title: string; area: Suggestion['area']; note: string | null;
@@ -38,7 +39,7 @@ interface AdminRow { pins: StaysAdmin['pins'] | null; scouts: StaysAdmin['scouts
 
 // The Finalize list is kept inside the ranking jsonb column under "final", so the live table needs
 // no new column.
-const toResponse = (r: RespRow): Response => {
+export const toResponse = (r: RespRow): Response => {
   const { final, ...ranking } = r.ranking ?? { ...emptyRanking(), final: null };
   return {
     name: r.name, days: r.days, flex: r.flex ?? false, pace: r.pace,
@@ -46,6 +47,21 @@ const toResponse = (r: RespRow): Response => {
     updatedAt: r.updated_at ?? new Date(0).toISOString(),
   };
 };
+
+type Patch = Partial<Omit<Response, 'name'>>;
+/** One of ranking and final without the other: the column write must carry the stored half, which only a read has. */
+export const needsStoredRanking = (p: Patch) => (p.ranking === undefined) !== (p.final === undefined);
+
+/** The upsert columns for a patch. Only columns present are written, so a partial patch never nulls the rest. */
+export function responseCols(name: Person, p: Patch, stored: RankingCol | null): Record<string, unknown> {
+  const cols: Record<string, unknown> = { name, updated_at: new Date().toISOString() };
+  for (const k of ['days', 'flex', 'pace', 'rated', 'submitted'] as const) if (p[k] !== undefined) cols[k] = p[k];
+  if (p.ranking !== undefined || p.final !== undefined) {
+    const { final = null, ...ranking }: RankingCol = stored ?? emptyRanking();
+    cols.ranking = { ...(p.ranking ?? ranking), final: p.final !== undefined ? p.final : final };
+  }
+  return cols;
+}
 
 const RELOAD_DEBOUNCE_MS = 200;
 const POLL_MS = 20_000;
@@ -119,14 +135,13 @@ export class SupabaseStore implements Store {
   }
 
   async saveResponse(name: Person, patch: Partial<Omit<Response, 'name'>>): Promise<void> {
-    // The queue sends the full current row, so there is no server read to merge against. Only
-    // the columns present in the patch are written, which keeps a partial patch from nulling the rest.
-    const cols: Record<string, unknown> = { name, updated_at: new Date().toISOString() };
-    for (const k of ['days', 'flex', 'pace', 'ranking', 'rated', 'submitted'] as const) {
-      if (patch[k] !== undefined) cols[k] = patch[k];
+    let stored: RankingCol | null = null;
+    if (needsStoredRanking(patch)) {
+      const { data, error } = await this.db.from('responses').select('ranking').eq('name', name).maybeSingle();
+      if (error) throw error;
+      stored = (data as { ranking: RankingCol | null } | null)?.ranking ?? null;
     }
-    if (patch.final !== undefined && patch.ranking) cols.ranking = { ...patch.ranking, final: patch.final };
-    const { error } = await this.db.from('responses').upsert(cols, { onConflict: 'name' });
+    const { error } = await this.db.from('responses').upsert(responseCols(name, patch, stored), { onConflict: 'name' });
     if (error) throw error;
     this.ping();
   }

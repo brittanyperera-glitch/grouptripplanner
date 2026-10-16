@@ -17,9 +17,9 @@ const row = (name: Person, done: boolean, prefs: PrefAnswer[] = []): CrewStays =
 
 // Hand-written answers, counted by eye below.
 const answers: Record<Person, PrefAnswer[]> = {
-  Brittany: [pref('stayType', { hostel: 'happy', hotel: 'happy' }), pref('rooms', { dorm: 'noway' }), pref('budget', { '30to60': 'happy' }), pref('nos', { dorm: 'noway' })],
-  Alex: [pref('stayType', { hostel: 'happy', villa: 'noway' }), pref('rooms', { dorm: 'happy', private: 'happy' }), pref('budget', { '30to60': 'happy' })],
-  Antek: [pref('stayType', { hostel: 'noway' }), pref('rooms', { private: 'happy' }), pref('budget', { under30: 'happy' }), pref('nos', { dorm: 'noway', noac: 'noway' })],
+  Brittany: [pref('stayType', { hostel: 'happy', hotel: 'happy' }), pref('rooms', { dorm: 'noway' }), pref('budget', { '35to55': 'happy' }), pref('nos', { dorm: 'noway' })],
+  Alex: [pref('stayType', { hostel: 'happy', villa: 'noway' }), pref('rooms', { dorm: 'happy', private: 'happy' }), pref('budget', { '35to55': 'happy' })],
+  Antek: [pref('stayType', { hostel: 'noway' }), pref('rooms', { private: 'happy' }), pref('budget', { under10: 'happy' }), pref('nos', { dorm: 'noway', noac: 'noway' })],
   Lazza: [pref('stayType', { hotel: 'happy' })],
   Saulie: [],
 };
@@ -51,6 +51,7 @@ describe('Group answers row', () => {
     expect(container.textContent).toContain('Hotel: 1 happy, 0 no way');
   });
 
+  // Changed deliberately (Brittany 2026-10-16): budget bands now follow the researched prices (reports in ~/.claude/plans/review/budget-research.md and her own)
   it('shows counts that match a hand count of the three finished answers', () => {
     seed(['Brittany', 'Alex', 'Antek']);
     const { container } = render(<GroupAnswers />);
@@ -62,8 +63,8 @@ describe('Group answers row', () => {
       'Villa: 0 happy, 1 no way', // Alex
       'Dorm bunk: 1 happy, 1 no way', // Alex happy; Brittany no way
       'Own room: 2 happy, 0 no way', // Alex, Antek
-      'Under 30: 1', // Antek
-      '30 to 60: 2', // Brittany, Alex
+      'Under 10: 1', // Antek
+      '35 to 55: 2', // Brittany, Alex
       'Dorm beds: 2', // Brittany, Antek
       'No air con: 1', // Antek
     ]) expect(text, line).toContain(line);
@@ -75,5 +76,21 @@ describe('Group answers row', () => {
     const { container } = render(<GroupAnswers />);
     open(container);
     for (const n of [...PEOPLE, ...GUESTS]) expect(container.innerHTML, n).not.toContain(n);
+  });
+});
+
+describe('Group answers budget bands', () => {
+  it('counts each of the six bands and ignores old keys', () => {
+    const b = (picks: Record<string, PrefStance>) => [pref('budget', picks)];
+    const per: Record<string, PrefAnswer[]> = {
+      Brittany: b({ '10to20': 'happy' }), Alex: b({ '10to20': 'happy' }), Antek: b({ '85plus': 'happy' }),
+      Lazza: b({ '30to60': 'happy' }), Saulie: b({ '55to85': 'happy' }),
+    };
+    crewNow = Object.fromEntries(PEOPLE.map(p => [p, row(p, true, per[p])]));
+    const { container } = render(<GroupAnswers />);
+    open(container);
+    const text = container.textContent ?? '';
+    for (const line of ['10 to 20: 2', '55 to 85: 1', '85 plus: 1']) expect(text, line).toContain(line);
+    for (const absent of ['Under 10:', '20 to 35:', '35 to 55:', '30 to 60', 'Under 30']) expect(text, absent).not.toContain(absent);
   });
 });

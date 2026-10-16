@@ -10,9 +10,11 @@ import { QuipGate } from './components/quipRate';
 import { groupAwards } from './lib/awards';
 import { awardsKey, isFinalizing, openItems, tabBadges, toRate } from './lib/openItems';
 import type { OpenItem } from './lib/openItems';
-import { outstanding } from './lib/outstanding';
+import { hidesTabs, pickScreen } from './lib/overlay';
+import type { Overlay } from './lib/overlay';
 import { removeId, setTier } from './lib/ranking';
 import Awards from './screens/Awards';
+import Bingo from './screens/Bingo';
 import Days from './screens/Days';
 import Extras from './screens/Extras';
 import Finalize, { EditListRow } from './screens/Finalize';
@@ -35,6 +37,7 @@ import Rate from './screens/Rate';
 import Rerank from './screens/Rerank';
 import Suggest from './screens/Suggest';
 import Waiting from './screens/Waiting';
+import BigState from './components/BigState';
 import HowTo, { howtoWanted, markHowtoSeen } from './screens/HowTo';
 import type { HowToCopy } from './screens/HowTo';
 import copyData from './content/copy.json';
@@ -82,37 +85,30 @@ function GroupTrip() {
   );
 }
 
-function MyTripTab({ onVote }: { onVote(): void }) {
+function MyTripTab() {
   const { state, me, items, legs } = useApp();
-  const group = useGroup();
-  const owed = group?.open && me ? outstanding(group, state.votes, me).mine : 0;
-  const [view, setView] = useState<TripView>('mine');
+  // Until she picks a view, the group plan leads once it is open. The tab remounts on re-entry, which resets the pick.
+  const [picked, setPicked] = useState<TripView | null>(null);
   const resp = me ? state.responses[me] : undefined;
   const { data: plan } = usePersonPlan(resp, items, legs);
   // Same test as group.open in lib/group.ts: all five trip members have submitted.
   const open = PEOPLE.every(p => state.responses[p]?.submitted);
+  const view: TripView = picked ?? (open ? 'group' : 'mine');
   let content;
   if (view === 'group' && open) content = <GroupTrip />;
+  else if (view === 'group') content = <section className="body" aria-label="Group trip, not open yet"><BigState headline="The plan is locked." sub="It opens when all five have finished rating. Ask the slow ones." crew={{ label: 'Who has finished rating', done: p => !!state.responses[p]?.submitted, doneLabel: 'finished rating', waitLabel: 'still rating', caption: `${PEOPLE.filter(p => state.responses[p]?.submitted).length} of ${PEOPLE.length} done` }} /></section>;
   else if (!resp) content = <div className="body"><div className="sub">Loading</div></div>;
   else if (!plan) content = <div className="body"><div className="sub">Working out the plan...</div></div>;
   // Before you go lives on My trip until Group trip opens, then only there (one home at a time).
   else content = <MyTrip plan={plan} days={resp.flex ? 14 : resp.days ?? 9} showBook={!open} />;
-  const shown: TripView = view === 'group' && open ? 'group' : 'mine';
+  const shown: TripView = view;
   return (
     <>
-      {owed > 0 && (
-        <section className="oi-banner" aria-label="Votes owed">
-          <h2 className="oi-banner-head">Democracy needs you</h2>
-          <p className="oi-banner-line">{`You have ${owed} ${owed === 1 ? 'vote' : 'votes'} to cast.`}</p>
-          <VoteNow mine={owed} onGo={onVote} />
-        </section>
-      )}
       <div className="mt-sub">
         <div className="mt-seg">
-          <button type="button" aria-pressed={shown === 'mine'} onClick={() => setView('mine')}>My trip</button>
-          <button type="button" aria-pressed={shown === 'group'} aria-disabled={!open} onClick={() => { if (open) setView('group'); }}>Group trip</button>
+          <button type="button" aria-pressed={shown === 'mine'} onClick={() => setPicked('mine')}>My trip</button>
+          <button type="button" aria-pressed={shown === 'group'} onClick={() => setPicked('group')}>Group trip</button>
         </div>
-        {!open && <small>Opens when all five have finished rating</small>}
       </div>
       {content}
     </>
@@ -137,25 +133,6 @@ function GroupTab({ view, onView }: { view: GroupView; onView(v: GroupView): voi
       {finalizing && view === 'hub' && <EditListRow group={group} onEdit={() => setEditing(true)} />}
       <GroupHub group={group} view={view} onView={onView} />
     </>
-  );
-}
-
-/** The one button to the group stage, shared by the locked Picks block and the My trip banner. */
-function VoteNow({ mine, onGo }: { mine: number; onGo(): void }) {
-  return <button type="button" className="cta" onClick={onGo}>{mine > 0 ? `Vote now (${mine})` : 'See the group stage'}</button>;
-}
-
-/** Replaces the small "Ratings are locked" line on Picks: one headline and one button to the group stage. */
-function LockedBlock({ onGo }: { onGo(): void }) {
-  const { state, me } = useApp();
-  const group = useGroup();
-  const mine = group ? outstanding(group, state.votes, me).mine : 0;
-  return (
-    <section className="body gh-locked" aria-label="Ratings locked">
-      <h2 className="big display">Ratings are locked</h2>
-      <div className="sub">The group stage is open. Your votes settle the plan.</div>
-      <VoteNow mine={mine} onGo={onGo} />
-    </section>
   );
 }
 
@@ -199,14 +176,10 @@ function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLog
   const pick = (act: () => void) => () => { setOpen(false); setArmed(false); act(); };
   return (
     <div className="hmenu" ref={box}>
-      {/* The count is a description, not part of the name, so the button stays "Menu". */}
-      <button className="link" aria-haspopup="true" aria-expanded={open} aria-describedby={todo > 0 ? 'oi-menu-desc' : undefined} onClick={() => { setOpen(o => !o); setArmed(false); }}>
-        Menu{todo > 0 && <span className="oi-dot" aria-hidden="true" />}
-      </button>
-      {todo > 0 && <span id="oi-menu-desc" hidden>{todo === 1 ? '1 thing to do' : `${todo} things to do`}</span>}
+      <button className="link" aria-haspopup="true" aria-expanded={open} onClick={() => { setOpen(o => !o); setArmed(false); }}>Menu</button>
       {open && (
         <div className="hmenu-list" role="group" aria-label="Menu">
-          {onItems && <button onClick={pick(onItems)}>Open items</button>}
+          {onItems && <button onClick={pick(onItems)}>{todo > 0 ? `Open items (${todo})` : 'Open items'}</button>}
           {onAwards && <button onClick={pick(onAwards)}>Awards</button>}
           <button onClick={pick(onProfile)}>{profileCopy.menuItem}</button>
           {onStats && <button onClick={pick(onStats)}>Group stats</button>}
@@ -232,67 +205,80 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   });
   const ref = useRef(draft);
   const [step, setStep] = useState<Step>(() => (draft.days === null ? 'days' : draft.pace === null ? 'pace' : draft.submitted ? 'tabs' : 'rate'));
-  const [tab, setTabState] = useState<Tab>('My trip');
+  const [rawTab, setTabState] = useState<Tab>('My trip');
   const [groupView, setGroupView] = useState<GroupView>('hub');
   const [editing, setEditing] = useState(false);
-  // The profile card sits over whatever step or tab I was on; Back closes it and that screen is still there.
-  const [profileOpen, setProfileOpen] = useState(false);
-  // The Open items page sits over the current tab the same way.
-  const [itemsOpen, setItemsOpen] = useState(false);
-  const [awardsOpen, setAwardsOpen] = useState(false);
-  // The travel quiz is a page over the current tab, like Open items; its answers save as they are finished.
-  const [quizOpen, setQuizOpen] = useState(false);
+  // At most one page sits over the current step or tab (the profile card before the tabs, then Open items, the travel
+  // quiz, Travel Bingo, Awards); closing it leaves that screen as it was. pickScreen decides what shows.
+  const [overlay, setOverlay] = useState<Overlay | null>(null);
   const [awardsSeen, setAwardsSeen] = useState<string | null>(readSeen);
   // The welcome-back walkthrough shows once a day, to someone who opens the app already submitted.
   const [walkDay, setWalkDay] = useState<string | null>(readWalkSeen);
   const scrollBack = useRef<number | null>(null);
   // On the tabs the profile is its own tab (Brittany 2026-10-16); before that it opens over the current step.
   const openProfile = () => {
-    if (step === 'tabs') { if (tabRef.current !== 'Profile') navigate('tab', () => setTab('Profile')); return; }
-    if (profileOpen) return;
-    scrollBack.current = window.scrollY;
-    navigate('fwd', () => setProfileOpen(true));
+    if (step === 'tabs') {
+      navigate('tab', () => { if (tabRef.current !== 'Profile') setTab('Profile'); else if (overlay) dropOverlay(); });
+      return;
+    }
+    if (overlay === 'profile') return;
+    navigate('fwd', () => showOverlay('profile'));
   };
-  const closeProfile = () => navigate('back', () => setProfileOpen(false));
-  // Jump to a Group view from anywhere (the Menu, the locked Picks block).
+  const closeProfile = () => navigate('back', () => setOverlay(null));
+  // Jump to a Group view from anywhere (the Menu).
   const openGroup = (v: GroupView) => navigate('tab', () => {
     setGroupView(v);
-    if (tabRef.current !== 'Group') setTab('Group');
+    if (tabRef.current !== 'Group') setTab('Group'); else if (overlay) dropOverlay();
   });
   const openItemsPage = () => {
-    if (itemsOpen) return;
-    scrollBack.current = window.scrollY;
-    navigate('fwd', () => setItemsOpen(true));
+    if (overlay === 'items') return;
+    navigate('fwd', () => showOverlay('items'));
   };
-  const closeItems = () => navigate('back', () => setItemsOpen(false));
   // A row on the Open items page: close the page, then go where the action is.
   const goItem = (i: OpenItem) => navigate('tab', () => {
-    setItemsOpen(false);
-    if (i.target.tab === 'Awards') { setAwardsOpen(true); return; }
-    if (i.target.tab === 'Quiz') { setQuizOpen(true); return; }
+    if (i.target.tab === 'Awards') { showOverlay('awards'); return; }
+    if (i.target.tab === 'Quiz') { showOverlay('quiz'); return; }
+    if (i.target.tab === 'Bingo') { showOverlay('bingo'); return; }
     if (i.target.tab === 'Group') setGroupView(i.target.view ?? 'hub');
-    if (tabRef.current !== i.target.tab) setTab(i.target.tab);
+    if (tabRef.current !== i.target.tab) setTab(i.target.tab); else dropOverlay();
   });
   const closeAwards = () => {
     try { localStorage.setItem(AWARDS_SEEN_KEY, awardsKey(awardList)); } catch { /* storage unavailable: unseen again next visit */ }
     setAwardsSeen(awardsKey(awardList));
-    setAwardsOpen(false);
+    if (overlay === 'awards') dropOverlay();
   };
 
   // Each tab switch is a history entry with the same URL, so a phone's Back returns to the previous tab
   // instead of leaving the app. The hash is left alone because the raw page routes on it.
-  const tabRef = useRef(tab);
-  tabRef.current = tab;
+  const tabRef = useRef(rawTab);
+  // An overlay opened on the tabs owns one such entry too (tpOverlay), so Back closes it first. Going to a tab from it
+  // replaces that entry rather than stacking on it, and closing it by hand pops it (selfPop swallows that popstate).
+  const selfPop = useRef(false);
   const setTab = useCallback((t: Tab) => {
-    history.pushState({ ...history.state, tpTab: t }, '');
+    const entry = { ...history.state, tpTab: t, tpOverlay: undefined };
+    if (history.state?.tpOverlay) history.replaceState(entry, ''); else history.pushState(entry, '');
+    setOverlay(null);
     setTabState(t);
   }, []);
+  const showOverlay = (o: Overlay) => {
+    if (overlay === null && o !== 'awards') scrollBack.current = window.scrollY;
+    setOverlay(o);
+    if (step !== 'tabs') return;
+    const entry = { ...history.state, tpTab: tabRef.current, tpOverlay: o };
+    if (history.state?.tpOverlay) history.replaceState(entry, ''); else history.pushState(entry, '');
+  };
+  const dropOverlay = () => {
+    setOverlay(null);
+    if (history.state?.tpOverlay) { selfPop.current = true; history.back(); }
+  };
+  const closeOverlay = () => navigate('back', dropOverlay);
   useEffect(() => {
     if (step !== 'tabs') return;
-    history.replaceState({ ...history.state, tpTab: tabRef.current }, '');
+    history.replaceState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined }, '');
     const onPop = (e: PopStateEvent) => {
+      if (selfPop.current) { selfPop.current = false; return; }
       const t = (e.state as { tpTab?: Tab } | null)?.tpTab;
-      if (t && TABS.includes(t)) navigate('back', () => setTabState(t));
+      if (t && TABS.includes(t)) navigate('back', () => { setOverlay(null); setTabState(t); });
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -316,16 +302,26 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const shown: Step = locked ? 'tabs' : step;
   const awardList = useMemo(() => (group?.locked ? groupAwards(state, items, GENRES, [...group.results, ...group.knockouts]) : []), [group, state, items]);
   const awardsUnseen = awardList.length > 0 && awardsSeen !== awardsKey(awardList);
+  // Once ratings lock, Picks has nothing left to offer: the bar drops it and a stale visit lands on Group.
+  const tab: Tab = locked && rawTab === 'Picks' ? 'Group' : rawTab;
+  const tabs = locked ? TABS.filter(t => t !== 'Picks') : TABS;
+  tabRef.current = tab;
   const todo = shown === 'tabs' ? openItems({ me, group, state, unrated: unrated.length, ratingsLocked: locked, awardsUnseen }) : [];
   const badges = tabBadges(todo);
   const today = todayKey(new Date());
   // Returning means they had already submitted when the app opened; a guest sandbox has no "back", so it never shows there.
   const arrivedSubmitted = useRef(draft.submitted).current;
   // Awards open on their own first; the walkthrough follows with whatever is still to do.
-  const walking = shown === 'tabs' && arrivedSubmitted && !isGuest(me) && !profileOpen && !itemsOpen && !quizOpen && !awardsUnseen && !awardsOpen && walkShould(todo, today, walkDay);
+  const walkEligible = arrivedSubmitted && !isGuest(me) && walkShould(todo, today, walkDay);
+  const screen = pickScreen({ shown, overlay, awardsUnseen, walkEligible });
   const finishWalk = () => { setWalkDay(today); markWalkSeen(); };
 
-  const changeDays = () => navigate('back', () => { setProfileOpen(false); setEditing(true); setStep('days'); });
+  const changeDays = () => navigate('back', () => { setOverlay(null); setEditing(true); setStep('days'); });
+  const pickTab = (t: Tab) => {
+    if (t !== tab) navigate('tab', () => { if (t === 'Group') setGroupView('hub'); setTab(t); });
+    else if (overlay) navigate('back', dropOverlay);
+    else if (t === 'Group' && groupView !== 'hub') navigate('back', () => setGroupView('hub'));
+  };
   const changeLink = <button className="link" onClick={changeDays}>Change days or pace</button>;
 
   const commit = (r: Ranking, id: string) => save({ ranking: r, rated: draft.rated.includes(id) ? draft.rated : [...draft.rated, id] });
@@ -388,41 +384,39 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     // Your picks lives in the tab bar (Brittany 2026-10-15); after submitting, a reorder saves as you go.
     content = (
       <div role="tabpanel" aria-label="Picks" className="panel">
-        {locked && <LockedBlock onGo={() => openGroup('knockouts')} />}
-        {!locked && unrated.length > 0 && (
+        {unrated.length > 0 && (
           <button className="cta" onClick={() => navigate('back', () => setStep('rate'))}>{unrated.length} new to rate</button>
         )}
-        {!locked && (
-          <>
-            <Rerank ranking={draft.ranking} byId={byId} onChange={onReorder} onSubmit={() => undefined} sticky={false}
-              title="Your picks" kicker="My picks" sub="Drag a row to rank it, or into another tier to change it. Saves as you go." />
-            <div className="foot stack">{changeLink}</div>
-          </>
-        )}
+        <Rerank ranking={draft.ranking} byId={byId} onChange={onReorder} onSubmit={() => undefined} sticky={false}
+          title="Your picks" kicker="My picks" sub="Drag a row to rank it, or into another tier to change it. Saves as you go." />
+        <div className="foot stack">{changeLink}</div>
       </div>
     );
   } else if (tab === 'Profile') {
     // Back goes to the tab I came from: tab switches are history entries.
-    content = <div role="tabpanel" aria-label="Profile" className="panel"><Profile name={me} players={copy.players} onBack={() => history.back()} onQuiz={() => setQuizOpen(true)} /></div>;
+    content = <div role="tabpanel" aria-label="Profile" className="panel"><Profile name={me} players={copy.players} onBack={() => history.back()} onQuiz={() => showOverlay('quiz')} onBingo={() => showOverlay('bingo')} /></div>;
   } else {
     const Panel = tab === 'Group' || tab === 'My trip' ? null : PANELS[tab];
     content = (
       <div role="tabpanel" aria-label={tab} className="panel"><GuideNav.Provider value={() => navigate('tab', () => setTab('Guide'))}>
-        {Panel ? <Panel /> : tab === 'My trip' ? <MyTripTab onVote={() => openGroup('knockouts')} /> : <GroupTab view={groupView} onView={setGroupView} />}
+        {Panel ? <Panel /> : tab === 'My trip' ? <MyTripTab /> : <GroupTab view={groupView} onView={setGroupView} />}
       </GuideNav.Provider></div>
     );
   }
 
   const enter = cssEnter() ? lastNav() : null;
-  if (itemsOpen && shown === 'tabs') content = <OpenItems items={todo} onGo={goItem} onBack={closeItems} />;
-  if (walking) content = <Walkthrough name={me} items={todo} onGo={goItem} onDone={finishWalk} />;
-  if (quizOpen && shown === 'tabs') content = <Interview me={me} initial={state.stays?.crew[me]?.prefs} onSave={prefs => { void store.saveCrewStays(me, { prefs, quizDone: prefs.some(a => !a.skipped && (a.noPreference || Object.keys(a.picks).length > 0)) }); }} onDone={() => setQuizOpen(false)} onClose={() => setQuizOpen(false)} />;
-  if (profileOpen) content = <Profile name={me} players={copy.players} onBack={closeProfile} onQuiz={() => { setProfileOpen(false); setQuizOpen(true); }} />;
-  const screenKey = walking ? 'walkthrough' : quizOpen && shown === 'tabs' ? 'quiz' : profileOpen ? 'profile' : itemsOpen && shown === 'tabs' ? 'items' : shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
+  if (screen === 'items') content = <OpenItems items={todo} onGo={goItem} onBack={closeOverlay} />;
+  if (screen === 'walkthrough') content = <Walkthrough name={me} items={todo} onGo={goItem} onDone={finishWalk} />;
+  if (screen === 'quiz') content = <Interview me={me} initial={state.stays?.crew[me]?.prefs} onSave={prefs => { void store.saveCrewStays(me, { prefs, quizDone: prefs.some(a => !a.skipped && (a.noPreference || Object.keys(a.picks).length > 0)) }); }} onDone={closeOverlay} onClose={closeOverlay} />;
+  if (screen === 'bingo') content = <Bingo onBack={closeOverlay} />;
+  // The quiz and Bingo only exist on the tabs, so the card before them leaves their rows out.
+  if (screen === 'profile') content = <Profile name={me} players={copy.players} onBack={closeProfile} />;
+  const baseKey = shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
+  const screenKey = screen === 'base' || screen === 'awards' ? baseKey : screen;
   useLayoutEffect(() => {
-    const overlay = screenKey === 'profile' || screenKey === 'items';
-    if (!/jsdom/.test(navigator.userAgent)) window.scrollTo(0, overlay ? 0 : scrollBack.current ?? 0);
-    if (!overlay) scrollBack.current = null;
+    const over = screenKey === 'profile' || screenKey === 'items' || screenKey === 'quiz' || screenKey === 'bingo';
+    if (!/jsdom/.test(navigator.userAgent)) window.scrollTo(0, over ? 0 : scrollBack.current ?? 0);
+    if (!over) scrollBack.current = null;
   }, [screenKey]);
 
   return (
@@ -432,22 +426,22 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
           <Avatar name={me} size={30} />
           <b>{me}</b>
         </button>
-        <HeaderMenu onProfile={openProfile} onChange={(shown === 'rate' || shown === 'tabs') && !locked ? changeDays : undefined} onStats={shown === 'tabs' && statsOpen ? () => { if (profileOpen) setProfileOpen(false); openGroup('stats'); } : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} onLogout={finishSandbox ?? logout ?? undefined}
-          todo={todo.length} onItems={shown === 'tabs' ? () => { if (profileOpen) setProfileOpen(false); openItemsPage(); } : undefined} onAwards={shown === 'tabs' && awardList.length > 0 ? () => setAwardsOpen(true) : undefined} />
+        <HeaderMenu onProfile={openProfile} onChange={(shown === 'rate' || shown === 'tabs') && !locked ? changeDays : undefined} onStats={shown === 'tabs' && statsOpen ? () => openGroup('stats') : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} onLogout={finishSandbox ?? logout ?? undefined}
+          todo={todo.length} onItems={shown === 'tabs' ? openItemsPage : undefined} onAwards={shown === 'tabs' && awardList.length > 0 ? () => showOverlay('awards') : undefined} />
       </header>
       <div className={`screen${enter ? ` enter-${enter}` : ''}`} key={screenKey}>{content}</div>
-      {shown === 'tabs' && !profileOpen && !walking && !quizOpen && !itemsOpen && (
+      {shown === 'tabs' && !hidesTabs(screen) && (
         <nav className="tabs" role="tablist" aria-label="Sections">
-          {TABS.map(t => {
+          {tabs.map(t => {
             const Icon = TAB_ICON[t];
             const icon = t === 'Profile' ? <span className="tab-me" aria-hidden="true"><Avatar name={me} size={22} /></span> : <Icon />;
             const n = t === 'Group' || t === 'Picks' || t === 'Suggest' ? badges[t] ?? 0 : 0;
-            return <button key={t} role="tab" aria-selected={tab === t} aria-describedby={n > 0 ? `oi-tab-${t}` : undefined} onClick={() => { if (t !== tab) navigate('tab', () => { if (t === 'Group') setGroupView('hub'); setTab(t); }); else if (t === 'Group' && groupView !== 'hub') navigate('back', () => setGroupView('hub')); }}>{icon}<span>{t}</span>{n > 0 && <span className="badge-count" aria-hidden="true">{n > 9 ? '9+' : n}</span>}</button>;
+            return <button key={t} role="tab" aria-selected={tab === t} aria-describedby={n > 0 ? `oi-tab-${t}` : undefined} onClick={() => pickTab(t)}>{icon}<span>{t}</span>{n > 0 && <span className="badge-count" aria-hidden="true">{n > 9 ? '9+' : n}</span>}</button>;
           })}
-          {TABS.map(t => (t === 'Group' || t === 'Picks' || t === 'Suggest') && (badges[t] ?? 0) > 0 && <span key={t} id={`oi-tab-${t}`} hidden>{`${badges[t]} to do`}</span>)}
+          {tabs.map(t => (t === 'Group' || t === 'Picks' || t === 'Suggest') && (badges[t] ?? 0) > 0 && <span key={t} id={`oi-tab-${t}`} hidden>{`${badges[t]} to do`}</span>)}
         </nav>
       )}
-      {((shown === 'tabs' && awardsUnseen) || awardsOpen) && <Awards awards={awardList} onClose={closeAwards} />}
+      {screen === 'awards' && <Awards awards={awardList} onClose={closeAwards} />}
     </GroupCtx.Provider>
   );
 }

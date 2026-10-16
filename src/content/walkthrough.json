@@ -29,7 +29,11 @@
   },
   "stayQuiz": {
    "line": "Before you pick a bed, we need your {travel profile}. Three minutes.",
-   "button": "Start the quiz"
+   "button": "Start your travel profile"
+  },
+  "bingo": {
+   "line": "Your {travel bingo} card is missing. Predict the chaos before it happens.",
+   "button": "Make my card"
   },
   "stayAdd": {
    "line": "Time to put your {stays} on the table. Or none, we won't judge.",

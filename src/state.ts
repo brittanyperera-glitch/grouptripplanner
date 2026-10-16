@@ -1,5 +1,5 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { Dispatch, MutableRefObject, ReactNode, SetStateAction } from 'react';
 import catalogue from './data/catalogue.json';
 import legsData from './data/legs.json';
 import copyData from './content/copy.json';
@@ -34,6 +34,7 @@ interface AppValue {
 export const ME_KEY = 'tp:me';
 // My own saves, kept here until the server has them, so a failed save survives a reload of the page.
 const UNSAVED_KEY = (p: Person) => `tp:unsaved:${p}`;
+const PENDING_KEY = (name: string) => `tp:pending:${name}`;
 type Rows = AppState['responses'];
 // My crew writes, field by field, stamped when made; shown over the server row until it holds them.
 type CrewOverlay = Partial<Record<Player, { patch: Partial<Omit<CrewStays, 'name'>>; updatedAt: string }>>;
@@ -114,6 +115,116 @@ function writeUnsaved(rows: Rows): void {
   }
 }
 
+type Send = (store: Store) => Promise<void>;
+/**
+ * One kind of my own writes, shown over the server's state until it holds them. Kept on disk so a failed
+ * write survives a reload, and re-sent once after the first server read.
+ */
+interface Pending<T> {
+  empty: T;
+  /** Drops what the server already holds (returning `o` itself when nothing went), plus any writes that now can go. */
+  settle(o: T, s: AppState): [T, Send[]];
+  resend(o: T): Send[];
+  read(): T;
+  write(o: T): void;
+}
+
+const isObj = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
+function keepWhere<V>(o: Partial<Record<string, V>>, keep: (k: string, v: V) => boolean): Partial<Record<string, V>> {
+  const kept = Object.fromEntries(Object.entries(o).filter(([k, v]) => v !== undefined && keep(k, v as V))) as Partial<Record<string, V>>;
+  return Object.keys(kept).length === Object.keys(o).length ? o : kept;
+}
+
+/** Disk for a kind under tp:pending:<name>; `parse` rejects a corrupt value. */
+function onDisk<T>(name: string, empty: T, isEmpty: (o: T) => boolean, parse: (raw: unknown) => T | null, toJSON: (o: T) => unknown = o => o) {
+  return {
+    read(): T {
+      try {
+        const raw = localStorage.getItem(PENDING_KEY(name));
+        return (raw === null ? null : parse(JSON.parse(raw))) ?? empty;
+      } catch { return empty; }
+    },
+    write(o: T): void {
+      try {
+        if (isEmpty(o)) localStorage.removeItem(PENDING_KEY(name)); else localStorage.setItem(PENDING_KEY(name), JSON.stringify(toJSON(o)));
+      } catch { /* storage unavailable: the overlay lasts this visit */ }
+    },
+  };
+}
+
+const RESPONSES: Pending<Rows> = {
+  empty: {}, read: readUnsaved, write: writeUnsaved,
+  settle: (o, s) => [keepWhere(o, (_, r) => ahead(r, s.responses[r.name])), []],
+  resend: o => Object.values(o).map(r => st => {
+    const { name, updatedAt: _at, ...patch } = r!;
+    return st.saveResponse(name, patch);
+  }),
+};
+
+const CREW: Pending<CrewOverlay> = {
+  empty: {},
+  settle: (o, s) => [keepWhere(o, (n, c) => ahead(c, s.stays?.crew[n as Player])), []],
+  resend: o => Object.entries(o).map(([n, c]) => st => st.saveCrewStays(n as Player, c!.patch)),
+  ...onDisk<CrewOverlay>('crew', {}, o => Object.keys(o).length === 0,
+    raw => (isObj(raw) ? keepWhere(raw as CrewOverlay, (_, c) => isObj(c?.patch) && typeof c?.updatedAt === 'string') : null)),
+};
+
+const sameVote = (a: Vote, b: Vote) => a.forkId === b.forkId && a.name === b.name && a.choice === b.choice;
+const VOTES: Pending<Vote[]> = {
+  empty: [],
+  settle: (o, s) => {
+    const kept = o.filter(v => !s.votes.some(x => sameVote(x, v)));
+    return [kept.length === o.length ? o : kept, []];
+  },
+  resend: o => o.map(v => st => st.vote(v)),
+  ...onDisk<Vote[]>('votes', [], o => o.length === 0,
+    raw => (Array.isArray(raw) ? raw.filter(v => isObj(v) && typeof v.forkId === 'string' && typeof v.name === 'string' && (v.choice === 'a' || v.choice === 'b')) : null)),
+};
+
+const PLACES: Pending<PlaceOverlay> = {
+  empty: NO_PLACES,
+  settle: (o, s) => {
+    const { next, send } = settlePlaces(o, s.stays?.suggestions ?? []);
+    return [next, send.map(([id, v]) => st => st.setPlaceStatus(id, v))];
+  },
+  // A status on a pending id waits for its add to land (settle sends it then).
+  resend: o => [
+    ...o.added.map(({ s: { id: _id, status: _st, createdAt: _at, ...draft } }): Send => st => st.addPlaceSuggestion(draft)),
+    ...Object.entries(o.status).filter(([id]) => !id.startsWith(PENDING)).map(([id, v]): Send => st => st.setPlaceStatus(id, v)),
+  ],
+  ...onDisk<PlaceOverlay>('places', NO_PLACES, o => o.added.length === 0 && Object.keys(o.status).length === 0,
+    raw => (isObj(raw) && Array.isArray(raw.added) && isObj(raw.status) && raw.added.every(a => isObj(a) && isObj(a.s) && Array.isArray(a.seen))
+      ? (raw as unknown as PlaceOverlay) : null)),
+};
+
+// JSON drops undefined, and an undefined scout is a clear, so it goes to disk as null.
+const scoutsVia = (o: Partial<StaysAdmin>, to: undefined | null) =>
+  (o.scouts ? { ...o, scouts: Object.fromEntries(Object.entries(o.scouts).map(([k, v]) => [k, v ?? to])) } : o);
+const ADMIN: Pending<Partial<StaysAdmin>> = {
+  empty: {},
+  settle: (o, s) => [settleAdmin(o, s.stays?.admin ?? EMPTY_STAYS.admin), []],
+  resend: o => (Object.keys(o).length ? [st => st.saveStaysAdmin(o)] : []),
+  ...onDisk<Partial<StaysAdmin>>('admin', {}, o => Object.keys(o).length === 0,
+    raw => (isObj(raw) ? scoutsVia(raw as Partial<StaysAdmin>, undefined) : null), o => scoutsVia(o, null)),
+};
+
+interface PendingState<T> { kind: Pending<T>; value: T; set: Dispatch<SetStateAction<T>>; ref: MutableRefObject<T> }
+function usePending<T>(kind: Pending<T>, sandbox: boolean): PendingState<T> {
+  const [value, set] = useState<T>(() => (sandbox ? kind.empty : kind.read()));
+  const ref = useRef(value);
+  ref.current = value;
+  useEffect(() => { if (!sandbox) kind.write(value); }, [kind, value, sandbox]);
+  return { kind, value, set, ref };
+}
+
+/** Prunes one kind against a server read, and sends what can go now (or, on `replay`, everything left). */
+function sweep<T>(p: PendingState<T>, server: AppState, store: Store | undefined, replay: boolean): void {
+  const before = p.ref.current;
+  const [next, send] = p.kind.settle(before, server);
+  if (next !== before) p.set(o => (o === before ? next : p.kind.settle(o, server)[0]));
+  if (store) for (const w of replay ? p.kind.resend(next) : send) void w(store);
+}
+
 /** Server state with my not-yet-stored saves on top, so a reload that lacks them never wipes them from screen. */
 function withLocal(server: AppState, local: Rows, votes: Vote[] = [], crew: CrewOverlay = {}): AppState {
   const responses = { ...server.responses };
@@ -171,17 +282,13 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   }, [injected, attempt, open, access.password]);
   const [error, setError] = useState<string | null>(null);
   const [server, setServer] = useState<AppState | null>(null);
-  const [local, setLocal] = useState<Rows>(() => (sandbox ? {} : readUnsaved()));
-  const [localVotes, setLocalVotes] = useState<Vote[]>([]);
-  const [localCrew, setLocalCrew] = useState<CrewOverlay>({});
-  const [localPlaces, setLocalPlaces] = useState<PlaceOverlay>(NO_PLACES);
-  const [localAdmin, setLocalAdmin] = useState<Partial<StaysAdmin>>({});
-  const placesRef = useRef(localPlaces);
-  placesRef.current = localPlaces;
+  const local = usePending(RESPONSES, !!sandbox);
+  const votes = usePending(VOTES, !!sandbox);
+  const crew = usePending(CREW, !!sandbox);
+  const places = usePending(PLACES, !!sandbox);
+  const admin = usePending(ADMIN, !!sandbox);
   const serverRef = useRef(server);
   serverRef.current = server;
-  const localRef = useRef(local);
-  localRef.current = local;
   const [me, setMeState] = useState<Player | null>(() => (sandbox ? null : readMe()));
   const queue = useMemo(() => base && new WriteQueue(base, {
     onFail: () => setError("Couldn't save"),
@@ -204,72 +311,56 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
     return base?.subscribe(setServer);
   }, [base, load]);
 
-  // Drop a local row once the server holds it (or something newer), and keep the rest on disk.
-  useEffect(() => {
-    if (!server) return;
-    setLocal(l => {
-      const kept = Object.fromEntries(Object.entries(l).filter(([, r]) => r && ahead(r, server.responses[r.name]))) as Rows;
-      return Object.keys(kept).length === Object.keys(l).length ? l : kept;
-    });
-    setLocalCrew(l => {
-      const kept = Object.fromEntries(Object.entries(l).filter(([n, c]) => c && ahead(c, server.stays?.crew[n as Player]))) as CrewOverlay;
-      return Object.keys(kept).length === Object.keys(l).length ? l : kept;
-    });
-    const { next, send } = settlePlaces(placesRef.current, server.stays?.suggestions ?? []);
-    if (next !== placesRef.current) setLocalPlaces(next);
-    for (const [id, st] of send) void queue?.store.setPlaceStatus(id, st);
-    setLocalAdmin(a => settleAdmin(a, server.stays?.admin ?? EMPTY_STAYS.admin));
-  }, [server, queue]);
-  useEffect(() => { if (!sandbox) writeUnsaved(local); }, [local, sandbox]);
-
-  // Saves left over from an earlier visit go back into the queue once, after the first server read.
+  // Each server read drops what it now holds; writes left over from an earlier visit go back into the queue once, after the first.
   const replayed = useRef(false);
   useEffect(() => {
-    if (sandbox || !server || !queue || replayed.current) return;
-    replayed.current = true;
-    for (const r of Object.values(localRef.current)) {
-      if (!r || !ahead(r, server.responses[r.name])) continue;
-      const { name, updatedAt: _at, ...patch } = r;
-      void queue.store.saveResponse(name, patch);
-    }
+    if (!server) return;
+    const replay = !sandbox && !!queue && !replayed.current;
+    if (replay) replayed.current = true;
+    const store = queue?.store;
+    sweep(local, server, store, replay);
+    sweep(votes, server, store, replay);
+    sweep(crew, server, store, replay);
+    sweep(places, server, store, replay);
+    sweep(admin, server, store, replay);
   }, [server, queue, sandbox]);
 
   const store = useMemo<Store | null>(() => queue && {
     ...queue.store,
     saveResponse: (name, patch) => {
-      setLocal(l => {
+      local.set(l => {
         const prev = l[name] ?? serverRef.current?.responses[name] ?? blankRow(name);
         return { ...l, [name]: { ...prev, ...patch, name, updatedAt: new Date().toISOString() } };
       });
       return queue.store.saveResponse(name, patch);
     },
     vote: v => {
-      setLocalVotes(l => [...l.filter(x => !(x.forkId === v.forkId && x.name === v.name)), v]);
+      votes.set(l => [...l.filter(x => !(x.forkId === v.forkId && x.name === v.name)), v]);
       return queue.store.vote(v);
     },
     saveCrewStays: (name, patch) => {
-      setLocalCrew(l => ({ ...l, [name]: { patch: { ...l[name]?.patch, ...patch }, updatedAt: new Date().toISOString() } }));
+      crew.set(l => ({ ...l, [name]: { patch: { ...l[name]?.patch, ...patch }, updatedAt: new Date().toISOString() } }));
       return queue.store.saveCrewStays(name, patch);
     },
     addPlaceSuggestion: s => {
       const seen = (serverRef.current?.stays?.suggestions ?? []).map(x => x.id);
       const shown: PlaceSuggestion = { ...structuredClone(s), id: `${PENDING}${crypto.randomUUID()}`, status: 'live', createdAt: new Date().toISOString() };
-      setLocalPlaces(o => ({ ...o, added: [...o.added, { s: shown, seen }] }));
+      places.set(o => ({ ...o, added: [...o.added, { s: shown, seen }] }));
       return queue.store.addPlaceSuggestion(s);
     },
     // A pending id has no server row yet; the status is sent once a reload brings the row (see settlePlaces).
     setPlaceStatus: (id, st) => {
-      setLocalPlaces(o => ({ ...o, status: { ...o.status, [id]: st } }));
+      places.set(o => ({ ...o, status: { ...o.status, [id]: st } }));
       return id.startsWith(PENDING) ? Promise.resolve() : queue.store.setPlaceStatus(id, st);
     },
     saveStaysAdmin: patch => {
-      setLocalAdmin(a => mergeAdmin(a, patch));
+      admin.set(a => mergeAdmin(a, patch));
       return queue.store.saveStaysAdmin(patch);
     },
   }, [queue]);
   const state = useMemo(
-    () => server && withStays(withLocal(server, local, localVotes, localCrew), localPlaces, localAdmin),
-    [server, local, localVotes, localCrew, localPlaces, localAdmin],
+    () => server && withStays(withLocal(server, local.value, votes.value, crew.value), places.value, admin.value),
+    [server, local.value, votes.value, crew.value, places.value, admin.value],
   );
 
   const retry = useCallback(() => {

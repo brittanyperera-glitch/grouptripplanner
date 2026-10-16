@@ -1,6 +1,6 @@
 import { diffResponse } from './choices';
 import { mergeAdmin } from '../types';
-import type { ChoiceInput, CrewStays, Player, Response, StaysAdmin, Store, Vote } from '../types';
+import type { ChoiceInput, CrewStays, PlaceSuggestion, Player, Response, StaysAdmin, Store, Suggestion, Vote } from '../types';
 
 type Patch = Partial<Omit<Response, 'name'>>;
 type CrewPatch = Partial<Omit<CrewStays, 'name'>>;
@@ -10,13 +10,15 @@ type Job =
   | { kind: 'admin'; key: 'a:admin'; patch: Partial<StaysAdmin>; waiters: Array<() => void> }
   | { kind: 'vote'; key: string; vote: Vote; waiters: Array<() => void> }
   | { kind: 'log'; key: 'log'; entries: ChoiceInput[]; waiters: Array<() => void> }
+  | { kind: 'sugg'; key: string; id: string; status: Suggestion['status']; waiters: Array<() => void> }
+  | { kind: 'place'; key: string; id: string; status: PlaceSuggestion['status']; waiters: Array<() => void> }
   | { kind: 'op'; key: null; run: () => Promise<void>; waiters: Array<() => void> };
 
 interface Hooks { onFail(): void; onClear(): void }
 
 /**
- * Wraps a Store so writes never run in parallel. Saves for one person and votes for one fork
- * coalesce into the latest value, so a failed save is never replayed over a newer one.
+ * Wraps a Store so writes never run in parallel. Saves for one person, votes for one fork and statuses for one
+ * suggestion coalesce into the latest value, so a failed save is never replayed over a newer one.
  */
 export class WriteQueue {
   readonly store: Store;
@@ -57,9 +59,9 @@ export class WriteQueue {
       },
       saveCrewStays: (name, patch) => this.add({ kind: 'crew', key: `c:${name}`, name, patch, waiters: [] }),
       addPlaceSuggestion: s => this.add({ kind: 'op', key: null, run: () => base.addPlaceSuggestion(s), waiters: [] }),
-      setPlaceStatus: (id, st) => this.add({ kind: 'op', key: null, run: () => base.setPlaceStatus(id, st), waiters: [] }),
+      setPlaceStatus: (id, status) => this.add({ kind: 'place', key: `p:${id}`, id, status, waiters: [] }),
       saveStaysAdmin: patch => this.add({ kind: 'admin', key: 'a:admin', patch, waiters: [] }),
-      setSuggestionStatus: (id, st) => this.add({ kind: 'op', key: null, run: () => base.setSuggestionStatus(id, st), waiters: [] }),
+      setSuggestionStatus: (id, status) => this.add({ kind: 'sugg', key: `s:${id}`, id, status, waiters: [] }),
       logChoice: c => this.logAll([c]),
       loadLog: () => base.loadLog(),
     };
@@ -97,6 +99,8 @@ export class WriteQueue {
     if (j.kind === 'admin') return this.base.saveStaysAdmin(j.patch);
     if (j.kind === 'vote') return this.base.vote(j.vote);
     if (j.kind === 'log') return this.writeLog(j.entries);
+    if (j.kind === 'sugg') return this.base.setSuggestionStatus(j.id, j.status);
+    if (j.kind === 'place') return this.base.setPlaceStatus(j.id, j.status);
     return j.run();
   }
 
@@ -148,6 +152,10 @@ function merge(into: Job, from: Job, intoIsNewer = false): void {
     into.patch = intoIsNewer ? mergeAdmin(from.patch, into.patch) : mergeAdmin(into.patch, from.patch);
   } else if (into.kind === 'vote' && from.kind === 'vote' && !intoIsNewer) {
     into.vote = from.vote;
+  } else if (into.kind === 'sugg' && from.kind === 'sugg' && !intoIsNewer) {
+    into.status = from.status;
+  } else if (into.kind === 'place' && from.kind === 'place' && !intoIsNewer) {
+    into.status = from.status;
   } else if (into.kind === 'log' && from.kind === 'log') {
     into.entries = intoIsNewer ? [...from.entries, ...into.entries] : [...into.entries, ...from.entries];
   }

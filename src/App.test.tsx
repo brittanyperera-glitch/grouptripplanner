@@ -239,10 +239,10 @@ describe('submit, lock and errors', () => {
   it('locks ratings once all five have submitted', async () => {
     for (const p of PEOPLE) seed(row(p, { submitted: true, rated: ['a', 'b', 'c'], ranking: { ...emptyRanking(), must: [['a'], ['b'], ['c']] } }));
     localStorage.setItem('tp:me', 'Alex');
-    const user = userEvent.setup();
     render(<App />);
-    await user.click(await screen.findByRole('tab', { name: 'Picks' }));
-    expect(screen.getByText(/ratings are locked/i)).toBeInTheDocument();
+    // Changed deliberately (Brittany 2026-10-16): the locked state is the Picks tab being gone, not a block on it.
+    await screen.findByRole('tab', { name: 'Group' });
+    expect(screen.queryByRole('tab', { name: 'Picks' })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Musts' })).not.toBeInTheDocument();
   });
 

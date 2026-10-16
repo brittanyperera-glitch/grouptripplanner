@@ -3,8 +3,9 @@
    screen is what Save image produces. Every class here starts pf- because all CSS is global (src/css-collisions.test.ts). */
 
 .pf-screen { gap: 10px; padding-top: 10px; }
-.pf-quiz { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 2px; font-weight: 700; }
-.pf-quiz .pf-quiz-go { flex-shrink: 0; white-space: nowrap; }
+
+.pf-quiz, .pf-bingo { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 2px; font-weight: 700; }
+.pf-quiz .pf-quiz-go, .pf-bingo .pf-quiz-go { flex-shrink: 0; white-space: nowrap; }
 .pf-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
 .pf-back { min-height: 32px; display: inline-flex; align-items: center; font-size: 13px; padding: 4px 14px; }
 

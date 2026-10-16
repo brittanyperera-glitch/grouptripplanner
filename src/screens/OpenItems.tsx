@@ -1,4 +1,5 @@
 import './OpenItems.css';
+import BigState from '../components/BigState';
 import { IconRight } from '../components/Icons';
 import type { OpenItem } from '../lib/openItems';
 
@@ -6,10 +7,13 @@ export default function OpenItems({ items, onGo, onBack }: { items: OpenItem[]; 
   return (
     <section className="body oi-page" aria-label="Open items">
       <button type="button" className="link oi-back" onClick={onBack}>Back</button>
-      <h2 className="big display">Open items</h2>
       {items.length === 0
-        ? <p className="sub oi-empty">Nothing to do. Enjoy the planning.</p>
+        ? (
+          <BigState headline="All done." sub="Nothing to do. Enjoy the planning." action={{ label: 'Back to my trip', onClick: onBack }} />
+        )
         : (
+          <>
+          <h2 className="big display">Open items</h2>
           <ul className="oi-list">
             {items.map(i => (
               <li key={i.id}>
@@ -20,6 +24,7 @@ export default function OpenItems({ items, onGo, onBack }: { items: OpenItem[]; 
               </li>
             ))}
           </ul>
+          </>
         )}
     </section>
   );

@@ -3,7 +3,7 @@ import { PEOPLE, stayForkId } from '../types';
 import type { Area, CrewStays, Day, Hub, Leg, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, Vote } from '../types';
 import { VOTES_TO_RESOLVE } from './group';
 import legsJson from '../data/legs.json';
-import { BUDGET_CAP_GBP, finalStay, finalists, groupSummary, hardNos, journeyFlags, nightsByArea, nightsWarnings, rankPoints, scoutAssignments, stayAreas, stayParticipants, stayResult, voteOpen, warnings } from './stays';
+import { BUDGET_CAP_GBP, budgetCap, finalStay, finalists, groupSummary, hardNos, journeyFlags, nightsByArea, nightsWarnings, rankPoints, scoutAssignments, stayAreas, stayParticipants, stayResult, voteOpen, warnings } from './stays';
 
 const AREAS: Area[] = ['Colombo', 'Ella', 'Kitulgala', 'Hill country'];
 const TYPES = ['hostel', 'guesthouse', 'boutique', 'hotel', 'villa', 'other'] as const;
@@ -45,12 +45,13 @@ function randomRanks(r: () => number, stays: PlaceSuggestion[]) {
 const idsOf = (f: ReturnType<typeof finalists>): string[] => ('finalists' in f ? f.finalists : 'auto' in f ? [f.auto] : []);
 
 describe('hardNos and warnings', () => {
+  // Changed deliberately (Brittany 2026-10-16): budget bands now follow the researched prices (reports in ~/.claude/plans/review/budget-research.md and her own)
   it('maps stay type, rooms and budget to anonymous counted warnings', () => {
-    const crew = [person('Lazza', [pref('rooms', { dorm: 'noway' })]), person('Alex', [pref('stayType', { hostel: 'noway' })]), person('Antek', [pref('budget', { '30to60': 'noway' })])];
+    const crew = [person('Lazza', [pref('rooms', { dorm: 'noway' })]), person('Alex', [pref('stayType', { hostel: 'noway' })]), person('Antek', [pref('budget', { '35to55': 'noway' })])];
     expect(warnings(stay('s1', { rooms: 'dorm' }), crew)).toEqual({ count: 1, messages: ["1 person won't do dorms"] });
     expect(warnings(stay('s2', { stayType: 'hostel' }), crew).messages).toEqual(["1 person won't do hostels"]);
-    expect(warnings(stay('s3', { priceGbp: 61 }), crew).messages).toEqual(["1 person's budget is under this"]);
-    expect(warnings(stay('s4', { priceGbp: 60, rooms: 'private', stayType: 'villa' }), crew).count).toBe(0);
+    expect(warnings(stay('s3', { priceGbp: 56 }), crew).messages).toEqual(["1 person's budget is under this"]);
+    expect(warnings(stay('s4', { priceGbp: 55, rooms: 'private', stayType: 'villa' }), crew).count).toBe(0);
     const two = [...crew, person('Saulie', [pref('stayType', { hostel: 'noway' })])];
     expect(warnings(stay('s5', { stayType: 'hostel' }), two)).toEqual({ count: 2, messages: ["2 people won't do hostels"] });
   });
@@ -59,9 +60,10 @@ describe('hardNos and warnings', () => {
     expect(warnings(stay('s1', { stayType: 'hostel', rooms: 'private', priceGbp: 500 }), crew).count).toBe(0);
     expect(warnings(stay('s2'), crew).count).toBe(0);
   });
-  it('budget bands map to caps and 100plus excludes nothing', () => {
-    expect(BUDGET_CAP_GBP).toEqual({ under30: 30, '30to60': 60, '60to100': 100, '100plus': Infinity });
-    expect(warnings(stay('s1', { priceGbp: 9999 }), [person('Alex', [pref('budget', { '100plus': 'noway' })])]).count).toBe(0);
+  // Changed deliberately (Brittany 2026-10-16): budget bands now follow the researched prices (reports in ~/.claude/plans/review/budget-research.md and her own)
+  it('budget bands map to caps and 85plus excludes nothing', () => {
+    expect(BUDGET_CAP_GBP).toEqual({ under10: 10, '10to20': 20, '20to35': 35, '35to55': 55, '55to85': 85, '85plus': Infinity });
+    expect(warnings(stay('s1', { priceGbp: 9999 }), [person('Alex', [pref('budget', { '85plus': 'noway' })])]).count).toBe(0);
   });
   it('happy picks are not hard NOs', () => {
     expect([...hardNos([pref('stayType', { hostel: 'happy', villa: 'noway' })])]).toEqual(['stayType:villa']);
@@ -303,5 +305,34 @@ describe('nights and journeys', () => {
     ]);
     expect(journeyFlags(planOf(route), legs, everyone('bigday'))).toEqual([]);
     expect(JSON.stringify(flags)).not.toMatch(/Brittany|Alex|Antek|Lazza|Saulie/);
+  });
+});
+
+describe('six budget bands', () => {
+  const cap = (picks: PrefAnswer['picks']) => budgetCap([pref('budget', picks)]);
+  const EDGES: [string, number][] = [['under10', 10], ['10to20', 20], ['20to35', 35], ['35to55', 55], ['55to85', 85]];
+  const STRETCH: [string, number][] = [['same', 0], ['plus20', 20], ['plus50', 50]];
+
+  it('band plus stretch gives the cap, with independently written values', () => {
+    for (const [band, edge] of EDGES) for (const [s, add] of STRETCH) expect(cap({ [band]: 'happy', [`stretch:${s}`]: 'happy' }), `${band}+${s}`).toBe(edge + add);
+    expect(cap({ under10: 'happy' })).toBe(10);
+    expect(cap({ '55to85': 'happy', 'stretch:plus50': 'happy' })).toBe(135);
+    expect(cap({ '85plus': 'happy' })).toBe(Infinity);
+    expect(cap({ under10: 'happy', 'stretch:anything': 'happy' })).toBe(Infinity);
+    expect(cap({ '20to35': 'noway' })).toBe(35);
+  });
+
+  it('old four-band keys are ignored: no cap, no warning', () => {
+    for (const old of ['under30', '30to60', '60to100', '100plus']) {
+      expect(cap({ [old]: 'happy' }), old).toBe(Infinity);
+      expect(cap({ [old]: 'happy', 'stretch:same': 'happy' }), old).toBe(Infinity);
+      expect(cap({ [old]: 'noway' }), old).toBe(Infinity);
+      expect(warnings(stay('s1', { priceGbp: 500 }), [person('Alex', [pref('budget', { [old]: 'happy' })])]).count, old).toBe(0);
+      expect(warnings(stay('s2', { priceGbp: 500 }), [person('Alex', [pref('budget', { [old]: 'noway' })])]).count, old).toBe(0);
+    }
+  });
+
+  it('an old happy key does not hide a valid new one', () => {
+    expect(cap({ '30to60': 'happy', '10to20': 'happy' })).toBe(20);
   });
 });

@@ -34,7 +34,7 @@ export const CARD_COPY: Record<'stayType' | 'rooms' | 'budget' | 'transport' | '
   budget: {
     host: 'Groom', ask: 'What do you pay a night?', hint: 'Per person, in pounds.',
     idle: 'Groom is counting. Gently.', picked: 'Groom writes it down.',
-    opts: [['under30', 'Under 30'], ['30to60', '30 to 60'], ['60to100', '60 to 100'], ['100plus', '100 plus']],
+    opts: [['under10', 'Under 10'], ['10to20', '10 to 20'], ['20to35', '20 to 35'], ['35to55', '35 to 55'], ['55to85', '55 to 85'], ['85plus', '85 plus']],
   },
   transport: {
     host: 'Tuktuk', ask: 'How are we getting around?',
@@ -63,7 +63,7 @@ export const QUIPS: Record<string, string> = {
   'stayType:villa': 'A whole villa. Aunty approves.',
   'transport:bus': 'Bus it is. Hold on to something.',
   'transport:tuktuk': 'Tuk-tuk. Hold your hat.',
-  'budget:100plus': 'A big spender. Noted.',
+  'budget:85plus': 'A big spender. Noted.',
   'budget:stretch:anything': 'Anything? Groom is nervous.',
   'nos:overnight': 'No night trains. Fair enough.',
 };
@@ -88,7 +88,7 @@ export const COPY = {
   nightsUnit: 'nights',
   reveal: {
     kicker: 'Your travel personality',
-    private: 'Only you see this.',
+    private: 'The group only sees counts, never names.',
     happy: 'Up for',
     noway: 'No way',
     nothing: 'Nothing yet',

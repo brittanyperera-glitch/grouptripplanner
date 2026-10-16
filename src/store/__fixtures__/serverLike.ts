@@ -1,8 +1,18 @@
+import { responseCols, toResponse } from '../supabase';
+import type { RespRow } from '../supabase';
 import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, Store, Suggestion, Vote } from '../../types';
+
+const toRow = (r: Response): RespRow => ({
+  name: r.name as Person, days: r.days, flex: r.flex, pace: r.pace, ranking: { ...r.ranking, final: r.final ?? null },
+  rated: r.rated, submitted: r.submitted, updated_at: r.updatedAt,
+});
+const NO_ROW = (name: Person): RespRow => ({ name, days: null, flex: null, pace: null, ranking: null, rated: null, submitted: null, updated_at: null });
 
 /**
  * Behaves like SupabaseStore: a save never notifies this tab (only a realtime reload does, via push()),
  * and responses or the choice log can be made to fail like a missing table or a 500.
+ * Responses are written as the real columns are (final inside the ranking column, only sent columns
+ * replaced). The old `{ ...row, ...patch }` kept final on a ranking-only save, which hid that the real store wiped it.
  */
 export class ServerLike implements Store {
   rows: AppState['responses'] = {};
@@ -19,7 +29,8 @@ export class ServerLike implements Store {
   }
   async saveResponse(name: Person, patch: Partial<Omit<Response, 'name'>>): Promise<void> {
     if (this.failResp) throw new Error('500');
-    this.rows[name] = { ...(this.rows[name] as Response), ...patch, name, updatedAt: new Date().toISOString() };
+    const row = this.rows[name] ? toRow(this.rows[name]) : NO_ROW(name);
+    this.rows[name] = toResponse({ ...row, ...responseCols(name, patch, row.ranking) } as RespRow);
   }
   async addSuggestion(_s: { name: Person; title: string; area: Suggestion['area']; note: string }): Promise<void> {}
   async setSuggestionStatus(_id: string, _st: Suggestion['status']): Promise<void> {}

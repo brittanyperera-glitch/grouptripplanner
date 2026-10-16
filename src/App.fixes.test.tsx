@@ -87,10 +87,10 @@ describe('R3 change days or pace', () => {
   it('is gone once the group is locked', async () => {
     for (const p of PEOPLE) seed(row(p, DONE));
     localStorage.setItem('tp:me', 'Alex');
-    const user = userEvent.setup();
     render(<App />);
-    await user.click(await screen.findByRole('tab', { name: 'Picks' }));
-    await screen.findByText(/ratings are locked/i);
+    // Changed deliberately (Brittany 2026-10-16): no Picks tab once locked, so the check starts from the Group tab.
+    await screen.findByRole('tab', { name: 'Group' });
+    expect(screen.queryByRole('tab', { name: 'Picks' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Change days or pace' })).toBeNull();
     openMenu();
     expect(screen.queryByRole('button', { name: 'Change days or pace' })).toBeNull();
@@ -112,8 +112,10 @@ describe('R4 lock while editing picks', () => {
     seed(row('Saulie', { ...DONE, ranking }));
     act(() => { window.dispatchEvent(new StorageEvent('storage', { key: 'tp:resp:Saulie' })); });
 
-    expect(await screen.findByText(/ratings are locked/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^Gamma Beach,/ })).toBeNull();
+    // Changed deliberately (Brittany 2026-10-16): locking moves her to Group (whose Finalize list also names Gamma Beach), so the check is on the Picks panel.
+    expect(await screen.findByRole('tab', { name: 'Group', selected: true })).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Picks' })).toBeNull();
+    expect(screen.queryByRole('tabpanel', { name: 'Picks' })).toBeNull();
     expect(localStorage.getItem('tp:resp:Alex')).toBe(before);
   });
 });

@@ -53,6 +53,8 @@ test('five friends: rate, submit, knockouts, final plan', async ({ page }) => {
   await submit.click();
 
   await page.getByRole('tab', { name: 'My trip' }).click();
+  // Changed deliberately (Brittany 2026-10-16): all five have submitted, so Group trip leads; pick her own plan.
+  await page.getByRole('button', { name: 'My trip' }).click();
   await expect(page.getByText(/Your best 9 days/)).toBeVisible();
   await shot(page, 'mytrip');
 

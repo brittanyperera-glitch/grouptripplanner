@@ -11,7 +11,7 @@ vi.mock('./MemoryStore', async importOriginal => {
   return { MemoryStore: (await import('../store/local')).LocalStore };
 });
 
-const REAL = /^tp:resp:|^tp:stays:|^tp:sugg$|^tp:placesug$|^tp:staysadmin$|^tp:votes$|^tp:log$|^tp-trip-key$|^tp:me$/;
+const REAL = /^tp:resp:|^tp:stays:|^tp:sugg$|^tp:placesug$|^tp:staysadmin$|^tp:votes$|^tp:log$|^tp:pending:|^tp-trip-key$|^tp:me$/;
 
 let ctx: ReturnType<typeof useApp>;
 const Probe = () => { ctx = useApp(); return null; };

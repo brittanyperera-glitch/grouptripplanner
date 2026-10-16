@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../state';
 import { PEOPLE, type BingoCard, type BingoSquare, type Person } from '../types';
 import Avatar from '../components/Avatar';
+import BigState from '../components/BigState';
 import { IconCheck, IconLeft, IconPlus } from '../components/Icons';
 import './Bingo.css';
 
@@ -18,8 +19,10 @@ const newId = () => `b${Date.now().toString(36)}${Math.random().toString(36).sli
 
 const COPY = {
   title: 'Travel Bingo',
-  lock: 'Only you can see your cards.',
-  empty: 'No cards yet. Predict what will happen on the trip.',
+  lock: 'Your cards are only shown to you in the app.',
+  empty: 'Predict what will happen on the trip, then tick it off when it does.',
+  emptyHead: 'Make your first card.',
+  example: 'Monkey steals food',
   newCard: 'New card',
   back: 'Back',
   titleLabel: 'Card title',
@@ -169,7 +172,11 @@ export default function Bingo({ onBack }: { onBack(): void }) {
       {header(onBack)}
       <div className="big display small">{COPY.title}</div>
       {lock}
-      {cards.length === 0 && <div className="sub bg-empty">{COPY.empty}</div>}
+      {cards.length === 0 && (
+        <BigState compact headline={COPY.emptyHead} sub={COPY.empty}>
+          <div className="bs-eg" aria-hidden="true">{COPY.example}</div>
+        </BigState>
+      )}
       <ul className="bg-cards">
         {cards.map(c => (
           <li key={c.id}>

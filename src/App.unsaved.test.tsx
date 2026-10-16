@@ -56,7 +56,7 @@ describe('a save the server rejects', () => {
   it('a page reload keeps my unsaved ratings, and retry then stores them', async () => {
     const store = new ServerLike();
     // Quiz done on the server, so this exercises what it did before the stayQuiz to-do existed.
-    store.stays = { crew: { Alex: { name: 'Alex', prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z' } }, suggestions: [], admin: { pins: [], scouts: {} } };
+    store.stays = { crew: { Alex: { name: 'Alex', prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [{ id: 'b1', title: 't', squares: Array.from({ length: 9 }, () => ({ text: 's', ticked: false })), createdAt: '' }], updatedAt: '2026-10-14T00:00:00Z' } }, suggestions: [], admin: { pins: [], scouts: {} } };
     store.failResp = true;
     const user = userEvent.setup();
     const first = render(<App store={store} />);

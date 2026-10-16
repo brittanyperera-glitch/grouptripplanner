@@ -1,6 +1,5 @@
-import Avatar from '../components/Avatar';
+import BigState from '../components/BigState';
 import { useOpenGuide } from '../components/GuideNav';
-import { IconCheck } from '../components/Icons';
 import TukTuk from '../components/TukTuk';
 import { useApp } from '../state';
 import { isLocal } from '../store';
@@ -40,31 +39,16 @@ export default function Waiting() {
 
   return (
     <section className="body" aria-label="Waiting for the group">
-      <div className="kicker">Group plan</div>
-      <div className="big display">{done.length} of {PEOPLE.length} done</div>
-      {/* The tuk-tuk idles at the group's progress, waiting on the rest. */}
-      <div aria-hidden="true" style={{ position: 'relative', height: 38, marginTop: 4 }}>
-        <span style={{ position: 'absolute', bottom: -2, left: `calc(${done.length / PEOPLE.length} * (100% - 46px))`, transition: 'left var(--dur-slow) var(--ease)' }}>
-          <TukTuk width={46} idle />
-        </span>
-      </div>
-      <div className="meter" aria-hidden="true"><span style={{ width: `${(done.length / PEOPLE.length) * 100}%` }} /></div>
-      <div className="sub">The group plan opens when all five have submitted.</div>
-      <div className="wait-grid" role="list" aria-label="Who has submitted">
-        {PEOPLE.map(p => {
-          const ok = done.includes(p);
-          return (
-            <div key={p} className="wait-person" role="listitem" aria-label={`${p}, ${ok ? 'submitted' : 'not yet'}`} data-done={ok}>
-              <span className="wait-pic">
-                <Avatar name={p} size={72} />
-                {ok && <span className="wait-tick" role="img" aria-label="Submitted"><IconCheck size={14} /></span>}
-              </span>
-              <span className="wait-name">{p}</span>
-            </div>
-          );
-        })}
-      </div>
-      {openGuide && <button className="cta guide-open" onClick={openGuide}>Open the guide</button>}
+      <BigState headline="Waiting on the crew." sub="The group plan opens when all five have submitted. Go and chase them."
+        crew={{ label: 'Who has submitted', done: p => done.includes(p), doneLabel: 'Submitted', waitLabel: 'not yet', caption: `${done.length} of ${PEOPLE.length} done` }}
+        action={openGuide ? { label: 'Open the guide', onClick: openGuide } : undefined}>
+        {/* The tuk-tuk idles at the group's progress, waiting on the rest. */}
+        <div aria-hidden="true" className="bs-road">
+          <span style={{ position: 'absolute', bottom: -2, left: `calc(${done.length / PEOPLE.length} * (100% - 46px))`, transition: 'left var(--dur-slow) var(--ease)' }}>
+            <TukTuk width={46} idle />
+          </span>
+        </div>
+      </BigState>
       {isLocal && <button className="demo" onClick={fill}>Test only: fake votes for the other four</button>}
     </section>
   );

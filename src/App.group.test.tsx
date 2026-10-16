@@ -144,17 +144,18 @@ describe('Menu Group stats', () => {
 });
 
 describe('My trip sub-tabs', () => {
-  it('Group trip is disabled with a hint until all five have rated, and opens the group plan after', async () => {
+  it('Group trip shows a locked-plan screen until all five have rated, and opens the group plan after', async () => {
     seedCrew('Alex', 'Saulie');
     grp.current = group({ open: false, base: null, knockouts: [] });
     const user = userEvent.setup();
     render(<App />);
     const groupTrip = await screen.findByRole('button', { name: 'Group trip' });
-    expect(groupTrip).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByText('Opens when all five have finished rating')).toBeInTheDocument();
-    await user.click(groupTrip);
-    expect(screen.queryByLabelText('The trip')).toBeNull();
+    // Changed deliberately (Brittany 2026-10-16): Group trip now opens a big locked-plan screen instead of a disabled button with a small hint.
     expect(screen.getByRole('button', { name: 'My trip' })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(groupTrip);
+    expect(await screen.findByRole('heading', { name: 'The plan is locked.' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('The trip')).toBeNull();
+    expect(groupTrip).toHaveAttribute('aria-pressed', 'true');
 
     cleanup();
     seedCrew('Alex');
@@ -162,7 +163,8 @@ describe('My trip sub-tabs', () => {
     render(<App />);
     const open = await screen.findByRole('button', { name: 'Group trip' });
     expect(open).not.toHaveAttribute('aria-disabled', 'true');
-    expect(screen.queryByText('Opens when all five have finished rating')).toBeNull();
+    // Changed deliberately (Brittany 2026-10-16): the small hint is gone; the locked-plan heading is what must not show once open.
+    expect(screen.queryByRole('heading', { name: 'The plan is locked.' })).toBeNull();
     await user.click(open);
     expect(await screen.findByRole('region', { name: 'The trip' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'My trip' })).toBeNull();
@@ -170,33 +172,24 @@ describe('My trip sub-tabs', () => {
     expect(await screen.findByRole('region', { name: 'My trip' })).toBeInTheDocument();
   });
 
-  it('My trip is the default sub-tab', async () => {
+  // Changed deliberately (Brittany 2026-10-16): once all five have submitted, Group trip is the default sub-tab.
+  it('Group trip is the default sub-tab once the group plan is open', async () => {
     seedCrew('Alex');
     render(<App />);
-    expect(await screen.findByRole('region', { name: 'My trip' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'My trip' })).toHaveAttribute('aria-pressed', 'true');
+    expect(await screen.findByRole('region', { name: 'The trip' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Group trip' })).toHaveAttribute('aria-pressed', 'true');
   });
 });
 
-describe('Ratings locked on Picks', () => {
-  it('a big block says so and one button goes straight to the knockouts, labelled with my open votes', async () => {
+// Changed deliberately (Brittany 2026-10-16): the "Ratings are locked" block and its Vote now button are gone with the Picks tab.
+describe('Ratings locked', () => {
+  it('there is no Picks tab, and the knockouts block on Group still says how many votes are mine', async () => {
     seedCrew('Brittany');
     const user = userEvent.setup();
     render(<App />);
-    await user.click(await screen.findByRole('tab', { name: 'Picks' }));
-    const go = await screen.findByRole('button', { name: 'Vote now (2)' });
-    expect(screen.getByRole('heading', { name: 'Ratings are locked' })).toBeInTheDocument();
-    await user.click(go);
-    expect(await screen.findByRole('tab', { name: 'Group', selected: true })).toBeInTheDocument();
-    expect((await screen.findAllByRole('group', { name: /^Knockout:/ })).length).toBe(2);
-  });
-
-  it('with nothing left to vote on the button says See the group stage', async () => {
-    seedCrew('Alex');
-    grp.current = group({ knockouts: [] });
-    render(<App />);
-    await userEvent.setup().click(await screen.findByRole('tab', { name: 'Picks' }));
-    expect(await screen.findByRole('button', { name: 'See the group stage' })).toBeInTheDocument();
+    await user.click(await screen.findByRole('tab', { name: 'Group' }));
+    expect(screen.queryByRole('tab', { name: 'Picks' })).toBeNull();
+    await waitFor(() => expect(koBlock()).toHaveTextContent('You have 2 to vote on'));
   });
 });
 

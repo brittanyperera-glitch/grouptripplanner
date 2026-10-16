@@ -2,8 +2,9 @@ import { PEOPLE, isGuest, stayForkId } from '../types';
 import type { Area, CrewStays, Hub, Leg, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, StayType, Vote } from '../types';
 import { VOTES_TO_RESOLVE } from './group';
 
-// A 'noway' on a budget band caps the price at that band's upper edge; 100plus caps nothing.
-export const BUDGET_CAP_GBP: Record<string, number> = { under30: 30, '30to60': 60, '60to100': 100, '100plus': Infinity };
+// A 'noway' on a budget band caps the price at that band's upper edge; 85plus caps nothing. Keys from the retired
+// four-band quiz (under30...) are absent on purpose: they are ignored, never remapped.
+export const BUDGET_CAP_GBP: Record<string, number> = { under10: 10, '10to20': 20, '20to35': 35, '35to55': 55, '55to85': 85, '85plus': Infinity };
 
 const ROOM_WORDS: Record<string, string> = { dorm: 'dorms', shared: 'shared rooms', private: 'private rooms' };
 const TYPE_WORDS: Record<StayType, string> = { hostel: 'hostels', guesthouse: 'guesthouses', boutique: 'boutique stays', hotel: 'hotels', villa: 'villas', other: 'other stays' };
@@ -34,7 +35,7 @@ export function maxNightsOf(prefs: PrefAnswer[]): Record<string, number> {
 /** The longest-journey answer ('under2h' | '2to3h' | '3to4h' | 'bigday'), for journeyFlags limits. */
 export const journeyLimitOf = (prefs: PrefAnswer[]): string | undefined => happies(prefs, 'journey')[0];
 
-/** Keys like `rooms:dorm`, `stayType:hostel`, `budget:under30`. */
+/** Keys like `rooms:dorm`, `stayType:hostel`, `budget:under10`. */
 export function hardNos(prefs: PrefAnswer[]): Set<string> {
   const out = new Set<string>();
   for (const t of ['stayType', 'rooms', 'budget'] as const) for (const k of noways(prefs, t)) out.add(`${t}:${k}`);
@@ -44,7 +45,7 @@ export function hardNos(prefs: PrefAnswer[]): Set<string> {
 // The quiz asks a band (a happy pick) and how far they would stretch; the price they can take is band + stretch.
 // A 'noway' band still caps as before.
 export const budgetCap = (prefs: PrefAnswer[]): number => {
-  const band = happies(prefs, 'budget')[0];
+  const band = happies(prefs, 'budget').find(k => k in BUDGET_CAP_GBP);
   const stretchKey = rawKeys(prefs, 'budget').find(k => k.startsWith('stretch:'))?.slice('stretch:'.length);
   const fromBand = band === undefined ? Infinity : (BUDGET_CAP_GBP[band] ?? Infinity) + (STRETCH_GBP[stretchKey ?? 'same'] ?? 0);
   return Math.min(fromBand, ...noways(prefs, 'budget').map(k => BUDGET_CAP_GBP[k] ?? Infinity));

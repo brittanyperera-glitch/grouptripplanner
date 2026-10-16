@@ -45,7 +45,10 @@ vi.mock('@supabase/supabase-js', () => ({
           const n = fake.loads++;
           fake.reads++;
           const row = { name: 'Alex', days: n + 1, flex: false, pace: 1, ranking: fake.ranking, rated: [], submitted: false, updated_at: null };
-          return { ...thenable(result([row]), fake.delays[n] ?? 0), eq: () => ({ maybeSingle: async () => result([]) }) };
+          return {
+            ...thenable(result([row]), fake.delays[n] ?? 0),
+            eq: () => ({ maybeSingle: async () => ({ data: fake.ranking === null ? null : { ranking: fake.ranking }, error: null }) }),
+          };
         },
         upsert: async (cols: unknown, opts?: unknown) => {
           fake.upserts.push(cols); fake.upsertTables.push(table); fake.upsertOpts.push(opts);
@@ -96,6 +99,27 @@ describe('SupabaseStore final list', () => {
     await s.saveResponse('Alex', { ranking: R, final: FIN });
     expect(fake.upserts[0]).toMatchObject({ ranking: { ...R, final: FIN } });
     expect(fake.upserts[0]).not.toHaveProperty('final');
+  });
+  it('a patch holding both writes them in one request, with no read', async () => {
+    fake.ranking = { ...R, final: null };
+    await new SupabaseStore('https://x.supabase.co', 'k').saveResponse('Alex', { ranking: R, final: FIN });
+    expect(fake.reads).toBe(0);
+    expect(fake.upserts).toEqual([expect.objectContaining({ ranking: { ...R, final: FIN } })]);
+  });
+  it('a ranking without final keeps the stored final', async () => {
+    fake.ranking = { ...R, final: FIN };
+    const R2 = { must: [['b']], keen: [['a']], meh: [], skip: [] };
+    await new SupabaseStore('https://x.supabase.co', 'k').saveResponse('Alex', { ranking: R2, days: 9 });
+    expect(fake.upserts[0]).toMatchObject({ days: 9, ranking: { ...R2, final: FIN } });
+  });
+  it('a final without ranking is saved, over the stored ranking', async () => {
+    fake.ranking = { ...R, final: null };
+    await new SupabaseStore('https://x.supabase.co', 'k').saveResponse('Alex', { final: FIN });
+    expect(fake.upserts[0]).toMatchObject({ ranking: { ...R, final: FIN } });
+  });
+  it('a final without ranking for a person with no row yet goes over an empty ranking', async () => {
+    await new SupabaseStore('https://x.supabase.co', 'k').saveResponse('Alex', { final: FIN });
+    expect(fake.upserts[0]).toMatchObject({ ranking: { must: [], keen: [], meh: [], skip: [], final: FIN } });
   });
   it('reads it back out of the ranking column', async () => {
     fake.ranking = { ...R, final: FIN };

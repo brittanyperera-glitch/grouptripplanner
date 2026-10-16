@@ -2,9 +2,9 @@ import type { AppState, GroupResult, Player } from '../types';
 import type { Award } from './awards';
 import { outstanding } from './outstanding';
 
-export type OpenTab = 'Picks' | 'Group' | 'Suggest' | 'Awards' | 'Quiz';
+export type OpenTab = 'Picks' | 'Group' | 'Suggest' | 'Awards' | 'Quiz' | 'Bingo';
 export interface OpenItem {
-  id: 'votes' | 'final' | 'rate' | 'approve' | 'stayQuiz' | 'awards';
+  id: 'votes' | 'final' | 'rate' | 'approve' | 'stayQuiz' | 'bingo' | 'awards';
   label: string;
   count?: number;
   target: { tab: OpenTab; view?: 'knockouts' };
@@ -45,6 +45,8 @@ export function openItems({ me, group, state, unrated, ratingsLocked, awardsUnse
     if (ideas > 0) out.push({ id: 'approve', label: `${plural(ideas, 'idea', 'ideas')} waiting for approval`, count: ideas, target: { tab: 'Suggest' } });
   }
   if (!state.stays?.crew[me]?.quizDone) out.push({ id: 'stayQuiz', label: 'Do your travel profile (3 minutes)', target: { tab: 'Quiz' } });
+  // Ratings are not checked here: the caller only builds this list once the member has submitted, as for stayQuiz.
+  if (!state.stays?.crew[me]?.bingo?.length) out.push({ id: 'bingo', label: 'Make your travel bingo card', target: { tab: 'Bingo' } });
   if (group?.locked && awardsUnseen) out.push({ id: 'awards', label: 'See the group awards', target: { tab: 'Awards' } });
   return out;
 }

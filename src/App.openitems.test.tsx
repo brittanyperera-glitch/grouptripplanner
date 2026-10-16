@@ -45,47 +45,17 @@ const row = (name: Person, over: Partial<Response> = {}): Response => ({
 const seed = (r: Response) => localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
 // One person rates a place Keen, so the "most enthusiastic" award has a single winner.
 // Quiz marked done for the person under test, so this exercises what it did before the stayQuiz to-do existed.
-const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z' }));
+// Changed deliberately (Brittany 2026-10-16): Bingo is now a to-do, so a person with nothing to do also has one card.
+const quizDone = (name: string) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [{ id: 'b1', title: 't', squares: Array.from({ length: 9 }, () => ({ text: 's', ticked: false })), createdAt: '' }], updatedAt: '2026-10-14T00:00:00Z' }));
 const seedCrew = (me: Person, keener: Person = 'Alex') => {
   for (const p of PEOPLE) seed(row(p, p === keener ? { ranking: { ...emptyRanking(), must: [['b'], ['c']], keen: [['a']] } } : {}));
   localStorage.setItem('tp:me', me);
   quizDone(me);
 };
-const dot = () => document.querySelector('.oi-dot');
 const knockoutCards = () => screen.findAllByRole('group', { name: /^Knockout:/ });
 
 beforeEach(() => { localStorage.clear(); seenWalkToday(); window.location.hash = ''; cat.items = THREE; grp.current = group(); });
 afterEach(() => { cleanup(); window.location.hash = ''; });
-
-describe('Menu red dot', () => {
-  it('shows while something is waiting on me and says how many, and not otherwise', async () => {
-    seedCrew('Alex');
-    render(<App />);
-    await screen.findByRole('tab', { name: 'Group' });
-    expect(dot()).not.toBeNull();
-    expect(screen.getByRole('button', { name: 'Menu' })).toHaveAccessibleDescription('1 thing to do');
-    cleanup();
-    grp.current = group(NONE);
-    render(<App />);
-    await screen.findByRole('tab', { name: 'Group' });
-    expect(dot()).toBeNull();
-  });
-
-  it('counts every kind of item, and Brittany alone is asked to approve ideas', async () => {
-    seedCrew('Brittany');
-    localStorage.setItem('tp:sugg', JSON.stringify([{ id: 's1', name: 'Alex', title: 'Tea tour', area: 'Colombo', note: '', status: 'pending', createdAt: 'x' }]));
-    render(<App />);
-    await screen.findByRole('tab', { name: 'Suggest' });
-    expect(screen.getByRole('button', { name: 'Menu' })).toHaveAccessibleDescription('2 things to do');
-    cleanup();
-    seedCrew('Lazza');
-    localStorage.setItem('tp:sugg', JSON.stringify([{ id: 's1', name: 'Alex', title: 'Tea tour', area: 'Colombo', note: '', status: 'pending', createdAt: 'x' }]));
-    grp.current = group(NONE);
-    render(<App />);
-    await screen.findByRole('tab', { name: 'Suggest' });
-    expect(dot()).toBeNull();
-  });
-});
 
 describe('Open items page', () => {
   it('lists what is waiting and a row opens the Group knockouts view', async () => {
@@ -94,7 +64,8 @@ describe('Open items page', () => {
     render(<App />);
     await screen.findByRole('tab', { name: 'Group' });
     openMenu();
-    await user.click(await screen.findByRole('button', { name: 'Open items' }));
+    // Changed deliberately (Brittany 2026-10-16): the Menu entry carries the count.
+    await user.click(await screen.findByRole('button', { name: /^Open items/ }));
     expect(await screen.findByRole('heading', { name: 'Open items' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Vote on 2 head-to-heads/ }));
     expect(await screen.findByRole('tab', { name: 'Group', selected: true })).toBeInTheDocument();
@@ -121,7 +92,6 @@ describe('Open items page', () => {
     await user.click(await screen.findByRole('button', { name: 'Aunty' }));
     openMenu();
     expect(screen.queryByRole('button', { name: 'Open items' })).toBeNull();
-    expect(dot()).toBeNull();
   });
 });
 
@@ -141,27 +111,6 @@ describe('Tab badges', () => {
     render(<App />);
     await screen.findByRole('tab', { name: 'Group' });
     expect(document.querySelectorAll('.badge-count')).toHaveLength(0);
-  });
-});
-
-describe('My trip banner', () => {
-  it('says Democracy needs you with the count, and its button lands on the knockouts', async () => {
-    seedCrew('Brittany');
-    const user = userEvent.setup();
-    render(<App />);
-    expect(await screen.findByRole('heading', { name: 'Democracy needs you' })).toBeInTheDocument();
-    expect(screen.getByText('You have 2 votes to cast.')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Vote now (2)' }));
-    expect(await screen.findByRole('tab', { name: 'Group', selected: true })).toBeInTheDocument();
-    expect((await knockoutCards()).length).toBe(2);
-  });
-
-  it('is absent when nothing is owed', async () => {
-    seedCrew('Alex');
-    grp.current = group(NONE);
-    render(<App />);
-    await screen.findByRole('region', { name: 'My trip' });
-    expect(screen.queryByRole('heading', { name: 'Democracy needs you' })).toBeNull();
   });
 });
 

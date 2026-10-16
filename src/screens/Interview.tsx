@@ -52,8 +52,8 @@ function next(cur: PrefStance | undefined, noOnly?: boolean): PrefStance | undef
  * Travel personality. Pure and deterministic: the first rule that matches wins, in this order.
  *   1 Easygoing One   no preference on at least half the cards, or nothing picked anywhere
  *   2 Local Legend    tuk-tuk AND guesthouse both happy (most specific, so it beats the spend rules)
- *   3 Big Spender     budget 100plus, or stretch anything
- *   4 Budget Backpacker  budget under30, or hostel happy
+ *   3 Big Spender     budget 85plus, or stretch anything
+ *   4 Budget Backpacker  budget under10, or hostel happy
  *   5 Comfort Seeker  hotel, villa or boutique happy, or dorm a no way (rooms or dealbreakers)
  *   fallback          Easygoing One
  */
@@ -66,8 +66,8 @@ export function personality(answers: PrefAnswer[]): { title: string; happy: stri
   let title = T.easy;
   if (noPrefCount * 2 >= CARDS.length || nothing) title = T.easy;
   else if (transport.tuktuk === 'happy' && stay.guesthouse === 'happy') title = T.local;
-  else if (budget['100plus'] || budget[`${STRETCH_PREFIX}anything`]) title = T.spender;
-  else if (budget.under30 || stay.hostel === 'happy') title = T.backpacker;
+  else if (budget['85plus'] || budget[`${STRETCH_PREFIX}anything`]) title = T.spender;
+  else if (budget.under10 || stay.hostel === 'happy') title = T.backpacker;
   else if (stay.hotel === 'happy' || stay.villa === 'happy' || stay.boutique === 'happy' || rooms.dorm === 'noway' || nos.dorm === 'noway') title = T.comfort;
 
   const happy: string[] = [];
@@ -90,8 +90,16 @@ const LockIcon = () => (
   </svg>
 );
 
+// Budget picks saved under the retired four-band keys are dropped on load, so the card shows empty rather than
+// being reinterpreted; every other pick (the stretch answer, other topics) stays.
+const OLD_BUDGET_KEYS = ['under30', '30to60', '60to100', '100plus'];
+const dropOldBudget = (a?: PrefAnswer): PrefAnswer | undefined => {
+  if (!a || a.topic !== 'budget') return a;
+  return { ...a, picks: Object.fromEntries(Object.entries(a.picks).filter(([k]) => !OLD_BUDGET_KEYS.includes(k))) };
+};
+
 export default function Interview({ initial, onSave, onDone, onClose }: { me: Person | string; initial?: PrefAnswer[]; onSave: (a: PrefAnswer[]) => void; onDone: () => void; onClose?: () => void }) {
-  const [answers, setAnswers] = useState<PrefAnswer[]>(() => CARDS.map((c) => initial?.find((a) => a.topic === c.topic) ?? blank(c.topic)));
+  const [answers, setAnswers] = useState<PrefAnswer[]>(() => CARDS.map((c) => dropOldBudget(initial?.find((a) => a.topic === c.topic)) ?? blank(c.topic)));
   const [idx, setIdx] = useState(0);
   const [reveal, setReveal] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -198,6 +206,7 @@ export default function Interview({ initial, onSave, onDone, onClose }: { me: Pe
           <div className="iv-quip" aria-live="polite">{quip ?? card.idle}</div>
         </div>
       </div>
+      {idx === 0 && <div className="sub iv-legend">{COPY.legend}</div>}
       <div className="big display small">{card.ask}</div>
       {card.hint && <div className="sub">{card.hint}</div>}
       <div className={`iv-chips${stack ? ' stack' : ''}`} role="group" aria-label={card.ask}>
@@ -230,7 +239,6 @@ export default function Interview({ initial, onSave, onDone, onClose }: { me: Pe
           </div>
         </>
       )}
-      {idx === 0 && <div className="sub">{COPY.legend}</div>}
       <div className="sub iv-lock"><LockIcon />{COPY.anonymous}</div>
       <div className="iv-nav">
         <button type="button" className="cta iv-cta" onClick={advance}>{empty(ans) ? COPY.skip : last ? COPY.done : COPY.next}</button>

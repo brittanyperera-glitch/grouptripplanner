@@ -80,13 +80,14 @@ describe('Interview quiz', () => {
     expect(screen.getByText('1 of 6')).toBeInTheDocument();
   });
 
+  // Changed deliberately (Brittany 2026-10-16): budget bands now follow the researched prices (reports in ~/.claude/plans/review/budget-research.md and her own)
   it('single-choice cards hold one answer', async () => {
     const { user } = setup();
     await next(user); await next(user);
-    await user.click(chip('Under 30, not picked'));
-    await user.click(chip('30 to 60, not picked'));
-    expect(chip('Under 30, not picked')).toBeInTheDocument();
-    expect(chip('30 to 60, picked')).toBeInTheDocument();
+    await user.click(chip('Under 10, not picked'));
+    await user.click(chip('10 to 20, not picked'));
+    expect(chip('Under 10, not picked')).toBeInTheDocument();
+    expect(chip('10 to 20, picked')).toBeInTheDocument();
   });
 
   // Changed deliberately (Brittany 2026-10-16): answers save when the last card is done, and the reveal button only closes.
@@ -127,6 +128,13 @@ describe('Interview quiz', () => {
       await next(user);
       if (i === 0) expect(screen.queryByText(COPY.legend)).toBeNull();
     }
+  });
+
+  it('puts the legend above the first chip in document order', () => {
+    setup();
+    const legend = screen.getByText(COPY.legend);
+    const firstChip = document.querySelector('.iv-chip') as Element;
+    expect(legend.compareDocumentPosition(firstChip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('shows the right host on every card and the quip changes when a chip is picked', async () => {
@@ -211,17 +219,17 @@ describe('Interview quiz', () => {
     const { user, onSave } = setup();
     await next(user); await next(user);
     expect(screen.getByText(STRETCH_ASK)).toBeInTheDocument();
-    await user.click(chip('Under 30, not picked'));
+    await user.click(chip('Under 10, not picked'));
     await user.click(chip('Stretch +20, not picked'));
     await user.click(chip('Stretch +50, not picked'));
-    expect(chip('Under 30, picked')).toBeInTheDocument();
+    expect(chip('Under 10, picked')).toBeInTheDocument();
     expect(chip('Stretch +50, picked')).toBeInTheDocument();
     expect(chip('Stretch +20, not picked')).toBeInTheDocument();
     for (let i = 0; i < 4; i++) await next(user);
     await user.click(chip(COPY.reveal.cta));
     const a: PrefAnswer[] = onSave.mock.calls[0][0];
     expect(a[2].topic).toBe('budget');
-    expect(a[2].picks).toEqual({ under30: 'happy', 'stretch:plus50': 'happy' });
+    expect(a[2].picks).toEqual({ under10: 'happy', 'stretch:plus50': 'happy' });
   });
 
   it('dealbreakers list exactly the four approved options plus None', async () => {
@@ -271,28 +279,28 @@ describe('personality', () => {
   const t = (a: PrefAnswer[]) => personality(a).title;
 
   it('picks each of the five titles', () => {
-    expect(t(full({ budget: ans('budget', { under30: 'happy' }) }))).toBe(T.backpacker);
+    expect(t(full({ budget: ans('budget', { under10: 'happy' }) }))).toBe(T.backpacker);
     expect(t(full({ stayType: ans('stayType', { hotel: 'happy' }) }))).toBe(T.comfort);
     expect(t(full({ rooms: ans('rooms', { dorm: 'noway' }) }))).toBe(T.comfort);
     expect(t(full({ transport: ans('transport', { tuktuk: 'happy' }), stayType: ans('stayType', { guesthouse: 'happy' }) }))).toBe(T.local);
-    expect(t(full({ budget: ans('budget', { '100plus': 'happy' }) }))).toBe(T.spender);
+    expect(t(full({ budget: ans('budget', { '85plus': 'happy' }) }))).toBe(T.spender);
     expect(t(full({ budget: ans('budget', { 'stretch:anything': 'happy' }) }))).toBe(T.spender);
     expect(t(full())).toBe(T.easy);
     expect(t(full({ stayType: ans('stayType', {}, true), rooms: ans('rooms', {}, true), budget: ans('budget', {}, true) }))).toBe(T.easy);
   });
 
   it('priority order: easygoing, local, spender, backpacker, comfort', () => {
-    const noPrefHalf = { stayType: ans('stayType', { hotel: 'happy' }), rooms: ans('rooms', {}, true), budget: ans('budget', { '100plus': 'happy' }), transport: ans('transport', {}, true), journey: ans('journey', {}, true) };
+    const noPrefHalf = { stayType: ans('stayType', { hotel: 'happy' }), rooms: ans('rooms', {}, true), budget: ans('budget', { '85plus': 'happy' }), transport: ans('transport', {}, true), journey: ans('journey', {}, true) };
     expect(t(full(noPrefHalf))).toBe(T.easy);
-    const local = { transport: ans('transport', { tuktuk: 'happy' }), stayType: ans('stayType', { guesthouse: 'happy', hostel: 'happy' }), budget: ans('budget', { '100plus': 'happy' }) };
+    const local = { transport: ans('transport', { tuktuk: 'happy' }), stayType: ans('stayType', { guesthouse: 'happy', hostel: 'happy' }), budget: ans('budget', { '85plus': 'happy' }) };
     expect(t(full(local))).toBe(T.local);
-    expect(t(full({ budget: ans('budget', { under30: 'happy', 'stretch:anything': 'happy' }) }))).toBe(T.spender);
+    expect(t(full({ budget: ans('budget', { under10: 'happy', 'stretch:anything': 'happy' }) }))).toBe(T.spender);
     expect(t(full({ stayType: ans('stayType', { hostel: 'happy', hotel: 'happy' }) }))).toBe(T.backpacker);
   });
 
   it('lists happy and no way as labels', () => {
-    const p = personality(full({ stayType: ans('stayType', { hostel: 'happy', 'nights:hostel:2': 'happy' }), nos: ans('nos', { noac: 'noway' }), budget: ans('budget', { under30: 'happy' }) }));
-    expect(p.happy).toEqual(['Hostel dorm', 'Under 30 a night']);
+    const p = personality(full({ stayType: ans('stayType', { hostel: 'happy', 'nights:hostel:2': 'happy' }), nos: ans('nos', { noac: 'noway' }), budget: ans('budget', { under10: 'happy' }) }));
+    expect(p.happy).toEqual(['Hostel dorm', 'Under 10 a night']);
     expect(p.noway).toEqual(['No air con']);
   });
 
@@ -330,11 +338,59 @@ describe('interview copy', () => {
   it('uses the approved strings verbatim', () => {
     expect(COPY.banner).toBe('Only counts are shown. Nobody sees who said what.');
     expect(COPY.legend).toBe("Tap once if you're up for it. Twice if it's a no way.");
+    // Changed deliberately (Brittany 2026-10-16): the old line claimed more than the data guarantees.
+    expect(COPY.reveal.private).toBe('The group only sees counts, never names.');
     expect(COPY.skip).toBe('Skip, no answer');
     expect(COPY.noPref).toBe("No preference, I'm easy");
     // Changed deliberately (Brittany 2026-10-16): Stays is not live yet, so the button just says Done.
     expect(COPY.reveal.cta).toBe('Done');
     expect(CARD_COPY.stayType.ask).toBe('Where are you willing to lay your head?');
     expect(CARD_COPY.nos.ask).toBe('Any dealbreakers? Things you would never do on this trip.');
+  });
+});
+
+describe('six budget bands', () => {
+  const BANDS: [string, string][] = [['under10', 'Under 10'], ['10to20', '10 to 20'], ['20to35', '20 to 35'], ['35to55', '35 to 55'], ['55to85', '55 to 85'], ['85plus', '85 plus']];
+
+  it('offers exactly the six chips with these keys and labels', () => {
+    expect(CARD_COPY.budget.opts).toEqual(BANDS);
+  });
+
+  it('shows the six band chips plus the four stretch chips on one card, single choice', async () => {
+    const { user } = setup();
+    await next(user); await next(user);
+    const group = screen.getByRole('group', { name: CARD_COPY.budget.ask });
+    const names = within(group).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent);
+    expect(names.filter((n) => !/^No preference/.test(n ?? ''))).toEqual(BANDS.map(([, l]) => `${l}, not picked`));
+    expect(screen.getByText(STRETCH_ASK)).toBeInTheDocument();
+    for (const l of ['Same', '+20', '+50', 'Anything']) expect(chip(`Stretch ${l}, not picked`)).toBeInTheDocument();
+    await user.click(chip('55 to 85, not picked'));
+    await user.click(chip('85 plus, not picked'));
+    expect(chip('55 to 85, not picked')).toBeInTheDocument();
+    expect(chip('85 plus, picked')).toBeInTheDocument();
+  });
+
+  it('drops an old-key budget pick on load, keeps the stretch pick and other answers', async () => {
+    const initial: PrefAnswer[] = [
+      ans('stayType', { hotel: 'happy' }),
+      ans('rooms'),
+      ans('budget', { '30to60': 'happy', 'stretch:plus20': 'happy' }),
+    ];
+    const { user, onSave } = setup(initial);
+    expect(chip('Hotel, happy')).toBeInTheDocument();
+    await next(user); await next(user);
+    for (const [, l] of BANDS) expect(chip(`${l}, not picked`)).toBeInTheDocument();
+    expect(chip('Stretch +20, picked')).toBeInTheDocument();
+    await next(user); await next(user); await next(user); await next(user);
+    await user.click(chip(COPY.reveal.cta));
+    const saved: PrefAnswer[] = onSave.mock.calls[0][0];
+    expect(saved[0].picks).toEqual({ hotel: 'happy' });
+    expect(saved[2].picks).toEqual({ 'stretch:plus20': 'happy' });
+  });
+
+  it('a saved current-key budget pick survives load', async () => {
+    const { user } = setup([ans('stayType'), ans('rooms'), ans('budget', { '35to55': 'happy' })]);
+    await next(user); await next(user);
+    expect(chip('35 to 55, picked')).toBeInTheDocument();
   });
 });

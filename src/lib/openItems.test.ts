@@ -10,8 +10,10 @@ const group = (over: Partial<GroupResult> = {}): GroupResult => ({
   open: true, days: 9, pace: 1, base: null, knockouts: [], results: [], final: null, extras: [], knocked: [], finalized: [], locked: false, ...over,
 });
 const sug = (id: string, title: string, over: Partial<Suggestion> = {}): Suggestion => ({ id, name: 'Alex', title, area: 'Colombo', note: '', status: 'pending', createdAt: 'x', ...over });
-// The quiz is marked done for every person under test so these cases keep proving what they did before the stayQuiz to-do existed.
-const quizDone = (name: Player) => ({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '' });
+// The quiz is marked done and one bingo card saved for every person under test, so these cases keep proving what they did before the stayQuiz and bingo to-dos existed.
+// Changed deliberately (Brittany 2026-10-16): Bingo is now a to-do, so the baseline person has a card.
+const card = { id: 'b1', title: 't', squares: Array.from({ length: 9 }, () => ({ text: 's', ticked: false })), createdAt: '' };
+const quizDone = (name: Player) => ({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [card], updatedAt: '' });
 const doneStays = (...names: Player[]): NonNullable<AppState['stays']> => ({ crew: Object.fromEntries(names.map(n => [n, quizDone(n)])), suggestions: [], admin: { pins: [], scouts: {} } });
 const empty: AppState = { responses: {}, suggestions: [], votes: [], stays: doneStays('Alex', 'Brittany', 'Aunty') };
 const ctx = (over: Partial<OpenCtx> = {}): OpenCtx => ({ me: 'Alex', group: group(), state: empty, unrated: 0, ratingsLocked: false, awardsUnseen: false, ...over });
@@ -93,11 +95,41 @@ describe('openItems', () => {
 
 describe('stayQuiz', () => {
   it('is owed after approve and before awards until the quiz is done', () => {
-    const state: AppState = { ...empty, stays: undefined, suggestions: [sug('1', 'Tea tour')] };
+    // Changed deliberately (Brittany 2026-10-16): Bingo is now a to-do, so this person holds a card and only the quiz is owed.
+    const state: AppState = { ...empty, stays: { ...doneStays(), crew: { Brittany: { ...quizDone('Brittany'), quizDone: false } } }, suggestions: [sug('1', 'Tea tour')] };
     const c = ctx({ me: 'Brittany', state, group: group({ locked: true }), awardsUnseen: true });
     expect(ids(c)).toEqual(['approve', 'stayQuiz', 'awards']);
     expect(openItems(c).find(i => i.id === 'stayQuiz')).toMatchObject({ id: 'stayQuiz', target: { tab: 'Quiz' } });
     expect(ids({ ...c, state: { ...state, stays: doneStays('Brittany') } })).toEqual(['approve', 'awards']);
+  });
+});
+
+describe('bingo', () => {
+  const crewOf = (over: object) => ({ ...quizDone('Alex'), ...over });
+  const withCrew = (c: object): AppState => ({ ...empty, stays: { ...doneStays('Alex'), crew: { Alex: c as never } } });
+  it('is owed until a first card is saved, whatever else is done', () => {
+    for (const bingo of [[], undefined]) {
+      expect(ids(ctx({ state: withCrew(crewOf({ bingo })) }))).toEqual(['bingo']);
+    }
+    expect(ids(ctx({ state: { ...empty, stays: undefined } }))).toEqual(['stayQuiz', 'bingo']);
+    expect(ids(ctx({ state: { ...empty, stays: { ...doneStays(), crew: {} } } }))).toEqual(['stayQuiz', 'bingo']);
+    expect(openItems(ctx({ state: withCrew(crewOf({ bingo: [] })) }))[0]).toMatchObject({ id: 'bingo', label: 'Make your travel bingo card', target: { tab: 'Bingo' } });
+    expect(openItems(ctx({ state: withCrew(crewOf({ bingo: [] })) }))[0].count).toBeUndefined();
+  });
+  it('never appears for a person with at least one card, however many', () => {
+    for (let n = 1; n <= 4; n++) expect(ids(ctx({ state: withCrew(crewOf({ bingo: Array.from({ length: n }, (_, i) => ({ ...card, id: `b${i}` })) })) }))).toEqual([]);
+  });
+  it('is per person: another member\'s card does not clear mine', () => {
+    const state: AppState = { ...empty, stays: { ...doneStays('Alex', 'Brittany'), crew: { Alex: quizDone('Alex'), Brittany: { ...quizDone('Brittany'), bingo: [] } } } };
+    expect(ids(ctx({ me: 'Alex', state }))).toEqual([]);
+    expect(ids(ctx({ me: 'Brittany', state }))).toEqual(['bingo']);
+  });
+  it('sits after stayQuiz and before awards', () => {
+    const state: AppState = { ...empty, stays: undefined, suggestions: [sug('1', 'Tea tour')] };
+    expect(ids(ctx({ me: 'Brittany', state, group: group({ locked: true }), awardsUnseen: true }))).toEqual(['approve', 'stayQuiz', 'bingo', 'awards']);
+  });
+  it('carries no tab badge', () => {
+    expect(tabBadges(openItems(ctx({ state: withCrew(crewOf({ bingo: [] })) })))).toEqual({});
   });
 });
 

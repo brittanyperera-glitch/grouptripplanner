@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyRanking, PEOPLE, type Person, type Response } from './types';
@@ -66,6 +66,8 @@ describe('guest mode in the app shell', () => {
     for (let i = 0; i < 3; i++) await user.click(await screen.findByRole('button', { name: 'Must' }));
     await user.click(await screen.findByRole('button', { name: 'Done, submit' }));
     await user.click(await screen.findByRole('tab', { name: 'My trip' }));
+    // Changed deliberately (Brittany 2026-10-16): the seeded crew has submitted, so Group trip leads; pick My trip for her own plan.
+    await user.click(await screen.findByRole('button', { name: 'My trip' }));
     expect(await screen.findByText('Your best 9 days')).toBeInTheDocument();
     expect(screen.queryByText('Loading')).toBeNull();
   });
@@ -93,11 +95,11 @@ describe('guest mode in the app shell', () => {
   });
 
   it('(h) a trip member with all five submitted still sees the locked state', async () => {
-    const user = userEvent.setup();
     for (const p of PEOPLE) localStorage.setItem(`tp:resp:${p}`, JSON.stringify(submitted(p)));
     localStorage.setItem('tp:me', 'Alex');
     render(<App />);
-    await user.click(await screen.findByRole('tab', { name: 'Picks' }));
-    await waitFor(() => expect(screen.getByText(/Ratings are locked/)).toBeInTheDocument());
+    // Changed deliberately (Brittany 2026-10-16): locked means no Picks tab and the group plan leads.
+    await screen.findByRole('tab', { name: 'Group' });
+    expect(screen.queryByRole('tab', { name: 'Picks' })).toBeNull();
   });
 });

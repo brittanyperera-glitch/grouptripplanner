@@ -5,3 +5,24 @@
 .ko-change { all: unset; box-sizing: border-box; cursor: pointer; min-height: 40px; padding: 0 14px; display: grid; place-items: center; border-radius: var(--r-btn); box-shadow: inset 0 0 0 1.5px var(--line-strong); font: 800 14px/1 var(--font-head); letter-spacing: .03em; text-transform: uppercase; color: var(--ink); }
 .ko-change:focus-visible, .ko-decided:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 .ko-decided { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 6px; min-height: 40px; font-weight: 800; }
+
+/* One question for every open fork that would drop the same place (Knockouts.tsx, groupCard). */
+.kg-head { margin: 0; font: 800 22px/1.05 var(--font-head); text-transform: uppercase; letter-spacing: .01em; overflow-wrap: anywhere; }
+.kg-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border-radius: var(--r-photo); box-shadow: inset 0 0 0 1.5px var(--line); }
+.kg-row[data-mine="true"] { box-shadow: inset 0 0 0 2.5px var(--red-deep); }
+.kg-open { all: unset; box-sizing: border-box; cursor: pointer; flex: 1 1 180px; min-width: 0; min-height: 64px; display: flex; align-items: center; gap: 10px; }
+.kg-text { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.kg-thumb.kg-thumb { flex: none; width: 64px; height: 64px; border-radius: var(--r-photo); padding: 0; }
+.kg-thumb > small { display: none; }
+.kg-actions { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
+.kg-details { all: unset; box-sizing: border-box; cursor: pointer; min-height: 44px; padding: 0 6px; display: inline-grid; place-items: center; font: 800 14px/1 var(--font-head); letter-spacing: .03em; text-transform: uppercase; color: var(--teal); text-decoration: underline; text-underline-offset: 3px; }
+.kg-vote:focus-visible, .kg-details:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.kg-name { flex: 1 1 180px; min-width: 0; font: 800 20px/1 var(--font-head); text-transform: uppercase; overflow-wrap: anywhere; }
+.kg-text .kg-name { flex: none; }
+.kg-cost { font-size: var(--fs-md); color: var(--muted); overflow-wrap: anywhere; }
+.kg-voters { flex: 1 0 100%; display: flex; flex-wrap: wrap; gap: 6px; order: 3; }
+.kg-pv { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px 2px 2px; border-radius: var(--r-pill); background: var(--chip); font: 700 12px/1 var(--font-body); }
+.kg-pv > :first-child { flex: none; border-radius: 50%; overflow: hidden; }
+.kg-vote { all: unset; box-sizing: border-box; cursor: pointer; flex: none; min-height: 44px; padding: 0 18px; display: inline-grid; place-items: center; border-radius: var(--r-btn); box-shadow: inset 0 0 0 1.5px var(--line-strong); font: 800 16px/1 var(--font-head); letter-spacing: .03em; text-transform: uppercase; color: var(--ink); }
+.kg-vote[aria-pressed="true"] { background: var(--red-deep); color: var(--on-red); box-shadow: none; }
+.kg-vote[disabled] { opacity: .5; pointer-events: none; }

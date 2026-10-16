@@ -19,7 +19,8 @@ async function answerQuiz(): Promise<PrefAnswer[]> {
   await user.click(chip('Hostel dorm, up to 2 nights'));
   await user.click(nextBtn());
   await user.click(nextBtn());
-  await user.click(chip('Under 30, not picked'));
+  // Changed deliberately (Brittany 2026-10-16): budget bands now follow the researched prices (reports in ~/.claude/plans/review/budget-research.md and her own)
+  await user.click(chip('Under 10, not picked'));
   await user.click(chip('Stretch +20, not picked'));
   for (let i = 0; i < 4; i++) await user.click(nextBtn());
   await user.click(chip(COPY.reveal.cta));
@@ -33,11 +34,12 @@ const stay = (over: Partial<PlaceSuggestion>): PlaceSuggestion => ({
 describe('what the quiz saves is what the engine reads', () => {
   it('a happy band plus a stretch becomes a price cap, and a nights limit becomes a map', async () => {
     const prefs = await answerQuiz();
-    expect(budgetCap(prefs)).toBe(50);
+    expect(budgetCap(prefs)).toBe(30); // under10 (10) + plus20; was under30 + 20 = 50 before the six-band change
     expect(maxNightsOf(prefs)).toEqual({ hostel: 2 });
     const crew: CrewStays[] = [{ name: 'Alex', prefs, quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '' }];
+    // Changed deliberately (Brittany 2026-10-16): budget bands now follow the researched prices (reports in ~/.claude/plans/review/budget-research.md and her own)
     expect(warnings(stay({ priceGbp: 60 }), crew).count).toBe(1);
-    expect(warnings(stay({ priceGbp: 45 }), crew).count).toBe(0);
+    expect(warnings(stay({ priceGbp: 30 }), crew).count).toBe(0);
     expect(nightsWarnings(stay({ stayType: 'hostel' }), 3, { Alex: maxNightsOf(prefs) }).count).toBe(1);
     expect(nightsWarnings(stay({ stayType: 'hostel' }), 2, { Alex: maxNightsOf(prefs) }).count).toBe(0);
   });

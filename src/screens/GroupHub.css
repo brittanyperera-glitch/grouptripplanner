@@ -16,7 +16,6 @@
 @media (prefers-reduced-motion: reduce) { .gh-block { transition: none; } }
 .gh-top { flex: none; padding-bottom: 0; align-items: flex-start; }
 .gh-back { min-height: 32px; display: inline-flex; align-items: center; font-size: 13px; padding: 4px 14px; }
-.gh-locked h2 { margin: 0; }
 .gh-book > summary { cursor: pointer; list-style: none; }
 .gh-book > summary::-webkit-details-marker { display: none; }
 .gh-book > summary:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }

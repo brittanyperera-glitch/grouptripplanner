@@ -112,6 +112,54 @@ describe('WriteQueue', () => {
   });
 });
 
+// Reviewer's probe: Approve fails, Reject (queued behind it) succeeds, then the retry used to send Approve last.
+describe('WriteQueue status writes', () => {
+  const failFirst = (sent: string[]) => {
+    let calls = 0;
+    const send = async (id: string, st: string) => {
+      calls++;
+      if (calls === 1) { await new Promise(r => setTimeout(r, 5)); throw new Error('offline'); }
+      sent.push(`${st} ${id}`);
+    };
+    return class extends LocalStore {
+      override setSuggestionStatus(id: string, st: 'pending' | 'live' | 'rejected') { return send(id, st); }
+      override setPlaceStatus(id: string, st: 'live' | 'withdrawn') { return send(id, st); }
+    };
+  };
+
+  it('an old suggestion status retried after a newer one for the same id never lands last', async () => {
+    const sent: string[] = [];
+    const q = new WriteQueue(new (failFirst(sent))(), hooks());
+    await Promise.all([q.store.setSuggestionStatus('s1', 'live'), q.store.setSuggestionStatus('s1', 'rejected')]);
+    expect(await q.flush()).toBe(true);
+    expect(sent).toEqual(['rejected s1']);
+  });
+
+  it('an old place status retried after a newer one for the same id never lands last', async () => {
+    const sent: string[] = [];
+    const q = new WriteQueue(new (failFirst(sent))(), hooks());
+    await Promise.all([q.store.setPlaceStatus('p1', 'withdrawn'), q.store.setPlaceStatus('p1', 'live')]);
+    expect(await q.flush()).toBe(true);
+    expect(sent).toEqual(['live p1']);
+  });
+
+  it('a newer status queued after an old one has already failed replaces it', async () => {
+    const sent: string[] = [];
+    const q = new WriteQueue(new (failFirst(sent))(), hooks());
+    await q.store.setSuggestionStatus('s1', 'live');
+    await q.store.setSuggestionStatus('s1', 'rejected');
+    expect(sent).toEqual(['rejected s1']);
+  });
+
+  it('statuses for different ids are each sent', async () => {
+    const sent: string[] = [];
+    const q = new WriteQueue(new (failFirst(sent))(), hooks());
+    await Promise.all([q.store.setSuggestionStatus('s1', 'live'), q.store.setSuggestionStatus('s2', 'rejected'), q.store.setPlaceStatus('s1', 'withdrawn')]);
+    await q.flush();
+    expect(sent.sort()).toEqual(['live s1', 'rejected s2', 'withdrawn s1']);
+  });
+});
+
 describe('WriteQueue crew stays', () => {
   type CrewPatch = Parameters<LocalStore['saveCrewStays']>[1];
   const pref = { topic: 'budget' as const, picks: {}, noPreference: true, skipped: false };
@@ -197,7 +245,8 @@ describe('WriteQueue place suggestions and stays admin', () => {
     expect(sent).toEqual([{ pins: [pin('a')], scouts: { Ella: 'Saulie', North: 'Alex' } }]);
   });
 
-  it('place adds and status changes are each sent, in order, never folded together', async () => {
+  // Was ['add a','add b','withdrawn p1','live p1']: unkeyed statuses let an old retried one land last; adds still never fold.
+  it('place adds are each sent in order; statuses for one id fold to the newest', async () => {
     const sent: string[] = [];
     let release: () => void = () => undefined;
     class Spy extends LocalStore {
@@ -210,6 +259,6 @@ describe('WriteQueue place suggestions and stays admin', () => {
     const writes = [q.store.addPlaceSuggestion(draft('a')), q.store.addPlaceSuggestion(draft('b')), q.store.setPlaceStatus('p1', 'withdrawn'), q.store.setPlaceStatus('p1', 'live')];
     release();
     await Promise.all([blocker, ...writes]);
-    expect(sent).toEqual(['add a', 'add b', 'withdrawn p1', 'live p1']);
+    expect(sent).toEqual(['add a', 'add b', 'live p1']);
   });
 });

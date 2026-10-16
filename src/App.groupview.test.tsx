@@ -103,6 +103,8 @@ describe('Group trip puts the important parts first', () => {
   });
   it('My trip has no book card once Group trip is open', async () => {
     render(<App />);
+    // Changed deliberately (Brittany 2026-10-16): Group trip opens first now, so pick the My trip view.
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'My trip' }));
     const region = await screen.findByRole('region', { name: 'My trip' });
     expect(region.querySelector('details.gh-book')).toBeNull();
     expect(within(region).queryByText(/to book soon/)).toBeNull();

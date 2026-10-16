@@ -3,6 +3,8 @@ import { mustFitDays, plan } from './planner';
 import { KNOCKED_MUST, score, scoresFor, tierOf } from './ranking';
 
 export const VOTES_TO_RESOLVE = 3; // majority of 5
+// The plan the open questions were measured on, for tests: every drop side must be a subset of it.
+export const measuredOn = new WeakMap<GroupResult, Plan>();
 
 // "If added: day 4 in South coast, travel 18.2 h to 19.2 h." The day part is left out when the place has none.
 export const fitLine = (f: NonNullable<Knockout['fit']>): string => {
@@ -121,28 +123,52 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
   const regionOpen = knockouts.length > 0;
   // At most MAX_CONTESTED item questions. Items settled without one (north items behind the region
   // question, items that fit for free or ride on another question) do not use up a place.
-  let asked = 0;
-  for (const c of regionOpen ? [] : contested) {
-    if (asked >= MAX_CONTESTED) break;
-    if (skipNorth && northSet.has(c)) continue;
-    if (P.chosen.includes(c)) continue;
-    if (covered.has(c)) continue;
-    // Knocked down by an earlier result and still out: no second question about it.
-    if (knocked.has(c)) { results.push({ forkId: `ko:${c}:displaced`, a: [c], b: [], winner: 'displaced' }); continue; }
-    const Q = run(new Set([...F, c]), O);
-    if (Q.forceFailed) continue;
-    const b = P.chosen.filter(id => !Q.chosen.includes(id) && !F.has(id));
-    if (!b.length) { F.add(c); P = Q; continue; }
-    const added = Q.chosen.filter(id => !P.chosen.includes(id) && id !== c);
-    if (added.some(id => covered.has(id))) continue; // overlaps an open fork: it rides on that one
-    const a = [c, ...added];
-    // Keyed on c alone: a vote for 'a' means "add c", which stays true when b shifts after an earlier result.
-    const forkId = `ko:${c}`;
-    asked++;
-    const votes = tallyFor(forkId);
-    if (votes.a.length >= VOTES_TO_RESOLVE) { F.add(c); b.forEach(knockDown); results.push({ forkId, a, b, winner: 'a' }); P = settle(Q); }
-    else if (votes.b.length >= VOTES_TO_RESOLVE) { knockDown(c); results.push({ forkId, a, b, winner: 'b' }); P = settle(P); }
-    else { knockouts.push({ forkId, a, b, votes }); a.forEach(id => covered.add(id)); }
+  // A vote that settles a question after an open one changes the plan that question was measured on
+  // (it may even have knocked down a place the question offers to drop). So once the pass ends, the
+  // questions left open are measured again, and only those: no other question opens and nothing else
+  // settles, so every result and every stored vote keeps the meaning it had.
+  const askItems = (cs: string[], later?: string[]) => {
+    knockouts.length = 0; covered.clear();
+    let asked = 0, settledLate = false, fitLate = false;
+    for (const c of cs) {
+      if (asked >= MAX_CONTESTED) break;
+      if (skipNorth && northSet.has(c)) continue;
+      if (P.chosen.includes(c)) continue;
+      if (covered.has(c)) continue;
+      // Knocked down by an earlier result and still out: no second question about it.
+      if (knocked.has(c)) { results.push({ forkId: `ko:${c}:displaced`, a: [c], b: [], winner: 'displaced' }); continue; }
+      const Q = run(new Set([...F, c]), O);
+      if (Q.forceFailed) continue;
+      const b = P.chosen.filter(id => !Q.chosen.includes(id) && !F.has(id));
+      if (!b.length && later) { later.push(c); continue; }
+      if (!b.length) { F.add(c); P = Q; fitLate ||= knockouts.length > 0; continue; }
+      const added = Q.chosen.filter(id => !P.chosen.includes(id) && id !== c);
+      if (added.some(id => covered.has(id))) continue; // overlaps an open fork: it rides on that one
+      const a = [c, ...added];
+      // Keyed on c alone: a vote for 'a' means "add c", which stays true when b shifts after an earlier result.
+      const forkId = `ko:${c}`;
+      asked++;
+      const votes = tallyFor(forkId);
+      if (votes.a.length >= VOTES_TO_RESOLVE) { F.add(c); b.forEach(knockDown); results.push({ forkId, a, b, winner: 'a' }); P = settle(Q); }
+      else if (votes.b.length >= VOTES_TO_RESOLVE) { knockDown(c); results.push({ forkId, a, b, winner: 'b' }); P = settle(P); }
+      else { knockouts.push({ forkId, a, b, votes }); a.forEach(id => covered.add(id)); continue; }
+      settledLate ||= knockouts.length > 0;
+    }
+    return { settledLate, fitLate };
+  };
+  // A re-measured question cannot settle (its votes are unchanged); one that now fits for free moves the plan again.
+  const openIds = () => knockouts.filter(k => !k.genre && !k.fit).map(k => k.a[0]);
+  const reaskItems = (extra: string[] = []) => {
+    let cs = [...openIds(), ...extra].sort((x, y) => contested.indexOf(x) - contested.indexOf(y));
+    while (askItems(cs).fitLate) cs = openIds();
+  };
+  // With late items, nothing the re-measure frees (a question that now fits for free, or the keep vote,
+  // Finalize lists and Must floor that wait for open questions) moves the plan until the late votes are
+  // taken, so each late vote counts on the plan the group saw.
+  const freeAfterLate: string[] = [];
+  let waitForLate = false;
+  if (!regionOpen && askItems(contested).settledLate) {
+    if (lateAll.length) { waitForLate = true; askItems(openIds(), freeAfterLate); } else reaskItems();
   }
 
   // Same-type keep vote (Brittany 2026-10-15): once the head to heads are done, two or more places of one
@@ -156,7 +182,8 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
   const genreDropped = new Set<string>();
   const wanted = (id: string) => rated(id, 'must') + rated(id, 'keen') >= 1;
   const allFinal = sealed;
-  if (!knockouts.length && genres.length) {
+  const genreStage = () => {
+    if (knockouts.length || waitForLate || !genres.length) return;
     // Head to head winners are never re-asked; nor is a place decided by an earlier keep vote.
     const settledIn = new Set(results.flatMap(r => (r.forkId.startsWith('ko:') && r.winner === 'a' ? [r.a[0]] : [])));
     const rounds = new Map<string, number>(); // keep votes resolved per genre
@@ -203,7 +230,8 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
       }
       if (!settled) knockouts.push(...open);
     }
-  }
+  };
+  genreStage();
 
   // Must floor (Brittany 2026-10-15): once nothing is open, anyone with none of their Musts in (from
   // their saved Finalize list, else as submitted) gets the one that costs the group least, never one
@@ -227,43 +255,70 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
   // Winners stay forced in and the losing region stays out; anyone without a list counts as submitted,
   // knock-downs included. Their submitted ratings keep driving the head to heads above, so a saved
   // list never reopens or changes a question.
-  let finalized = knockouts.length ? [] : rs.filter(r => r.final).map(r => r.name);
+  let finalized: Player[] = [];
   // A place a late vote knocks down counts as the lowest Keen even from a list saved before that vote.
   const lateKnocked = new Set<string>();
   const val = (r: Response, id: string) => {
     const t = r.final ? tierOf(r.final, id) : null;
     return t ? (t === 'must' && lateKnocked.has(id) ? KNOCKED_MUST : score(r.final!, id)) : rating(r, id);
   };
-  if (finalized.length) {
+  const rescore = () => {
+    finalized = knockouts.length || waitForLate ? [] : rs.filter(r => r.final).map(r => r.name);
+    if (!finalized.length) return;
     for (const id of ids) scores[id] = rs.reduce((n, r) => n + val(r, id), 0);
     P = run(F, O);
-  }
+  };
+  rescore();
 
   // Late items (Brittany 2026-10-16) come last, sealed or not: one vote each against the plan as it stands; the rest stays.
   let held: Plan | null = null;
   if (lateAll.length && !regionOpen) {
-    if (!knockouts.length) floor();
+    if (!knockouts.length && !waitForLate) floor();
     const southWon = results.some(r => r.forkId === REGION_FORK && r.winner === 'b');
-    const won: Item[] = [], taken = new Set<string>(), open: Knockout[] = [];
+    const won: Item[] = [];
     const lateKnock = (id: string) => { lateKnocked.add(id); knocked.add(id); scores[id] = rs.reduce((n, r) => n + val(r, id), 0); };
-    for (const c of [...lateAll].sort((x, y) => (x.id < y.id ? -1 : 1))) {
-      pool = [...items, ...won, c];
-      scores[c.id] = rs.reduce((n, r) => n + val(r, c.id), 0);
-      const Q = run(new Set([...F, c.id]), O);
-      // S7: never a silent drop; the Decided list says it does not fit. A South result rules out the north too.
-      if (Q.forceFailed || (southWon && NORTH_AREAS.has(c.area))) { results.push({ forkId: `ko:${c.id}:nofit`, a: [c.id], b: [], winner: 'nofit' }); continue; }
-      const b = P.chosen.filter(id => !Q.chosen.includes(id) && !F.has(id));
-      if (!b.length) { F.add(c.id); P = Q; won.push(c); continue; }
-      const a = [c.id, ...Q.chosen.filter(id => !P.chosen.includes(id) && id !== c.id && !taken.has(id))];
-      const forkId = `ko:${c.id}`;
-      const votes = tallyFor(forkId);
-      if (votes.a.length >= VOTES_TO_RESOLVE) { F.add(c.id); b.forEach(lateKnock); results.push({ forkId, a, b, winner: 'a' }); P = settle(Q); won.push(c); }
-      else if (votes.b.length >= VOTES_TO_RESOLVE) { lateKnock(c.id); results.push({ forkId, a, b, winner: 'b' }); }
-      else {
-        const day = Q.days.findIndex(d => d.entries.some(e => e.itemId === c.id));
-        open.push({ forkId, a, b, votes, fit: { day: day < 0 ? null : day + 1, hub: day < 0 ? null : Q.days[day].area, travelBefore: P.travelHours, travelAfter: Q.travelHours } });
-        a.forEach(id => taken.add(id));
+    const itemOpen = knockouts.some(k => !k.genre) || waitForLate;
+    const anyItemOpen = () => knockouts.some(k => !k.genre);
+    let open: Knockout[] = [];
+    // As with item questions: a late vote that settles after an open question gets that question measured again.
+    const askLate = (cs: Item[]) => {
+      open = [];
+      const taken = new Set<string>();
+      let settledLate = false, fitLate = false;
+      for (const c of cs) {
+        pool = [...items, ...won.filter(w => w !== c), c];
+        scores[c.id] = rs.reduce((n, r) => n + val(r, c.id), 0);
+        const Q = run(new Set([...F, c.id]), O);
+        // S7: never a silent drop; the Decided list says it does not fit. A South result rules out the north too.
+        if (Q.forceFailed || (southWon && NORTH_AREAS.has(c.area))) { results.push({ forkId: `ko:${c.id}:nofit`, a: [c.id], b: [], winner: 'nofit' }); continue; }
+        const b = P.chosen.filter(id => !Q.chosen.includes(id) && !F.has(id));
+        if (!b.length) { F.add(c.id); P = Q; if (!won.includes(c)) won.push(c); fitLate ||= open.length > 0 || anyItemOpen(); continue; }
+        const a = [c.id, ...Q.chosen.filter(id => !P.chosen.includes(id) && id !== c.id && !taken.has(id))];
+        const forkId = `ko:${c.id}`;
+        const votes = tallyFor(forkId);
+        if (votes.a.length >= VOTES_TO_RESOLVE) { F.add(c.id); b.forEach(lateKnock); results.push({ forkId, a, b, winner: 'a' }); P = settle(Q); won.push(c); }
+        else if (votes.b.length >= VOTES_TO_RESOLVE) { lateKnock(c.id); results.push({ forkId, a, b, winner: 'b' }); }
+        else {
+          const day = Q.days.findIndex(d => d.entries.some(e => e.itemId === c.id));
+          open.push({ forkId, a, b, votes, fit: { day: day < 0 ? null : day + 1, hub: day < 0 ? null : Q.days[day].area, travelBefore: P.travelHours, travelAfter: Q.travelHours } });
+          a.forEach(id => taken.add(id));
+          continue;
+        }
+        settledLate ||= open.length > 0 || anyItemOpen();
       }
+      return { settledLate, fitLate };
+    };
+    const byId = new Map(lateAll.map(i => [i.id, i]));
+    const lateIds = () => open.map(k => byId.get(k.a[0])!);
+    const settledLate = askLate([...lateAll].sort((x, y) => (x.id < y.id ? -1 : 1))).settledLate;
+    // Held back above: the item questions are measured again only if the plan has to move.
+    const release = waitForLate && (freeAfterLate.length > 0 || !anyItemOpen());
+    waitForLate = false;
+    if (settledLate || release) {
+      for (let moved = itemOpen; moved;) { pool = [...items, ...won]; reaskItems(freeAfterLate.splice(0)); moved = askLate(lateIds()).fitLate && anyItemOpen(); }
+      // The item questions that held back the keep vote and the Finalize lists may all have gone.
+      if (itemOpen && !knockouts.length) { genreStage(); rescore(); if (!knockouts.length) floor(); }
+      while (askLate(lateIds()).fitLate);
     }
     pool = [...items, ...won];
     if (open.length) {
@@ -284,5 +339,7 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
     .map(id => ({ id, who: rs.flatMap(r => { const t = tierOf(r.ranking, id); return t === 'must' || t === 'keen' ? [{ name: r.name, tier: t }] : []; }) }))
     .filter(e => e.who.length > 0)
     .sort((x, y) => scores[y.id] - scores[x.id] || (x.id < y.id ? -1 : 1));
-  return { open, days, pace, base: baseP, knockouts, results, final, extras, knocked: [...knocked].sort(), finalized, locked: finalized.length === PEOPLE.length, ...(held ? { held } : {}) };
+  const out: GroupResult = { open, days, pace, base: baseP, knockouts, results, final, extras, knocked: [...knocked].sort(), finalized, locked: finalized.length === PEOPLE.length, ...(held ? { held } : {}) };
+  measuredOn.set(out, P);
+  return out;
 }
