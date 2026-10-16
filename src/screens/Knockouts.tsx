@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import Avatar from '../components/Avatar';
 import { IconCheck } from '../components/Icons';
 import ItemSheet from '../components/ItemSheet';
 import { Cover } from '../components/PhotoCard';
@@ -56,6 +57,11 @@ export default function Knockouts({ group }: { group: GroupResult }) {
         <span className="pick-copy">
           <span className="tag">{tag}</span>
           {copy}
+          {k.votes[s].length > 0 && (
+            <span className="pick-voters" role="list" aria-label="Voted for this">
+              {k.votes[s].map(p => <span key={p} role="listitem" className="pv" title={p}><Avatar name={p} size={30} /><span className="pv-name">{p}</span></span>)}
+            </span>
+          )}
           <button type="button" className="pick-vote" aria-pressed={mine} aria-label={`Vote for ${label}`} disabled={me === null}
             onClick={() => castVote(k.forkId, s)}>{mine ? 'Voted' : 'Vote'}</button>
         </span>

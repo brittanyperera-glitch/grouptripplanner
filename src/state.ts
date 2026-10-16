@@ -8,7 +8,7 @@ import { getStore, supabaseConfigured } from './store';
 import { useTripAccess } from './store/useTripAccess';
 import { WriteQueue } from './store/queue';
 import { emptyRanking, PEOPLE } from './types';
-import type { AppState, Item, Leg, Person, Player, Response, Store } from './types';
+import type { AppState, Item, Leg, Person, Player, Response, Store, Vote } from './types';
 
 // A quip is one line, or a list the app picks from at random so it doesn't repeat.
 export type Quip = string | string[];
@@ -65,10 +65,13 @@ function writeUnsaved(rows: Rows): void {
 }
 
 /** Server state with my not-yet-stored saves on top, so a reload that lacks them never wipes them from screen. */
-function withLocal(server: AppState, local: Rows): AppState {
+function withLocal(server: AppState, local: Rows, votes: Vote[] = []): AppState {
   const responses = { ...server.responses };
   for (const r of Object.values(local)) if (r && ahead(r, server.responses[r.name])) responses[r.name] = r;
-  return { ...server, responses };
+  // My own taps, shown at once; the server's row replaces them once it holds the same choice.
+  const mine = votes.filter(v => !server.votes.some(s => s.forkId === v.forkId && s.name === v.name && s.choice === v.choice));
+  const kept = server.votes.filter(s => !mine.some(v => v.forkId === s.forkId && v.name === s.name));
+  return { ...server, responses, votes: mine.length ? [...kept, ...mine] : server.votes };
 }
 const copy: Copy = copyData;
 
@@ -113,6 +116,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   const [error, setError] = useState<string | null>(null);
   const [server, setServer] = useState<AppState | null>(null);
   const [local, setLocal] = useState<Rows>(() => (sandbox ? {} : readUnsaved()));
+  const [localVotes, setLocalVotes] = useState<Vote[]>([]);
   const serverRef = useRef(server);
   serverRef.current = server;
   const localRef = useRef(local);
@@ -170,8 +174,12 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
       });
       return queue.store.saveResponse(name, patch);
     },
+    vote: v => {
+      setLocalVotes(l => [...l.filter(x => !(x.forkId === v.forkId && x.name === v.name)), v]);
+      return queue.store.vote(v);
+    },
   }, [queue]);
-  const state = useMemo(() => server && withLocal(server, local), [server, local]);
+  const state = useMemo(() => server && withLocal(server, local, localVotes), [server, local, localVotes]);
 
   const retry = useCallback(() => {
     if (!queue) { setAttempt(a => a + 1); return; }
