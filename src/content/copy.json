@@ -29,7 +29,9 @@
       "Alex": "solo wolf joins the team - what's left on your list?",
       "Antek": "hello there. ready to meet the family?",
       "Lazza": "post-blounge activities must be chosen",
-      "Guest": "Welcome, guest. Have a look around.",
+      "Tuktuk": "shouldn't you be driving?",
+      "Aunty": "welcome aunty!",
+      "Groom": "congratulations on the wedding :)",
       "Saulie": "sadly no 5-star-resorts on the cards for mr money-bags, hope that's okay"
     },
     "days": {},
@@ -238,10 +240,28 @@
         }
       ]
     },
-    "Guest": {
-      "title": "Guest",
+    "Tuktuk": {
+      "title": "The local legend",
       "stats": [
-        { "label": "Curiosity", "value": 7 }
+        { "label": "Charm", "value": 7 },
+        { "label": "Local knowledge", "value": 7 },
+        { "label": "Energy", "value": 7 }
+      ]
+    },
+    "Aunty": {
+      "title": "The TownCCTV",
+      "stats": [
+        { "label": "Charm", "value": 7 },
+        { "label": "Local knowledge", "value": 7 },
+        { "label": "Energy", "value": 7 }
+      ]
+    },
+    "Groom": {
+      "title": "The bachelor",
+      "stats": [
+        { "label": "Charm", "value": 7 },
+        { "label": "Local knowledge", "value": 7 },
+        { "label": "Energy", "value": 7 }
       ]
     },
     "Saulie": {

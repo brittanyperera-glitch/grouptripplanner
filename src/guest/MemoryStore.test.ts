@@ -1,17 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GUEST, type AppState } from '../types';
+import { type AppState } from '../types';
 import { MemoryStore } from './MemoryStore';
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-const sugg = { name: GUEST, title: 'A cafe', area: 'Colombo' as const, note: 'n' };
+const WHO = 'Aunty' as const;
+const sugg = { name: WHO, title: 'A cafe', area: 'Colombo' as const, note: 'n' };
 
 describe('MemoryStore', () => {
   it('saveResponse then load shows the row with defaults', async () => {
     const s = new MemoryStore();
-    await s.saveResponse(GUEST, { days: 7 });
-    const r = (await s.load()).responses[GUEST]!;
-    expect(r).toMatchObject({ name: GUEST, days: 7, flex: false, pace: null, submitted: false });
+    await s.saveResponse(WHO, { days: 7 });
+    const r = (await s.load()).responses[WHO]!;
+    expect(r).toMatchObject({ name: WHO, days: 7, flex: false, pace: null, submitted: false });
   });
 
   it('two stores never share state', async () => {
@@ -37,13 +38,13 @@ describe('MemoryStore', () => {
     const s = new MemoryStore();
     const seen: AppState[] = [];
     const off = s.subscribe(x => seen.push(x));
-    await s.saveResponse(GUEST, { days: 6 });
-    await s.vote({ forkId: 'f', name: GUEST, choice: 'a' });
+    await s.saveResponse(WHO, { days: 6 });
+    await s.vote({ forkId: 'f', name: WHO, choice: 'a' });
     expect(seen).toHaveLength(2);
     seen[1].votes.length = 0;
     expect((await s.load()).votes).toHaveLength(1);
     off();
-    await s.saveResponse(GUEST, { days: 8 });
+    await s.saveResponse(WHO, { days: 8 });
     expect(seen).toHaveLength(2);
   });
 
@@ -69,8 +70,8 @@ describe('MemoryStore', () => {
 
   it('logChoice then loadLog returns entries with id and at', async () => {
     const s = new MemoryStore();
-    await s.logChoice({ name: GUEST, kind: 'days', ref: null, value: 7 });
-    await s.logChoice({ name: GUEST, kind: 'pace', ref: null, value: 1 });
+    await s.logChoice({ name: WHO, kind: 'days', ref: null, value: 7 });
+    await s.logChoice({ name: WHO, kind: 'pace', ref: null, value: 1 });
     const log = await s.loadLog();
     expect(log).toHaveLength(2);
     expect(log[0]).toMatchObject({ kind: 'days', value: 7 });
@@ -86,12 +87,12 @@ describe('MemoryStore', () => {
     const s = new MemoryStore();
     const off = s.subscribe(() => {});
     await s.load();
-    await s.saveResponse(GUEST, { days: 7 });
+    await s.saveResponse(WHO, { days: 7 });
     await s.addSuggestion(sugg);
     const id = (await s.load()).suggestions[0].id;
     await s.setSuggestionStatus(id, 'live');
-    await s.vote({ forkId: 'f', name: GUEST, choice: 'a' });
-    await s.logChoice({ name: GUEST, kind: 'days', ref: null, value: 7 });
+    await s.vote({ forkId: 'f', name: WHO, choice: 'a' });
+    await s.logChoice({ name: WHO, kind: 'days', ref: null, value: 7 });
     await s.loadLog();
     off();
     expect(setItem).not.toHaveBeenCalled();

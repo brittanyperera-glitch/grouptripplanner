@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import catalogue from '../data/catalogue.json';
 import legsData from '../data/legs.json';
 import { groupResult } from '../lib/group';
-import { GUEST, PEOPLE, emptyRanking, type Item, type Leg, type Response } from '../types';
+import { GUESTS, PEOPLE, emptyRanking, type Item, type Leg, type Response } from '../types';
 import { seedState } from './seed';
 
 const items = (catalogue as unknown as { items: Item[] }).items;
@@ -33,13 +33,13 @@ describe('seedState', () => {
     expect((g.final ?? g.base!).days.length).toBeGreaterThan(0);
   });
 
-  it('(b) a Guest row changes nothing in the group result', () => {
+  it.each(GUESTS)('(b) an all-Must %s row changes nothing in the group result', (id) => {
     const setup = seedState();
     const r = emptyRanking();
     r.must = items.map(i => [i.id]);
-    const guest: Response = { name: GUEST, days: 14, flex: false, pace: 1, ranking: r, rated: items.map(i => i.id), submitted: true, updatedAt: '2026-01-01T00:00:00.000Z' };
+    const guest: Response = { name: id, days: 14, flex: false, pace: 1, ranking: r, rated: items.map(i => i.id), submitted: true, updatedAt: '2026-01-01T00:00:00.000Z' };
     const withGuest = structuredClone(setup);
-    withGuest.responses[GUEST] = guest;
+    withGuest.responses[id] = guest;
     expect(groupResult(withGuest, items, legs)).toEqual(groupResult(setup, items, legs));
   });
 });

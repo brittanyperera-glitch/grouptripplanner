@@ -28,7 +28,9 @@ export const PALETTE: Record<Player, [string, string]> = {
   Antek: ['#8a5a0c', '#a56a10'],
   Lazza: ['#6b2f55', '#853c69'],
   Saulie: ['#2d3f7a', '#3b4f94'],
-  Guest: ['#4a5560', '#69737f'],
+  Tuktuk: ['#2f6b3a', '#43895a'],
+  Aunty: ['#a02a5c', '#c24478'],
+  Groom: ['#7a1c28', '#9c2c3a'],
 };
 const FALLBACK: [string, string] = PALETTE.Brittany;
 

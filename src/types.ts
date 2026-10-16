@@ -34,8 +34,10 @@ export interface Plan {
 }
 export type Person = 'Brittany' | 'Alex' | 'Antek' | 'Lazza' | 'Saulie';
 export const PEOPLE: Person[] = ['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie'];
-export type Player = Person | 'Guest';
-export const GUEST = 'Guest' as const;
+export const GUESTS = ['Tuktuk', 'Aunty', 'Groom'] as const;
+export type Guest = typeof GUESTS[number];
+export type Player = Person | Guest;
+export const isGuest = (p: Player | null): p is Guest => p !== null && (GUESTS as readonly string[]).includes(p);
 export interface Response {
   name: Player; days: number | null; flex: boolean; pace: Pace | null;
   ranking: Ranking; rated: string[]; submitted: boolean; updatedAt: string;

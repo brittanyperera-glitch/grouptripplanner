@@ -17,7 +17,9 @@ export const LOOKS: Record<Player, Look> = {
   Alex: { height: 200, build: 0.9, skin: '#C9A27A', hair: '#3B2416', hairStyle: 'short-swept', narrowEyes: true, top: '#1F2F5C', legs: 'camo', denim: '#CDB98F', shoes: 'af1' },
   Antek: { height: 189, build: 1.1, skin: '#EBC3A0', hair: '#4A3020', hairStyle: 'curly-mullet', top: '#F4F1EA', legs: 'wide', denim: '#17181C', shoes: 'loafer', glasses: true, watch: true, ring: true },
   Lazza: { height: 181, build: 0.88, skin: '#E6BC97', hair: '#4B2E1C', hairStyle: 'high-ponytail', top: '#F2EEE8', longSleeves: true, legs: 'flared', denim: '#4E6E9E', shoes: 'flat' },
-  Guest: { height: 175, build: 1, skin: '#D9B99B', hair: '#8A8A8A', hairStyle: 'short-light', top: '#C9CED6', legs: 'straight', denim: '#7A8494', shoes: 'flat' },
+  Tuktuk: { height: 172, build: 1, skin: '#B98A62', hair: '#2A1A10', hairStyle: 'short-swept', top: '#2F7D4F', legs: 'straight', denim: '#C9A24A', shoes: 'flat' },
+  Aunty: { height: 160, build: 1.05, skin: '#A9744F', hair: '#1E1410', hairStyle: 'curly-shoulder', top: '#B8356B', legs: 'wide', denim: '#E3B23C', shoes: 'flat', bangle: true, earrings: true },
+  Groom: { height: 178, build: 1, skin: '#C69670', hair: '#241811', hairStyle: 'short-light', top: '#F2E6C8', legs: 'wide', denim: '#8C1F2B', shoes: 'loafer', watch: true },
   Saulie: { height: 191, build: 1, skin: '#F0CDB0', hair: '#9C6B42', hairStyle: 'short-light', top: '#F4F1EA', legs: 'straight', denim: '#3E5F94', shoes: 'af1', glasses: true },
 };
 
@@ -25,7 +27,7 @@ export const LOOKS: Record<Player, Look> = {
 // the file is committed; a static list means no request is made to probe for a missing file.
 export const IMAGE_AVATARS: ReadonlySet<Player> = new Set<Player>(['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie']);
 // Real heights in cm for the PNG figures, measured from each figure's own pixel height (the crops differ).
-export const IMAGE_CM: Record<Player, number> = { Alex: 188, Saulie: 183, Antek: 178, Lazza: 170, Brittany: 160, Guest: 175 };
+export const IMAGE_CM: Record<Player, number> = { Alex: 188, Saulie: 183, Antek: 178, Lazza: 170, Brittany: 160, Tuktuk: 172, Aunty: 160, Groom: 178 };
 // Top of the SVG figure's head above the feet at 200 cm, in grid units; the PNG is fitted to the same height.
 const FIGURE_H = 211;
 

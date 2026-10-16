@@ -7,7 +7,7 @@ import PasswordGate from './components/PasswordGate';
 import { getStore, supabaseConfigured } from './store';
 import { useTripAccess } from './store/useTripAccess';
 import { WriteQueue } from './store/queue';
-import { emptyRanking, GUEST, PEOPLE } from './types';
+import { emptyRanking, PEOPLE } from './types';
 import type { AppState, Item, Leg, Person, Player, Response, Store } from './types';
 
 // A quip is one line, or a list the app picks from at random so it doesn't repeat.
@@ -113,7 +113,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   serverRef.current = server;
   const localRef = useRef(local);
   localRef.current = local;
-  const [me, setMeState] = useState<Player | null>(() => (sandbox ? GUEST : readMe()));
+  const [me, setMeState] = useState<Player | null>(() => (sandbox ? null : readMe()));
   const queue = useMemo(() => base && new WriteQueue(base, {
     onFail: () => setError("Couldn't save"),
     onClear: () => setError(e => (e === "Couldn't save" ? null : e)),
