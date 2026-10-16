@@ -12,7 +12,7 @@ export type Category = 'Food' | 'Temple' | 'History' | 'Nature' | 'Hike' | 'Wild
 export interface Item {
   id: string; name: string; area: Area; about: string; hours: number; slot: Slot; fee: string;
   category?: Category; sideTrip: number; book?: string; warn?: string; photo?: string; hub?: Hub;
-  google?: { rating: string; reviews: string; url: string }; suggestedBy?: Person; credit?: string; when?: string;
+  google?: { rating: string; reviews: string; url: string }; suggestedBy?: Player; credit?: string; when?: string;
 }
 export interface Leg { a: Hub; b: Hub; hours: number; km?: number; src: string }
 export type Pace = 0 | 1 | 2; // pack, balanced, slow
@@ -34,23 +34,25 @@ export interface Plan {
 }
 export type Person = 'Brittany' | 'Alex' | 'Antek' | 'Lazza' | 'Saulie';
 export const PEOPLE: Person[] = ['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie'];
+export type Player = Person | 'Guest';
+export const GUEST = 'Guest' as const;
 export interface Response {
-  name: Person; days: number | null; flex: boolean; pace: Pace | null;
+  name: Player; days: number | null; flex: boolean; pace: Pace | null;
   ranking: Ranking; rated: string[]; submitted: boolean; updatedAt: string;
   // The Finalize list, saved after the head to heads; ranking stays as submitted, which the head to heads use.
   final?: Ranking | null;
 }
-export interface Suggestion { id: string; name: Person; title: string; area: Area; note: string; status: 'pending' | 'live' | 'rejected'; createdAt: string }
-export interface Vote { forkId: string; name: Person; choice: 'a' | 'b' }
+export interface Suggestion { id: string; name: Player; title: string; area: Area; note: string; status: 'pending' | 'live' | 'rejected'; createdAt: string }
+export interface Vote { forkId: string; name: Player; choice: 'a' | 'b' }
 export type ChoiceKind = 'tier' | 'rerank' | 'knockout' | 'days' | 'pace' | 'suggest';
 // ref is the item id (tier), the fork id (knockout), the area (suggest) or null.
-export interface ChoiceInput { name: Person; kind: ChoiceKind; ref: string | null; value: unknown }
+export interface ChoiceInput { name: Player; kind: ChoiceKind; ref: string | null; value: unknown }
 export interface ChoiceEntry extends ChoiceInput { id: string; at: string }
-export interface AppState { responses: Partial<Record<Person, Response>>; suggestions: Suggestion[]; votes: Vote[] }
+export interface AppState { responses: Partial<Record<Player, Response>>; suggestions: Suggestion[]; votes: Vote[] }
 export interface Store {
   load(): Promise<AppState>;
-  saveResponse(name: Person, patch: Partial<Omit<Response, 'name'>>): Promise<void>;
-  addSuggestion(s: { name: Person; title: string; area: Area; note: string }): Promise<void>;
+  saveResponse(name: Player, patch: Partial<Omit<Response, 'name'>>): Promise<void>;
+  addSuggestion(s: { name: Player; title: string; area: Area; note: string }): Promise<void>;
   setSuggestionStatus(id: string, status: Suggestion['status']): Promise<void>;
   vote(v: Vote): Promise<void>;
   subscribe(cb: (s: AppState) => void): () => void;
@@ -69,9 +71,9 @@ export interface Genre { id: string; label: string; one: string; many: string; i
 export interface GroupResult {
   open: boolean; days: number; pace: Pace; base: Plan | null; knockouts: Knockout[];
   results: { forkId: string; a: string[]; b: string[]; winner: 'a' | 'b' | 'displaced' }[]; final: Plan | null;
-  extras: { id: string; who: { name: Person; tier: Tier }[] }[];
+  extras: { id: string; who: { name: Player; tier: Tier }[] }[];
   // Items that lost a head to head; who has saved a Finalize list; locked once all five have.
-  knocked: string[]; finalized: Person[]; locked: boolean;
+  knocked: string[]; finalized: Player[]; locked: boolean;
 }
 export const AREA_HUB: Record<Area, Hub> = {
   'Colombo': 'Colombo', 'North': 'Jaffna', 'East coast': 'Trincomalee', 'Cultural Triangle': 'Sigiriya', 'Kandy and Knuckles': 'Kandy', 'Kitulgala': 'Kitulgala',

@@ -1,11 +1,11 @@
 import { tierOf } from '../lib/ranking';
 import { emptyRanking } from '../types';
-import type { ChoiceEntry, ChoiceInput, Item, Person, Ranking, Response } from '../types';
+import type { ChoiceEntry, ChoiceInput, Item, Player, Ranking, Response } from '../types';
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 /** The user choices a save carries, found by comparing it with what was stored before it. */
-export function diffResponse(name: Person, prev: Response | undefined, patch: Partial<Omit<Response, 'name'>>): ChoiceInput[] {
+export function diffResponse(name: Player, prev: Response | undefined, patch: Partial<Omit<Response, 'name'>>): ChoiceInput[] {
   const out: ChoiceInput[] = [];
   const before = prev?.rated ?? [];
   const ranking = patch.ranking ?? prev?.ranking ?? emptyRanking();

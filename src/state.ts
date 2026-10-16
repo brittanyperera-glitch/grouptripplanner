@@ -8,7 +8,7 @@ import { getStore, supabaseConfigured } from './store';
 import { useTripAccess } from './store/useTripAccess';
 import { WriteQueue } from './store/queue';
 import { emptyRanking, PEOPLE } from './types';
-import type { AppState, Item, Leg, Person, Response, Store } from './types';
+import type { AppState, Item, Leg, Person, Player, Response, Store } from './types';
 
 // A quip is one line, or a list the app picks from at random so it doesn't repeat.
 export type Quip = string | string[];
@@ -33,7 +33,7 @@ export const ME_KEY = 'tp:me';
 const UNSAVED_KEY = (p: Person) => `tp:unsaved:${p}`;
 type Rows = AppState['responses'];
 
-const blankRow = (name: Person): Response => ({
+const blankRow = (name: Player): Response => ({
   name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: new Date(0).toISOString(),
 });
 

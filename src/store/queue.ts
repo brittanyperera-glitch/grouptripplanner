@@ -1,9 +1,9 @@
 import { diffResponse } from './choices';
-import type { ChoiceInput, Person, Response, Store, Vote } from '../types';
+import type { ChoiceInput, Player, Response, Store, Vote } from '../types';
 
 type Patch = Partial<Omit<Response, 'name'>>;
 type Job =
-  | { kind: 'resp'; key: string; name: Person; patch: Patch; waiters: Array<() => void> }
+  | { kind: 'resp'; key: string; name: Player; patch: Patch; waiters: Array<() => void> }
   | { kind: 'vote'; key: string; vote: Vote; waiters: Array<() => void> }
   | { kind: 'log'; key: 'log'; entries: ChoiceInput[]; waiters: Array<() => void> }
   | { kind: 'op'; key: null; run: () => Promise<void>; waiters: Array<() => void> };
@@ -21,7 +21,7 @@ export class WriteQueue {
   private current: Promise<boolean> = Promise.resolve(true);
   private dirty = false;
   // What was last stored, so each save is logged as the choices it adds. Seeded once from the base store.
-  private known = new Map<Person, Response>();
+  private known = new Map<Player, Response>();
   private lastVote = new Map<string, 'a' | 'b'>();
 
   constructor(private base: Store, private hooks: Hooks) {

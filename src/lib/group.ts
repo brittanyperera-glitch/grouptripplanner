@@ -1,4 +1,4 @@
-import { PEOPLE, type AppState, type Genre, type GroupResult, type Item, type Knockout, type Leg, type Pace, type Person, type Plan, type Response } from '../types';
+import { PEOPLE, type AppState, type Genre, type GroupResult, type Item, type Knockout, type Leg, type Pace, type Player, type Plan, type Response } from '../types';
 import { mustFitDays, plan } from './planner';
 import { KNOCKED_MUST, score, scoresFor, tierOf } from './ranking';
 
@@ -90,7 +90,7 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[], genres:
     // b empty: going north costs nobody anything, so there is nothing to vote on.
     if (!planNorth.forceFailed && a.length && b.length && (southMustLost || northMustLost)) {
       skipNorth = true;
-      const latest = new Map<Person, 'a' | 'b'>();
+      const latest = new Map<Player, 'a' | 'b'>();
       for (const v of state.votes) if (v.forkId === REGION_FORK) latest.set(v.name, v.choice);
       const who = (side: 'a' | 'b') => PEOPLE.filter(p => latest.get(p) === side);
       const votes = { a: who('a'), b: who('b') };
@@ -122,7 +122,7 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[], genres:
     // Keyed on c alone: a vote for 'a' means "add c", which stays true when b shifts after an earlier result.
     const forkId = `ko:${c}`;
     asked++;
-    const latest = new Map<Person, 'a' | 'b'>();
+    const latest = new Map<Player, 'a' | 'b'>();
     for (const v of state.votes) if (v.forkId === forkId) latest.set(v.name, v.choice);
     const who = (side: 'a' | 'b') => PEOPLE.filter(p => latest.get(p) === side);
     const votes = { a: who('a'), b: who('b') };
@@ -147,7 +147,7 @@ export function groupResult(state: AppState, items: Item[], legs: Leg[], genres:
     const settledIn = new Set(results.flatMap(r => (r.forkId.startsWith('ko:') && r.winner === 'a' ? [r.a[0]] : [])));
     const rounds = new Map<string, number>(); // keep votes resolved per genre
     const tallyOf = (gid: string, id: string) => {
-      const latest = new Map<Person, 'a' | 'b'>();
+      const latest = new Map<Player, 'a' | 'b'>();
       for (const v of state.votes) if (v.forkId === `genre:${gid}:${id}`) latest.set(v.name, v.choice);
       return { keep: PEOPLE.filter(p => latest.get(p) === 'a'), drop: PEOPLE.filter(p => latest.get(p) === 'b') };
     };

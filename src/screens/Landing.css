@@ -1,0 +1,18 @@
+.landing { display: flex; }
+.landing-scrim { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(22, 15, 10, .72) 0%, rgba(22, 15, 10, .45) 40%, rgba(22, 15, 10, .8) 100%); }
+.landing-body { position: relative; z-index: 2; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 24px; padding: calc(10dvh + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom)); }
+.landing-title { margin: 0; color: var(--paper); font-family: var(--font-head); font-size: clamp(56px, 20cqi, 120px); font-weight: 800; line-height: .86; text-transform: uppercase; text-shadow: 0 2px 24px rgba(0, 0, 0, .4); overflow-wrap: anywhere; }
+.landing-cards { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 320px; align-self: center; }
+.landing-card { all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; gap: 4px; min-height: 96px; justify-content: center; padding: 18px 20px; border-radius: var(--r-card); background: var(--white); color: var(--card-ink); box-shadow: 0 14px 34px rgba(0, 0, 0, .35); transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease); }
+.landing-card.primary { background: var(--red-deep); color: var(--on-red); }
+.landing-card:active { transform: scale(.98); }
+.landing-card:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
+.landing-h { font: 800 clamp(28px, 8cqi, 36px)/1 var(--font-head); letter-spacing: .03em; text-transform: uppercase; overflow-wrap: anywhere; }
+.landing-sub { font: 600 15px/1.3 var(--font-body); color: var(--card-muted); }
+.landing-card.primary .landing-sub { color: var(--on-red); }
+@media (prefers-reduced-motion: no-preference) {
+  .landing-title, .landing-card { animation: land-in var(--dur-slow) var(--ease) both; }
+  .landing-card:nth-child(1) { animation-delay: var(--dur-fast); }
+  .landing-card:nth-child(2) { animation-delay: var(--dur); }
+}
+@keyframes land-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }

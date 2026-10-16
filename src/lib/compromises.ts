@@ -1,5 +1,5 @@
 import { AREA_HUB, PEOPLE } from '../types';
-import type { AppState, GroupResult, Hub, Item, Person } from '../types';
+import type { AppState, GroupResult, Hub, Item, Player } from '../types';
 import { tierOf } from './ranking';
 
 export const MAX_CARDS = 5;
@@ -34,7 +34,7 @@ export function compromises(group: GroupResult, state: Pick<AppState, 'responses
 
   // Latest vote per person on a fork, as counts for each side.
   const tally = (forkId: string) => {
-    const latest = new Map<Person, 'a' | 'b'>();
+    const latest = new Map<Player, 'a' | 'b'>();
     for (const v of state.votes) if (v.forkId === forkId) latest.set(v.name, v.choice);
     const n = { a: 0, b: 0 };
     latest.forEach(c => { n[c]++; });
