@@ -90,7 +90,7 @@ const LockIcon = () => (
   </svg>
 );
 
-export default function Interview({ initial, onSave, onDone }: { me: Person | string; initial?: PrefAnswer[]; onSave: (a: PrefAnswer[]) => void; onDone: () => void }) {
+export default function Interview({ initial, onSave, onDone, onClose }: { me: Person | string; initial?: PrefAnswer[]; onSave: (a: PrefAnswer[]) => void; onDone: () => void; onClose?: () => void }) {
   const [answers, setAnswers] = useState<PrefAnswer[]>(() => CARDS.map((c) => initial?.find((a) => a.topic === c.topic) ?? blank(c.topic)));
   const [idx, setIdx] = useState(0);
   const [reveal, setReveal] = useState(false);
@@ -156,7 +156,7 @@ export default function Interview({ initial, onSave, onDone }: { me: Person | st
     <div className="iv-top">
       {(idx > 0 || reveal) ? (
         <button type="button" className="iv-back" aria-label={COPY.back} onClick={back}><IconLeft size={20} /></button>
-      ) : <span />}
+      ) : onClose ? <button type="button" className="iv-link" onClick={onClose}>{COPY.close}</button> : <span />}
       {confirming ? (
         <div className="iv-confirm" role="group" aria-label={COPY.confirmAsk}>
           <span>{COPY.confirmAsk}</span>

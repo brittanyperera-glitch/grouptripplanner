@@ -28,6 +28,8 @@ for (const w of [320, 390, 1280]) {
     await row.getByRole('button', { name: 'Do it, 3 minutes' }).click();
 
     await expect(page.getByText('1 of 6')).toBeVisible();
+    // Changed deliberately (2026-10-16 review): skipping every card no longer counts as done, so answer one card.
+    await page.getByRole('button', { name: 'Hostel dorm, not set' }).click();
     for (let i = 0; i < 6; i++) await page.getByRole('button', { name: /^(Next|Skip, no answer)$/ }).click();
     // Saved the moment the last card is done, before anyone taps Done.
     await expect.poll(async () => page.evaluate(() => localStorage.getItem('tp:stays:Brittany') !== null)).toBe(true);
