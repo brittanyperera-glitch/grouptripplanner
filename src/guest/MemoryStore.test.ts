@@ -98,6 +98,9 @@ describe('MemoryStore', () => {
     await s.logChoice({ name: WHO, kind: 'days', ref: null, value: 7 });
     await s.loadLog();
     await s.saveCrewStays(WHO, { quizDone: true });
+    await s.addPlaceSuggestion({ name: WHO, area: 'Ella', kind: 'eat', title: 'Curry' });
+    await s.setPlaceStatus('x', 'withdrawn');
+    await s.saveStaysAdmin({ scouts: { Ella: WHO } });
     off();
     expect(setItem).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -116,6 +119,29 @@ describe('MemoryStore crew stays', () => {
     const c = (await s.load()).stays!.crew[WHO]!;
     expect(c).toMatchObject({ name: WHO, locked: true, quizDone: true, prefs: [], ranks: {}, bingo: [] });
     expect(Date.parse(c.updatedAt)).toBeGreaterThan(0);
+  });
+});
+
+describe('MemoryStore place suggestions and stays admin', () => {
+  it('adds a live suggestion, withdraws it, and merges admin like the real stores', async () => {
+    const s = new MemoryStore();
+    await s.addPlaceSuggestion({ name: WHO, area: 'Ella', kind: 'stay', title: 'Hill hut' });
+    const [p] = (await s.load()).stays!.suggestions;
+    expect(p).toMatchObject({ name: WHO, title: 'Hill hut', status: 'live' });
+    await s.setPlaceStatus(p.id, 'withdrawn');
+    expect((await s.load()).stays!.suggestions[0].status).toBe('withdrawn');
+    await s.saveStaysAdmin({ pins: [{ area: 'Ella', suggestionId: p.id, at: 't' }], scouts: { Ella: WHO, Colombo: WHO } });
+    await s.saveStaysAdmin({ scouts: { Colombo: undefined } });
+    expect((await s.load()).stays!.admin).toEqual({ pins: [{ area: 'Ella', suggestionId: p.id, at: 't' }], scouts: { Ella: WHO } });
+  });
+
+  it('a caller mutating what it passed or loaded cannot change the stored copy', async () => {
+    const s = new MemoryStore();
+    const pins = [{ area: 'Ella' as const, suggestionId: 'a', at: 't' }];
+    await s.saveStaysAdmin({ pins });
+    pins[0].suggestionId = 'changed';
+    (await s.load()).stays!.admin.pins.push({ area: 'Colombo', suggestionId: 'b', at: 't' });
+    expect((await s.load()).stays!.admin.pins).toEqual([{ area: 'Ella', suggestionId: 'a', at: 't' }]);
   });
 });
 

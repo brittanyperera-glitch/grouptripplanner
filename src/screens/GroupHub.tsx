@@ -10,6 +10,7 @@ import { useApp } from '../state';
 import { isGuest, PEOPLE } from '../types';
 import type { GroupResult } from '../types';
 import Everyone from './Everyone';
+import GroupAnswers from './GroupAnswers';
 import Friends from './Friends';
 import Knockouts from './Knockouts';
 
@@ -77,6 +78,7 @@ export default function GroupHub({ group, view, onView }: { group: GroupResult; 
     <>
       <section className="body gh-hub" aria-label="Group">
         {sandbox && <div className="sub">Example picks for the demo, not the real group's.</div>}
+        <GroupAnswers />
         {stats && <Block icon={<IconGroup size={26} />} title="Group stats" lines={[twin ? `Travel twin: ${twin.name} ${twin.pct}%` : 'Who travels like who']} onOpen={() => go('stats')} />}
         <Block icon={<IconSpark size={26} />} title="Group knockouts" lines={koLines(open, mine, others)} onOpen={() => go('knockouts')} alert={owing} pulse={pulse} />
         <Block icon={<IconList size={26} />} title="Everyone's picks" lines={[`${items.length} places, ${withMust} Musts`]} onOpen={() => go('picks')} />

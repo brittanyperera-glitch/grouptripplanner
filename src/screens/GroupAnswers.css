@@ -1,0 +1,13 @@
+/* Group answers row on the Group hub, and the journey note under a long drive. Every class starts ga- or jf-. */
+.ga-row { box-sizing: border-box; border-radius: var(--r-card); background: var(--card); color: var(--ink); box-shadow: var(--shadow-card); }
+.ga-head { cursor: pointer; list-style: none; display: flex; flex-direction: column; gap: 3px; min-height: 64px; justify-content: center; padding: 14px 18px; }
+.ga-head::-webkit-details-marker { display: none; }
+.ga-head:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
+.ga-head b { font-family: var(--font-head); font-size: 22px; font-weight: 800; line-height: 1; text-transform: uppercase; }
+.ga-head small { color: var(--muted); font-size: 14px; }
+.ga-body { padding: 0 18px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.ga-note { margin: 0; color: var(--muted); font-size: 13px; }
+.ga-sec h3 { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.ga-sec ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.ga-sec li { font-size: 14px; overflow-wrap: anywhere; }
+.jf-note { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }

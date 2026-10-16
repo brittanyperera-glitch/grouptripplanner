@@ -1,14 +1,17 @@
-import { blankCrew, emptyRanking, PEOPLE } from '../types';
-import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, Response, Store, Suggestion, Vote } from '../types';
+import { applyAdmin, blankCrew, EMPTY_STAYS, emptyRanking, PEOPLE } from '../types';
+import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, Store, Suggestion, Vote } from '../types';
 
 const SUGG = 'tp:sugg';
 const VOTES = 'tp:votes';
 const LOG = 'tp:log';
+const PLACES = 'tp:placesug';
+const ADMIN = 'tp:staysadmin';
 const respKey = (n: Person) => `tp:resp:${n}`;
 const staysKey = (n: Person) => `tp:stays:${n}`;
 
 /** The keys that are this store's shared data (everyone's rows, votes, suggestions, log), not one person's progress. */
-export const isLocalStoreKey = (k: string) => k === SUGG || k === VOTES || k === LOG || k.startsWith('tp:resp:') || k.startsWith('tp:stays:');
+export const isLocalStoreKey = (k: string) =>
+  k === SUGG || k === VOTES || k === LOG || k === PLACES || k === ADMIN || k.startsWith('tp:resp:') || k.startsWith('tp:stays:');
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -32,6 +35,12 @@ const defaultRow = (name: Person): Response => ({
   rated: [], submitted: false, updatedAt: new Date().toISOString(),
 });
 
+function readAdmin(): StaysAdmin {
+  const a = read<Partial<StaysAdmin> | null>(ADMIN, null);
+  if (!a || typeof a !== 'object') return structuredClone(EMPTY_STAYS.admin);
+  return { pins: Array.isArray(a.pins) ? a.pins : [], scouts: a.scouts && typeof a.scouts === 'object' ? a.scouts : {} };
+}
+
 export class LocalStore implements Store {
   private listeners = new Set<(s: AppState) => void>();
 
@@ -48,12 +57,30 @@ export class LocalStore implements Store {
     }
     const suggestions = read<Suggestion[]>(SUGG, []);
     const votes = read<Vote[]>(VOTES, []);
+    const places = read<PlaceSuggestion[]>(PLACES, []);
     return {
       responses,
       suggestions: Array.isArray(suggestions) ? suggestions : [],
       votes: Array.isArray(votes) ? votes : [],
-      stays: { crew, suggestions: [], admin: { pins: [], scouts: {} } },
+      stays: { crew, suggestions: Array.isArray(places) ? places : [], admin: readAdmin() },
     };
+  }
+
+  async addPlaceSuggestion(s: PlaceDraft): Promise<void> {
+    const list = (await this.load()).stays!.suggestions;
+    list.push({ ...s, id: crypto.randomUUID(), status: 'live', createdAt: new Date().toISOString() });
+    write(PLACES, list);
+    await this.emit();
+  }
+
+  async setPlaceStatus(id: string, status: PlaceSuggestion['status']): Promise<void> {
+    write(PLACES, (await this.load()).stays!.suggestions.map(x => (x.id === id ? { ...x, status } : x)));
+    await this.emit();
+  }
+
+  async saveStaysAdmin(patch: Partial<StaysAdmin>): Promise<void> {
+    write(ADMIN, applyAdmin(readAdmin(), patch));
+    await this.emit();
   }
 
   async saveCrewStays(name: Person, patch: Partial<Omit<CrewStays, 'name'>>): Promise<void> {

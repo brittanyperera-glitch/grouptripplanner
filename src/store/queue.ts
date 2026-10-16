@@ -1,11 +1,13 @@
 import { diffResponse } from './choices';
-import type { ChoiceInput, CrewStays, Player, Response, Store, Vote } from '../types';
+import { mergeAdmin } from '../types';
+import type { ChoiceInput, CrewStays, Player, Response, StaysAdmin, Store, Vote } from '../types';
 
 type Patch = Partial<Omit<Response, 'name'>>;
 type CrewPatch = Partial<Omit<CrewStays, 'name'>>;
 type Job =
   | { kind: 'resp'; key: string; name: Player; patch: Patch; waiters: Array<() => void> }
   | { kind: 'crew'; key: string; name: Player; patch: CrewPatch; waiters: Array<() => void> }
+  | { kind: 'admin'; key: 'a:admin'; patch: Partial<StaysAdmin>; waiters: Array<() => void> }
   | { kind: 'vote'; key: string; vote: Vote; waiters: Array<() => void> }
   | { kind: 'log'; key: 'log'; entries: ChoiceInput[]; waiters: Array<() => void> }
   | { kind: 'op'; key: null; run: () => Promise<void>; waiters: Array<() => void> };
@@ -54,6 +56,9 @@ export class WriteQueue {
         return Promise.all([saved, this.logAll([{ name: s.name, kind: 'suggest', ref: s.area, value: { title: s.title, note: s.note } }])]).then(() => undefined);
       },
       saveCrewStays: (name, patch) => this.add({ kind: 'crew', key: `c:${name}`, name, patch, waiters: [] }),
+      addPlaceSuggestion: s => this.add({ kind: 'op', key: null, run: () => base.addPlaceSuggestion(s), waiters: [] }),
+      setPlaceStatus: (id, st) => this.add({ kind: 'op', key: null, run: () => base.setPlaceStatus(id, st), waiters: [] }),
+      saveStaysAdmin: patch => this.add({ kind: 'admin', key: 'a:admin', patch, waiters: [] }),
       setSuggestionStatus: (id, st) => this.add({ kind: 'op', key: null, run: () => base.setSuggestionStatus(id, st), waiters: [] }),
       logChoice: c => this.logAll([c]),
       loadLog: () => base.loadLog(),
@@ -89,6 +94,7 @@ export class WriteQueue {
   private exec(j: Job): Promise<void> {
     if (j.kind === 'resp') return this.base.saveResponse(j.name, j.patch);
     if (j.kind === 'crew') return this.base.saveCrewStays(j.name, j.patch);
+    if (j.kind === 'admin') return this.base.saveStaysAdmin(j.patch);
     if (j.kind === 'vote') return this.base.vote(j.vote);
     if (j.kind === 'log') return this.writeLog(j.entries);
     return j.run();
@@ -138,6 +144,8 @@ function merge(into: Job, from: Job, intoIsNewer = false): void {
     into.patch = intoIsNewer ? { ...from.patch, ...into.patch } : { ...into.patch, ...from.patch };
   } else if (into.kind === 'crew' && from.kind === 'crew') {
     into.patch = intoIsNewer ? { ...from.patch, ...into.patch } : { ...into.patch, ...from.patch };
+  } else if (into.kind === 'admin' && from.kind === 'admin') {
+    into.patch = intoIsNewer ? mergeAdmin(from.patch, into.patch) : mergeAdmin(into.patch, from.patch);
   } else if (into.kind === 'vote' && from.kind === 'vote' && !intoIsNewer) {
     into.vote = from.vote;
   } else if (into.kind === 'log' && from.kind === 'log') {

@@ -72,3 +72,40 @@ describe('LocalStore', () => {
     expect(isLocalStoreKey('tp:me')).toBe(false);
   });
 });
+
+describe('LocalStore place suggestions and stays admin', () => {
+  const draft = { name: 'Alex' as const, area: 'Ella' as const, kind: 'stay' as const, title: 'Hill hut', priceGbp: 40 };
+
+  it('adds a live suggestion with an id and stamp, withdraws it, and both survive a new store', async () => {
+    await new LocalStore().addPlaceSuggestion(draft);
+    const [p] = (await new LocalStore().load()).stays!.suggestions;
+    expect(p).toMatchObject({ ...draft, status: 'live' });
+    expect(p.id).toBeTruthy();
+    expect(Date.parse(p.createdAt)).toBeGreaterThan(0);
+    await new LocalStore().setPlaceStatus(p.id, 'withdrawn');
+    expect((await new LocalStore().load()).stays!.suggestions).toEqual([{ ...p, status: 'withdrawn' }]);
+  });
+
+  it('admin pins are replaced whole, scouts merge by area, and undefined clears an area', async () => {
+    const pin = (suggestionId: string | null) => ({ area: 'Ella' as const, suggestionId, at: 't' });
+    await new LocalStore().saveStaysAdmin({ pins: [pin('a'), { ...pin('b'), area: 'Kandy and Knuckles' }], scouts: { Ella: 'Lazza', Colombo: 'Alex', North: 'Antek' } });
+    await new LocalStore().saveStaysAdmin({ pins: [pin(null)], scouts: { Ella: 'Saulie', Colombo: undefined } });
+    expect((await new LocalStore().load()).stays!.admin).toEqual({ pins: [pin(null)], scouts: { Ella: 'Saulie', North: 'Antek' } });
+  });
+
+  it('subscribe fires after each new write', async () => {
+    const s = new LocalStore();
+    let n = 0;
+    const off = s.subscribe(() => { n++; });
+    await s.addPlaceSuggestion(draft);
+    await s.setPlaceStatus('x', 'withdrawn');
+    await s.saveStaysAdmin({ scouts: { Ella: 'Alex' } });
+    off();
+    expect(n).toBe(3);
+  });
+
+  it('place suggestions and admin count as shared store data, cleared by Start over', () => {
+    expect(isLocalStoreKey('tp:placesug')).toBe(true);
+    expect(isLocalStoreKey('tp:staysadmin')).toBe(true);
+  });
+});

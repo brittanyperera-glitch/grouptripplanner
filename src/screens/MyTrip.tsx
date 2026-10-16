@@ -10,6 +10,7 @@ import type { DayEntry, Item, Leg, Plan } from '../types';
 import { unlock } from '../components/sound';
 import TransportLine, { transportOf } from '../components/TransportLine';
 import BookCard, { type DayTip } from './BookCard';
+import { useJourneyNotes } from './GroupAnswers';
 import { Reveal } from './Reveal';
 
 // A day with this many driving hours or more gets a "Long driving day" note.
@@ -30,7 +31,8 @@ const andList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')
 
 // One card per day. The header strip is the day's first activity photo when we have one.
 // skippedBy is for the group plan only (D7): a Skip is a strong minus, not a veto, so it is named.
-export function DayRows({ plan, items = [], legs = [], skippedBy, quests = [], tips = [] }: { plan: Plan; items?: Item[]; legs?: Leg[]; skippedBy?: (id: string) => string[]; quests?: SideQuest[]; tips?: DayTip[] }) {
+export function DayRows({ plan, items = [], legs = [], skippedBy, quests = [], tips = [], journey = true }: { plan: Plan; items?: Item[]; legs?: Leg[]; skippedBy?: (id: string) => string[]; quests?: SideQuest[]; tips?: DayTip[]; journey?: boolean }) {
+  const notes = useJourneyNotes(plan, legs, journey);
   const byId = new Map(items.map(i => [i.id, i]));
   return (
     <div role="list" aria-label="Days" className="days">
@@ -66,6 +68,7 @@ export function DayRows({ plan, items = [], legs = [], skippedBy, quests = [], t
                   </span>
                 );
               })}
+              {notes.has(d.n) && <small className="jf-note">{notes.get(d.n)}</small>}
               {quests.filter(q => q.day === d.n).map(q => <small key={q.itemId} className="day-quest">Side quest: {q.what}</small>)}
               {tips.filter(t => t.day === d.n).map(t => <small key={t.name} className="day-quest">{t.name}: {t.text}</small>)}
               {(driving >= LONG_DRIVE_HOURS || d.rainSlack) && (
@@ -108,7 +111,7 @@ export default function MyTrip({ plan, days, showBook = false }: { plan: Plan & 
       <RouteMap route={plan.route} drive={!revealing} />
       {me && <button type="button" className="cta mytrip-reveal" onClick={() => { unlock(); setRevealing(true); }}>Play my route reveal</button>}
       {revealing && me && <Reveal plan={plan} who={me} onClose={() => setRevealing(false)} />}
-      <DayRows plan={plan} items={items} legs={legs} />
+      <DayRows plan={plan} items={items} legs={legs} journey={false} />
     </section>
   );
 }

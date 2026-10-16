@@ -7,8 +7,8 @@ import PasswordGate from './components/PasswordGate';
 import { getStore, supabaseConfigured } from './store';
 import { useTripAccess } from './store/useTripAccess';
 import { WriteQueue } from './store/queue';
-import { blankCrew, EMPTY_STAYS, emptyRanking, PEOPLE } from './types';
-import type { AppState, CrewStays, Item, Leg, Person, Player, Response, Store, Vote } from './types';
+import { applyAdmin, blankCrew, EMPTY_STAYS, emptyRanking, mergeAdmin, PEOPLE } from './types';
+import type { AppState, CrewStays, Item, Leg, Person, PlaceSuggestion, Player, Response, StayPin, StaysAdmin, Store, Vote } from './types';
 
 // A quip is one line, or a list the app picks from at random so it doesn't repeat.
 export type Quip = string | string[];
@@ -37,6 +37,54 @@ const UNSAVED_KEY = (p: Person) => `tp:unsaved:${p}`;
 type Rows = AppState['responses'];
 // My crew writes, field by field, stamped when made; shown over the server row until it holds them.
 type CrewOverlay = Partial<Record<Player, { patch: Partial<Omit<CrewStays, 'name'>>; updatedAt: string }>>;
+
+// My place adds (under a pending id, with the server ids that existed when I added) and status changes.
+// Rows carry no updatedAt to compare, so each entry is dropped once the server holds the same value, as votes are.
+interface PlaceOverlay { added: { s: PlaceSuggestion; seen: string[] }[]; status: Record<string, PlaceSuggestion['status']> }
+const NO_PLACES: PlaceOverlay = { added: [], status: {} };
+const PENDING = 'pending:';
+
+const sameDraft = (a: PlaceSuggestion, b: PlaceSuggestion) => a.name === b.name && a.area === b.area && a.kind === b.kind && a.title === b.title;
+/** Matches my pending adds to new server rows; a status set on a pending id moves to the real id and is returned to send. */
+function settlePlaces(o: PlaceOverlay, rows: PlaceSuggestion[]): { next: PlaceOverlay; send: [string, PlaceSuggestion['status']][] } {
+  if (o.added.length === 0 && Object.keys(o.status).length === 0) return { next: o, send: [] };
+  const status = { ...o.status };
+  const send: [string, PlaceSuggestion['status']][] = [];
+  const used = new Set<string>();
+  const added = o.added.filter(a => {
+    const hit = rows.find(r => !used.has(r.id) && !a.seen.includes(r.id) && sameDraft(r, a.s));
+    if (!hit) return true;
+    used.add(hit.id);
+    const st = status[a.s.id];
+    delete status[a.s.id];
+    if (st !== undefined && st !== hit.status) { status[hit.id] = st; send.push([hit.id, st]); }
+    return false;
+  });
+  for (const id of Object.keys(status)) if (rows.some(r => r.id === id && r.status === status[id])) delete status[id];
+  const same = added.length === o.added.length && Object.keys(status).length === Object.keys(o.status).length && send.length === 0;
+  return { next: same ? o : { added, status }, send };
+}
+
+const samePins = (a: StayPin[], b: StayPin[]) => a.length === b.length && a.every((p, i) => p.area === b[i].area && p.suggestionId === b[i].suggestionId && p.at === b[i].at);
+/** Drops each admin field (pins whole, scouts per area) the server already holds. */
+function settleAdmin(o: Partial<StaysAdmin>, server: StaysAdmin): Partial<StaysAdmin> {
+  if (Object.keys(o).length === 0) return o;
+  const next: Partial<StaysAdmin> = {};
+  if (o.pins && !samePins(o.pins, server.pins)) next.pins = o.pins;
+  const scouts = Object.fromEntries(Object.entries(o.scouts ?? {}).filter(([k, v]) => server.scouts[k as keyof StaysAdmin['scouts']] !== v));
+  if (Object.keys(scouts).length) next.scouts = scouts;
+  const unchanged = !!next.pins === !!o.pins && Object.keys(scouts).length === Object.keys(o.scouts ?? {}).length;
+  return unchanged ? o : next;
+}
+
+/** My place and admin writes over the server's stays, so an add, a withdraw or a pin shows at once. */
+function withStays(s: AppState, places: PlaceOverlay, admin: Partial<StaysAdmin>): AppState {
+  if (places.added.length === 0 && Object.keys(places.status).length === 0 && Object.keys(admin).length === 0) return s;
+  const stays = s.stays ?? EMPTY_STAYS;
+  const o = settlePlaces(places, stays.suggestions).next;
+  const suggestions = [...stays.suggestions, ...o.added.map(a => a.s)].map(p => (o.status[p.id] && o.status[p.id] !== p.status ? { ...p, status: o.status[p.id] } : p));
+  return { ...s, stays: { ...stays, suggestions, admin: applyAdmin(stays.admin, admin) } };
+}
 
 const blankRow = (name: Player): Response => ({
   name, days: null, flex: false, pace: null, ranking: emptyRanking(), rated: [], submitted: false, updatedAt: new Date(0).toISOString(),
@@ -126,6 +174,10 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   const [local, setLocal] = useState<Rows>(() => (sandbox ? {} : readUnsaved()));
   const [localVotes, setLocalVotes] = useState<Vote[]>([]);
   const [localCrew, setLocalCrew] = useState<CrewOverlay>({});
+  const [localPlaces, setLocalPlaces] = useState<PlaceOverlay>(NO_PLACES);
+  const [localAdmin, setLocalAdmin] = useState<Partial<StaysAdmin>>({});
+  const placesRef = useRef(localPlaces);
+  placesRef.current = localPlaces;
   const serverRef = useRef(server);
   serverRef.current = server;
   const localRef = useRef(local);
@@ -163,7 +215,11 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
       const kept = Object.fromEntries(Object.entries(l).filter(([n, c]) => c && ahead(c, server.stays?.crew[n as Player]))) as CrewOverlay;
       return Object.keys(kept).length === Object.keys(l).length ? l : kept;
     });
-  }, [server]);
+    const { next, send } = settlePlaces(placesRef.current, server.stays?.suggestions ?? []);
+    if (next !== placesRef.current) setLocalPlaces(next);
+    for (const [id, st] of send) void queue?.store.setPlaceStatus(id, st);
+    setLocalAdmin(a => settleAdmin(a, server.stays?.admin ?? EMPTY_STAYS.admin));
+  }, [server, queue]);
   useEffect(() => { if (!sandbox) writeUnsaved(local); }, [local, sandbox]);
 
   // Saves left over from an earlier visit go back into the queue once, after the first server read.
@@ -195,8 +251,26 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
       setLocalCrew(l => ({ ...l, [name]: { patch: { ...l[name]?.patch, ...patch }, updatedAt: new Date().toISOString() } }));
       return queue.store.saveCrewStays(name, patch);
     },
+    addPlaceSuggestion: s => {
+      const seen = (serverRef.current?.stays?.suggestions ?? []).map(x => x.id);
+      const shown: PlaceSuggestion = { ...structuredClone(s), id: `${PENDING}${crypto.randomUUID()}`, status: 'live', createdAt: new Date().toISOString() };
+      setLocalPlaces(o => ({ ...o, added: [...o.added, { s: shown, seen }] }));
+      return queue.store.addPlaceSuggestion(s);
+    },
+    // A pending id has no server row yet; the status is sent once a reload brings the row (see settlePlaces).
+    setPlaceStatus: (id, st) => {
+      setLocalPlaces(o => ({ ...o, status: { ...o.status, [id]: st } }));
+      return id.startsWith(PENDING) ? Promise.resolve() : queue.store.setPlaceStatus(id, st);
+    },
+    saveStaysAdmin: patch => {
+      setLocalAdmin(a => mergeAdmin(a, patch));
+      return queue.store.saveStaysAdmin(patch);
+    },
   }, [queue]);
-  const state = useMemo(() => server && withLocal(server, local, localVotes, localCrew), [server, local, localVotes, localCrew]);
+  const state = useMemo(
+    () => server && withStays(withLocal(server, local, localVotes, localCrew), localPlaces, localAdmin),
+    [server, local, localVotes, localCrew, localPlaces, localAdmin],
+  );
 
   const retry = useCallback(() => {
     if (!queue) { setAttempt(a => a + 1); return; }

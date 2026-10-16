@@ -1,6 +1,6 @@
 import { VOTES_TO_RESOLVE } from '../lib/group';
-import { blankCrew, EMPTY_STAYS, emptyRanking, isGuest, PEOPLE } from '../types';
-import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Player, Response, Store, Suggestion, Vote } from '../types';
+import { applyAdmin, blankCrew, EMPTY_STAYS, emptyRanking, isGuest, PEOPLE } from '../types';
+import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
 import { seedState } from './seed';
 
 const defaultRow = (name: Player): Response => ({
@@ -28,9 +28,30 @@ export class MemoryStore implements Store {
     this.emit();
   }
 
+  private stays(): StaysState {
+    return this.state.stays ?? (this.state.stays = structuredClone(EMPTY_STAYS));
+  }
+
   async saveCrewStays(name: Player, patch: Partial<Omit<CrewStays, 'name'>>): Promise<void> {
-    const stays = this.state.stays ?? (this.state.stays = structuredClone(EMPTY_STAYS));
+    const stays = this.stays();
     stays.crew[name] = structuredClone({ ...(stays.crew[name] ?? blankCrew(name)), ...patch, name, updatedAt: new Date().toISOString() });
+    this.emit();
+  }
+
+  async addPlaceSuggestion(s: PlaceDraft): Promise<void> {
+    this.stays().suggestions.push(structuredClone({ ...s, id: crypto.randomUUID(), status: 'live' as const, createdAt: new Date().toISOString() }));
+    this.emit();
+  }
+
+  async setPlaceStatus(id: string, status: PlaceSuggestion['status']): Promise<void> {
+    const stays = this.stays();
+    stays.suggestions = stays.suggestions.map(x => (x.id === id ? { ...x, status } : x));
+    this.emit();
+  }
+
+  async saveStaysAdmin(patch: Partial<StaysAdmin>): Promise<void> {
+    const stays = this.stays();
+    stays.admin = structuredClone(applyAdmin(stays.admin, patch));
     this.emit();
   }
 

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { tripClient } from './tripKey';
-import { EMPTY_STAYS, emptyRanking } from '../types';
-import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, Response, StaysState, Store, Suggestion, Vote } from '../types';
+import { applyAdmin, EMPTY_STAYS, emptyRanking } from '../types';
+import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
 
 interface RespRow {
   name: Person; days: number | null; flex?: boolean | null; pace: Response['pace'];
@@ -21,6 +21,20 @@ const toCrew = (r: CrewRow): CrewStays => ({
   name: r.name, prefs: r.prefs ?? [], quizDone: r.quiz_done ?? false, locked: r.locked ?? false,
   ranks: r.ranks ?? {}, bingo: r.bingo ?? [], updatedAt: r.updated_at ?? new Date(0).toISOString(),
 });
+interface PlaceRow {
+  id: string; name: Person; area: PlaceSuggestion['area']; kind: PlaceSuggestion['kind']; title: string;
+  link: string | null; price_gbp: number | null; stay_type: PlaceSuggestion['stayType'] | null; rooms: PlaceSuggestion['rooms'] | null;
+  why: string | null; photo: string | null; hostel_id: string | null; status: PlaceSuggestion['status']; created_at: string;
+}
+// Optional columns come back null; leave them off rather than carry nulls the type does not allow.
+const toPlace = (r: PlaceRow): PlaceSuggestion => {
+  const opt = { link: r.link, priceGbp: r.price_gbp, stayType: r.stay_type, rooms: r.rooms, why: r.why, photo: r.photo, hostelId: r.hostel_id };
+  return {
+    id: r.id, name: r.name, area: r.area, kind: r.kind, title: r.title, status: r.status, createdAt: r.created_at,
+    ...Object.fromEntries(Object.entries(opt).filter(([, v]) => v !== null && v !== undefined)),
+  };
+};
+interface AdminRow { pins: StaysAdmin['pins'] | null; scouts: StaysAdmin['scouts'] | null }
 
 // The Finalize list is kept inside the ranking jsonb column under "final", so the live table needs
 // no new column.
@@ -81,14 +95,26 @@ export class SupabaseStore implements Store {
     };
   }
 
-  /** Never throws: a crew_stays table missing on a database whose schema was not re-run must not blank the whole app. */
+  /**
+   * Never throws: a stays table missing on a database whose schema was not re-run must not blank the whole app.
+   * Each table fails on its own, so a missing place_suggestions does not hide crew rows that exist.
+   */
   private async loadStays(): Promise<StaysState> {
     const stays: StaysState = structuredClone(EMPTY_STAYS);
-    try {
-      const { data, error } = await this.db.from('crew_stays').select('*');
-      if (error) return stays;
-      for (const row of (data ?? []) as CrewRow[]) stays.crew[row.name] = toCrew(row);
-    } catch { /* same as an error result: the stays phase starts empty */ }
+    const soft = async (read: () => PromiseLike<{ data: unknown[] | null; error: unknown }>, use: (rows: unknown[]) => void) => {
+      try {
+        const { data, error } = await read();
+        if (!error) use(data ?? []);
+      } catch { /* same as an error result: that piece starts empty */ }
+    };
+    await Promise.all([
+      soft(() => this.db.from('crew_stays').select('*'), rows => { for (const row of rows as CrewRow[]) stays.crew[row.name] = toCrew(row); }),
+      soft(() => this.db.from('place_suggestions').select('*').order('created_at'), rows => { stays.suggestions = (rows as PlaceRow[]).map(toPlace); }),
+      soft(() => this.db.from('stays_admin').select('*'), rows => {
+        const a = (rows as AdminRow[])[0];
+        if (a) stays.admin = { pins: a.pins ?? [], scouts: a.scouts ?? {} };
+      }),
+    ]);
     return stays;
   }
 
@@ -114,6 +140,36 @@ export class SupabaseStore implements Store {
     if (patch.ranks !== undefined) cols.ranks = patch.ranks;
     if (patch.bingo !== undefined) cols.bingo = patch.bingo;
     const { error } = await this.db.from('crew_stays').upsert(cols, { onConflict: 'name' });
+    if (error) throw error;
+    this.ping();
+  }
+
+  async addPlaceSuggestion(s: PlaceDraft): Promise<void> {
+    const { error } = await this.db.from('place_suggestions').insert({
+      id: crypto.randomUUID(), name: s.name, area: s.area, kind: s.kind, title: s.title, link: s.link, price_gbp: s.priceGbp,
+      stay_type: s.stayType, rooms: s.rooms, why: s.why, photo: s.photo, hostel_id: s.hostelId, status: 'live',
+    });
+    if (error) throw error;
+    this.ping();
+  }
+
+  async setPlaceStatus(id: string, status: PlaceSuggestion['status']): Promise<void> {
+    const { error } = await this.db.from('place_suggestions').update({ status }).eq('id', id);
+    if (error) throw error;
+    this.ping();
+  }
+
+  // Scouts merge by area, which needs the stored map; pins are written whole and need no read.
+  async saveStaysAdmin(patch: Partial<StaysAdmin>): Promise<void> {
+    const cols: Record<string, unknown> = { id: 1 };
+    if (patch.pins !== undefined) cols.pins = patch.pins;
+    if (patch.scouts !== undefined) {
+      const { data, error } = await this.db.from('stays_admin').select('scouts');
+      if (error) throw error;
+      const stored = ((data ?? []) as AdminRow[])[0]?.scouts ?? {};
+      cols.scouts = applyAdmin({ pins: [], scouts: stored }, { scouts: patch.scouts }).scouts;
+    }
+    const { error } = await this.db.from('stays_admin').upsert(cols, { onConflict: 'id' });
     if (error) throw error;
     this.ping();
   }

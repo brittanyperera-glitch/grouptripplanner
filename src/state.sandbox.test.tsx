@@ -13,6 +13,7 @@ const stubStore = (): Store => ({
   load: async () => empty, saveResponse: vi.fn(async () => undefined), addSuggestion: async () => undefined,
   setSuggestionStatus: async () => undefined, vote: async () => undefined, subscribe: () => () => undefined,
   logChoice: async () => undefined, loadLog: async () => [], saveCrewStays: async () => undefined,
+  addPlaceSuggestion: async () => undefined, setPlaceStatus: async () => undefined, saveStaysAdmin: async () => undefined,
 });
 
 let ctx: ReturnType<typeof useApp>;

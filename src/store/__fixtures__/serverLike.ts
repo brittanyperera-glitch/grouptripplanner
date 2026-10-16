@@ -1,4 +1,4 @@
-import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, Response, Store, Suggestion, Vote } from '../../types';
+import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, Store, Suggestion, Vote } from '../../types';
 
 /**
  * Behaves like SupabaseStore: a save never notifies this tab (only a realtime reload does, via push()),
@@ -25,6 +25,9 @@ export class ServerLike implements Store {
   async setSuggestionStatus(_id: string, _st: Suggestion['status']): Promise<void> {}
   async vote(_v: Vote): Promise<void> {}
   async saveCrewStays(_n: Person, _p: Partial<Omit<CrewStays, 'name'>>): Promise<void> {}
+  async addPlaceSuggestion(_s: PlaceDraft): Promise<void> {}
+  async setPlaceStatus(_id: string, _st: PlaceSuggestion['status']): Promise<void> {}
+  async saveStaysAdmin(_p: Partial<StaysAdmin>): Promise<void> {}
   async logChoice(c: ChoiceInput): Promise<void> {
     this.logCalls++;
     if (this.failLog) throw new Error('404 choice_log');

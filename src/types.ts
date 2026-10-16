@@ -66,7 +66,13 @@ export interface Store {
   loadLog(): Promise<ChoiceEntry[]>;
   // Stays phase: one row per person (quiz answers, lock, ranks, bingo); latest write wins field by field.
   saveCrewStays(name: Player, patch: Partial<Omit<CrewStays, 'name'>>): Promise<void>;
+  addPlaceSuggestion(s: PlaceDraft): Promise<void>;
+  // Anon cannot delete, so taking a suggestion down is a status change.
+  setPlaceStatus(id: string, status: PlaceSuggestion['status']): Promise<void>;
+  // pins replace the stored list whole; scouts merge by area (an undefined value clears that area).
+  saveStaysAdmin(patch: Partial<StaysAdmin>): Promise<void>;
 }
+export type PlaceDraft = Omit<PlaceSuggestion, 'id' | 'createdAt' | 'status'>;
 // a = contested item first, then anything else forcing it in adds; b = items it would displace
 export interface Knockout {
   forkId: string; a: string[]; b: string[]; votes: { a: Person[]; b: Person[] };
@@ -130,5 +136,17 @@ export interface StaysState { crew: Partial<Record<Player, CrewStays>>; suggesti
 export const EMPTY_STAYS: StaysState = { crew: {}, suggestions: [], admin: { pins: [], scouts: {} } };
 // Epoch updatedAt, so any stored row counts as newer than this placeholder.
 export const blankCrew = (name: Player): CrewStays => ({ name, prefs: [], quizDone: false, locked: false, ranks: {}, bingo: [], updatedAt: new Date(0).toISOString() });
+// The one merge rule for admin patches, so every store and the write queue agree. `next` wins.
+export function mergeAdmin(prev: Partial<StaysAdmin>, next: Partial<StaysAdmin>): Partial<StaysAdmin> {
+  const out: Partial<StaysAdmin> = { ...prev, ...next };
+  if (prev.scouts || next.scouts) out.scouts = { ...prev.scouts, ...next.scouts };
+  return out;
+}
+// A stored admin row with a patch applied; a cleared scout is dropped, not kept as undefined.
+export function applyAdmin(stored: StaysAdmin, patch: Partial<StaysAdmin>): StaysAdmin {
+  const m = mergeAdmin(stored, patch);
+  const scouts = Object.fromEntries(Object.entries(m.scouts ?? {}).filter(([, p]) => p !== undefined)) as StaysAdmin['scouts'];
+  return { pins: m.pins ?? [], scouts };
+}
 export const stayForkId = (area: Area, a: string, b: string) => `stay:${area}:${a}:${b}`;
 export const reactForkId = (suggestionId: string) => `react:${suggestionId}`;

@@ -154,3 +154,62 @@ describe('WriteQueue crew stays', () => {
     expect(sent).toEqual([{ quizDone: true, locked: true, prefs: [pref] }]);
   });
 });
+
+describe('WriteQueue place suggestions and stays admin', () => {
+  type AdminPatch = Parameters<LocalStore['saveStaysAdmin']>[0];
+  type Draft = Parameters<LocalStore['addPlaceSuggestion']>[0];
+  const draft = (title: string): Draft => ({ name: 'Alex', area: 'Ella', kind: 'eat', title });
+  const pin = (suggestionId: string | null) => ({ area: 'Ella' as const, suggestionId, at: 't' });
+
+  it('two admin saves queued behind another write become one write: newest pins whole, scouts merged by area', async () => {
+    const sent: AdminPatch[] = [];
+    let release: () => void = () => undefined;
+    class Spy extends LocalStore {
+      override async addPlaceSuggestion() { await new Promise<void>(r => { release = r; }); }
+      override async saveStaysAdmin(p: AdminPatch) { sent.push(p); }
+    }
+    const q = new WriteQueue(new Spy(), hooks());
+    const blocker = q.store.addPlaceSuggestion(draft('x'));
+    const one = q.store.saveStaysAdmin({ pins: [pin('a')], scouts: { Ella: 'Lazza', North: 'Alex' } });
+    const two = q.store.saveStaysAdmin({ pins: [pin(null)], scouts: { Ella: 'Saulie' } });
+    release();
+    await Promise.all([blocker, one, two]);
+    expect(sent).toEqual([{ pins: [pin(null)], scouts: { Ella: 'Saulie', North: 'Alex' } }]);
+  });
+
+  it('a retry after failures sends one admin write holding every field, newest value per field', async () => {
+    const sent: AdminPatch[] = [];
+    class Spy extends LocalStore {
+      fail = true;
+      override async saveStaysAdmin(p: AdminPatch) {
+        if (this.fail) throw new Error('offline');
+        sent.push(p);
+      }
+    }
+    const base = new Spy();
+    const h = hooks();
+    const q = new WriteQueue(base, h);
+    await q.store.saveStaysAdmin({ scouts: { Ella: 'Lazza', North: 'Alex' } });
+    await q.store.saveStaysAdmin({ pins: [pin('a')], scouts: { Ella: 'Saulie' } });
+    expect(h.fails).toBeGreaterThan(0);
+    base.fail = false;
+    expect(await q.flush()).toBe(true);
+    expect(sent).toEqual([{ pins: [pin('a')], scouts: { Ella: 'Saulie', North: 'Alex' } }]);
+  });
+
+  it('place adds and status changes are each sent, in order, never folded together', async () => {
+    const sent: string[] = [];
+    let release: () => void = () => undefined;
+    class Spy extends LocalStore {
+      override async saveStaysAdmin() { await new Promise<void>(r => { release = r; }); }
+      override async addPlaceSuggestion(s: Draft) { sent.push(`add ${s.title}`); }
+      override async setPlaceStatus(id: string, st: 'live' | 'withdrawn') { sent.push(`${st} ${id}`); }
+    }
+    const q = new WriteQueue(new Spy(), hooks());
+    const blocker = q.store.saveStaysAdmin({ pins: [] });
+    const writes = [q.store.addPlaceSuggestion(draft('a')), q.store.addPlaceSuggestion(draft('b')), q.store.setPlaceStatus('p1', 'withdrawn'), q.store.setPlaceStatus('p1', 'live')];
+    release();
+    await Promise.all([blocker, ...writes]);
+    expect(sent).toEqual(['add a', 'add b', 'withdrawn p1', 'live p1']);
+  });
+});
