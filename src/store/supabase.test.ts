@@ -18,6 +18,8 @@ const fake = vi.hoisted(() => ({
   placeRows: [] as unknown[],
   admin: 'ok' as 'ok' | 'error' | 'throw',
   adminRows: [] as unknown[],
+  trip: 'ok' as 'ok' | 'error' | 'throw',
+  tripRows: [] as unknown[],
   inserts: [] as Array<[string, unknown]>,
   updates: [] as Array<[string, unknown, string, unknown]>,
   selects: [] as Array<[string, string]>,
@@ -36,6 +38,12 @@ vi.mock('@supabase/supabase-js', () => ({
             if (mode === 'throw') throw new Error('network down');
             const res = mode === 'error' ? { data: null, error: { message: `relation "public.${table}" does not exist` } } : result(rows);
             return { ...thenable(res), order: () => thenable(res) };
+          }
+          if (table === 'trip_admin') {
+            if (fake.trip === 'throw') throw new Error('network down');
+            const res = fake.trip === 'error' ? { data: null, error: { message: 'relation "public.trip_admin" does not exist' } } : result(fake.tripRows);
+            const one = { data: fake.trip === 'error' ? null : (fake.tripRows[0] ?? null), error: res.error };
+            return { ...thenable(res), eq: () => ({ maybeSingle: async () => one }) };
           }
           if (table === 'crew_stays') {
             if (fake.crew === 'throw') throw new Error('network down');
@@ -77,7 +85,7 @@ const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
 beforeEach(() => {
   fake.handler = null; fake.delays = []; fake.loads = 0; fake.upserts = []; fake.reads = 0; fake.ranking = null;
   fake.crew = 'ok'; fake.crewRows = []; fake.upsertTables = []; fake.upsertOpts = []; fake.failUpsert = false;
-  fake.places = 'ok'; fake.placeRows = []; fake.admin = 'ok'; fake.adminRows = []; fake.inserts = []; fake.updates = []; fake.selects = [];
+  fake.places = 'ok'; fake.placeRows = []; fake.admin = 'ok'; fake.adminRows = []; fake.trip = 'ok'; fake.tripRows = []; fake.inserts = []; fake.updates = []; fake.selects = [];
 });
 
 describe('SupabaseStore.saveResponse', () => {
@@ -256,6 +264,19 @@ describe('SupabaseStore place suggestions and stays admin', () => {
     expect(fake.upserts[0]).toEqual({ id: 1, pins });
   });
 
+  it('a stored admin row without closed loads with closed empty, and with it loads as stored', async () => {
+    fake.adminRows = [{ pins: [], scouts: {} }];
+    expect((await store().load()).stays?.admin.closed).toEqual([]);
+    fake.adminRows = [{ pins: [], scouts: {}, closed: ['Ella'] }];
+    expect((await store().load()).stays?.admin.closed).toEqual(['Ella']);
+  });
+
+  it('saveStaysAdmin with closed only writes just closed on id 1, without a read', async () => {
+    await store().saveStaysAdmin({ closed: ['Ella'] });
+    expect(fake.selects.filter(([t]) => t === 'stays_admin')).toEqual([]);
+    expect(fake.upserts[0]).toEqual({ id: 1, closed: ['Ella'] });
+  });
+
   it('saveStaysAdmin merges scouts by area into the stored map, and undefined clears one area', async () => {
     fake.adminRows = [{ scouts: { Ella: 'Lazza', North: 'Alex', Colombo: 'Antek' } }];
     await store().saveStaysAdmin({ scouts: { Ella: 'Saulie', North: undefined } });
@@ -269,5 +290,42 @@ describe('SupabaseStore place suggestions and stays admin', () => {
     fake.admin = 'ok';
     fake.failUpsert = true;
     await expect(store().saveStaysAdmin({ pins: [] })).rejects.toThrow('500');
+  });
+});
+
+// trip_admin is loaded in its own call and fails alone: the live database has no such table until the schema is re-run.
+describe('SupabaseStore trip admin', () => {
+  const store = () => new SupabaseStore('https://x.supabase.co', 'k');
+  const ROW = { name: 'Alex', items: { flights: { done: true, doneAt: 't', ref: 'ABC' }, money: { done: true } }, updated_at: '2026-10-17T10:00:00.000Z' };
+
+  it.each(['error', 'throw'] as const)('a missing trip_admin (%s) leaves the rest loading, with the checklist empty', async mode => {
+    fake.trip = mode;
+    fake.crewRows = [{ name: 'Alex', prefs: [], quiz_done: true, locked: false, ranks: {}, bingo: [], updated_at: '2026-10-16T10:00:00.000Z' }];
+    const st = await store().load();
+    expect(st.responses.Alex?.days).toBe(1);
+    expect(st.stays?.crew.Alex?.quizDone).toBe(true);
+    expect(st.tripAdmin).toEqual({});
+  });
+
+  it('load() maps rows by person', async () => {
+    fake.tripRows = [ROW];
+    expect((await store().load()).tripAdmin).toEqual({ Alex: { name: 'Alex', items: ROW.items, updatedAt: '2026-10-17T10:00:00.000Z' } });
+  });
+
+  it('saveTripAdmin merges the patch into the stored items by id and upserts on name', async () => {
+    fake.tripRows = [ROW];
+    await store().saveTripAdmin('Alex', { eta: { done: true }, flights: { done: false } });
+    expect(fake.upsertTables).toEqual(['trip_admin']);
+    expect(fake.upsertOpts).toEqual([{ onConflict: 'name' }]);
+    expect((fake.upserts[0] as { items: unknown }).items).toEqual({ money: { done: true }, eta: { done: true }, flights: { done: false } });
+  });
+
+  it('saveTripAdmin throws when the read or the write fails, so the queue keeps it', async () => {
+    fake.trip = 'error';
+    await expect(store().saveTripAdmin('Alex', { eta: { done: true } })).rejects.toBeTruthy();
+    expect(fake.upserts).toEqual([]);
+    fake.trip = 'ok';
+    fake.failUpsert = true;
+    await expect(store().saveTripAdmin('Alex', { eta: { done: true } })).rejects.toThrow('500');
   });
 });

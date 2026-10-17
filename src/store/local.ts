@@ -1,17 +1,18 @@
-import { applyAdmin, blankCrew, EMPTY_STAYS, emptyRanking, PEOPLE } from '../types';
-import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, Store, Suggestion, Vote } from '../types';
+import { applyAdmin, mergeAdminItems, blankCrew, EMPTY_STAYS, emptyRanking, PEOPLE } from '../types';
+import type { AdminItems, AppState, TripAdminRow, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, Store, Suggestion, Vote } from '../types';
 
 const SUGG = 'tp:sugg';
 const VOTES = 'tp:votes';
 const LOG = 'tp:log';
 const PLACES = 'tp:placesug';
 const ADMIN = 'tp:staysadmin';
+const tripKey = (n: Person) => `tp:tripadmin:${n}`;
 const respKey = (n: Person) => `tp:resp:${n}`;
 const staysKey = (n: Person) => `tp:stays:${n}`;
 
 /** The keys that are this store's shared data (everyone's rows, votes, suggestions, log), not one person's progress. */
 export const isLocalStoreKey = (k: string) =>
-  k === SUGG || k === VOTES || k === LOG || k === PLACES || k === ADMIN || k.startsWith('tp:resp:') || k.startsWith('tp:stays:');
+  k === SUGG || k === VOTES || k === LOG || k === PLACES || k === ADMIN || k.startsWith('tp:tripadmin:') || k.startsWith('tp:resp:') || k.startsWith('tp:stays:');
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -38,7 +39,7 @@ const defaultRow = (name: Person): Response => ({
 function readAdmin(): StaysAdmin {
   const a = read<Partial<StaysAdmin> | null>(ADMIN, null);
   if (!a || typeof a !== 'object') return structuredClone(EMPTY_STAYS.admin);
-  return { pins: Array.isArray(a.pins) ? a.pins : [], scouts: a.scouts && typeof a.scouts === 'object' ? a.scouts : {} };
+  return { pins: Array.isArray(a.pins) ? a.pins : [], scouts: a.scouts && typeof a.scouts === 'object' ? a.scouts : {}, closed: Array.isArray(a.closed) ? a.closed : [] };
 }
 
 export class LocalStore implements Store {
@@ -55,6 +56,11 @@ export class LocalStore implements Store {
       const c = read<CrewStays | null>(staysKey(p), null);
       if (c && typeof c === 'object') crew[p] = c;
     }
+    const tripAdmin: AppState['tripAdmin'] = {};
+    for (const p of PEOPLE) {
+      const t = read<TripAdminRow | null>(tripKey(p), null);
+      if (t && typeof t === 'object') tripAdmin[p] = t;
+    }
     const suggestions = read<Suggestion[]>(SUGG, []);
     const votes = read<Vote[]>(VOTES, []);
     const places = read<PlaceSuggestion[]>(PLACES, []);
@@ -63,6 +69,7 @@ export class LocalStore implements Store {
       suggestions: Array.isArray(suggestions) ? suggestions : [],
       votes: Array.isArray(votes) ? votes : [],
       stays: { crew, suggestions: Array.isArray(places) ? places : [], admin: readAdmin() },
+      tripAdmin,
     };
   }
 
@@ -80,6 +87,12 @@ export class LocalStore implements Store {
 
   async saveStaysAdmin(patch: Partial<StaysAdmin>): Promise<void> {
     write(ADMIN, applyAdmin(readAdmin(), patch));
+    await this.emit();
+  }
+
+  async saveTripAdmin(name: Person, patch: AdminItems): Promise<void> {
+    const existing = read<TripAdminRow | null>(tripKey(name), null);
+    write(tripKey(name), { name, items: mergeAdminItems(existing?.items ?? {}, patch), updatedAt: new Date().toISOString() });
     await this.emit();
   }
 

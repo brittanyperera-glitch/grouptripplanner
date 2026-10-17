@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Avatar from './components/Avatar';
+import { AdminNav } from './components/AdminNav';
 import { GuideNav } from './components/GuideNav';
 import { MUTE_KEY } from './components/sound';
 import { IconBook, IconGroup, IconList, IconPin, IconRoute, IconSpark } from './components/Icons';
@@ -45,6 +46,7 @@ import genresJson from './data/genres.json';
 import GuestRoot from './guest/GuestRoot';
 import Landing from './screens/Landing';
 import Stays from './screens/Stays';
+import TripAdmin from './screens/TripAdmin';
 import { AppProvider, ME_KEY, pickQuip, useApp } from './state';
 import type { Copy } from './state';
 import { connectionMissingNow, supabaseConfigured } from './store';
@@ -156,7 +158,7 @@ const START_OVER_ARMED_MS = 4000;
  * on a phone (Brittany 2026-10-15). Start over takes two taps; the first arms it for a few seconds, no browser dialog.
  */
 // Log out is the same item for everyone: a trip member forgets the password, a guest's demo resets; both land on the entry screen.
-function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLogout, todo = 0, onItems, onAwards }: { onProfile(): void; onChange?(): void; onStats?(): void; onNotYou(): void; onStartOver(): void; onLogout?(): void; todo?: number; onItems?(): void; onAwards?(): void }) {
+function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLogout, todo = 0, onItems, onAwards, onAdmin }: { onProfile(): void; onChange?(): void; onStats?(): void; onNotYou(): void; onStartOver(): void; onLogout?(): void; todo?: number; onItems?(): void; onAwards?(): void; onAdmin?(): void }) {
   const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -182,6 +184,7 @@ function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLog
         <div className="hmenu-list" role="group" aria-label="Menu">
           {onItems && <button onClick={pick(onItems)}>{todo > 0 ? `Open items (${todo})` : 'Open items'}</button>}
           {onAwards && <button onClick={pick(onAwards)}>Awards</button>}
+          {onAdmin && <button onClick={pick(onAdmin)}>Trip admin</button>}
           <button onClick={pick(onProfile)}>{profileCopy.menuItem}</button>
           {onStats && <button onClick={pick(onStats)}>Group stats</button>}
           {onChange && <button onClick={pick(onChange)}>Change days or pace</button>}
@@ -403,9 +406,9 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   } else {
     const Panel = tab === 'Group' || tab === 'My trip' ? null : PANELS[tab];
     content = (
-      <div role="tabpanel" aria-label={tab} className="panel"><GuideNav.Provider value={() => navigate('tab', () => setTab('Guide'))}>
+      <div role="tabpanel" aria-label={tab} className="panel"><AdminNav.Provider value={() => navigate('fwd', () => showOverlay('admin'))}><GuideNav.Provider value={() => navigate('tab', () => setTab('Guide'))}>
         {Panel ? <Panel /> : tab === 'My trip' ? <MyTripTab /> : <GroupTab view={groupView} onView={setGroupView} />}
-      </GuideNav.Provider></div>
+      </GuideNav.Provider></AdminNav.Provider></div>
     );
   }
 
@@ -414,12 +417,13 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   if (screen === 'walkthrough') content = <Walkthrough name={me} items={todo} onGo={goItem} onDone={finishWalk} />;
   if (screen === 'quiz') content = <Interview me={me} initial={state.stays?.crew[me]?.prefs} onSave={prefs => { void store.saveCrewStays(me, { prefs, quizDone: prefs.some(a => !a.skipped && (a.noPreference || Object.keys(a.picks).length > 0)) }); }} onDone={closeOverlay} onClose={closeOverlay} />;
   if (screen === 'bingo') content = <Bingo onBack={closeOverlay} />;
+  if (screen === 'admin') content = <TripAdmin onBack={closeOverlay} />;
   // The quiz and Bingo only exist on the tabs, so the card before them leaves their rows out.
   if (screen === 'profile') content = <Profile name={me} players={copy.players} onBack={closeProfile} />;
   const baseKey = shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
   const screenKey = screen === 'base' || screen === 'awards' ? baseKey : screen;
   useLayoutEffect(() => {
-    const over = screenKey === 'profile' || screenKey === 'items' || screenKey === 'quiz' || screenKey === 'bingo';
+    const over = screenKey === 'profile' || screenKey === 'items' || screenKey === 'quiz' || screenKey === 'bingo' || screenKey === 'admin';
     if (!/jsdom/.test(navigator.userAgent)) window.scrollTo(0, over ? 0 : scrollBack.current ?? 0);
     if (!over) scrollBack.current = null;
   }, [screenKey]);
@@ -432,7 +436,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
           <b>{me}</b>
         </button>
         <HeaderMenu onProfile={openProfile} onChange={(shown === 'rate' || shown === 'tabs') && !locked ? changeDays : undefined} onStats={shown === 'tabs' && statsOpen ? () => openGroup('stats') : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} onLogout={finishSandbox ?? logout ?? undefined}
-          todo={todo.length} onItems={shown === 'tabs' ? openItemsPage : undefined} onAwards={shown === 'tabs' && awardList.length > 0 ? () => showOverlay('awards') : undefined} />
+          todo={todo.length} onItems={shown === 'tabs' ? openItemsPage : undefined} onAwards={shown === 'tabs' && awardList.length > 0 ? () => showOverlay('awards') : undefined} onAdmin={shown === 'tabs' ? () => navigate('fwd', () => showOverlay('admin')) : undefined} />
       </header>
       <div className={`screen${enter ? ` enter-${enter}` : ''}`} key={screenKey}>{content}</div>
       {shown === 'tabs' && !hidesTabs(screen) && (
@@ -440,10 +444,10 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
           {tabs.map(t => {
             const Icon = TAB_ICON[t];
             const icon = t === 'Profile' ? <span className="tab-me" aria-hidden="true"><Avatar name={me} size={22} /></span> : <Icon />;
-            const n = t === 'Group' || t === 'Picks' || t === 'Suggest' ? badges[t] ?? 0 : 0;
+            const n = t === 'Group' || t === 'Picks' || t === 'Suggest' || t === 'Stays' ? badges[t] ?? 0 : 0;
             return <button key={t} role="tab" aria-selected={tab === t} aria-describedby={n > 0 ? `oi-tab-${t}` : undefined} onClick={() => pickTab(t)}>{icon}<span>{t}</span>{n > 0 && <span className="badge-count" aria-hidden="true">{n > 9 ? '9+' : n}</span>}</button>;
           })}
-          {tabs.map(t => (t === 'Group' || t === 'Picks' || t === 'Suggest') && (badges[t] ?? 0) > 0 && <span key={t} id={`oi-tab-${t}`} hidden>{`${badges[t]} to do`}</span>)}
+          {tabs.map(t => (t === 'Group' || t === 'Picks' || t === 'Suggest' || t === 'Stays') && (badges[t] ?? 0) > 0 && <span key={t} id={`oi-tab-${t}`} hidden>{`${badges[t]} to do`}</span>)}
         </nav>
       )}
       {screen === 'awards' && <Awards awards={awardList} onClose={closeAwards} />}

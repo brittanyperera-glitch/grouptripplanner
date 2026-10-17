@@ -14,7 +14,7 @@ class SlowStore extends LocalStore {
 // Stores a write without telling this tab, like SupabaseStore; push() is the poll arriving.
 class QuietStore extends LocalStore {
   places: PlaceSuggestion[] = [];
-  admin: StaysAdmin = { pins: [], scouts: {} };
+  admin: StaysAdmin = { pins: [], scouts: {}, closed: [] };
   statusCalls: Array<[string, PlaceSuggestion['status']]> = [];
   private cbs = new Set<(s: Loaded) => void>();
   override async load() {
@@ -29,7 +29,7 @@ class QuietStore extends LocalStore {
     this.places = this.places.map(p => (p.id === id ? { ...p, status: st } : p));
   }
   override async saveStaysAdmin(patch: Partial<StaysAdmin>) {
-    this.admin = { pins: patch.pins ?? this.admin.pins, scouts: { ...this.admin.scouts, ...patch.scouts } };
+    this.admin = { pins: patch.pins ?? this.admin.pins, scouts: { ...this.admin.scouts, ...patch.scouts }, closed: patch.closed ?? this.admin.closed };
   }
   override subscribe(cb: (s: Loaded) => void) { this.cbs.add(cb); return () => { this.cbs.delete(cb); }; }
   async push() { const s = await this.load(); this.cbs.forEach(cb => cb(s)); }
@@ -56,7 +56,7 @@ describe('my place and admin writes', () => {
     expect(ctx.state.stays?.suggestions).toMatchObject([{ title: 'Hill hut', status: 'withdrawn' }]);
     act(() => { void ctx.store.saveStaysAdmin({ pins: [pin('a')], scouts: { Ella: 'Lazza', North: 'Alex' } }); });
     act(() => { void ctx.store.saveStaysAdmin({ scouts: { Ella: 'Saulie' } }); });
-    expect(ctx.state.stays?.admin).toEqual({ pins: [pin('a')], scouts: { Ella: 'Saulie', North: 'Alex' } });
+    expect(ctx.state.stays?.admin).toEqual({ pins: [pin('a')], scouts: { Ella: 'Saulie', North: 'Alex' }, closed: [] });
   });
 
   it('a withdraw on a server row shows at once', async () => {

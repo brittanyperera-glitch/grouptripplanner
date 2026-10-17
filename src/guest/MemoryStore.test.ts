@@ -18,6 +18,16 @@ describe('MemoryStore', () => {
     expect(r).toMatchObject({ name: WHO, days: 7, flex: false, pace: null, submitted: false });
   });
 
+  it('a guest saving their final list finalizes the example crew with their own rankings; nothing else does', async () => {
+    const s = new MemoryStore();
+    await s.saveResponse(WHO, { days: 7 });
+    expect(PEOPLE.some(p => (s as unknown as { state: AppState }).state.responses[p]?.final)).toBe(false);
+    const before = (await s.load()).responses;
+    await s.saveResponse(WHO, { final: before.Brittany!.ranking });
+    const after = (await s.load()).responses;
+    for (const p of PEOPLE) expect(after[p]!.final).toEqual(before[p]!.ranking);
+  });
+
   it('two stores never share state', async () => {
     const a = new MemoryStore(); const b = new MemoryStore();
     await a.saveResponse('Brittany', { days: 5 });
@@ -101,6 +111,7 @@ describe('MemoryStore', () => {
     await s.addPlaceSuggestion({ name: WHO, area: 'Ella', kind: 'eat', title: 'Curry' });
     await s.setPlaceStatus('x', 'withdrawn');
     await s.saveStaysAdmin({ scouts: { Ella: WHO } });
+    await s.saveTripAdmin(WHO, { eta: { done: true } });
     off();
     expect(setItem).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -132,7 +143,7 @@ describe('MemoryStore place suggestions and stays admin', () => {
     expect((await s.load()).stays!.suggestions[0].status).toBe('withdrawn');
     await s.saveStaysAdmin({ pins: [{ area: 'Ella', suggestionId: p.id, at: 't' }], scouts: { Ella: WHO, Colombo: WHO } });
     await s.saveStaysAdmin({ scouts: { Colombo: undefined } });
-    expect((await s.load()).stays!.admin).toEqual({ pins: [{ area: 'Ella', suggestionId: p.id, at: 't' }], scouts: { Ella: WHO } });
+    expect((await s.load()).stays!.admin).toEqual({ pins: [{ area: 'Ella', suggestionId: p.id, at: 't' }], scouts: { Ella: WHO }, closed: [] });
   });
 
   it('a caller mutating what it passed or loaded cannot change the stored copy', async () => {
@@ -210,5 +221,22 @@ describe('MemoryStore guest sandbox', () => {
     await s.addSuggestion(sugg);
     const state = await s.load();
     expect(() => groupResult(state, items, legs)).not.toThrow();
+  });
+});
+
+describe('MemoryStore trip admin', () => {
+  it('starts empty, merges by item id and stamps updatedAt, with no storage or network', async () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const s = new MemoryStore();
+    expect((await s.load()).tripAdmin ?? {}).toEqual({});
+    await s.saveTripAdmin(WHO, { flights: { done: true } });
+    await s.saveTripAdmin(WHO, { eta: { done: true }, flights: { done: false } });
+    const t = (await s.load()).tripAdmin![WHO]!;
+    expect(t.items).toEqual({ flights: { done: false }, eta: { done: true } });
+    expect(Date.parse(t.updatedAt)).toBeGreaterThan(0);
+    expect(setItem).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

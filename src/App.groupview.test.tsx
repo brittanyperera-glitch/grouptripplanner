@@ -67,35 +67,30 @@ describe('Group trip puts the important parts first', () => {
     expect(screen.queryByText(/route reveal drops once/)).toBeNull();
   });
 
-  it('Before you go: one collapsed card with both counts, listing the to-book items', async () => {
-    const { user, trip } = await openGroupTrip();
-    const cards = trip.querySelectorAll('details.gh-book');
-    expect(cards).toHaveLength(1);
-    const card = cards[0] as HTMLElement;
-    expect(within(card).getByText('Before you go: 2 to book, 3 tips')).toBeInTheDocument();
-    expect(card).not.toHaveAttribute('open');
-    await user.click(within(card).getByText(/^Before you go/));
-    expect(within(card).getByText('Permit needed')).toBeInTheDocument();
-    expect(trip.querySelector('.map')!.compareDocumentPosition(card)).toBe(Node.DOCUMENT_POSITION_PRECEDING);
+  // Changed deliberately (Brittany 2026-10-17): the read-only "Before you go" card is replaced by the Trip admin page.
+  it('Group trip has one Trip admin link, above the map, with a count', async () => {
+    const { trip } = await openGroupTrip();
+    const links = within(trip).getAllByRole('button', { name: /^Trip admin/ });
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveTextContent(/\d+ to do|All done/);
+    expect(trip.querySelector('.map')!.compareDocumentPosition(links[0])).toBe(Node.DOCUMENT_POSITION_PRECEDING);
+    expect(trip.querySelector('details.gh-book')).toBeNull();
   });
 
-  it('a tip sits on its day row, a tip with no day stays in the card, and there is no pooled list', async () => {
+  it('a tip sits on its day row and there is no pooled list', async () => {
     const { trip } = await openGroupTrip();
     const days = Array.from(trip.querySelectorAll<HTMLElement>('.day'));
     expect(days[0]).toHaveTextContent('Steep climb');
     expect(days[1]).toHaveTextContent('Strong currents');
     expect(days[0]).not.toHaveTextContent('Strong currents');
-    const card = trip.querySelector('details.gh-book') as HTMLElement;
-    expect(card).toHaveTextContent('Closed Mondays');
-    expect(card).not.toHaveTextContent('Steep climb');
     expect(within(trip).queryByText('Good to know')).toBeNull();
   });
 
-  it('before Group trip opens, Before you go sits on My trip', async () => {
+  it('before Group trip opens, the Trip admin link sits on My trip', async () => {
     localStorage.setItem('tp:resp:Saulie', JSON.stringify({ ...row('Saulie'), submitted: false }));
     render(<App />);
     const region = await screen.findByRole('region', { name: 'My trip' });
-    expect(await within(region).findByText(/^Before you go:/)).toBeInTheDocument();
+    expect(await within(region).findByRole('button', { name: /^Trip admin/ })).toBeInTheDocument();
   });
   it('My trip has no book card once Group trip is open', async () => {
     render(<App />);

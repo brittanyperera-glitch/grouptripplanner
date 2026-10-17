@@ -14,7 +14,7 @@ const sug = (id: string, title: string, over: Partial<Suggestion> = {}): Suggest
 // Changed deliberately (Brittany 2026-10-16): Bingo is now a to-do, so the baseline person has a card.
 const card = { id: 'b1', title: 't', squares: Array.from({ length: 9 }, () => ({ text: 's', ticked: false })), createdAt: '' };
 const quizDone = (name: Player) => ({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [card], updatedAt: '' });
-const doneStays = (...names: Player[]): NonNullable<AppState['stays']> => ({ crew: Object.fromEntries(names.map(n => [n, quizDone(n)])), suggestions: [], admin: { pins: [], scouts: {} } });
+const doneStays = (...names: Player[]): NonNullable<AppState['stays']> => ({ crew: Object.fromEntries(names.map(n => [n, quizDone(n)])), suggestions: [], admin: { pins: [], scouts: {}, closed: [] } });
 const empty: AppState = { responses: {}, suggestions: [], votes: [], stays: doneStays('Alex', 'Brittany', 'Aunty') };
 const ctx = (over: Partial<OpenCtx> = {}): OpenCtx => ({ me: 'Alex', group: group(), state: empty, unrated: 0, ratingsLocked: false, awardsUnseen: false, ...over });
 const ids = (c: OpenCtx) => openItems(c).map(i => i.id);
@@ -48,10 +48,22 @@ describe('openItems', () => {
     expect(item).toMatchObject({ id: 'final', count: 1, label: 'Save your final list', target: { tab: 'Group' } });
     const saved: AppState = { ...empty, responses: { Alex: { name: 'Alex', days: 9, flex: false, pace: 1, ranking: emptyRanking(), rated: [], submitted: true, updatedAt: 'x', final: emptyRanking() } } };
     expect(ids(ctx({ group: finalizing, state: saved }))).toEqual([]);
-    expect(ids(ctx({ group: group({ final: finalizing.final, locked: true }) }))).toEqual([]);
+    // Changed deliberately (Brittany 2026-10-17): a final route now raises "Find somewhere to stay" for everyone.
+    expect(ids(ctx({ group: group({ final: finalizing.final, locked: true }) }))).toEqual(['stayAdd']);
     expect(ids(ctx({ group: group({ final: null }) }))).toEqual([]);
     expect(isFinalizing(finalizing)).toBe(true);
     expect(isFinalizing(group({ final: finalizing.final, knockouts: [ko('ko:1')] }))).toBe(false);
+  });
+
+  it('Find somewhere to stay shows once the route is final and clears when my stays are locked in', () => {
+    const route = group({ final: {} as GroupResult['final'], locked: true });
+    const [item] = openItems(ctx({ group: route }));
+    expect(item).toMatchObject({ id: 'stayAdd', count: 1, label: 'Find somewhere to stay', target: { tab: 'Stays' } });
+    const crew = (locked: boolean) => ({ ...empty, stays: { crew: { Alex: { name: 'Alex', prefs: [], quizDone: false, locked, ranks: {}, bingo: [], updatedAt: 'x' } }, suggestions: [], admin: { pins: [], scouts: {} } } }) as unknown as AppState;
+    expect(ids(ctx({ group: route, state: crew(false) }))).toContain('stayAdd');
+    expect(ids(ctx({ group: route, state: crew(true) }))).not.toContain('stayAdd');
+    expect(ids(ctx({ group: group({ final: null, locked: false }) }))).not.toContain('stayAdd');
+    expect(tabBadges(openItems(ctx({ group: route })))).toMatchObject({ Stays: 1 });
   });
 
   it('new places to rate show only when ratings are not locked', () => {

@@ -1,4 +1,4 @@
-export type Overlay = 'items' | 'quiz' | 'awards' | 'profile' | 'bingo';
+export type Overlay = 'items' | 'quiz' | 'awards' | 'profile' | 'bingo' | 'admin';
 export type Screen = Overlay | 'walkthrough' | 'base';
 
 interface Pick {

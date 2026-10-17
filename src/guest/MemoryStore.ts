@@ -1,6 +1,6 @@
 import { VOTES_TO_RESOLVE } from '../lib/group';
-import { applyAdmin, blankCrew, EMPTY_STAYS, emptyRanking, isGuest, PEOPLE } from '../types';
-import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
+import { applyAdmin, blankCrew, mergeAdminItems, EMPTY_STAYS, emptyRanking, isGuest, PEOPLE } from '../types';
+import type { AdminItems, AppState, ChoiceEntry, ChoiceInput, CrewStays, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
 import { seedState } from './seed';
 
 const defaultRow = (name: Player): Response => ({
@@ -25,6 +25,10 @@ export class MemoryStore implements Store {
   async saveResponse(name: Player, patch: Partial<Omit<Response, 'name'>>): Promise<void> {
     const existing = this.state.responses[name] ?? defaultRow(name);
     this.state.responses[name] = structuredClone({ ...existing, ...patch, name, updatedAt: new Date().toISOString() });
+    if (isGuest(name) && patch.final) {
+      // The example crew finalizes with the guest, so the route locks and the demo reaches Stays.
+      for (const p of PEOPLE) { const r = this.state.responses[p]; if (r && !r.final) r.final = structuredClone(r.ranking); }
+    }
     this.emit();
   }
 
@@ -35,6 +39,12 @@ export class MemoryStore implements Store {
   async saveCrewStays(name: Player, patch: Partial<Omit<CrewStays, 'name'>>): Promise<void> {
     const stays = this.stays();
     stays.crew[name] = structuredClone({ ...(stays.crew[name] ?? blankCrew(name)), ...patch, name, updatedAt: new Date().toISOString() });
+    this.emit();
+  }
+
+  async saveTripAdmin(name: Player, patch: AdminItems): Promise<void> {
+    const rows = (this.state.tripAdmin ??= {});
+    rows[name] = structuredClone({ name, items: mergeAdminItems(rows[name]?.items ?? {}, patch), updatedAt: new Date().toISOString() });
     this.emit();
   }
 

@@ -54,8 +54,17 @@ describe('LocalStore', () => {
     expect(Date.parse(c!.updatedAt)).toBeGreaterThan(0);
   });
 
+  it('trip admin merges by item id across stores and is a local store key', async () => {
+    await new LocalStore().saveTripAdmin('Alex', { flights: { done: true } });
+    await new LocalStore().saveTripAdmin('Alex', { eta: { done: true }, flights: { done: false } });
+    const t = (await new LocalStore().load()).tripAdmin?.Alex;
+    expect(t).toMatchObject({ name: 'Alex', items: { flights: { done: false }, eta: { done: true } } });
+    expect(Date.parse(t!.updatedAt)).toBeGreaterThan(0);
+    expect(isLocalStoreKey('tp:tripadmin:Alex')).toBe(true);
+  });
+
   it('load always carries a stays block, empty when nothing is saved', async () => {
-    expect((await new LocalStore().load()).stays).toEqual({ crew: {}, suggestions: [], admin: { pins: [], scouts: {} } });
+    expect((await new LocalStore().load()).stays).toEqual({ crew: {}, suggestions: [], admin: { pins: [], scouts: {}, closed: [] } });
   });
 
   it('subscribe callback fires after saveCrewStays', async () => {
@@ -90,7 +99,18 @@ describe('LocalStore place suggestions and stays admin', () => {
     const pin = (suggestionId: string | null) => ({ area: 'Ella' as const, suggestionId, at: 't' });
     await new LocalStore().saveStaysAdmin({ pins: [pin('a'), { ...pin('b'), area: 'Kandy and Knuckles' }], scouts: { Ella: 'Lazza', Colombo: 'Alex', North: 'Antek' } });
     await new LocalStore().saveStaysAdmin({ pins: [pin(null)], scouts: { Ella: 'Saulie', Colombo: undefined } });
-    expect((await new LocalStore().load()).stays!.admin).toEqual({ pins: [pin(null)], scouts: { Ella: 'Saulie', North: 'Antek' } });
+    expect((await new LocalStore().load()).stays!.admin).toEqual({ pins: [pin(null)], scouts: { Ella: 'Saulie', North: 'Antek' }, closed: [] });
+  });
+
+  it('closed is replaced whole, and saving closed keeps pins and scouts while saving them keeps closed', async () => {
+    const pin = { area: 'Ella' as const, suggestionId: 'a', at: 't' };
+    await new LocalStore().saveStaysAdmin({ pins: [pin], scouts: { Ella: 'Lazza' } });
+    await new LocalStore().saveStaysAdmin({ closed: ['Ella'] });
+    expect((await new LocalStore().load()).stays!.admin).toEqual({ pins: [pin], scouts: { Ella: 'Lazza' }, closed: ['Ella'] });
+    await new LocalStore().saveStaysAdmin({ scouts: { North: 'Alex' } });
+    expect((await new LocalStore().load()).stays!.admin).toEqual({ pins: [pin], scouts: { Ella: 'Lazza', North: 'Alex' }, closed: ['Ella'] });
+    localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [], scouts: {} }));
+    expect((await new LocalStore().load()).stays!.admin.closed).toEqual([]);
   });
 
   it('subscribe fires after each new write', async () => {

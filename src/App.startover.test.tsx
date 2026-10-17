@@ -80,7 +80,7 @@ describe('Start over', () => {
     const store = new ServerLike();
     store.rows = { Alex: done('Alex'), Lazza: done('Lazza') };
     // Quiz done on the server, so this still lands on My trip as before the stayQuiz to-do existed.
-    store.stays = { crew: { Alex: crewQuizDone('Alex') }, suggestions: [], admin: { pins: [], scouts: {} } };
+    store.stays = { crew: { Alex: crewQuizDone('Alex') }, suggestions: [], admin: { pins: [], scouts: {}, closed: [] } };
     localStorage.setItem('tp:me', 'Alex');
     render(<App store={store} />);
     await screen.findByRole('tab', { name: 'My trip' });

@@ -1,6 +1,6 @@
 import { responseCols, toResponse } from '../supabase';
 import type { RespRow } from '../supabase';
-import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, Store, Suggestion, Vote } from '../../types';
+import type { AdminItems, AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, Store, Suggestion, Vote } from '../../types';
 
 const toRow = (r: Response): RespRow => ({
   name: r.name as Person, days: r.days, flex: r.flex, pace: r.pace, ranking: { ...r.ranking, final: r.final ?? null },
@@ -39,6 +39,7 @@ export class ServerLike implements Store {
   async addPlaceSuggestion(_s: PlaceDraft): Promise<void> {}
   async setPlaceStatus(_id: string, _st: PlaceSuggestion['status']): Promise<void> {}
   async saveStaysAdmin(_p: Partial<StaysAdmin>): Promise<void> {}
+  async saveTripAdmin(_n: Player, _p: AdminItems): Promise<void> {}
   async logChoice(c: ChoiceInput): Promise<void> {
     this.logCalls++;
     if (this.failLog) throw new Error('404 choice_log');

@@ -69,16 +69,26 @@ create table if not exists place_suggestions (
 create table if not exists stays_admin (
   id int primary key check (id = 1),
   pins jsonb not null default '[]',
-  scouts jsonb not null default '{}'
+  scouts jsonb not null default '{}',
+  closed jsonb not null default '[]'
 );
+alter table stays_admin add column if not exists closed jsonb not null default '[]';
 
 alter table responses enable row level security;
 alter table suggestions enable row level security;
 alter table knockout_votes enable row level security;
 alter table choice_log enable row level security;
+/* Trip admin checklist: one row per person, items is a map of item id to that person's entry (done, price, reference, note). Not in the realtime publication. */
+create table if not exists trip_admin (
+  name text primary key check (name in ('Brittany','Alex','Antek','Lazza','Saulie')),
+  items jsonb not null default '{}' check (octet_length(items::text) <= 20000),
+  updated_at timestamptz not null default now()
+);
+
 alter table crew_stays enable row level security;
 alter table place_suggestions enable row level security;
 alter table stays_admin enable row level security;
+alter table trip_admin enable row level security;
 
 /* The trip password. Only its sha256 is stored, and anon has no policy on this table, so it cannot be read. */
 /* Set or change it with supabase/set-trip-password.sql, never in this file. */
@@ -125,6 +135,9 @@ drop policy if exists "anon update" on place_suggestions;
 drop policy if exists "anon select" on stays_admin;
 drop policy if exists "anon insert" on stays_admin;
 drop policy if exists "anon update" on stays_admin;
+drop policy if exists "anon select" on trip_admin;
+drop policy if exists "anon insert" on trip_admin;
+drop policy if exists "anon update" on trip_admin;
 
 create policy "anon select" on responses for select to anon using (public.trip_ok());
 create policy "anon insert" on responses for insert to anon with check (public.trip_ok());
@@ -152,6 +165,10 @@ create policy "anon update" on place_suggestions for update to anon using (publi
 create policy "anon select" on stays_admin for select to anon using (public.trip_ok());
 create policy "anon insert" on stays_admin for insert to anon with check (public.trip_ok());
 create policy "anon update" on stays_admin for update to anon using (public.trip_ok()) with check (public.trip_ok());
+
+create policy "anon select" on trip_admin for select to anon using (public.trip_ok());
+create policy "anon insert" on trip_admin for insert to anon with check (public.trip_ok());
+create policy "anon update" on trip_admin for update to anon using (public.trip_ok()) with check (public.trip_ok());
 
 /* Adding a table that is already in the publication is an error, so add only the missing ones. */
 do $$

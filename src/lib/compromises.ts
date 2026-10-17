@@ -33,9 +33,9 @@ export function compromises(group: GroupResult, state: Pick<AppState, 'responses
 
   // Latest vote per person on a fork, as counts for each side.
   const tally = (forkId: string) => {
-    // Everyone who voted counts, guests included (unlike group.ts, which counts the five).
+    // The five crew only, as in group.ts: a guest vote never moves what the real group sees (Brittany 2026-10-17).
     const n = { a: 0, b: 0 };
-    latestVotes(state.votes, forkId, null).forEach(c => { n[c]++; });
+    latestVotes(state.votes, forkId, PEOPLE).forEach(c => { n[c]++; });
     return n;
   };
 

@@ -327,7 +327,7 @@ describe('guests', () => {
   const sandbox = () => {
     const base = seedState();
     const crew = Object.fromEntries(PEOPLE.map(p => [p, crewRow(p, { locked: true })]));
-    return new MemoryStore({ ...base, stays: { crew, suggestions: [place('a1', { title: 'Hill hut' })], admin: { pins: [], scouts: {} } } });
+    return new MemoryStore({ ...base, stays: { crew, suggestions: [place('a1', { title: 'Hill hut' })], admin: { pins: [], scouts: {}, closed: [] } } });
   };
 
   it('the guest is the sixth to lock; until then nothing is decided, after it the lone stay is picked', async () => {
@@ -341,5 +341,106 @@ describe('guests', () => {
     await user.click(btn('I have none to add'));
     expect(await screen.findByText('Hill hut')).toBeInTheDocument();
     expect(localStorage.getItem('tp:stays:Aunty')).toBeNull();
+  });
+});
+
+describe('Brittany-only controls', () => {
+  const three = () => seedPlaces([place('a1', { title: 'Hill hut' }), place('a2', { title: 'River house' }), place('a3', { title: 'Tree lodge' })]);
+
+  it('Brittany pins a stay: stamp for all, Unpin for her, and the pin is stored', async () => {
+    seedCrew('Brittany'); seedPlaces([place('a1', { title: 'Hill hut' }), place('a2', { title: 'River house' })]);
+    const user = await mount('Brittany');
+    await user.click(row('Ella, 1 night, 2 stays'));
+    const card = screen.getByRole('article', { name: 'River house' });
+    await user.click(within(card).getByRole('button', { name: 'Pin as final' }));
+    expect(stored<{ pins: { area: string; suggestionId: string }[] }>('tp:staysadmin').pins).toMatchObject([{ area: 'Ella', suggestionId: 'a2' }]);
+    expect(within(await screen.findByRole('article', { name: 'River house' })).getByText("Brittany's pick")).toBeInTheDocument();
+    await user.click(within(screen.getByRole('article', { name: 'River house' })).getByRole('button', { name: 'Unpin' }));
+    expect(stored<{ pins: unknown[] }>('tp:staysadmin').pins).toEqual([]);
+    expect(screen.queryByText("Brittany's pick")).toBeNull();
+  });
+
+  it('Brittany closes ranking on a waiting destination and the head to head opens on the ranks in; others never see the button', async () => {
+    seedAll({ locked: true }, p => (p === 'Saulie' ? {} : { ranks: { Ella: { first: 'a1', second: 'a2' } } })); three();
+    await mount('Alex');
+    expect(await screen.findByText('Waiting on the others to pick their top 2.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Close ranking/ })).toBeNull();
+    cleanup();
+    const user = await mount('Brittany');
+    await user.click(await screen.findByRole('button', { name: 'Close ranking for Ella' }));
+    expect(stored<{ closed: string[] }>('tp:staysadmin').closed).toEqual(['Ella']);
+    await user.click(await screen.findByRole('button', { name: 'Head to head' }));
+    expect(await screen.findByRole('group', { name: 'Stay vote: Ella' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Close ranking/ })).toBeNull();
+  });
+
+  it('everyone else sees the stamp on a pinned stay but no Pin or Unpin', async () => {
+    seedCrew('Alex'); seedPlaces([place('a1', { title: 'Hill hut' }), place('a2', { title: 'River house' })]);
+    localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [{ area: 'Ella', suggestionId: 'a2', at: 't' }], scouts: {} }));
+    const user = await mount('Alex');
+    await user.click(row('Ella, 1 night, 2 stays'));
+    expect(screen.getByText("Brittany's pick")).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Pin as final' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Unpin' })).toBeNull();
+  });
+
+  it('a pinned destination with 3 stays skips ranking and the vote', async () => {
+    seedAll({ locked: true }); three();
+    localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [{ area: 'Ella', suggestionId: 'a3', at: 't' }], scouts: {} }));
+    await mount('Brittany');
+    expect(screen.getByText('Your stays are set')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Pick my top 2' })).toBeNull();
+  });
+
+  it('without the pin the same destination still waits for rankings', async () => {
+    seedAll({ locked: true }); three();
+    await mount('Brittany');
+    expect(screen.getByRole('button', { name: 'Pick my top 2' })).toBeInTheDocument();
+  });
+
+  it('Brittany can unlock a locked person; nobody else is offered it', async () => {
+    seedAll({ locked: true });
+    const user = await mount('Brittany');
+    await user.click(btn('Unlock Alex'));
+    expect(stored<CrewStays>('tp:stays:Alex').locked).toBe(false);
+    expect(stored<CrewStays>('tp:stays:Antek').locked).toBe(true);
+    cleanup();
+    localStorage.clear();
+    seedAll({ locked: true });
+    await mount('Alex');
+    expect(screen.queryByRole('button', { name: /^Unlock/ })).toBeNull();
+  });
+});
+
+describe('add an eat, do or gem idea', () => {
+  it('the chooser switches the form to name, destination, link, why and rough cost, and saves the kind', async () => {
+    seedCrew('Brittany');
+    const user = await mount('Brittany');
+    await user.click(row('Ella, 1 night, 0 stays'));
+    await user.click(btn('Gems'));
+    await user.click(btn('+ Add an idea'));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('button', { name: 'Gems' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(dialog).queryByRole('group', { name: 'Room setup' })).toBeNull();
+    await user.type(within(dialog).getByLabelText('Name'), 'Secret waterfall');
+    await user.type(within(dialog).getByLabelText('Link'), 'example.com/fall');
+    await user.type(within(dialog).getByLabelText('Why it is good (optional, one line)'), 'Empty at dawn');
+    await user.type(within(dialog).getByLabelText('Rough cost per person (GBP, optional)'), '3');
+    await user.click(within(dialog).getByRole('button', { name: 'Add this idea' }));
+    expect(stored<PlaceSuggestion[]>('tp:placesug')).toMatchObject([{ kind: 'gem', area: 'Ella', title: 'Secret waterfall', why: 'Empty at dawn', priceGbp: 3, link: 'https://example.com/fall' }]);
+    expect(stored<PlaceSuggestion[]>('tp:placesug')[0].stayType).toBeUndefined();
+  });
+
+  it('an idea needs only a name', async () => {
+    seedCrew('Brittany');
+    const user = await mount('Brittany');
+    await user.click(row('Ella, 1 night, 0 stays'));
+    await user.click(btn('Do'));
+    await user.click(btn('+ Add an idea'));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('button', { name: 'Add this idea' })).toBeDisabled();
+    await user.type(within(dialog).getByLabelText('Name'), 'Sunrise hike');
+    await user.click(within(dialog).getByRole('button', { name: 'Add this idea' }));
+    expect(stored<PlaceSuggestion[]>('tp:placesug')[0]).toMatchObject({ kind: 'do', title: 'Sunrise hike' });
   });
 });

@@ -86,3 +86,8 @@
 
 /* Head to head cards sit in two narrow columns: long names clamp to three lines, the full name is on the detail page. */
 .st-pk-wrap > b.st-pk-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; font-size: 18px; overflow-wrap: anywhere; hyphens: manual; }
+
+/* Brittany-only controls: unlock block and the pin stamp laid over a stay photo. */
+.st-admin { display: flex; flex-direction: column; gap: 8px; }
+.st-pinned { position: absolute; top: 8px; left: 8px; max-width: calc(100% - 16px); background: var(--card); }
+.st-close { margin-top: 8px; }

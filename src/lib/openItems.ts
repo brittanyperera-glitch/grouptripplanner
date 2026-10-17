@@ -2,9 +2,9 @@ import type { AppState, GroupResult, Player } from '../types';
 import type { Award } from './awards';
 import { outstanding } from './outstanding';
 
-export type OpenTab = 'Picks' | 'Group' | 'Suggest' | 'Awards' | 'Quiz' | 'Bingo';
+export type OpenTab = 'Picks' | 'Group' | 'Suggest' | 'Stays' | 'Awards' | 'Quiz' | 'Bingo';
 export interface OpenItem {
-  id: 'votes' | 'final' | 'rate' | 'approve' | 'stayQuiz' | 'bingo' | 'awards';
+  id: 'votes' | 'final' | 'rate' | 'approve' | 'stayQuiz' | 'stayAdd' | 'bingo' | 'awards';
   label: string;
   count?: number;
   target: { tab: OpenTab; view?: 'knockouts' };
@@ -45,6 +45,8 @@ export function openItems({ me, group, state, unrated, ratingsLocked, awardsUnse
     if (ideas > 0) out.push({ id: 'approve', label: `${plural(ideas, 'idea', 'ideas')} waiting for approval`, count: ideas, target: { tab: 'Suggest' } });
   }
   if (!state.stays?.crew[me]?.quizDone) out.push({ id: 'stayQuiz', label: 'Do your travel profile (3 minutes)', target: { tab: 'Quiz' } });
+  // Once the route is final, finding somewhere to stay is everyone's job until they lock in their stays (zero is allowed).
+  if (group?.locked && group.final && !state.stays?.crew[me]?.locked) out.push({ id: 'stayAdd', label: 'Find somewhere to stay', count: 1, target: { tab: 'Stays' } });
   // Ratings are not checked here: the caller only builds this list once the member has submitted, as for stayQuiz.
   if (!state.stays?.crew[me]?.bingo?.length) out.push({ id: 'bingo', label: 'Make your travel bingo card', target: { tab: 'Bingo' } });
   if (group?.locked && awardsUnseen) out.push({ id: 'awards', label: 'See the group awards', target: { tab: 'Awards' } });
@@ -52,9 +54,9 @@ export function openItems({ me, group, state, unrated, ratingsLocked, awardsUnse
 }
 
 /** Number badges for the tabs that hold an action; a tab with nothing to do has no key. */
-export function tabBadges(items: OpenItem[]): Partial<Record<'Picks' | 'Group' | 'Suggest', number>> {
+export function tabBadges(items: OpenItem[]): Partial<Record<'Picks' | 'Group' | 'Suggest' | 'Stays', number>> {
   const sum = (...ids: OpenItem['id'][]) => items.filter(i => ids.includes(i.id)).reduce((n, i) => n + (i.count ?? 0), 0);
-  const all = { Group: sum('votes', 'final'), Picks: sum('rate'), Suggest: sum('approve') };
+  const all = { Group: sum('votes', 'final'), Picks: sum('rate'), Suggest: sum('approve'), Stays: sum('stayAdd') };
   return Object.fromEntries(Object.entries(all).filter(([, n]) => n > 0));
 }
 

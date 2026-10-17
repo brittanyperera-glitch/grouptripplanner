@@ -3,13 +3,16 @@ import type { ReactNode } from 'react';
 import Avatar from '../components/Avatar';
 import BigState from '../components/BigState';
 import { IconCheck, IconLeft } from '../components/Icons';
+import { canCloseRanking } from '../lib/override';
 import { outcome, rankedBy, scoutOf, STAY_COPY, STEPS, stayCtx, stayStatus } from '../lib/stayflow';
 import type { Outcome, Step } from '../lib/stayflow';
+import { rankPoints } from '../lib/stays';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
-import type { Area, PlaceSuggestion } from '../types';
+import type { Area, PlaceKind, PlaceSuggestion } from '../types';
 import { useGroupResult } from '../workers/usePlan';
 import StayAddSheet from './StayAddSheet';
+import StayUnlock from './StayUnlock';
 import StayBoard from './StayBoard';
 import StayRank from './StayRank';
 import StayVote from './StayVote';
@@ -23,7 +26,7 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
   const { state, me, store, items, legs } = useApp();
   const { data: group } = useGroupResult(state, items, legs);
   const [view, setView] = useState<View>({ kind: 'home' });
-  const [sheet, setSheet] = useState<{ area: Area; editing?: PlaceSuggestion } | null>(null);
+  const [sheet, setSheet] = useState<{ area: Area; kind?: PlaceKind; editing?: PlaceSuggestion } | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const viewKey = 'area' in view ? `${view.kind}:${view.area}` : view.kind;
   useEffect(() => { root.current?.scrollIntoView?.({ block: 'start' }); }, [viewKey]);
@@ -40,18 +43,22 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
   const mineScouted = ctx.areas.filter(a => scoutOf(ctx, a) === me);
   const outs: Outcome[] = status.open ? ctx.areas.map(a => outcome(ctx, a)) : [];
   const votable = outs.some(o => o.kind === 'vote');
+  const closable = ctx.areas.filter((a, i) => {
+    const o = outs[i];
+    return o?.kind === 'wait' && canCloseRanking(me, rankPoints(ctx.suggestions, {}, a).length, o.ranked, ctx.participants.length, ctx.admin.closed, a);
+  });
   const finished = status.open && status.ranked && ctx.areas.length > 0 && outs.every(o => o.kind === 'decided' || o.kind === 'empty');
   const done: Step[] = finished ? [...STEPS] : status.done;
   const openAdd = () => setSheet({ area: mineScouted[0] ?? ctx.areas[0] });
   const nextRank = (skip?: Area) => status.rankAreas.find(a => a !== skip && !rankedBy(ctx, me, a));
-  const sheetEl = sheet && <StayAddSheet area={sheet.area} areas={ctx.areas} editing={sheet.editing} onClose={() => setSheet(null)} />;
+  const sheetEl = sheet && <StayAddSheet area={sheet.area} kind={sheet.kind} areas={ctx.areas} editing={sheet.editing} onClose={() => setSheet(null)} />;
 
   if (view.kind === 'board' && ctx.areas.includes(view.area)) {
     const area = view.area;
     return shell(
       <>
         <StayBoard ctx={ctx} status={status} area={area} onBack={home} onQuiz={onQuiz}
-          onAdd={() => setSheet({ area })} onEdit={s => setSheet({ area: s.area, editing: s })} />
+          onAdd={kind => setSheet({ area, kind })} onEdit={s => setSheet({ area: s.area, editing: s })} />
         {sheetEl}
       </>,
     );
@@ -128,6 +135,9 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
           <>
             <h2 className="st-step-title">{finished ? C.final.set : C.final.title}</h2>
             <p className="sub">{finished ? C.final.setSub : votable ? C.final.sub : C.final.waiting}</p>
+            {closable.map(a => (
+              <button key={a} type="button" className="st-ghost st-close" title={C.closeRank.hint} onClick={() => { void store.saveStaysAdmin({ closed: [...ctx.admin.closed, a] }); }}>{C.closeRank.go(a)}</button>
+            ))}
             {votable && <button type="button" className="cta" onClick={() => setView({ kind: 'vote' })}>{C.final.go}</button>}
           </>
         );
@@ -171,6 +181,7 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
           );
         })}
       </ul>
+      <StayUnlock ctx={ctx} />
       {sheetEl}
     </section>,
   );

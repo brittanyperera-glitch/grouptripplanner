@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 const sql = readFileSync('supabase/schema.sql', 'utf8').replace(/--.*$/gm, '');
 // crew_stays added 2026-10-16 for the stays phase: 4 tables carry the anon select/insert/update trio.
 // place_suggestions and stays_admin added 2026-10-16 for stays suggestions and pins: 6 tables, measured in schema.sql.
-const TABLES = ['responses', 'suggestions', 'knockout_votes', 'crew_stays', 'place_suggestions', 'stays_admin'];
+// trip_admin added 2026-10-17 for the Trip admin checklist: 7 tables, measured in schema.sql.
+const TABLES = ['responses', 'suggestions', 'knockout_votes', 'crew_stays', 'place_suggestions', 'stays_admin', 'trip_admin'];
 
 describe('supabase/schema.sql', () => {
   it('grants anon select, insert and update on every table, and never delete or for all', () => {
@@ -42,7 +43,8 @@ describe('supabase/schema.sql', () => {
   it('keeps the name check, the flex column and the realtime publication', () => {
     // 4 since crew_stays (2026-10-16): responses, suggestions, knockout_votes, crew_stays; measured 4 in schema.sql.
     // 5 since place_suggestions (2026-10-16); stays_admin has no name column; measured 5 in schema.sql.
-    expect(sql.match(/check \(name in \('Brittany','Alex','Antek','Lazza','Saulie'\)\)/g)).toHaveLength(5);
+    // 6 since trip_admin (2026-10-17), one row per person; measured 6 in schema.sql.
+    expect(sql.match(/check \(name in \('Brittany','Alex','Antek','Lazza','Saulie'\)\)/g)).toHaveLength(6);
     expect(sql).toMatch(/flex boolean not null default false/);
     // Added through a guarded loop so a re-run does not fail on a table that is already published.
     expect(sql).toMatch(/array\['responses','suggestions','knockout_votes'\]/);

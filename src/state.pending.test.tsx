@@ -13,7 +13,7 @@ class Server extends LocalStore {
   crew: Partial<Record<Player, CrewStays>> = {};
   votes: Vote[] = [];
   places: PlaceSuggestion[] = [{ name: 'Lazza', area: 'Ella', kind: 'eat', title: 'Curry shack', id: 'p1', status: 'live', createdAt: 't' }];
-  admin: StaysAdmin = { pins: [], scouts: {} };
+  admin: StaysAdmin = { pins: [], scouts: {}, closed: [] };
   private cbs = new Set<(s: Loaded) => void>();
   private gate(what: string) {
     if (this.fail) throw new Error('offline');
@@ -120,7 +120,7 @@ describe('my failed stays writes, across a reload', () => {
 
   it('a cleared scout survives the reload as a clear', async () => {
     const store = new Server();
-    store.admin = { pins: [], scouts: { Ella: 'Lazza', North: 'Alex' } };
+    store.admin = { pins: [], scouts: { Ella: 'Lazza', North: 'Alex' }, closed: [] };
     await mount(store);
     await act(async () => { await ctx.store.saveStaysAdmin({ scouts: { Ella: undefined } }); });
     cleanup();
@@ -129,6 +129,24 @@ describe('my failed stays writes, across a reload', () => {
     await settle();
     expect(store.admin.scouts).toEqual({ North: 'Alex' });
     expect(ctx.state.stays?.admin.scouts).toEqual({ North: 'Alex' });
+  });
+});
+
+describe('a close ranking that failed to save', () => {
+  it('is resent after the reload, shows meanwhile, and gives way once the server holds it', async () => {
+    const store = new Server();
+    await mount(store);
+    await act(async () => { await ctx.store.saveStaysAdmin({ closed: ['Ella'] }); });
+    expect(ctx.state.stays?.admin.closed).toEqual(['Ella']);
+    cleanup();
+    store.fail = false;
+    await mount(store);
+    await settle();
+    expect(store.admin.closed).toEqual(['Ella']);
+    expect(ctx.state.stays?.admin.closed).toEqual(['Ella']);
+    await act(async () => { await store.push(); });
+    await settle();
+    expect(pendingKeys()).toEqual([]);
   });
 });
 

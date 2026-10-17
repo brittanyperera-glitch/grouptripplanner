@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AREAS, PEOPLE } from '../types';
 import type { Area, CrewStays, PlaceSuggestion, Player } from '../types';
-import { flow, HOSTELS, HUB_AREA, hostelPrice, hostelsFor, outcome, parseUrl, STAY_COPY, STEPS, stayCtx } from './stayflow';
+import { flow, HOSTELS, HUB_AREA, hostelPrice, hostelsFor, outcome, parseUrl, rankAreas, STAY_COPY, STEPS, stayCtx } from './stayflow';
 import type { FlowInput, StayCtx } from './stayflow';
 
 function rng(seed: number) {
@@ -93,7 +93,7 @@ describe('copy ceiling', () => {
 const crewRow = (name: Player, o: Partial<CrewStays> = {}): CrewStays => ({ name, prefs: [], quizDone: true, locked: true, ranks: {}, bingo: [], updatedAt: '', ...o });
 const stay = (id: string, area: Area, o: Partial<PlaceSuggestion> = {}): PlaceSuggestion => ({ id, name: 'Alex', area, kind: 'stay', title: `Stay ${id}`, status: 'live', createdAt: `2026-10-1${id.slice(-1)}`, ...o });
 const ctxOf = (suggestions: PlaceSuggestion[], crew: Partial<Record<Player, CrewStays>>, extra: Partial<StayCtx> = {}): StayCtx => ({
-  ...stayCtx({ responses: {}, suggestions: [], votes: [], stays: { crew, suggestions, admin: { pins: [], scouts: {} } } }, 'Alex', null),
+  ...stayCtx({ responses: {}, suggestions: [], votes: [], stays: { crew, suggestions, admin: { pins: [], scouts: {}, closed: [] } } }, 'Alex', null),
   areas: ['Ella'], ...extra,
 });
 
@@ -111,11 +111,21 @@ describe('outcome per destination', () => {
     const ranked = Object.fromEntries(PEOPLE.map(p => [p, crewRow(p, { ranks: { Ella: { first: 'a1', second: 'a2' } } })])) as Record<Player, CrewStays>;
     expect(outcome(ctxOf(three, ranked), 'Ella')).toMatchObject({ kind: 'vote', pair: ['a1', 'a2'] });
   });
+  it('a closed destination uses the ranks already in, and a person with none is not waited on', () => {
+    const three = ['a1', 'a2', 'a3'].map(id => stay(id, 'Ella'));
+    const one = { ...locked, Brittany: crewRow('Brittany', { ranks: { Ella: { first: 'a3', second: 'a2' } } }) };
+    const closed = ctxOf(three, one, { admin: { pins: [], scouts: {}, closed: ['Ella'] } });
+    expect(outcome(ctxOf(three, one), 'Ella')).toEqual({ kind: 'wait', ranked: 1 });
+    expect(outcome(closed, 'Ella')).toMatchObject({ kind: 'vote', pair: ['a3', 'a2'] });
+    expect(outcome(ctxOf(three, locked, { admin: { pins: [], scouts: {}, closed: ['Ella'] } }), 'Ella')).toMatchObject({ kind: 'vote', pair: ['a1', 'a2'] });
+    expect(rankAreas(closed)).toEqual([]);
+    expect(rankAreas(ctxOf(three, one))).toEqual(['Ella']);
+  });
   it('a pin from Brittany beats the vote, a null pin does not', () => {
     const two = [stay('a1', 'Ella'), stay('a2', 'Ella')];
-    const pinned = ctxOf(two, locked, { admin: { pins: [{ area: 'Ella', suggestionId: 'a2', at: 't' }], scouts: {} } });
+    const pinned = ctxOf(two, locked, { admin: { pins: [{ area: 'Ella', suggestionId: 'a2', at: 't' }], scouts: {}, closed: [] } });
     expect(outcome(pinned, 'Ella')).toEqual({ kind: 'decided', id: 'a2', via: 'pin' });
-    const unpinned = ctxOf(two, locked, { admin: { pins: [{ area: 'Ella', suggestionId: 'a2', at: 't1' }, { area: 'Ella', suggestionId: null, at: 't2' }], scouts: {} } });
+    const unpinned = ctxOf(two, locked, { admin: { pins: [{ area: 'Ella', suggestionId: 'a2', at: 't1' }, { area: 'Ella', suggestionId: null, at: 't2' }], scouts: {}, closed: [] } });
     expect(outcome(unpinned, 'Ella').kind).toBe('vote');
   });
   it('three votes settle it', () => {

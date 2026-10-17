@@ -225,6 +225,22 @@ describe('WriteQueue place suggestions and stays admin', () => {
     expect(sent).toEqual([{ pins: [pin(null)], scouts: { Ella: 'Saulie', North: 'Alex' } }]);
   });
 
+  it('queued admin saves keep closed from one and pins from the other in a single write', async () => {
+    const sent: AdminPatch[] = [];
+    let release: () => void = () => undefined;
+    class Spy extends LocalStore {
+      override async addPlaceSuggestion() { await new Promise<void>(r => { release = r; }); }
+      override async saveStaysAdmin(p: AdminPatch) { sent.push(p); }
+    }
+    const q = new WriteQueue(new Spy(), hooks());
+    const blocker = q.store.addPlaceSuggestion(draft('x'));
+    const one = q.store.saveStaysAdmin({ closed: ['Ella'] });
+    const two = q.store.saveStaysAdmin({ pins: [pin('a')] });
+    release();
+    await Promise.all([blocker, one, two]);
+    expect(sent).toEqual([{ closed: ['Ella'], pins: [pin('a')] }]);
+  });
+
   it('a retry after failures sends one admin write holding every field, newest value per field', async () => {
     const sent: AdminPatch[] = [];
     class Spy extends LocalStore {
@@ -260,5 +276,47 @@ describe('WriteQueue place suggestions and stays admin', () => {
     release();
     await Promise.all([blocker, ...writes]);
     expect(sent).toEqual(['add a', 'add b', 'live p1']);
+  });
+});
+
+describe('WriteQueue trip admin', () => {
+  type Items = Parameters<LocalStore['saveTripAdmin']>[1];
+
+  it('saves for one person queued behind another write become one write, newest value per item', async () => {
+    const sent: Array<[string, Items]> = [];
+    let release: () => void = () => undefined;
+    class Spy extends LocalStore {
+      override async saveTripAdmin(n: Name, p: Items) {
+        if (n === 'Brittany') await new Promise<void>(r => { release = r; });
+        sent.push([n, p]);
+      }
+    }
+    const q = new WriteQueue(new Spy(), hooks());
+    const blocker = q.store.saveTripAdmin('Brittany', { eta: { done: true } });
+    const one = q.store.saveTripAdmin('Alex', { flights: { done: false }, eta: { done: true } });
+    const two = q.store.saveTripAdmin('Alex', { flights: { done: true, ref: 'R1' } });
+    release();
+    await Promise.all([blocker, one, two]);
+    const alex = sent.filter(([n]) => n === 'Alex');
+    expect(alex).toHaveLength(1);
+    expect(alex[0][1]).toEqual({ flights: { done: true, ref: 'R1' }, eta: { done: true } });
+  });
+
+  it('a retry after a failure sends one write holding the newest value per item', async () => {
+    const sent: Items[] = [];
+    class Spy extends LocalStore {
+      fail = true;
+      override async saveTripAdmin(_n: Name, p: Items) {
+        if (this.fail) throw new Error('offline');
+        sent.push(p);
+      }
+    }
+    const base = new Spy();
+    const q = new WriteQueue(base, hooks());
+    await q.store.saveTripAdmin('Alex', { flights: { done: false } });
+    await q.store.saveTripAdmin('Alex', { flights: { done: true }, money: { done: true } });
+    base.fail = false;
+    expect(await q.flush()).toBe(true);
+    expect(sent).toEqual([{ flights: { done: true }, money: { done: true } }]);
   });
 });

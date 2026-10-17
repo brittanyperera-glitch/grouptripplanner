@@ -7,8 +7,8 @@ import PasswordGate from './components/PasswordGate';
 import { getStore, supabaseConfigured } from './store';
 import { useTripAccess } from './store/useTripAccess';
 import { WriteQueue } from './store/queue';
-import { applyAdmin, blankCrew, EMPTY_STAYS, emptyRanking, mergeAdmin, PEOPLE } from './types';
-import type { AppState, CrewStays, Item, Leg, Person, PlaceSuggestion, Player, Response, StayPin, StaysAdmin, Store, Vote } from './types';
+import { applyAdmin, blankCrew, EMPTY_STAYS, emptyRanking, mergeAdmin, mergeAdminItems, PEOPLE } from './types';
+import type { AdminItems, AppState, TripAdminState, CrewStays, Item, Leg, Person, PlaceSuggestion, Player, Response, StayPin, StaysAdmin, Store, Vote } from './types';
 
 // A quip is one line, or a list the app picks from at random so it doesn't repeat.
 export type Quip = string | string[];
@@ -67,14 +67,16 @@ function settlePlaces(o: PlaceOverlay, rows: PlaceSuggestion[]): { next: PlaceOv
 }
 
 const samePins = (a: StayPin[], b: StayPin[]) => a.length === b.length && a.every((p, i) => p.area === b[i].area && p.suggestionId === b[i].suggestionId && p.at === b[i].at);
-/** Drops each admin field (pins whole, scouts per area) the server already holds. */
+const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+/** Drops each admin field (pins and closed whole, scouts per area) the server already holds. */
 function settleAdmin(o: Partial<StaysAdmin>, server: StaysAdmin): Partial<StaysAdmin> {
   if (Object.keys(o).length === 0) return o;
   const next: Partial<StaysAdmin> = {};
   if (o.pins && !samePins(o.pins, server.pins)) next.pins = o.pins;
   const scouts = Object.fromEntries(Object.entries(o.scouts ?? {}).filter(([k, v]) => server.scouts[k as keyof StaysAdmin['scouts']] !== v));
   if (Object.keys(scouts).length) next.scouts = scouts;
-  const unchanged = !!next.pins === !!o.pins && Object.keys(scouts).length === Object.keys(o.scouts ?? {}).length;
+  if (o.closed && !sameList(o.closed, server.closed)) next.closed = o.closed;
+  const unchanged = !!next.pins === !!o.pins && !!next.closed === !!o.closed && Object.keys(scouts).length === Object.keys(o.scouts ?? {}).length;
   return unchanged ? o : next;
 }
 
@@ -168,6 +170,23 @@ const CREW: Pending<CrewOverlay> = {
   ...onDisk<CrewOverlay>('crew', {}, o => Object.keys(o).length === 0,
     raw => (isObj(raw) ? keepWhere(raw as CrewOverlay, (_, c) => isObj(c?.patch) && typeof c?.updatedAt === 'string') : null)),
 };
+
+// My trip admin edits per person, item by item, shown over the server row until it holds them.
+type TripOverlay = Partial<Record<Player, { items: AdminItems; updatedAt: string }>>;
+const TRIP: Pending<TripOverlay> = {
+  empty: {},
+  settle: (o, s) => [keepWhere(o, (n, t) => ahead(t, s.tripAdmin?.[n as Player])), []],
+  resend: o => Object.entries(o).map(([n, t]) => st => st.saveTripAdmin(n as Player, t!.items)),
+  ...onDisk<TripOverlay>('trip', {}, o => Object.keys(o).length === 0,
+    raw => (isObj(raw) ? keepWhere(raw as TripOverlay, (_, t) => isObj(t?.items) && typeof t?.updatedAt === 'string') : null)),
+};
+function withTrip(s: AppState, trip: TripOverlay): AppState {
+  const pending = (Object.entries(trip) as [Player, NonNullable<TripOverlay[Player]>][]).filter(([n, t]) => ahead(t, s.tripAdmin?.[n]));
+  if (pending.length === 0) return s;
+  const rows: TripAdminState = { ...s.tripAdmin };
+  for (const [n, t] of pending) rows[n] = { name: n, items: mergeAdminItems(rows[n]?.items ?? {}, t.items), updatedAt: t.updatedAt };
+  return { ...s, tripAdmin: rows };
+}
 
 const sameVote = (a: Vote, b: Vote) => a.forkId === b.forkId && a.name === b.name && a.choice === b.choice;
 const VOTES: Pending<Vote[]> = {
@@ -287,6 +306,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   const crew = usePending(CREW, !!sandbox);
   const places = usePending(PLACES, !!sandbox);
   const admin = usePending(ADMIN, !!sandbox);
+  const trip = usePending(TRIP, !!sandbox);
   const serverRef = useRef(server);
   serverRef.current = server;
   const [me, setMeState] = useState<Player | null>(() => (sandbox ? null : readMe()));
@@ -323,6 +343,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
     sweep(crew, server, store, replay);
     sweep(places, server, store, replay);
     sweep(admin, server, store, replay);
+    sweep(trip, server, store, replay);
   }, [server, queue, sandbox]);
 
   const store = useMemo<Store | null>(() => queue && {
@@ -357,10 +378,14 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
       admin.set(a => mergeAdmin(a, patch));
       return queue.store.saveStaysAdmin(patch);
     },
+    saveTripAdmin: (name, patch) => {
+      trip.set(l => ({ ...l, [name]: { items: mergeAdminItems(l[name]?.items ?? {}, patch), updatedAt: new Date().toISOString() } }));
+      return queue.store.saveTripAdmin(name, patch);
+    },
   }, [queue]);
   const state = useMemo(
-    () => server && withStays(withLocal(server, local.value, votes.value, crew.value), places.value, admin.value),
-    [server, local.value, votes.value, crew.value, places.value, admin.value],
+    () => server && withTrip(withStays(withLocal(server, local.value, votes.value, crew.value), places.value, admin.value), trip.value),
+    [server, local.value, votes.value, crew.value, places.value, admin.value, trip.value],
   );
 
   const retry = useCallback(() => {

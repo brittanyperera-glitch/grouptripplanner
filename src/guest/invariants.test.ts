@@ -11,7 +11,7 @@ vi.mock('./MemoryStore', async importOriginal => {
   return { MemoryStore: (await import('../store/local')).LocalStore };
 });
 
-const REAL = /^tp:resp:|^tp:stays:|^tp:sugg$|^tp:placesug$|^tp:staysadmin$|^tp:votes$|^tp:log$|^tp:pending:|^tp-trip-key$|^tp:me$/;
+const REAL = /^tp:resp:|^tp:stays:|^tp:tripadmin:|^tp:sugg$|^tp:placesug$|^tp:staysadmin$|^tp:votes$|^tp:log$|^tp:pending:|^tp-trip-key$|^tp:me$/;
 
 let ctx: ReturnType<typeof useApp>;
 const Probe = () => { ctx = useApp(); return null; };
@@ -39,6 +39,7 @@ describe('guest sandbox invariant', () => {
       await ctx.store.saveCrewStays('Aunty', { quizDone: true });
       await ctx.store.addPlaceSuggestion({ name: 'Aunty', area: 'Ella', kind: 'stay', title: 'Hill hut' });
       await ctx.store.saveStaysAdmin({ scouts: { Ella: 'Aunty' } });
+      await ctx.store.saveTripAdmin('Aunty', { flights: { done: true, ref: 'ABC' } });
     });
     const placed = (await ctx.store.load()).stays?.suggestions[0];
     await act(async () => { await ctx.store.setPlaceStatus(placed!.id, 'withdrawn'); });
@@ -49,5 +50,6 @@ describe('guest sandbox invariant', () => {
     expect((await ctx.store.load()).stays?.crew.Aunty?.quizDone).toBe(true);
     expect((await ctx.store.load()).stays?.suggestions).toMatchObject([{ title: 'Hill hut', status: 'withdrawn' }]);
     expect((await ctx.store.load()).stays?.admin.scouts).toEqual({ Ella: 'Aunty' });
+    expect((await ctx.store.load()).tripAdmin?.Aunty?.items).toEqual({ flights: { done: true, ref: 'ABC' } });
   });
 });

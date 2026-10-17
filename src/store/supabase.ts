@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { tripClient } from './tripKey';
-import { applyAdmin, EMPTY_STAYS, emptyRanking } from '../types';
-import type { AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
+import { applyAdmin, EMPTY_STAYS, emptyRanking, mergeAdminItems } from '../types';
+import type { AdminItems, AppState, TripAdminState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
 
 type RankingCol = Response['ranking'] & { final?: Response['final'] };
 export interface RespRow {
@@ -35,7 +35,8 @@ const toPlace = (r: PlaceRow): PlaceSuggestion => {
     ...Object.fromEntries(Object.entries(opt).filter(([, v]) => v !== null && v !== undefined)),
   };
 };
-interface AdminRow { pins: StaysAdmin['pins'] | null; scouts: StaysAdmin['scouts'] | null }
+interface TripRow { name: Person; items: AdminItems | null; updated_at: string | null }
+interface AdminRow { pins: StaysAdmin['pins'] | null; scouts: StaysAdmin['scouts'] | null; closed?: StaysAdmin['closed'] | null }
 
 // The Finalize list is kept inside the ranking jsonb column under "final", so the live table needs
 // no new column.
@@ -90,11 +91,12 @@ export class SupabaseStore implements Store {
   }
 
   async load(): Promise<AppState> {
-    const [r, s, v, stays] = await Promise.all([
+    const [r, s, v, stays, tripAdmin] = await Promise.all([
       this.db.from('responses').select('*'),
       this.db.from('suggestions').select('*').order('created_at'),
       this.db.from('knockout_votes').select('*'),
       this.loadStays(),
+      this.loadTripAdmin(),
     ]);
     const err = r.error ?? s.error ?? v.error;
     if (err) throw err;
@@ -108,7 +110,34 @@ export class SupabaseStore implements Store {
       })),
       votes: ((v.data ?? []) as VoteRow[]).map(x => ({ forkId: x.fork_id, name: x.name, choice: x.choice })),
       stays,
+      tripAdmin,
     };
+  }
+
+  /** Never throws: the trip_admin table is missing until the schema is re-run, and that must not blank the app. */
+  private async loadTripAdmin(): Promise<TripAdminState> {
+    const out: TripAdminState = {};
+    try {
+      const { data, error } = await this.db.from('trip_admin').select('*');
+      if (error) return out;
+      for (const row of (data ?? []) as TripRow[]) {
+        out[row.name] = { name: row.name, items: row.items ?? {}, updatedAt: row.updated_at ?? new Date(0).toISOString() };
+      }
+    } catch { /* same as an error result: the checklist starts empty */ }
+    return out;
+  }
+
+  // One jsonb row per person, so a patch needs the stored map to merge into; the queue sends one write at a time.
+  async saveTripAdmin(name: Person, patch: AdminItems): Promise<void> {
+    const { data, error: readErr } = await this.db.from('trip_admin').select('items').eq('name', name).maybeSingle();
+    if (readErr) throw readErr;
+    const stored = (data as { items: AdminItems | null } | null)?.items ?? {};
+    const { error } = await this.db.from('trip_admin').upsert(
+      { name, items: mergeAdminItems(stored, patch), updated_at: new Date().toISOString() },
+      { onConflict: 'name' },
+    );
+    if (error) throw error;
+    this.ping();
   }
 
   /**
@@ -128,7 +157,7 @@ export class SupabaseStore implements Store {
       soft(() => this.db.from('place_suggestions').select('*').order('created_at'), rows => { stays.suggestions = (rows as PlaceRow[]).map(toPlace); }),
       soft(() => this.db.from('stays_admin').select('*'), rows => {
         const a = (rows as AdminRow[])[0];
-        if (a) stays.admin = { pins: a.pins ?? [], scouts: a.scouts ?? {} };
+        if (a) stays.admin = { pins: a.pins ?? [], scouts: a.scouts ?? {}, closed: Array.isArray(a.closed) ? a.closed : [] };
       }),
     ]);
     return stays;
@@ -178,11 +207,12 @@ export class SupabaseStore implements Store {
   async saveStaysAdmin(patch: Partial<StaysAdmin>): Promise<void> {
     const cols: Record<string, unknown> = { id: 1 };
     if (patch.pins !== undefined) cols.pins = patch.pins;
+    if (patch.closed !== undefined) cols.closed = patch.closed;
     if (patch.scouts !== undefined) {
       const { data, error } = await this.db.from('stays_admin').select('scouts');
       if (error) throw error;
       const stored = ((data ?? []) as AdminRow[])[0]?.scouts ?? {};
-      cols.scouts = applyAdmin({ pins: [], scouts: stored }, { scouts: patch.scouts }).scouts;
+      cols.scouts = applyAdmin({ pins: [], scouts: stored, closed: [] }, { scouts: patch.scouts }).scouts;
     }
     const { error } = await this.db.from('stays_admin').upsert(cols, { onConflict: 'id' });
     if (error) throw error;

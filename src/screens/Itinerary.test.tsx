@@ -60,7 +60,7 @@ describe('chosenStays', () => {
     expect(chosenStays(base({ suggestions: [stay], crew: { Brittany: crew('Brittany', false) } }), 'Brittany', plan)).toEqual([]);
   });
   it('takes a pin over everything, with the nights the plan spends there', () => {
-    const s = base({ suggestions: [stay], admin: { pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-10-16T01:00:00Z' }], scouts: {} } });
+    const s = base({ suggestions: [stay], admin: { pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-10-16T01:00:00Z' }], scouts: {}, closed: [] } });
     expect(chosenStays(s, 'Brittany', plan)).toEqual([{ area: 'Ella', title: 'Hill hut', stayType: 'guesthouse', priceGbp: 40, nights: 2, link: 'https://example.com/hut' }]);
   });
   it('takes a lone stay only once all five have locked in', () => {
@@ -69,7 +69,7 @@ describe('chosenStays', () => {
     expect(chosenStays(base({ suggestions: [stay], crew: { ...lockedCrew, Saulie: { ...lockedCrew.Saulie, locked: false } } }), 'Brittany', plan)).toEqual([]);
   });
   it('ignores a pin on a withdrawn stay', () => {
-    const s = base({ suggestions: [{ ...stay, status: 'withdrawn' }], admin: { pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-10-16T01:00:00Z' }], scouts: {} } });
+    const s = base({ suggestions: [{ ...stay, status: 'withdrawn' }], admin: { pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-10-16T01:00:00Z' }], scouts: {}, closed: [] } });
     expect(chosenStays(s, 'Brittany', plan)).toEqual([]);
   });
 });

@@ -98,8 +98,8 @@ export const rankedBy = (ctx: StayCtx, p: Player, area: Area): boolean => {
   const r = ctx.crewOf[p]?.ranks[area];
   return !!r?.first && !!r?.second;
 };
-/** Areas with three or more distinct stays are ranked; fewer skip straight on. */
-export const rankAreas = (ctx: StayCtx): Area[] => ctx.areas.filter(a => rankPoints(ctx.suggestions, {}, a).length >= 3);
+/** Areas with three or more distinct stays are ranked; fewer skip straight on, and so do a pinned and a closed area. */
+export const rankAreas = (ctx: StayCtx): Area[] => ctx.areas.filter(a => !finalStay(a, ctx.admin.pins, null).pinned && !ctx.admin.closed.includes(a) && rankPoints(ctx.suggestions, {}, a).length >= 3);
 
 export type Outcome =
   | { kind: 'empty' }
@@ -107,14 +107,14 @@ export type Outcome =
   | { kind: 'vote'; pair: [string, string]; tieBreak: string | null; a: Player[]; b: Player[]; warns: Record<string, string[]> }
   | { kind: 'decided'; id: string; via: 'vote' | 'only' | 'pin' };
 
-/** Where a destination stands once voting is open. A pin beats everything; 3+ stays wait for everyone's top 2. */
+/** Where a destination stands once voting is open. A pin beats everything; 3+ stays wait for everyone's top 2 unless Brittany closed ranking, then the ranks in are used. */
 export function outcome(ctx: StayCtx, area: Area): Outcome {
   const pin = finalStay(area, ctx.admin.pins, null);
   if (pin.pinned && pin.id) return { kind: 'decided', id: pin.id, via: 'pin' };
   const scored = rankPoints(ctx.suggestions, {}, area).length;
   if (scored >= 3) {
     const ranked = ctx.participants.filter(p => rankedBy(ctx, p, area)).length;
-    if (ranked < ctx.participants.length) return { kind: 'wait', ranked };
+    if (ranked < ctx.participants.length && !ctx.admin.closed.includes(area)) return { kind: 'wait', ranked };
   }
   const f = finalists(ctx.suggestions, ranksOf(ctx), area, ctx.crew);
   if ('empty' in f) return { kind: 'empty' };
@@ -159,17 +159,20 @@ export const STAY_COPY = {
   waiting: { headline: 'Locked in', sub: 'Waiting on the others.', label: 'Who has locked in', done: 'locked in', wait: 'still to lock', caption: (n: number, of: number) => `${n} of ${of} locked` },
   rank: { title: 'Pick your top 2', sub: 'First place gets 2 points, second gets 1.', go: 'Pick my top 2', waitHead: 'Top 2 is in', waitSub: 'Waiting on the others to pick.', caption: (n: number, of: number) => `${n} of ${of} picked`, label: 'Who has picked', done: 'picked', wait: 'still to pick' },
   final: { title: 'Head to head', sub: 'Two finalists per place. Three votes settle it.', go: 'Head to head', waiting: 'Waiting on the others to pick their top 2.', set: 'Your stays are set', setSub: 'One stay per place.' },
+  closeRank: { go: (area: string) => `Close ranking for ${area}`, hint: 'Goes ahead with the top 2s already in.' },
   scout: (names: string) => `You scout ${names}`,
   scoutTag: 'You scout',
   destinations: 'Where we stay',
   row: (area: string, nights: number, stays: number) => `${area}, ${plural(nights, 'night')}, ${plural(stays, 'stay')}`,
-  board: { header: (area: string, nights: number) => `${area}, ${plural(nights, 'night')}`, add: '+ Add a stay', quizFirst: 'Do your travel profile first, 3 min', lockedLine: 'You locked in. Edits stop here.', none: 'No stays yet.', noneOther: 'Nothing here yet.', locked: 'Locked', edit: 'Edit', withdraw: 'Withdraw', book: 'See and book', night: 'per person per night', offRoute: 'Not on the route now.' },
+  board: { header: (area: string, nights: number) => `${area}, ${plural(nights, 'night')}`, add: '+ Add a stay', quizFirst: 'Do your travel profile first, 3 min', lockedLine: 'You locked in. Edits stop here.', none: 'No stays yet.', noneOther: 'Nothing here yet.', addIdea: '+ Add an idea', pin: 'Pin as final', unpin: 'Unpin', locked: 'Locked', edit: 'Edit', withdraw: 'Withdraw', book: 'See and book', night: 'per person per night', offRoute: 'Not on the route now.' },
   react: { yes: 'Interested', no: 'Not for me' },
   sheet: {
     title: 'Add a stay', edit: 'Edit your stay', close: 'Close', save: 'Add this stay', saveEdit: 'Save changes',
     guide: "Choose from the guide's hostels", guideNone: 'Pick one to fill it in', link: 'Link', name: 'Name', price: 'Price per person per night (GBP)', priceHint: 'Needed unless you chose a guide hostel.',
-    rooms: 'Room setup', type: 'Stay type', why: 'Why (optional, one line)', photo: 'Photo link (optional)', where: 'Destination', badLink: 'Use a web link starting with https.',
+    rooms: 'Room setup', type: 'Stay type',
+    kind: 'What are you adding?', titleIdea: 'Add an idea', cost: 'Rough cost per person (GBP, optional)', saveIdea: 'Add this idea', whyIdea: 'Why it is good (optional, one line)', why: 'Why (optional, one line)', photo: 'Photo link (optional)', where: 'Destination', badLink: 'Use a web link starting with https.',
   },
+  admin: { unlockTitle: 'Reopen a stays list', unlock: (name: string) => `Unlock ${name}` },
   lockPage: { title: 'Lock in my stays', note: 'Edits stop after this.', go: 'Lock in my stays', empty: 'No stays from you yet.' },
   rankPage: { title: (area: string) => `Your top 2 in ${area}`, sub: 'Tap your first pick, then your second. Tap again to clear.', go: 'Submit my top 2', card: (t: string) => `Rank ${t}`, auto: 'Only one stay here, so it is picked.', two: 'Two stays here, so on to the head to head.', zero: 'Nobody suggested a stay here.' },
   vote: {

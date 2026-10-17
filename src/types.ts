@@ -54,7 +54,15 @@ export type ChoiceKind = 'tier' | 'rerank' | 'knockout' | 'days' | 'pace' | 'sug
 // ref is the item id (tier), the fork id (knockout), the area (suggest) or null.
 export interface ChoiceInput { name: Player; kind: ChoiceKind; ref: string | null; value: unknown }
 export interface ChoiceEntry extends ChoiceInput { id: string; at: string }
-export interface AppState { responses: Partial<Record<Player, Response>>; suggestions: Suggestion[]; votes: Vote[]; stays?: StaysState }
+// Trip admin: one row per person, a map of item id to that person's entry. The group sees `done`; price, ref and note are
+// private to the owner in the UI only (one shared trip password means the rows are readable by any key holder).
+export interface AdminEntry { done: boolean; doneAt?: string; price?: string; ref?: string; note?: string }
+export type AdminItems = Record<string, AdminEntry>;
+export interface TripAdminRow { name: Player; items: AdminItems; updatedAt: string }
+export type TripAdminState = Partial<Record<Player, TripAdminRow>>;
+/** Latest write wins per item id: `next` replaces that item whole, other items are untouched. */
+export const mergeAdminItems = (prev: AdminItems, next: AdminItems): AdminItems => ({ ...prev, ...next });
+export interface AppState { responses: Partial<Record<Player, Response>>; suggestions: Suggestion[]; votes: Vote[]; stays?: StaysState; tripAdmin?: TripAdminState }
 export interface Store {
   load(): Promise<AppState>;
   saveResponse(name: Player, patch: Partial<Omit<Response, 'name'>>): Promise<void>;
@@ -69,8 +77,10 @@ export interface Store {
   addPlaceSuggestion(s: PlaceDraft): Promise<void>;
   // Anon cannot delete, so taking a suggestion down is a status change.
   setPlaceStatus(id: string, status: PlaceSuggestion['status']): Promise<void>;
-  // pins replace the stored list whole; scouts merge by area (an undefined value clears that area).
+  // pins and closed replace the stored list whole; scouts merge by area (an undefined value clears that area).
   saveStaysAdmin(patch: Partial<StaysAdmin>): Promise<void>;
+  // Trip admin checklist: the items in the patch replace those items whole; other items keep their stored value.
+  saveTripAdmin(name: Player, patch: AdminItems): Promise<void>;
 }
 export type PlaceDraft = Omit<PlaceSuggestion, 'id' | 'createdAt' | 'status'>;
 // a = contested item first, then anything else forcing it in adds; b = items it would displace
@@ -129,11 +139,12 @@ export interface CrewStays {
 }
 // Brittany's overrides: a pin skips the vote (suggestionId null = unpinned); scouts name who fills which destination.
 export interface StayPin { area: Area; suggestionId: string | null; at: string }
-export interface StaysAdmin { pins: StayPin[]; scouts: Partial<Record<Area, Player>> }
+// closed = destinations where Brittany stopped waiting on the rest of the top 2s; stored whole like pins.
+export interface StaysAdmin { pins: StayPin[]; scouts: Partial<Record<Area, Player>>; closed: Area[] }
 // Reactions (kind eat/do/gem) and the stay head to head ride the existing knockout votes:
 // forkId `react:<suggestionId>` (choice a = interested, b = not) and `stay:<area>:<idA>:<idB>` (a or b).
 export interface StaysState { crew: Partial<Record<Player, CrewStays>>; suggestions: PlaceSuggestion[]; admin: StaysAdmin }
-export const EMPTY_STAYS: StaysState = { crew: {}, suggestions: [], admin: { pins: [], scouts: {} } };
+export const EMPTY_STAYS: StaysState = { crew: {}, suggestions: [], admin: { pins: [], scouts: {}, closed: [] } };
 // Epoch updatedAt, so any stored row counts as newer than this placeholder.
 export const blankCrew = (name: Player): CrewStays => ({ name, prefs: [], quizDone: false, locked: false, ranks: {}, bingo: [], updatedAt: new Date(0).toISOString() });
 // The one merge rule for admin patches, so every store and the write queue agree. `next` wins.
@@ -146,7 +157,7 @@ export function mergeAdmin(prev: Partial<StaysAdmin>, next: Partial<StaysAdmin>)
 export function applyAdmin(stored: StaysAdmin, patch: Partial<StaysAdmin>): StaysAdmin {
   const m = mergeAdmin(stored, patch);
   const scouts = Object.fromEntries(Object.entries(m.scouts ?? {}).filter(([, p]) => p !== undefined)) as StaysAdmin['scouts'];
-  return { pins: m.pins ?? [], scouts };
+  return { pins: m.pins ?? [], scouts, closed: m.closed ?? [] };
 }
 export const stayForkId = (area: Area, a: string, b: string) => `stay:${area}:${a}:${b}`;
 export const reactForkId = (suggestionId: string) => `react:${suggestionId}`;

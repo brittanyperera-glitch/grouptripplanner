@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Avatar from '../components/Avatar';
 import { IconLeft } from '../components/Icons';
+import { isAdmin, pinnedId, withPin } from '../lib/override';
 import { KIND_LABEL, liveStays, STAY_COPY, warnLines } from '../lib/stayflow';
 import type { StayCtx, StayStatus } from '../lib/stayflow';
 import { tallySides } from '../lib/votes';
@@ -15,7 +16,7 @@ const KINDS: PlaceKind[] = ['stay', 'eat', 'do', 'gem'];
 
 interface Props {
   ctx: StayCtx; status: StayStatus; area: Area;
-  onBack(): void; onAdd(): void; onEdit(s: PlaceSuggestion): void; onQuiz?: () => void;
+  onBack(): void; onAdd(kind: PlaceKind): void; onEdit(s: PlaceSuggestion): void; onQuiz?: () => void;
 }
 
 /** One destination: stays I can add to, and eat / do / gem ideas the crew just react to. */
@@ -23,16 +24,23 @@ export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, on
   const { store } = useApp();
   const [kind, setKind] = useState<PlaceKind>('stay');
   const nights = ctx.nights[area] ?? 0;
+  const admin = isAdmin(ctx.me);
+  const pinned = pinnedId(ctx.admin.pins, area);
+  const setPin = (id: string | null) => { void store.saveStaysAdmin({ pins: withPin(ctx.admin.pins, area, id, new Date().toISOString()) }); };
   const stays = liveStays(ctx, area);
   const others = ctx.suggestions.filter(s => s.kind === kind && s.area === area && s.status === 'live');
 
   const stayCard = (s: PlaceSuggestion) => {
     const mine = s.name === ctx.me;
+    const isPin = pinned === s.id;
     return (
       <article key={s.id} className="st-card" aria-label={s.title}>
-        <StayFace s={s} lines={warnLines(ctx, s)} />
+        <StayFace s={s} lines={warnLines(ctx, s)} corner={isPin ? <span className="stamp-label red st-pinned">{STAY_COPY.vote.pinned}</span> : undefined} />
         <div className="st-actions">
           {s.link && <a className="st-link" href={s.link} target="_blank" rel="noopener noreferrer">{B.book}</a>}
+          {admin && (isPin
+            ? <button type="button" className="st-ghost" onClick={() => setPin(null)}>{B.unpin}</button>
+            : <button type="button" className="st-ghost" onClick={() => setPin(s.id)}>{B.pin}</button>)}
           {mine && status.locked && <span className="stamp-label">{B.locked}</span>}
           {mine && !status.locked && (
             <>
@@ -84,13 +92,14 @@ export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, on
       {kind === 'stay' && (status.locked
         ? <p className="sub">{B.lockedLine}</p>
         : status.quizDone
-          ? <button type="button" className="cta st-add" onClick={onAdd}>{B.add}</button>
+          ? <button type="button" className="cta st-add" onClick={() => onAdd('stay')}>{B.add}</button>
           : (
             <div className="st-gate">
               <button type="button" className="cta st-add" disabled>{B.add}</button>
               <button type="button" className="st-link st-reason" onClick={onQuiz}>{B.quizFirst}</button>
             </div>
           ))}
+      {kind !== 'stay' && <button type="button" className="cta st-add" onClick={() => onAdd(kind)}>{B.addIdea}</button>}
       {list.length === 0
         ? <p className="empty">{kind === 'stay' ? B.none : B.noneOther}</p>
         : <div className="st-list">{list.map(s => (kind === 'stay' ? stayCard(s) : reactCard(s)))}</div>}
