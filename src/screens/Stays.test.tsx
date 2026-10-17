@@ -18,7 +18,8 @@ const plan: Plan = {
   route: ['AIR', 'Sigiriya', 'Ella', 'AIR'], areas: ['Cultural Triangle', 'Ella'], chosen: [], dropped: [], travelHours: 0, fits: true, missingMusts: [], score: 0,
   days: [day(1, 'Cultural Triangle'), day(2, 'Cultural Triangle'), day(3, null), day(4, 'Ella'), day(5, 'Kandy and Knuckles')],
 };
-const routeLocked = (): GroupResult => ({ final: plan } as unknown as GroupResult);
+// Changed deliberately (route decided only once locked or reopened): the fixture carries `locked`, as a real decided route does.
+const routeLocked = (): GroupResult => ({ final: plan, locked: true } as unknown as GroupResult);
 
 const crewRow = (name: Player, over: Partial<CrewStays> = {}): CrewStays => ({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z', ...over });
 const seedCrew = (name: Player, over: Partial<CrewStays> = {}) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify(crewRow(name, over)));
@@ -70,6 +71,21 @@ describe('home: steps, one button, destinations', () => {
     localStorage.setItem('tp:me', 'Brittany');
     render(<AppProvider store={new LocalStore()}><Stays /></AppProvider>);
     expect(await screen.findByText('Stays opens when the route locks.')).toBeInTheDocument();
+  });
+
+  it('a route that was provisional (final lists still being saved) is not a route yet', async () => {
+    grp.current = { final: plan, locked: false } as unknown as GroupResult;
+    localStorage.setItem('tp:me', 'Brittany');
+    render(<AppProvider store={new LocalStore()}><Stays /></AppProvider>);
+    expect(await screen.findByText('Stays opens when the route locks.')).toBeInTheDocument();
+  });
+
+  it('a late vote reopening the locked route keeps Stays on the held plan', async () => {
+    PEOPLE.forEach(n => localStorage.setItem(`tp:resp:${n}`, JSON.stringify({ name: n, days: 9, flex: false, pace: 1, ranking: { must: [], keen: [], meh: [], skip: [] }, rated: [], submitted: true, updatedAt: 'x', final: { must: [], keen: [], meh: [], skip: [] } })));
+    grp.current = { final: null, held: plan, locked: false, knockouts: [{ forkId: 'ko:s:late' }] } as unknown as GroupResult;
+    await mount('Brittany');
+    expect(screen.queryByText('Stays opens when the route locks.')).toBeNull();
+    expect(row('Cultural Triangle, 2 nights, 0 stays')).toBeInTheDocument();
   });
 });
 

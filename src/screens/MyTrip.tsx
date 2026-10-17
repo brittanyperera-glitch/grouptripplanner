@@ -145,7 +145,7 @@ export default function MyTrip({ plan, days, showBook = false }: { plan: Plan & 
           {plan.missingMusts.length > 0 && `. Left out: ${plan.missingMusts.map(name).join(', ')}`}
         </div>
       )}
-      {showBook && <TripAdminLink plan={plan} onOpen={openAdmin ?? (() => {})} />}
+      {showBook && <TripAdminLink group={null} onOpen={openAdmin ?? (() => {})} />}
       <RouteMap route={plan.route} drive={!revealing} />
       {me && <button type="button" className="cta mytrip-reveal" onClick={() => { unlock(); setRevealing(true); }}>Play my route reveal</button>}
       {revealing && me && <Reveal plan={plan} who={me} onClose={() => setRevealing(false)} />}

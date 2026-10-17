@@ -4,6 +4,7 @@ import Avatar from '../components/Avatar';
 import BigState from '../components/BigState';
 import { IconCheck, IconLeft } from '../components/Icons';
 import { canCloseRanking } from '../lib/override';
+import { routePlan } from '../lib/openItems';
 import { outcome, rankedBy, scoutOf, STAY_COPY, STEPS, stayCtx, stayStatus } from '../lib/stayflow';
 import type { Outcome, Step } from '../lib/stayflow';
 import { rankPoints } from '../lib/stays';
@@ -34,9 +35,10 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
   const shell = (body: ReactNode) => <div ref={root}>{body}</div>;
   if (!me) return null;
   if (!group) return shell(<section className="body st"><p className="empty">{C.loading}</p></section>);
-  if (!group.final) return shell(<section className="body st"><p className="empty">{C.noRoute}</p></section>);
+  const route = routePlan(group, state);
+  if (!route) return shell(<section className="body st"><p className="empty">{C.noRoute}</p></section>);
 
-  const ctx = stayCtx(state, me, group.final);
+  const ctx = stayCtx(state, me, route);
   const status = stayStatus(ctx);
   const home = () => setView({ kind: 'home' });
   const lockNow = () => { void store.saveCrewStays(me, { locked: true }); home(); };

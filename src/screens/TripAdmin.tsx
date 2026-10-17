@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import Avatar from '../components/Avatar';
 import { IconCheck, IconLeft } from '../components/Icons';
+import { routePlan } from '../lib/openItems';
 import { adminChecklist, adminOutstanding, doneBy, FIELD_MAX, toggleDone, visibleEntry, withDetails } from '../lib/tripadmin';
 import type { AdminDef } from '../lib/tripadmin';
 import { useApp } from '../state';
-import type { Plan, Player } from '../types';
+import type { GroupResult, Player } from '../types';
 import { useGroupResult } from '../workers/usePlan';
 import './TripAdmin.css';
 
 const COPY = {
   title: 'Trip admin',
   back: 'Back',
-  sub: 'Tick what you have sorted. The group sees who is done, never your prices or booking details.',
+  sub: 'Tick what you have sorted. The group sees who is done. Prices, references and notes are shown only to you in the app.',
   mine: 'Yours',
   group: 'The group',
   groupEmpty: 'Group bookings appear once the route is set and each stay is decided.',
@@ -45,7 +46,7 @@ export default function TripAdmin({ onBack }: { onBack: () => void }) {
   const [form, setForm] = useState({ price: '', ref: '', note: '' });
   if (!me) return null;
 
-  const list = adminChecklist(state, me, group?.final ?? null);
+  const list = adminChecklist(state, me, routePlan(group, state));
   const mine = list.filter(d => d.scope === 'person');
   const shared = list.filter(d => d.scope === 'group');
   const entry = (id: string) => visibleEntry(me, me, state.tripAdmin?.[me]?.items[id]);
@@ -116,11 +117,14 @@ export default function TripAdmin({ onBack }: { onBack: () => void }) {
   );
 }
 
-/** The one entry point on Group trip and the Menu: how many items are left for me, and a tap to open the page. */
-export function TripAdminLink({ plan, onOpen }: { plan: Plan | null; onOpen: () => void }) {
+/**
+ * The one entry point on Group trip and My trip: how many items are left for me, and a tap to open the page.
+ * Counts from the same route as the page (routePlan); My trip has no group yet and passes null.
+ */
+export function TripAdminLink({ group, onOpen }: { group: GroupResult | null; onOpen: () => void }) {
   const { state, me } = useApp();
   if (!me) return null;
-  const n = adminOutstanding(me, state, plan).length;
+  const n = adminOutstanding(me, state, routePlan(group, state)).length;
   return (
     <button type="button" className="ta-link" onClick={onOpen}>
       <span className="ta-link-name">{COPY.title}</span>

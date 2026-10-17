@@ -45,6 +45,22 @@ describe('S1: Group trip while a late vote is open', () => {
   });
 });
 
+describe('Trip admin link on a reopened route', () => {
+  const BOOKABLE = ITEMS.find(i => i.book)!;
+  const link = async (finals: number) => {
+    seed(finals);
+    localStorage.setItem('tp:me', 'Alex');
+    render(<AppProvider store={new LocalStore()}><Plan group={reopened({ held: onePlace(BOOKABLE) })} /></AppProvider>);
+    return (await screen.findByRole('button', { name: /Trip admin/ })).textContent;
+  };
+  it('counts the held plan\'s bookings once all five lists are saved', async () => {
+    expect(await link(5)).toMatch(/7 to do/);
+  });
+  it('counts only personal items while lists are still being saved', async () => {
+    expect(await link(4)).toMatch(/6 to do/);
+  });
+});
+
 describe('S7: a late item that does not fit', () => {
   it('is listed in Decided, in plain words', async () => {
     const g = reopened({ held: undefined, knockouts: [], final: onePlace(A), results: [{ forkId: 'ko:scuba:nofit', a: ['scuba'], b: [], winner: 'nofit' }] });

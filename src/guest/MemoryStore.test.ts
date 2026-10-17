@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import catalogue from '../data/catalogue.json';
 import legsData from '../data/legs.json';
 import { groupResult, VOTES_TO_RESOLVE } from '../lib/group';
+import { finalListFrom } from '../lib/ranking';
 import { PEOPLE, type AppState, type Item, type Leg } from '../types';
 import { MemoryStore } from './MemoryStore';
 
@@ -214,6 +215,28 @@ describe('MemoryStore guest sandbox', () => {
     const out = (await s.load()).suggestions;
     expect(out.find(x => x.name === 'Aunty')?.status).toBe('live');
     expect(out.find(x => x.name === 'Alex')?.status).toBe('pending');
+  });
+
+  it('(g) a guest who votes B on every head to head gets none of the voted-out places back in the finished route', async () => {
+    const s = new MemoryStore();
+    let g = groupResult(await s.load(), items, legs);
+    for (let round = 0; round < 15 && g.knockouts.length; round++) {
+      for (const k of g.knockouts) await s.vote({ forkId: k.forkId, name: 'Aunty', choice: 'b' });
+      g = groupResult(await s.load(), items, legs);
+    }
+    expect(g.knockouts).toEqual([]);
+    const knocked = g.knocked;
+    expect(knocked.length).toBeGreaterThan(0);
+    const ranking = (await s.load()).responses.Brittany!.ranking;
+    await s.saveResponse('Aunty', { days: 9, ranking, final: finalListFrom(ranking, knocked) });
+    const after = await s.load();
+    for (const p of PEOPLE) {
+      expect(after.responses[p]!.final!.must.flat().filter(id => knocked.includes(id))).toEqual([]);
+      expect(after.responses[p]!.final).toEqual(finalListFrom(after.responses[p]!.ranking, knocked));
+    }
+    const route = groupResult(after, items, legs);
+    expect(route.locked).toBe(true);
+    expect(route.final!.chosen.filter(id => knocked.includes(id))).toEqual([]);
   });
 
   it('(f) groupResult does not throw with a live guest suggestion', async () => {

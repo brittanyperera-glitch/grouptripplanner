@@ -1,4 +1,5 @@
-import type { AppState, GroupResult, Player } from '../types';
+import { PEOPLE } from '../types';
+import type { AppState, GroupResult, Plan, Player } from '../types';
 import type { Award } from './awards';
 import { outstanding } from './outstanding';
 
@@ -23,6 +24,19 @@ export interface OpenCtx {
 /** Head to heads are done and my Finalize list is the next step (also the Group tab's finalize stage). */
 export const isFinalizing = (g: GroupResult): boolean => g.open && g.knockouts.length === 0 && !!g.final && !g.locked;
 
+/** A late item reopened a decided route: all five saved a Finalize list, one vote is open, and the group still holds the plan. */
+export const isReopened = (g: GroupResult, state: AppState): boolean => !g.final && !!g.held && PEOPLE.every(p => !!state.responses[p]?.final);
+
+/**
+ * The route the group has decided, or null: the locked plan, or the plan held while a late item's vote is open.
+ * The one test for "has the route been decided", for the Stays tab, its to-do and Trip admin's group bookings.
+ */
+export function routePlan(group: GroupResult | null | undefined, state: AppState): Plan | null {
+  if (!group) return null;
+  if (group.locked && group.final) return group.final;
+  return isReopened(group, state) ? group.held ?? null : null;
+}
+
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 // Same idea from several people is one row: the same key as Suggest groups by.
 export const ideaKey = (s: { title: string; area: string }) => `${s.title.trim().toLowerCase()}|${s.area}`;
@@ -46,7 +60,7 @@ export function openItems({ me, group, state, unrated, ratingsLocked, awardsUnse
   }
   if (!state.stays?.crew[me]?.quizDone) out.push({ id: 'stayQuiz', label: 'Do your travel profile (3 minutes)', target: { tab: 'Quiz' } });
   // Once the route is final, finding somewhere to stay is everyone's job until they lock in their stays (zero is allowed).
-  if (group?.locked && group.final && !state.stays?.crew[me]?.locked) out.push({ id: 'stayAdd', label: 'Find somewhere to stay', count: 1, target: { tab: 'Stays' } });
+  if (routePlan(group, state) && !state.stays?.crew[me]?.locked) out.push({ id: 'stayAdd', label: 'Find somewhere to stay', count: 1, target: { tab: 'Stays' } });
   // Ratings are not checked here: the caller only builds this list once the member has submitted, as for stayQuiz.
   if (!state.stays?.crew[me]?.bingo?.length) out.push({ id: 'bingo', label: 'Make your travel bingo card', target: { tab: 'Bingo' } });
   if (group?.locked && awardsUnseen) out.push({ id: 'awards', label: 'See the group awards', target: { tab: 'Awards' } });

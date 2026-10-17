@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import RouteMap from '../components/Map';
 import { useOpenAdmin } from '../components/AdminNav';
 import { useApp } from '../state';
+import { isReopened } from '../lib/openItems';
 import { tierOf } from '../lib/ranking';
 import { sideQuests } from '../lib/sideQuests';
 import { PEOPLE } from '../types';
@@ -17,7 +18,7 @@ export default function Plan({ group, reveal }: { group: GroupResult; reveal?: R
   // S1: while only late votes are open, show the plan they are asked against, never the pre-vote base.
   const plan = group.final ?? group.held ?? group.base;
   if (!plan) return null;
-  const reopened = !group.final && !!group.held && PEOPLE.every(p => !!state.responses[p]?.final);
+  const reopened = isReopened(group, state);
   const pending = group.knockouts.map(k => items.find(i => i.id === k.a[0])?.name ?? k.a[0]).join(', ');
   const chosen = items.filter(i => plan.chosen.includes(i.id));
   const tips = tipsOf(plan, chosen).flatMap(t => (t.day === null ? [] : [{ day: t.day, name: t.item.name, text: t.item.warn as string }]));
@@ -32,7 +33,7 @@ export default function Plan({ group, reveal }: { group: GroupResult; reveal?: R
             : `Provisional until all five finalize their lists (${group.finalized.length} of 5 done)`}
       </div>
       {reveal}
-      <TripAdminLink plan={plan} onOpen={openAdmin ?? (() => {})} />
+      <TripAdminLink group={group} onOpen={openAdmin ?? (() => {})} />
       <RouteMap route={plan.route} />
       <SaveItinerary plan={plan} kind="Group" provisional={!(reopened || (group.final && group.locked))} />
       <DayRows plan={plan} items={items} legs={legs} quests={sideQuests(plan, me, state, items)} tips={tips} skippedBy={id => PEOPLE.filter(p => { const r = state.responses[p]; return !!r && tierOf(r.ranking, id) === 'skip'; })} />

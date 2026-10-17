@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { emptyRanking } from '../types';
-import type { AppState, GroupResult, Knockout, Person, Player, Suggestion } from '../types';
+import { emptyRanking, PEOPLE } from '../types';
+import type { AppState, GroupResult, Knockout, Person, Player, Plan, Suggestion } from '../types';
 import type { Award } from './awards';
-import { awardsKey, isFinalizing, openItems, tabBadges } from './openItems';
+import { awardsKey, isFinalizing, isReopened, openItems, routePlan, tabBadges } from './openItems';
 import type { OpenCtx } from './openItems';
 
 const ko = (forkId: string, a: Person[] = [], b: Person[] = []): Knockout => ({ forkId, a: ['x'], b: ['y'], votes: { a, b } });
@@ -167,5 +167,34 @@ describe('awardsKey', () => {
     expect(awardsKey(base)).not.toBe(awardsKey([a('foodie', ['Saulie']), a('poseidon', ['Antek', 'Lazza'])]));
     expect(awardsKey(base)).not.toBe(awardsKey([base[0]]));
     expect(awardsKey([])).toBe('');
+  });
+});
+
+describe('routePlan: the route has been decided', () => {
+  const locked = { name: 'x' } as unknown as Plan, held = { name: 'held' } as unknown as Plan;
+  const withFinals = (who: readonly Player[]): AppState => ({
+    ...empty,
+    responses: Object.fromEntries(who.map(n => [n, { name: n, days: 9, flex: false, pace: 1, ranking: emptyRanking(), rated: [], submitted: true, updatedAt: 'x', final: emptyRanking() }])) as AppState['responses'],
+  });
+  // A late item after the seal: no final, one vote open, the plan held, every Finalize list still saved.
+  const reopened = group({ final: null, held, locked: false, knockouts: [ko('ko:s:late')] });
+
+  it('is the locked plan, a held plan while all five saved lists and a late vote is open, and nothing otherwise', () => {
+    expect(routePlan(group({ final: locked, locked: true }), empty)).toBe(locked);
+    expect(routePlan(reopened, withFinals(PEOPLE))).toBe(held);
+    expect(isReopened(reopened, withFinals(PEOPLE))).toBe(true);
+    expect(routePlan(null, empty)).toBeNull();
+    expect(routePlan(undefined, empty)).toBeNull();
+  });
+  it('never invents a route that was not decided', () => {
+    // Head to heads still open: a held plan is not a decision unless all five lists were saved.
+    expect(routePlan(group({ final: null, held, knockouts: [ko('ko:1')] }), withFinals(['Alex', 'Brittany']))).toBeNull();
+    expect(routePlan(group({ final: null, knockouts: [ko('ko:1')] }), withFinals(PEOPLE))).toBeNull();
+    // Finalizing: a plan exists but not all five have saved.
+    expect(routePlan(group({ final: locked, locked: false }), withFinals(['Alex']))).toBeNull();
+  });
+  it('keeps Find somewhere to stay on the list while a late vote is open', () => {
+    expect(ids(ctx({ group: reopened, state: { ...withFinals(PEOPLE), stays: empty.stays } }))).toContain('stayAdd');
+    expect(ids(ctx({ group: reopened, state: { ...withFinals(['Alex']), stays: empty.stays } }))).not.toContain('stayAdd');
   });
 });

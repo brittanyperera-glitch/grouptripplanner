@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProvider } from '../state';
 import { LocalStore } from '../store/local';
+import { emptyRanking, PEOPLE } from '../types';
 import type { GroupResult, Plan, Player, TripAdminRow } from '../types';
 import TripAdmin, { TripAdminLink } from './TripAdmin';
 
@@ -23,7 +24,10 @@ const mount = async (me: Player = 'Alex') => {
   return user;
 };
 
-beforeEach(() => { localStorage.clear(); grp.current = { final: plan } as unknown as GroupResult; });
+// Changed deliberately (route decided only once locked or reopened): the group fixture carries `locked`, as a real decided route does.
+const decided = { final: plan, locked: true } as unknown as GroupResult;
+const saveFinals = () => PEOPLE.forEach(n => localStorage.setItem(`tp:resp:${n}`, JSON.stringify({ name: n, days: 9, flex: false, pace: 1, ranking: emptyRanking(), rated: [], submitted: true, updatedAt: 'x', final: emptyRanking() })));
+beforeEach(() => { localStorage.clear(); grp.current = decided; });
 afterEach(() => cleanup());
 
 describe('TripAdmin', () => {
@@ -76,8 +80,42 @@ describe('TripAdmin', () => {
     localStorage.setItem('tp:me', 'Alex');
     const onOpen = vi.fn();
     const user = userEvent.setup();
-    render(<AppProvider store={new LocalStore()}><TripAdminLink plan={plan} onOpen={onOpen} /></AppProvider>);
+    render(<AppProvider store={new LocalStore()}><TripAdminLink group={decided} onOpen={onOpen} /></AppProvider>);
     await user.click(await screen.findByRole('button', { name: /Trip admin.*8 to do/ }));
     expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  describe('the route behind the group bookings', () => {
+    const reopened = { final: null, held: plan, locked: false, knockouts: [{ forkId: 'ko:s:late' }] } as unknown as GroupResult;
+    const provisional = { final: plan, locked: false } as unknown as GroupResult;
+    const linkText = async (g: GroupResult) => {
+      localStorage.setItem('tp:me', 'Alex');
+      render(<AppProvider store={new LocalStore()}><TripAdminLink group={g} onOpen={vi.fn()} /></AppProvider>);
+      return (await screen.findByRole('button', { name: /Trip admin/ })).textContent;
+    };
+
+    it('a late vote reopening the locked route keeps the group bookings, on the page and in the link count', async () => {
+      saveFinals();
+      grp.current = reopened;
+      await mount();
+      expect(screen.getAllByRole('checkbox').map(b => b.getAttribute('aria-label'))).toContain('Sigiriya Rock');
+      cleanup();
+      expect(await linkText(reopened)).toMatch(/8 to do/);
+    });
+
+    it('a provisional route lists no group bookings, and the link counts the same six', async () => {
+      grp.current = provisional;
+      await mount();
+      expect(screen.getAllByRole('checkbox')).toHaveLength(6);
+      expect(screen.getByText(/Group bookings appear once the route is set/)).toBeInTheDocument();
+      cleanup();
+      expect(await linkText(provisional)).toMatch(/6 to do/);
+    });
+
+    it('does not promise privacy it cannot keep', async () => {
+      await mount();
+      expect(document.body.textContent).not.toMatch(/never your prices/);
+      expect(screen.getByText(/shown only to you in the app/)).toBeInTheDocument();
+    });
   });
 });

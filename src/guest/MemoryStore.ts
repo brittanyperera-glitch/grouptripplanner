@@ -1,6 +1,10 @@
-import { VOTES_TO_RESOLVE } from '../lib/group';
+import genresJson from '../data/genres.json';
+import legsData from '../data/legs.json';
+import { groupResult, VOTES_TO_RESOLVE } from '../lib/group';
+import { finalListFrom } from '../lib/ranking';
+import { liveItems } from '../state';
 import { applyAdmin, blankCrew, mergeAdminItems, EMPTY_STAYS, emptyRanking, isGuest, PEOPLE } from '../types';
-import type { AdminItems, AppState, ChoiceEntry, ChoiceInput, CrewStays, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
+import type { AdminItems, AppState, ChoiceEntry, ChoiceInput, CrewStays, Genre, Leg, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
 import { seedState } from './seed';
 
 const defaultRow = (name: Player): Response => ({
@@ -26,8 +30,10 @@ export class MemoryStore implements Store {
     const existing = this.state.responses[name] ?? defaultRow(name);
     this.state.responses[name] = structuredClone({ ...existing, ...patch, name, updatedAt: new Date().toISOString() });
     if (isGuest(name) && patch.final) {
-      // The example crew finalizes with the guest, so the route locks and the demo reaches Stays.
-      for (const p of PEOPLE) { const r = this.state.responses[p]; if (r && !r.final) r.final = structuredClone(r.ranking); }
+      // The example crew finalizes with the guest, so the route locks and the demo reaches Stays. Each starts from the
+      // same list the Finalize screen opens with, so a place the group voted out is not handed back.
+      const { knocked } = groupResult(this.state, liveItems(this.state), legsData as unknown as Leg[], genresJson.genres as Genre[]);
+      for (const p of PEOPLE) { const r = this.state.responses[p]; if (r && !r.final) r.final = finalListFrom(r.ranking, knocked); }
     }
     this.emit();
   }

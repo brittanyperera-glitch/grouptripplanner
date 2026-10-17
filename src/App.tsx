@@ -9,7 +9,7 @@ import QuipBurst from './components/QuipBurst';
 import type { QuipKind } from './components/QuipBurst';
 import { QuipGate } from './components/quipRate';
 import { groupAwards } from './lib/awards';
-import { awardsKey, isFinalizing, openItems, tabBadges, toRate } from './lib/openItems';
+import { awardsKey, isFinalizing, openItems, routePlan, tabBadges, toRate } from './lib/openItems';
 import type { OpenItem } from './lib/openItems';
 import { hidesTabs, pickScreen } from './lib/overlay';
 import type { Overlay } from './lib/overlay';
@@ -308,7 +308,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const awardsUnseen = awardList.length > 0 && awardsSeen !== awardsKey(awardList);
   // Once ratings lock, Picks has nothing left to offer: the bar drops it and a stale visit lands on Group.
   // Stays opens once the route is final, and takes Picks' slot so the bar stays at six tabs (a seventh clips at 320).
-  const routeFinal = !!(group?.locked && group.final);
+  const routeFinal = routePlan(group, state) !== null;
   const tab: Tab = locked && rawTab === 'Picks' ? 'Group' : rawTab === 'Stays' && !routeFinal ? 'My trip' : rawTab;
   const tabs = TABS.filter(t => !(t === 'Picks' && (locked || routeFinal)) && !(t === 'Stays' && !routeFinal));
   tabRef.current = tab;
