@@ -141,7 +141,7 @@ export interface CrewStays {
 export interface StayPin { area: Area; suggestionId: string | null; at: string }
 // closed = destinations where Brittany stopped waiting on the rest of the top 2s; stored whole like pins.
 // nights = Brittany's accommodation-only nights per destination (1 to 14), stored whole; absent means the itinerary's count. Optional so a row from before the column reads as no override.
-export interface StaysAdmin { pins: StayPin[]; scouts: Partial<Record<Area, Player>>; closed: Area[]; nights?: Partial<Record<Area, number>> }
+export interface StaysAdmin { pins: StayPin[]; scouts: Partial<Record<Area, Player>>; closed: Area[]; nights?: Partial<Record<Area, number>>; nightsOff?: true }
 
 export const MIN_NIGHTS = 1;
 export const MAX_NIGHTS = 14;
@@ -167,7 +167,7 @@ export function applyAdmin(stored: StaysAdmin, patch: Partial<StaysAdmin>): Stay
   const m = mergeAdmin(stored, patch);
   const scouts = Object.fromEntries(Object.entries(m.scouts ?? {}).filter(([, p]) => p !== undefined)) as StaysAdmin['scouts'];
   const nights = cleanNights(m.nights);
-  return { pins: m.pins ?? [], scouts, closed: m.closed ?? [], ...(Object.keys(nights).length ? { nights } : {}) };
+  return { pins: m.pins ?? [], scouts, closed: m.closed ?? [], ...(Object.keys(nights).length ? { nights } : {}), ...(stored.nightsOff ? { nightsOff: true as const } : {}) };
 }
 export const stayForkId = (area: Area, a: string, b: string) => `stay:${area}:${a}:${b}`;
 export const reactForkId = (suggestionId: string) => `react:${suggestionId}`;

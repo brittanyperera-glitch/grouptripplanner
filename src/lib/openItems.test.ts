@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { emptyRanking, PEOPLE } from '../types';
 import type { AppState, GroupResult, Knockout, Person, Player, Plan, Suggestion } from '../types';
 import type { Award } from './awards';
-import { awardsKey, awardsOpen, isFinalizing, isReopened, openItems, routePlan, tabBadges } from './openItems';
+import { awardForks, awardsKey, awardsOpen, isFinalizing, isReopened, openItems, routePlan, tabBadges } from './openItems';
 import type { OpenCtx } from './openItems';
 
 const ko = (forkId: string, a: Person[] = [], b: Person[] = []): Knockout => ({ forkId, a: ['x'], b: ['y'], votes: { a, b } });
@@ -201,6 +201,10 @@ describe('routePlan: the route has been decided', () => {
     expect(awardsOpen(reopened, withFinals(PEOPLE))).toBe(true);
     expect(awardsOpen(group({ final: null, held, knockouts: [ko('ko:1')] }), withFinals(['Alex']))).toBe(false);
     expect(awardsOpen(null, empty)).toBe(false);
+    // Added 2026-10-17 (review): an open late vote must not count towards the awards, or one vote can change the winners.
+    const open = ko('ko:late'), done = { forkId: 'ko:old', a: ['x'], b: ['y'], winner: 'a' };
+    expect(awardForks(group({ locked: false, results: [done] as never, knockouts: [open] }))).toEqual([done]);
+    expect(awardForks(group({ locked: true, results: [done] as never, knockouts: [open] }))).toEqual([done, open]);
     const todo = openItems(ctx({ group: reopened, state: withFinals(PEOPLE), awardsUnseen: true }));
     expect(todo.map(i => i.id)).toContain('awards');
   });

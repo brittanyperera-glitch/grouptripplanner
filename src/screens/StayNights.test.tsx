@@ -43,7 +43,8 @@ describe('Brittany sets stay nights', () => {
     await user.click(screen.getByRole('button', { name: 'More nights' }));
     expect(stored<{ nights: Record<string, number> }>('tp:staysadmin').nights).toEqual({ Ella: 2 });
     expect(await screen.findByRole('heading', { name: 'Ella, 2 nights' })).toBeInTheDocument();
-    expect(screen.getByText('Brittany set these stay nights. The itinerary still has 1.')).toBeInTheDocument();
+    // Changed deliberately (review 2026-10-17): the note names its unit.
+    expect(screen.getByText('Brittany set these stay nights. The itinerary still has 1 night.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Fewer nights' }));
     expect(stored<{ nights?: Record<string, number> }>('tp:staysadmin').nights ?? {}).toEqual({});
     expect(screen.queryByText(/The itinerary still has/)).toBeNull();
@@ -54,7 +55,7 @@ describe('Brittany sets stay nights', () => {
     localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [], scouts: {}, closed: [], nights: { Ella: 5 } }));
     localStorage.setItem('tp:me', 'Brittany');
     render(<AppProvider store={new LocalStore()}><Stays /></AppProvider>);
-    expect(await screen.findByRole('button', { name: /^Ella, 5 nights, 0 stays/ })).toHaveTextContent('The itinerary still has 1.');
+    expect(await screen.findByRole('button', { name: /^Ella, 5 nights, 0 stays/ })).toHaveTextContent('The itinerary still has 1 night.');
     expect(screen.getByRole('button', { name: /^Cultural Triangle, 2 nights/ })).not.toHaveTextContent('itinerary still has');
   });
 
@@ -76,7 +77,7 @@ describe('only Brittany sees the stepper', () => {
     localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [], scouts: {}, closed: [], nights: { Ella: 3 } }));
     await mount(who);
     expect(screen.getByRole('heading', { name: 'Ella, 3 nights' })).toBeInTheDocument();
-    expect(screen.getByText('Brittany set these stay nights. The itinerary still has 1.')).toBeInTheDocument();
+    expect(screen.getByText('Brittany set these stay nights. The itinerary still has 1 night.')).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: GROUP })).toBeNull();
     expect(screen.queryByRole('button', { name: 'More nights' })).toBeNull();
   });

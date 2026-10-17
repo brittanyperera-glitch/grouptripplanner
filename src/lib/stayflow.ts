@@ -85,7 +85,7 @@ export function stayCtx(state: AppState, me: Player, plan: Plan | null): StayCtx
   const crew = participants.flatMap(p => stays.crew[p] ?? []);
   return {
     me, participants, crew, crewOf: stays.crew, suggestions: stays.suggestions, admin: stays.admin, votes: state.votes,
-    areas: plan ? stayAreas(plan) : [], nights: plan ? effectiveNights(nightsByArea(plan), stays.admin.nights) : {}, derivedNights: plan ? nightsByArea(plan) : {},
+    areas: plan ? stayAreas(plan) : [], nights: plan ? effectiveNights(nightsByArea(plan), stays.admin.nightsOff ? undefined : stays.admin.nights) : {}, derivedNights: plan ? nightsByArea(plan) : {},
     maxNights: Object.fromEntries(crew.map(c => [c.name, maxNightsOf(c.prefs)])),
   };
 }
@@ -174,7 +174,7 @@ export const STAY_COPY = {
   scout: (names: string) => `You scout ${names}`,
   scoutTag: 'You scout',
   destinations: 'Where we stay',
-  nightsNote: (itinerary: number) => `Brittany set these stay nights. The itinerary still has ${itinerary}.`,
+  nightsNote: (itinerary: number) => `Brittany set these stay nights. The itinerary still has ${itinerary} ${itinerary === 1 ? 'night' : 'nights'}.`,
   nightsStep: { label: (area: string) => `Stay nights in ${area}`, less: 'Fewer nights', more: 'More nights', unit: (n: number) => (n === 1 ? 'night' : 'nights') },
   row: (area: string, nights: number, stays: number) => `${area}, ${plural(nights, 'night')}, ${plural(stays, 'stay')}`,
   board: { header: (area: string, nights: number) => `${area}, ${plural(nights, 'night')}`, add: '+ Add a stay', quizFirst: 'Do your travel profile first, 3 min', lockedLine: 'You locked in. Edits stop here.', none: 'No stays yet.', noneOther: 'Nothing here yet.', addIdea: '+ Add an idea', pin: 'Pin as final', unpin: 'Unpin', locked: 'Locked', edit: 'Edit', withdraw: 'Withdraw', book: 'See and book', night: 'per person per night', offRoute: 'Not on the route now.' },

@@ -40,6 +40,9 @@ export function routePlan(group: GroupResult | null | undefined, state: Pick<App
 /** Awards stay up while a late vote reopens the route: the last locked plan still stands (Brittany 2026-10-17). */
 export const awardsOpen = (group: GroupResult | null | undefined, state: Pick<AppState, 'responses'>): boolean => !!group && (group.locked || routePlan(group, state) !== null);
 
+/** The decided and open votes the awards read. While a late vote is open only resolved ones count, so one vote cannot change the winners. */
+export const awardForks = (group: GroupResult) => (group.locked ? [...group.results, ...group.knockouts] : [...group.results]);
+
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 // Same idea from several people is one row: the same key as Suggest groups by.
 export const ideaKey = (s: { title: string; area: string }) => `${s.title.trim().toLowerCase()}|${s.area}`;

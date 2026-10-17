@@ -175,7 +175,7 @@ export class SupabaseStore implements Store {
       soft(() => this.db.from('place_suggestions').select('*').order('created_at'), rows => { stays.suggestions = (rows as PlaceRow[]).map(toPlace); }),
       soft(() => this.db.from('stays_admin').select('*'), rows => {
         const a = (rows as AdminRow[])[0];
-        if (a) stays.admin = { pins: a.pins ?? [], scouts: a.scouts ?? {}, closed: Array.isArray(a.closed) ? a.closed : [], ...nightsOf(a.nights) };
+        if (a) stays.admin = { pins: a.pins ?? [], scouts: a.scouts ?? {}, closed: Array.isArray(a.closed) ? a.closed : [], ...nightsOf(a.nights), ...('nights' in a ? {} : { nightsOff: true as const }) };
       }),
     ]);
     return stays;

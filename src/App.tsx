@@ -9,7 +9,7 @@ import QuipBurst from './components/QuipBurst';
 import type { QuipKind } from './components/QuipBurst';
 import { QuipGate } from './components/quipRate';
 import { groupAwards } from './lib/awards';
-import { awardsKey, awardsOpen, isFinalizing, openItems, routePlan, tabBadges, toRate } from './lib/openItems';
+import { awardForks, awardsKey, awardsOpen, isFinalizing, openItems, routePlan, tabBadges, toRate } from './lib/openItems';
 import type { OpenItem } from './lib/openItems';
 import { hidesTabs, pickScreen } from './lib/overlay';
 import type { Overlay } from './lib/overlay';
@@ -302,7 +302,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const statsOpen = !isGuest(me) && PEOPLE.every(p => state.responses[p]?.submitted);
   const locked = (PEOPLE as readonly string[]).includes(me) && PEOPLE.every(p => (p === me ? draft.submitted : state.responses[p]?.submitted));
   const shown: Step = locked ? 'tabs' : step;
-  const awardList = useMemo(() => (group && awardsOpen(group, state) ? groupAwards(state, items, GENRES, [...group.results, ...group.knockouts]) : []), [group, state, items]);
+  const awardList = useMemo(() => (group && awardsOpen(group, state) ? groupAwards(state, items, GENRES, awardForks(group)) : []), [group, state, items]);
   const awardsUnseen = awardList.length > 0 && awardsSeen !== awardsKey(awardList);
   // Once ratings lock, Picks has nothing left to offer: the bar drops it and a stale visit lands on Group.
   // Stays opens once the route is final, and takes Picks' slot so the bar stays at six tabs (a seventh clips at 320).

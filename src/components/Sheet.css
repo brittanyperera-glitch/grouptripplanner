@@ -5,6 +5,7 @@
 .shs-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
 .shs-title { margin: 0; min-width: 0; font: 800 22px/1 var(--font-head); text-transform: uppercase; }
 .shs-x { all: unset; box-sizing: border-box; cursor: pointer; flex: none; min-height: 44px; padding: 0 16px; display: grid; place-items: center; border-radius: var(--r-pill); font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.shs-x:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }
 .shs-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
 .shs-foot { flex: none; display: flex; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--bg); }
 .shs-foot > button { flex: 1; }

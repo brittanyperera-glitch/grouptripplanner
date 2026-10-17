@@ -14,6 +14,7 @@ import { sideQuestLine, sideQuests } from '../lib/sideQuests';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
 import type { GroupResult, Hub, Item, Leg, Plan, Player } from '../types';
+import { tipsOf } from './BookCard';
 import Poster from './Poster';
 
 export const INTRO_MS = 3000; // HUD stamps, title, then the island fades in
@@ -275,6 +276,8 @@ function MissionComplete({ plan, items, legs, animate, voice, crew, onDone }: { 
   // Only the group reveal: a person's own trip is already all theirs.
   const { state, me } = useApp();
   const quests = useMemo(() => (crew.length > 1 ? sideQuests(plan, me, state, items) : []), [crew.length, plan, me, state, items]);
+  // A place on no day has no row to carry its tip, so it shows here; scheduled places keep theirs on the day row.
+  const looseTips = useMemo(() => new Map(tipsOf(plan, plan.chosen.flatMap(id => byId.get(id) ?? [])).filter(t => t.day === null).map(t => [t.item.id, t.item.warn as string])), [plan, byId]);
   return (
     <section className="rv-done" aria-label={voice.doneLabel} data-animate={animate} data-solo={crew.length === 1}>
       <header className="rv-done-head">
@@ -314,7 +317,7 @@ function MissionComplete({ plan, items, legs, animate, voice, crew, onDone }: { 
           return (
             <li key={id}>
               {it?.photo ? <img src={`/img/${it.photo}.jpg`} alt="" loading="lazy" decoding="async" /> : <span className="rv-pick-blank" aria-hidden="true" />}
-              <span>{it?.name ?? id}</span>
+              <span>{it?.name ?? id}{looseTips.has(id) && <small className="rv-pick-tip">{looseTips.get(id)}</small>}</span>
             </li>
           );
         })}

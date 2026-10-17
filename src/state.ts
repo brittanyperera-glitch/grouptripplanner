@@ -318,20 +318,29 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   }), [base]);
   const legs = legsData as unknown as Leg[];
 
+  // A trip password changed under an open app makes every read come back empty with no error, so an empty
+  // or failed read asks the access hook to re-verify the key (it rate-limits, and only a rejected key leaves).
+  const recheck = access.recheck;
+  const accepted = useCallback((s: AppState) => {
+    setServer(s);
+    if (!injected && !s.suggestions.length && !s.votes.length && !Object.keys(s.responses).length) recheck();
+  }, [injected, recheck]);
+
   const load = useCallback(async () => {
     try {
       if (!base) throw new Error('no store');
-      setServer(await base.load());
+      accepted(await base.load());
       setError(null);
     } catch {
       setError("Couldn't load");
+      if (base && !injected) recheck();
     }
-  }, [base]);
+  }, [base, accepted, injected, recheck]);
 
   useEffect(() => {
     void load();
-    return base?.subscribe(setServer);
-  }, [base, load]);
+    return base?.subscribe(accepted);
+  }, [base, load, accepted]);
 
   // Each server read drops what it now holds; writes left over from an earlier visit go back into the queue once, after the first.
   const replayed = useRef(false);

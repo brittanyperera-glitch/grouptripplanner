@@ -90,7 +90,7 @@ export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, on
       </div>
       <h2 className="big display small st-h">{B.header(area, nights)}</h2>
       {note && <p className="sub st-nightsnote">{note}</p>}
-      {admin && (
+      {admin && !ctx.admin.nightsOff && (
         <div className="st-nights" role="group" aria-label={N.label(area)}>
           <button type="button" className="st-pill st-nstep" aria-label={N.less} disabled={nights <= MIN_NIGHTS} onClick={() => setNights(nights - 1)}>-</button>
           <span className="st-nval" aria-live="polite">{nights} {N.unit(nights)}</span>

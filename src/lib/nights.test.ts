@@ -20,6 +20,13 @@ describe('stay nights override', () => {
     expect(ctx.derivedNights).toEqual({ Ella: 2, Colombo: 1 });
   });
 
+  it('ignores a stored override when the live table has no nights column', () => {
+    const s = state({ Ella: 4 });
+    const off = { ...s, stays: { ...s.stays!, admin: { ...s.stays!.admin, nightsOff: true as const } } };
+    expect(stayCtx(off, 'Brittany', plan).nights).toEqual({ Ella: 2, Colombo: 1 });
+    expect(applyAdmin(off.stays!.admin, {}).nightsOff).toBe(true);
+  });
+
   it('falls back to the derived count when no override is stored', () => {
     expect(stayCtx(state(), 'Brittany', plan).nights).toEqual({ Ella: 2, Colombo: 1 });
     expect(effectiveNights({ Ella: 2 }, undefined)).toEqual({ Ella: 2 });

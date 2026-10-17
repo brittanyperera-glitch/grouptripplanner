@@ -305,6 +305,10 @@ describe('SupabaseStore place suggestions and stays admin', () => {
   it('nights load as stored, and a row from before the column loads with none', async () => {
     fake.adminRows = [{ pins: [], scouts: {}, closed: [] }];
     expect((await store().load()).stays?.admin.nights).toBeUndefined();
+    // Added 2026-10-17 (review): a row without the column marks nights off so the stepper hides; a row with it, even empty, does not.
+    expect((await store().load()).stays?.admin.nightsOff).toBe(true);
+    fake.adminRows = [{ pins: [], scouts: {}, closed: [], nights: {} }];
+    expect((await store().load()).stays?.admin.nightsOff).toBeUndefined();
     fake.adminRows = [{ pins: [], scouts: {}, closed: [], nights: { Ella: 3, Colombo: 40 } }];
     expect((await store().load()).stays?.admin.nights).toEqual({ Ella: 3 });
   });

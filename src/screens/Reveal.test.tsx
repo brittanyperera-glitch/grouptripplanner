@@ -6,6 +6,7 @@ import type { Compromise } from '../lib/compromises';
 import { AppProvider } from '../state';
 import { PEOPLE } from '../types';
 import type { Item, Plan } from '../types';
+import { Itinerary } from './Itinerary';
 import { HOLD_MS, Reveal, dayTag, revealStops } from './Reveal';
 
 const ITEMS = (catalogue as unknown as { items: Item[] }).items;
@@ -238,5 +239,23 @@ describe('route reveal, just me', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
     expect(stage()).toBe('complete');
     expect(screen.getByRole('region', { name: 'Mission ready' })).toBeInTheDocument();
+  });
+});
+
+describe('Chosen experiences list tips', () => {
+  // pettah has a tip and sits on no day; tooth has a tip and is on day 2.
+  const loose: Plan = { ...rplan, chosen: [...rplan.chosen, 'pettah'] };
+  const warnOf = (id: string) => ITEMS.find(i => i.id === id)!.warn!;
+  it('shows the tip of a place on no day, and not the tip of a place that has a day row', async () => {
+    render(<AppProvider><Reveal plan={loose} cards={cards} onClose={() => {}} /></AppProvider>);
+    await screen.findByRole('dialog');
+    const picks = screen.getByRole('list', { name: 'Chosen experiences' });
+    expect(within(picks).getByText(warnOf('pettah'))).toBeInTheDocument();
+    expect(within(picks).queryByText(warnOf('tooth'))).toBeNull();
+    expect(within(picks).queryByText(warnOf('knuckles'))).toBeNull();
+  });
+  it('leaves the itinerary document as it was: the tip prints once, under Heads up', () => {
+    render(<Itinerary plan={loose} items={ITEMS} legs={[]} heading="Group itinerary" />);
+    expect(screen.getAllByText(warnOf('pettah'), { exact: false })).toHaveLength(1);
   });
 });
