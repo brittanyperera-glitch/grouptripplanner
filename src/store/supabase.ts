@@ -66,6 +66,7 @@ export function responseCols(name: Person, p: Patch, stored: RankingCol | null):
 
 const RELOAD_DEBOUNCE_MS = 200;
 const POLL_MS = 20_000;
+const TRIP_WRITE_TRIES = 5;
 
 export class SupabaseStore implements Store {
   private db: SupabaseClient;
@@ -127,17 +128,29 @@ export class SupabaseStore implements Store {
     return out;
   }
 
-  // One jsonb row per person, so a patch needs the stored map to merge into; the queue sends one write at a time.
+  /**
+   * One jsonb row per person, so a patch is merged into the stored map. Two devices of one person can read the same map and
+   * the second write would drop the first's key, so the write is compare-and-swap on updated_at and re-reads when it lost.
+   */
   async saveTripAdmin(name: Person, patch: AdminItems): Promise<void> {
-    const { data, error: readErr } = await this.db.from('trip_admin').select('items').eq('name', name).maybeSingle();
-    if (readErr) throw readErr;
-    const stored = (data as { items: AdminItems | null } | null)?.items ?? {};
-    const { error } = await this.db.from('trip_admin').upsert(
-      { name, items: mergeAdminItems(stored, patch), updated_at: new Date().toISOString() },
-      { onConflict: 'name' },
-    );
-    if (error) throw error;
-    this.ping();
+    for (let attempt = 0; attempt < TRIP_WRITE_TRIES; attempt++) {
+      const { data, error: readErr } = await this.db.from('trip_admin').select('items, updated_at').eq('name', name).maybeSingle();
+      if (readErr) throw readErr;
+      const row = data as { items: AdminItems | null; updated_at: string | null } | null;
+      const items = mergeAdminItems(row?.items ?? {}, patch);
+      const updated_at = new Date().toISOString();
+      if (!row) {
+        const { error } = await this.db.from('trip_admin').insert({ name, items, updated_at });
+        if (!error) { this.ping(); return; }
+        if (error.code !== '23505') throw error;
+        continue;
+      }
+      const base = this.db.from('trip_admin').update({ items, updated_at }).eq('name', name);
+      const { data: won, error } = await (row.updated_at === null ? base.is('updated_at', null) : base.eq('updated_at', row.updated_at)).select('name');
+      if (error) throw error;
+      if (won && won.length > 0) { this.ping(); return; }
+    }
+    throw new Error('trip_admin changed under the save; kept for retry');
   }
 
   /**

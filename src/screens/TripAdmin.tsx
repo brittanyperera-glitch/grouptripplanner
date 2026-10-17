@@ -39,10 +39,12 @@ function Who({ people, id }: { people: Player[]; id: string }) {
  */
 export default function TripAdmin({ onBack }: { onBack: () => void }) {
   const { state, me, store, items, legs } = useApp();
-  const { data: group } = useGroupResult(state, items, legs);
+  const { data: group, loading } = useGroupResult(state, items, legs);
   const [open, setOpen] = useState<string | null>(null);
   const [form, setForm] = useState({ price: '', ref: '', note: '' });
   if (!me) return null;
+  // The route is unknown until the worker answers; rendering then would flash the empty text.
+  const pending = loading && group === null;
 
   const list = adminChecklist(state, me, routePlan(group, state));
   const entry = (id: string) => visibleEntry(me, me, state.tripAdmin?.[me]?.items[id]);
@@ -104,8 +106,9 @@ export default function TripAdmin({ onBack }: { onBack: () => void }) {
       </div>
       <h2 className="big display small ta-h">{COPY.title}</h2>
       <p className="sub">{COPY.sub}</p>
-      {list.length > 0 && <p className="ta-count" role="status">{left === 0 ? 'All done' : `${left} still to do`}</p>}
-      {list.length === 0 ? <p className="empty">{COPY.groupEmpty}</p> : <ul className="ta-list">{list.map(row)}</ul>}
+      {pending && <p className="empty" role="status">{COPY.loading}</p>}
+      {!pending && list.length > 0 && <p className="ta-count" role="status">{left === 0 ? 'All done' : `${left} still to do`}</p>}
+      {pending ? null : list.length === 0 ? <p className="empty">{COPY.groupEmpty}</p> : <ul className="ta-list">{list.map(row)}</ul>}
     </section>
   );
 }

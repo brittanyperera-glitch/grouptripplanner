@@ -21,6 +21,9 @@ const fake = vi.hoisted(() => ({
   trip: 'ok' as 'ok' | 'error' | 'throw',
   tripRows: [] as unknown[],
   inserts: [] as Array<[string, unknown]>,
+  tripLose: 0,
+  tripStored: null as null | { items: Record<string, unknown>; updated_at: string | null },
+  tripInsertCode: undefined as string | undefined,
   updates: [] as Array<[string, unknown, string, unknown]>,
   selects: [] as Array<[string, string]>,
 }));
@@ -42,7 +45,7 @@ vi.mock('@supabase/supabase-js', () => ({
           if (table === 'trip_admin') {
             if (fake.trip === 'throw') throw new Error('network down');
             const res = fake.trip === 'error' ? { data: null, error: { message: 'relation "public.trip_admin" does not exist' } } : result(fake.tripRows);
-            const one = { data: fake.trip === 'error' ? null : (fake.tripRows[0] ?? null), error: res.error };
+            const one = { data: fake.trip === 'error' ? null : (fake.tripStored ?? fake.tripRows[0] ?? null), error: res.error };
             return { ...thenable(res), eq: () => ({ maybeSingle: async () => one }) };
           }
           if (table === 'crew_stays') {
@@ -62,8 +65,12 @@ vi.mock('@supabase/supabase-js', () => ({
           fake.upserts.push(cols); fake.upsertTables.push(table); fake.upsertOpts.push(opts);
           return { error: fake.failUpsert ? new Error('500') : null };
         },
-        insert: async (cols: unknown) => { fake.inserts.push([table, cols]); return { error: fake.failUpsert ? new Error('500') : null }; },
-        update: (cols: unknown) => ({
+        insert: async (cols: unknown) => {
+          fake.inserts.push([table, cols]);
+          if (fake.tripInsertCode && fake.inserts.length === 1) fake.tripStored = { items: { eta: { done: true } }, updated_at: 'T1' };
+          return { error: fake.failUpsert ? new Error('500') : fake.tripInsertCode && fake.inserts.length === 1 ? { code: fake.tripInsertCode } : null };
+        },
+        update: (cols: unknown) => table === 'trip_admin' ? tripUpdate(cols) : ({
           eq: async (col: string, val: unknown) => { fake.updates.push([table, cols, col, val]); return { error: fake.failUpsert ? new Error('500') : null }; },
         }),
       };
@@ -77,6 +84,22 @@ vi.mock('@supabase/supabase-js', () => ({
   }),
 }));
 
+// A compare-and-swap update: .eq/.is filters stack, .select() resolves to the rows won (none while tripLose > 0).
+function tripUpdate(cols: unknown) {
+  const filters: unknown[] = [];
+  const chain = {
+    eq: (c: string, v: unknown) => { filters.push([c, v]); return chain; },
+    is: (c: string, v: unknown) => { filters.push([c, v, 'is']); return chain; },
+    select: async () => {
+      fake.updates.push(['trip_admin', cols, 'cas', filters]);
+      if (fake.failUpsert) return { data: null, error: new Error('500') };
+      if (fake.tripLose > 0) { fake.tripLose--; return { data: [], error: null }; }
+      return { data: [{ name: 'Alex' }], error: null };
+    },
+  };
+  return chain;
+}
+
 function thenable<T>(value: T, ms = 0) {
   return { then: (res: (v: T) => unknown) => new Promise(r => setTimeout(r, ms)).then(() => res(value)) };
 }
@@ -85,7 +108,7 @@ const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
 beforeEach(() => {
   fake.handler = null; fake.delays = []; fake.loads = 0; fake.upserts = []; fake.reads = 0; fake.ranking = null;
   fake.crew = 'ok'; fake.crewRows = []; fake.upsertTables = []; fake.upsertOpts = []; fake.failUpsert = false;
-  fake.places = 'ok'; fake.placeRows = []; fake.admin = 'ok'; fake.adminRows = []; fake.trip = 'ok'; fake.tripRows = []; fake.inserts = []; fake.updates = []; fake.selects = [];
+  fake.places = 'ok'; fake.placeRows = []; fake.admin = 'ok'; fake.adminRows = []; fake.trip = 'ok'; fake.tripRows = []; fake.inserts = []; fake.updates = []; fake.tripLose = 0; fake.tripStored = null; fake.tripInsertCode = undefined; fake.selects = [];
 });
 
 describe('SupabaseStore.saveResponse', () => {
@@ -312,12 +335,36 @@ describe('SupabaseStore trip admin', () => {
     expect((await store().load()).tripAdmin).toEqual({ Alex: { name: 'Alex', items: ROW.items, updatedAt: '2026-10-17T10:00:00.000Z' } });
   });
 
-  it('saveTripAdmin merges the patch into the stored items by id and upserts on name', async () => {
+  // Changed deliberately (two devices of one person lost each other's ticks): the write is a compare-and-swap update, not a blind upsert.
+  it('saveTripAdmin merges the patch into the stored items by id and updates only if updated_at is unchanged', async () => {
     fake.tripRows = [ROW];
     await store().saveTripAdmin('Alex', { eta: { done: true }, flights: { done: false } });
-    expect(fake.upsertTables).toEqual(['trip_admin']);
-    expect(fake.upsertOpts).toEqual([{ onConflict: 'name' }]);
-    expect((fake.upserts[0] as { items: unknown }).items).toEqual({ money: { done: true }, eta: { done: true }, flights: { done: false } });
+    expect(fake.upserts).toEqual([]);
+    const [, cols, , filters] = fake.updates[0] as [string, { items: unknown }, string, unknown[]];
+    expect(cols.items).toEqual({ money: { done: true }, eta: { done: true }, flights: { done: false } });
+    expect(filters).toEqual([['name', 'Alex'], ['updated_at', ROW.updated_at]]);
+  });
+
+  it('saveTripAdmin re-reads and merges again when another device wrote between its read and write', async () => {
+    fake.tripRows = [ROW];
+    fake.tripLose = 1;
+    await store().saveTripAdmin('Alex', { eta: { done: true } });
+    expect(fake.updates).toHaveLength(2);
+    expect(fake.selects.filter(([t]) => t === 'trip_admin')).toHaveLength(2);
+  });
+
+  it('saveTripAdmin keeps the save for the queue when it keeps losing the race', async () => {
+    fake.tripRows = [ROW];
+    fake.tripLose = 99;
+    await expect(store().saveTripAdmin('Alex', { eta: { done: true } })).rejects.toThrow('changed under');
+  });
+
+  it('saveTripAdmin inserts the first row, and retries via update when a second device inserted first', async () => {
+    await store().saveTripAdmin('Alex', { eta: { done: true } });
+    expect(fake.inserts).toEqual([['trip_admin', expect.objectContaining({ name: 'Alex', items: { eta: { done: true } } })]]);
+    fake.inserts = []; fake.tripInsertCode = '23505'; fake.tripStored = null;
+    await store().saveTripAdmin('Alex', { flights: { done: true } });
+    expect((fake.updates[0][1] as { items: unknown }).items).toEqual({ eta: { done: true }, flights: { done: true } });
   });
 
   it('saveTripAdmin throws when the read or the write fails, so the queue keeps it', async () => {

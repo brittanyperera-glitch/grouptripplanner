@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { emptyRanking, PEOPLE } from '../types';
 import type { AppState, GroupResult, Knockout, Person, Player, Plan, Suggestion } from '../types';
 import type { Award } from './awards';
-import { awardsKey, isFinalizing, isReopened, openItems, routePlan, tabBadges } from './openItems';
+import { awardsKey, awardsOpen, isFinalizing, isReopened, openItems, routePlan, tabBadges } from './openItems';
 import type { OpenCtx } from './openItems';
 
 const ko = (forkId: string, a: Person[] = [], b: Person[] = []): Knockout => ({ forkId, a: ['x'], b: ['y'], votes: { a, b } });
@@ -196,6 +196,13 @@ describe('routePlan: the route has been decided', () => {
     expect(routePlan(group({ final: null, knockouts: [ko('ko:1')] }), withFinals(PEOPLE))).toBeNull();
     // Finalizing: a plan exists but not all five have saved.
     expect(routePlan(group({ final: locked, locked: false }), withFinals(['Alex']))).toBeNull();
+  });
+  it('keeps the awards (and their to-do) while a late vote reopens the route', () => {
+    expect(awardsOpen(reopened, withFinals(PEOPLE))).toBe(true);
+    expect(awardsOpen(group({ final: null, held, knockouts: [ko('ko:1')] }), withFinals(['Alex']))).toBe(false);
+    expect(awardsOpen(null, empty)).toBe(false);
+    const todo = openItems(ctx({ group: reopened, state: withFinals(PEOPLE), awardsUnseen: true }));
+    expect(todo.map(i => i.id)).toContain('awards');
   });
   it('keeps Find somewhere to stay on the list while a late vote is open', () => {
     expect(ids(ctx({ group: reopened, state: { ...withFinals(PEOPLE), stays: empty.stays } }))).toContain('stayAdd');

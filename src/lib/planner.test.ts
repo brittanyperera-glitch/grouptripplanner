@@ -366,7 +366,10 @@ describe('planner speed at 10 areas', () => {
   it('plans the everything-Keen 14-day trip in under 60 ms', () => {
     const s = sc(items.map(i => i.id), 4);
     plan({ items, scores: nudged(s, 1e-7), days: 14, pace: 1, legs: L });
-    expect(cpuMs(() => plan({ items, scores: nudged(s, 2e-7), days: 14, pace: 1, legs: L }))).toBeLessThan(60);
+    // Changed deliberately (Brittany 2026-10-17): median of 5 runs, same 60 ms bound, so one busy-machine outlier cannot fail it.
+    // Each run nudges the scores differently so the plan() memo cannot answer a later run.
+    const runs = [2, 3, 4, 5, 6].map(k => cpuMs(() => plan({ items, scores: nudged(s, k * 1e-7), days: 14, pace: 1, legs: L }))).sort((x, y) => x - y);
+    expect(runs[2]).toBeLessThan(60);
   });
   it('finds mustFitDays in under 200 ms', () => {
     const must = ['jaffna', 'delft', 'trinco', 'sigiriya', 'yala', 'galle'];

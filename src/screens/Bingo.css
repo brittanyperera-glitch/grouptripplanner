@@ -25,7 +25,9 @@
 .bg-cell.bg-blank { background: var(--paper); }
 .bg-sq { all: unset; box-sizing: border-box; cursor: pointer; position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; padding: 8px 6px 2px; text-align: center; font-size: 13px; font-weight: 700; line-height: 1.2; }
 .bg-sq-text { position: relative; z-index: 1; max-width: 100%; overflow-wrap: anywhere; hyphens: auto; }
-.bg-daub { position: absolute; inset: 5px 6px 2px; border-radius: 50%; border: 3px solid var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); transform: rotate(-8deg); pointer-events: none; }
+/* Box is 0.86W x 0.86H; rotated 5deg its bounding box is 0.86*(0.996W+0.087H) wide and 0.86*(0.087W+0.996H) tall, inside the cell while H/W is 0.5 to 1.9. */
+.bg-daub { position: absolute; inset: 4px; box-sizing: border-box; border-radius: 24%; border: 3px solid var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); pointer-events: none; }
+.bg-cell.on .bg-sq { padding: 10px; }
 @media (prefers-reduced-motion: no-preference) { .bg-daub { animation: bg-stamp var(--dur) var(--ease) both; } }
 .bg-cell.on .bg-sq-text { color: var(--card-red); }
 .bg-cell.line { background: color-mix(in srgb, var(--red) 18%, var(--white)); }
@@ -36,4 +38,4 @@
 .bg-status.full { padding: 6px 12px; border-radius: var(--r-photo); background: var(--red-deep); color: var(--on-red); font-size: 28px; letter-spacing: .06em; }
 .bg-links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; }
 .bg-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; font-size: 14px; }
-@keyframes bg-stamp { from { transform: rotate(-8deg) scale(1.6); opacity: 0; } to { transform: rotate(-8deg) scale(1); opacity: 1; } }
+@keyframes bg-stamp { from { transform: scale(1.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }

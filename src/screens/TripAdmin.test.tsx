@@ -7,8 +7,8 @@ import { emptyRanking, PEOPLE } from '../types';
 import type { GroupResult, Plan, Player, TripAdminRow } from '../types';
 import TripAdmin, { TripAdminLink } from './TripAdmin';
 
-const grp = vi.hoisted(() => ({ current: null as unknown }));
-vi.mock('../workers/usePlan', async orig => ({ ...(await orig<typeof import('../workers/usePlan')>()), useGroupResult: () => ({ data: grp.current, loading: false }) }));
+const grp = vi.hoisted(() => ({ current: null as unknown, loading: false }));
+vi.mock('../workers/usePlan', async orig => ({ ...(await orig<typeof import('../workers/usePlan')>()), useGroupResult: () => ({ data: grp.current, loading: grp.loading }) }));
 
 const day = (n: number) => ({ n, area: 'Ella' as const, entries: [], spare: 0, rainSlack: false });
 const plan: Plan = { route: ['AIR'], areas: ['Ella'], chosen: ['sigiriya', 'train'], dropped: [], travelHours: 0, fits: true, missingMusts: [], score: 0, days: [day(1), day(2)] };
@@ -27,10 +27,19 @@ const mount = async (me: Player = 'Alex') => {
 // Changed deliberately (route decided only once locked or reopened): the group fixture carries `locked`, as a real decided route does.
 const decided = { final: plan, locked: true } as unknown as GroupResult;
 const saveFinals = () => PEOPLE.forEach(n => localStorage.setItem(`tp:resp:${n}`, JSON.stringify({ name: n, days: 9, flex: false, pace: 1, ranking: emptyRanking(), rated: [], submitted: true, updatedAt: 'x', final: emptyRanking() })));
-beforeEach(() => { localStorage.clear(); grp.current = decided; });
+beforeEach(() => { localStorage.clear(); grp.current = decided; grp.loading = false; });
 afterEach(() => cleanup());
 
 describe('TripAdmin', () => {
+  it('shows only Loading while the route is still being computed, never the empty text or All done', async () => {
+    localStorage.setItem('tp:me', 'Alex');
+    grp.current = null; grp.loading = true;
+    render(<AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} /></AppProvider>);
+    await screen.findByRole('heading', { name: 'Trip admin' });
+    expect(screen.getByText('Loading')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/All done|Group bookings appear/);
+  });
+
   // Changed deliberately (Brittany 2026-10-17): the personal flights/insurance checklist is gone, only group bookings remain.
   it('lists only the group bookings from the plan', async () => {
     await mount();

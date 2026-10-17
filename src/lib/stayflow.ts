@@ -1,7 +1,7 @@
 import hostelData from '../content/hostels.json';
 import { AREAS, AREA_HUB, EMPTY_STAYS, stayForkId } from '../types';
 import type { AppState, Area, CrewStays, PlaceKind, PlaceSuggestion, Plan, Player, RoomType, StayType, StaysAdmin, Vote } from '../types';
-import { finalStay, finalists, maxNightsOf, nightsByArea, nightsWarnings, rankPoints, scoutAssignments, stayAreas, stayParticipants, stayResult, voteOpen, warnings } from './stays';
+import { finalists, livePin, maxNightsOf, nightsByArea, nightsWarnings, rankPoints, scoutAssignments, stayAreas, stayParticipants, stayResult, voteOpen, warnings } from './stays';
 import type { RanksByPerson } from './stays';
 
 export const STEPS = ['quiz', 'suggest', 'lock', 'rank', 'final'] as const;
@@ -99,7 +99,7 @@ export const rankedBy = (ctx: StayCtx, p: Player, area: Area): boolean => {
   return !!r?.first && !!r?.second;
 };
 /** Areas with three or more distinct stays are ranked; fewer skip straight on, and so do a pinned and a closed area. */
-export const rankAreas = (ctx: StayCtx): Area[] => ctx.areas.filter(a => !finalStay(a, ctx.admin.pins, null).pinned && !ctx.admin.closed.includes(a) && rankPoints(ctx.suggestions, {}, a).length >= 3);
+export const rankAreas = (ctx: StayCtx): Area[] => ctx.areas.filter(a => !livePin(a, ctx.admin.pins, ctx.suggestions, null).pinned && !ctx.admin.closed.includes(a) && rankPoints(ctx.suggestions, {}, a).length >= 3);
 
 export type Outcome =
   | { kind: 'empty' }
@@ -109,7 +109,7 @@ export type Outcome =
 
 /** Where a destination stands once voting is open. A pin beats everything; 3+ stays wait for everyone's top 2 unless Brittany closed ranking, then the ranks in are used. */
 export function outcome(ctx: StayCtx, area: Area): Outcome {
-  const pin = finalStay(area, ctx.admin.pins, null);
+  const pin = livePin(area, ctx.admin.pins, ctx.suggestions, null);
   if (pin.pinned && pin.id) return { kind: 'decided', id: pin.id, via: 'pin' };
   const scored = rankPoints(ctx.suggestions, {}, area).length;
   if (scored >= 3) {

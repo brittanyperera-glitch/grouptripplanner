@@ -59,6 +59,12 @@ function history(seed: number, seen: Set<string>): string[] {
     }
     if (sealed(s)) {
       if (g.knockouts.some(k => isLateFork(k.forkId)) && prev?.locked) seen.add('locked plan reopened for a late vote');
+      // Changed deliberately (Brittany 2026-10-17): a reopened route carries the last locked plan until the new one locks, even with item votes also open.
+      if (prev?.locked && !g.locked && g.knockouts.length) {
+        if (!g.held) bad.push(`${tag}: reopened with no held plan (open: ${g.knockouts.map(k => k.forkId).join(', ')})`);
+        else if (g.held.chosen.join() !== prev.final!.chosen.join()) bad.push(`${tag}: held plan is not the last locked plan`);
+        if (g.knockouts.some(k => !k.genre && !isLateFork(k.forkId))) seen.add('reopened with an item vote also open');
+      }
       for (const k of g.knockouts) if (!isLateFork(k.forkId)) bad.push(`${tag}: new non-late fork ${k.forkId} after all five finalized`);
       if (!g.locked && !g.knockouts.some(k => isLateFork(k.forkId))) bad.push(`${tag}: unlocked with no open late fork`);
       if (prev?.locked && !g.locked && !g.knockouts.every(k => isLateFork(k.forkId))) bad.push(`${tag}: locked flipped back without a late fork`);

@@ -1,5 +1,6 @@
 import { AREA_HUB, PEOPLE } from '../types';
 import type { AppState, GroupResult, Hub, Item } from '../types';
+import { routePlan } from './openItems';
 import { tierOf } from './ranking';
 import { latestVotes, NORTH_AREAS, REGION_FORK } from './votes';
 
@@ -17,7 +18,8 @@ const fit = (...variants: string[]) => variants.find(v => v.length <= MAX_CHARS)
 
 /** One-line cards for the route reveal, biggest first, at most MAX_CARDS. Reads only; nothing here changes the plan. */
 export function compromises(group: GroupResult, state: Pick<AppState, 'responses' | 'votes'>, items: Item[]): Compromise[] {
-  const plan = group.final ?? group.base;
+  // A reopened route still shows the last locked plan, not the pre-vote base (Brittany 2026-10-17).
+  const plan = group.final ?? routePlan(group, state) ?? group.base;
   if (!plan) return [];
   const byId = new Map(items.map(i => [i.id, i]));
   const name = (id: string) => byId.get(id)?.name ?? id;

@@ -128,6 +128,13 @@ describe('outcome per destination', () => {
     const unpinned = ctxOf(two, locked, { admin: { pins: [{ area: 'Ella', suggestionId: 'a2', at: 't1' }, { area: 'Ella', suggestionId: null, at: 't2' }], scouts: {}, closed: [] } });
     expect(outcome(unpinned, 'Ella').kind).toBe('vote');
   });
+  it('a pin on a withdrawn stay stops counting, in outcome and rankAreas', () => {
+    const admin = { pins: [{ area: 'Ella' as Area, suggestionId: 'a2', at: 't' }], scouts: {}, closed: [] };
+    const two = [stay('a1', 'Ella'), stay('a2', 'Ella', { status: 'withdrawn' })];
+    expect(outcome(ctxOf(two, locked, { admin }), 'Ella')).toEqual({ kind: 'decided', id: 'a1', via: 'only' });
+    const three = [stay('a1', 'Ella'), stay('a2', 'Ella', { status: 'withdrawn' }), stay('a3', 'Ella'), stay('a4', 'Ella')];
+    expect(rankAreas(ctxOf(three, locked, { admin }))).toEqual(['Ella']);
+  });
   it('three votes settle it', () => {
     const two = [stay('a1', 'Ella'), stay('a2', 'Ella')];
     const votes = (['Alex', 'Antek', 'Lazza'] as const).map(name => ({ forkId: 'stay:Ella:a1:a2', name, choice: 'b' as const }));

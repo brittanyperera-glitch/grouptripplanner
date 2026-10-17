@@ -27,6 +27,10 @@ for (const w of [320, 390, 1280]) {
     await page.getByPlaceholder('e.g. Monkey steals food').fill('Thing 1');
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByRole('button', { name: /Thing 1, not ticked/ })).toBeVisible();
+    // The red ring is a rotated box: its bounding box must stay inside its cell at every width.
+    await page.getByRole('button', { name: /Thing 1, not ticked/ }).click();
+    const over = await page.locator('.bg-daub').evaluate(async e => { await Promise.all(e.getAnimations().map(a => a.finished)); const r = e.getBoundingClientRect(), c = e.closest('.bg-cell')!.getBoundingClientRect(); return Math.max(c.left - r.left, r.right - c.right, c.top - r.top, r.bottom - c.bottom); });
+    expect(over).toBeLessThanOrEqual(0.5);
     await page.getByRole('button', { name: 'Back', exact: true }).click();
     await expect(page.getByRole('button', { name: /Card 1/ })).toBeVisible();
     await expect(page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).resolves.toBe(true);

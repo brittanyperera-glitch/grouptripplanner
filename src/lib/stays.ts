@@ -167,6 +167,14 @@ export function finalStay(area: Area, pins: StayPin[], winner: string | null): {
   return { id: winner, pinned: false };
 }
 
+/** finalStay, but a pin whose suggestion is gone or no longer live in that area stops counting and the vote decides. */
+export function livePin(area: Area, pins: StayPin[], suggestions: PlaceSuggestion[], winner: string | null): { id: string | null; pinned: boolean } {
+  const f = finalStay(area, pins, winner);
+  if (!f.pinned) return f;
+  const ok = suggestions.some(s => s.id === f.id && s.kind === 'stay' && s.area === area && s.status === 'live');
+  return ok ? f : { id: winner, pinned: false };
+}
+
 export function scoutAssignments(areas: Area[], participants: Player[]): Partial<Record<Area, Player>> {
   const people = [...new Set(participants)].sort();
   const out: Partial<Record<Area, Player>> = {};

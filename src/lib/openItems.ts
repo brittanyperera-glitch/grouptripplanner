@@ -25,17 +25,20 @@ export interface OpenCtx {
 export const isFinalizing = (g: GroupResult): boolean => g.open && g.knockouts.length === 0 && !!g.final && !g.locked;
 
 /** A late item reopened a decided route: all five saved a Finalize list, one vote is open, and the group still holds the plan. */
-export const isReopened = (g: GroupResult, state: AppState): boolean => !g.final && !!g.held && PEOPLE.every(p => !!state.responses[p]?.final);
+export const isReopened = (g: GroupResult, state: Pick<AppState, 'responses'>): boolean => !g.final && !!g.held && PEOPLE.every(p => !!state.responses[p]?.final);
 
 /**
  * The route the group has decided, or null: the locked plan, or the plan held while a late item's vote is open.
  * The one test for "has the route been decided", for the Stays tab, its to-do and Trip admin's group bookings.
  */
-export function routePlan(group: GroupResult | null | undefined, state: AppState): Plan | null {
+export function routePlan(group: GroupResult | null | undefined, state: Pick<AppState, 'responses'>): Plan | null {
   if (!group) return null;
   if (group.locked && group.final) return group.final;
   return isReopened(group, state) ? group.held ?? null : null;
 }
+
+/** Awards stay up while a late vote reopens the route: the last locked plan still stands (Brittany 2026-10-17). */
+export const awardsOpen = (group: GroupResult | null | undefined, state: Pick<AppState, 'responses'>): boolean => !!group && (group.locked || routePlan(group, state) !== null);
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 // Same idea from several people is one row: the same key as Suggest groups by.
@@ -64,7 +67,7 @@ export function openItems({ me, group, state, unrated, ratingsLocked, awardsUnse
   // Ratings are not checked here: the caller only builds this list once the member has submitted, as for stayQuiz.
   // A card with no written square is not a card yet: the to-do clears once something is written.
   if (!state.stays?.crew[me]?.bingo?.some(c => c.squares.some(s => s.text.trim() !== ''))) out.push({ id: 'bingo', label: 'Make your travel bingo card', target: { tab: 'Bingo' } });
-  if (group?.locked && awardsUnseen) out.push({ id: 'awards', label: 'See the group awards', target: { tab: 'Awards' } });
+  if (awardsOpen(group, state) && awardsUnseen) out.push({ id: 'awards', label: 'See the group awards', target: { tab: 'Awards' } });
   return out;
 }
 

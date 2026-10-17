@@ -97,4 +97,11 @@ describe('compromises', () => {
     const g = group({ final: planOf(['sig']), results: [{ forkId: 'ko:yal', a: ['yal'], b: ['kit'], winner: 'a' }] });
     for (const c of run(g, votes('ko:yal', 3, 2))) { expect(c.text.length).toBeLessThanOrEqual(45); expect(c.text).not.toContain('—'); }
   });
+  it('a reopened route reads the last locked plan, not the pre-vote base', () => {
+    const resps = Object.fromEntries(PEOPLE.map(p => [p, { ...resp(p, { skip: ['yal'] }), final: emptyRanking() }])) as Record<Person, Response>;
+    const held = planOf(['yal', 'sig']);
+    const g = group({ final: null, base: planOf(['sig']), held, locked: false, finalized: [], knockouts: [{ forkId: 'ko:s:late', a: ['x'], b: ['y'], votes: { a: [], b: [] } }] });
+    // Yala is skipped by all five and is in the held plan only: the skipped card shows it only if the held plan is read.
+    expect(run(g, [], resps).some(c => c.kind === 'skipped')).toBe(true);
+  });
 });

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { CrewStays, Player, StayPin } from '../types';
+import type { CrewStays, PlaceSuggestion, Player, StayPin } from '../types';
 import { canCloseRanking, isAdmin, pinnedId, unlockable, withPin } from './override';
 
 const crew = (name: Player, locked: boolean): CrewStays => ({ name, prefs: [], quizDone: true, locked, ranks: {}, bingo: [], updatedAt: '' });
+const live = (id: string): PlaceSuggestion => ({ id, name: 'Alex', area: 'Ella', kind: 'stay', title: id, status: 'live', createdAt: '' });
 const pin = (suggestionId: string | null, at: string, area: StayPin['area'] = 'Ella'): StayPin => ({ area, suggestionId, at });
 
 describe('admin gate', () => {
@@ -18,15 +19,19 @@ describe('pins', () => {
     const base = [pin('a1', '1'), pin('k1', '1', 'Kandy and Knuckles')];
     const next = withPin(base, 'Ella', 'a2', '2');
     expect(next).toEqual([pin('k1', '1', 'Kandy and Knuckles'), pin('a2', '2')]);
-    expect(pinnedId(next, 'Ella')).toBe('a2');
+    expect(pinnedId(next, 'Ella', [live('a2')])).toBe('a2');
   });
   it('unpinning drops the area pin so the vote decides again', () => {
     const next = withPin([pin('a1', '1')], 'Ella', null, '2');
     expect(next).toEqual([]);
-    expect(pinnedId(next, 'Ella')).toBeNull();
+    expect(pinnedId(next, 'Ella', [live('a2')])).toBeNull();
   });
   it('a stored null pin reads as unpinned', () => {
-    expect(pinnedId([pin('a1', '1'), pin(null, '2')], 'Ella')).toBeNull();
+    expect(pinnedId([pin('a1', '1'), pin(null, '2')], 'Ella', [live('a1')])).toBeNull();
+  });
+  it('a pin on a withdrawn or missing stay reads as unpinned', () => {
+    expect(pinnedId([pin('a1', '1')], 'Ella', [{ ...live('a1'), status: 'withdrawn' }])).toBeNull();
+    expect(pinnedId([pin('a1', '1')], 'Ella', [])).toBeNull();
   });
 });
 
@@ -35,6 +40,9 @@ describe('unlock list', () => {
   const people = ['Alex', 'Brittany', 'Antek', 'Lazza'] as Player[];
   it('Brittany sees exactly the people who are locked', () => {
     expect(unlockable('Brittany', crewOf, people)).toEqual(['Alex', 'Antek']);
+  });
+  it('Brittany is offered her own unlock when she has locked (admin is not exempt from the lock)', () => {
+    expect(unlockable('Brittany', { Brittany: crew('Brittany', true) }, ['Brittany'] as Player[])).toEqual(['Brittany']);
   });
   it('nobody else sees anyone', () => {
     expect(unlockable('Alex', crewOf, people)).toEqual([]);
