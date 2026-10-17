@@ -1,4 +1,4 @@
-import { applyAdmin, mergeAdminItems, blankCrew, EMPTY_STAYS, emptyRanking, PEOPLE } from '../types';
+import { applyAdmin, cleanNights, mergeAdminItems, blankCrew, EMPTY_STAYS, emptyRanking, PEOPLE } from '../types';
 import type { AdminItems, AppState, TripAdminRow, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, Store, Suggestion, Vote } from '../types';
 
 const SUGG = 'tp:sugg';
@@ -39,7 +39,7 @@ const defaultRow = (name: Person): Response => ({
 function readAdmin(): StaysAdmin {
   const a = read<Partial<StaysAdmin> | null>(ADMIN, null);
   if (!a || typeof a !== 'object') return structuredClone(EMPTY_STAYS.admin);
-  return { pins: Array.isArray(a.pins) ? a.pins : [], scouts: a.scouts && typeof a.scouts === 'object' ? a.scouts : {}, closed: Array.isArray(a.closed) ? a.closed : [] };
+  return { pins: Array.isArray(a.pins) ? a.pins : [], scouts: a.scouts && typeof a.scouts === 'object' ? a.scouts : {}, closed: Array.isArray(a.closed) ? a.closed : [], ...(Object.keys(cleanNights(a.nights)).length ? { nights: cleanNights(a.nights) } : {}) };
 }
 
 export class LocalStore implements Store {

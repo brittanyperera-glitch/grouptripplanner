@@ -68,7 +68,8 @@ function settlePlaces(o: PlaceOverlay, rows: PlaceSuggestion[]): { next: PlaceOv
 
 const samePins = (a: StayPin[], b: StayPin[]) => a.length === b.length && a.every((p, i) => p.area === b[i].area && p.suggestionId === b[i].suggestionId && p.at === b[i].at);
 const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
-/** Drops each admin field (pins and closed whole, scouts per area) the server already holds. */
+const sameNights = (a: Record<string, number | undefined>, b: Record<string, number | undefined>) => { const k = Object.keys(a); return k.length === Object.keys(b).length && k.every(x => a[x] === b[x]); };
+/** Drops each admin field (pins, closed and nights whole, scouts per area) the server already holds. */
 function settleAdmin(o: Partial<StaysAdmin>, server: StaysAdmin): Partial<StaysAdmin> {
   if (Object.keys(o).length === 0) return o;
   const next: Partial<StaysAdmin> = {};
@@ -76,7 +77,8 @@ function settleAdmin(o: Partial<StaysAdmin>, server: StaysAdmin): Partial<StaysA
   const scouts = Object.fromEntries(Object.entries(o.scouts ?? {}).filter(([k, v]) => server.scouts[k as keyof StaysAdmin['scouts']] !== v));
   if (Object.keys(scouts).length) next.scouts = scouts;
   if (o.closed && !sameList(o.closed, server.closed)) next.closed = o.closed;
-  const unchanged = !!next.pins === !!o.pins && !!next.closed === !!o.closed && Object.keys(scouts).length === Object.keys(o.scouts ?? {}).length;
+  if (o.nights && !sameNights(o.nights, server.nights ?? {})) next.nights = o.nights;
+  const unchanged = !!next.pins === !!o.pins && !!next.closed === !!o.closed && !!next.nights === !!o.nights && Object.keys(scouts).length === Object.keys(o.scouts ?? {}).length;
   return unchanged ? o : next;
 }
 

@@ -73,6 +73,7 @@ create table if not exists stays_admin (
   closed jsonb not null default '[]'
 );
 alter table stays_admin add column if not exists closed jsonb not null default '[]';
+alter table stays_admin add column if not exists nights jsonb not null default '{}';
 
 alter table responses enable row level security;
 alter table suggestions enable row level security;
@@ -169,16 +170,5 @@ create policy "anon update" on stays_admin for update to anon using (public.trip
 create policy "anon select" on trip_admin for select to anon using (public.trip_ok());
 create policy "anon insert" on trip_admin for insert to anon with check (public.trip_ok());
 create policy "anon update" on trip_admin for update to anon using (public.trip_ok()) with check (public.trip_ok());
-
-/* Adding a table that is already in the publication is an error, so add only the missing ones. */
-do $$
-declare t text;
-begin
-  foreach t in array array['responses','suggestions','knockout_votes'] loop
-    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
-      execute format('alter publication supabase_realtime add table %I', t);
-    end if;
-  end loop;
-end $$;
 
 notify pgrst, 'reload schema';

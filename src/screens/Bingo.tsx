@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useState } from 'react';
 import { useApp } from '../state';
 import { PEOPLE, type BingoCard, type BingoSquare, type Person } from '../types';
 import Avatar from '../components/Avatar';
 import BigState from '../components/BigState';
+import BaseSheet from '../components/Sheet';
 import { IconLeft, IconPlus } from '../components/Icons';
 import './Stays.css';
 import './Bingo.css';
@@ -64,36 +64,14 @@ const PencilIcon = () => (
 
 interface SheetProps { title: string; canSave: boolean; onSave(): void; onClose(): void; children: React.ReactNode }
 
-/** The Stays add-sheet chrome (st-* classes from Stays.css) around one small form: Save, Cancel, Esc and focus return. */
+/** One small form in the shared bottom sheet, with Save. */
 function Sheet({ title, canSave, onSave, onClose, children }: SheetProps) {
-  const dialog = useRef<HTMLDivElement>(null);
-  const closeNow = useRef(onClose);
-  closeNow.current = onClose;
-  // Read during render, before autoFocus moves focus into the box, so Esc and Cancel can hand focus back to the square.
-  const [opener] = useState(() => (document.activeElement instanceof HTMLElement ? document.activeElement : null));
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeNow.current(); };
-    document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('keydown', onKey); opener?.focus(); };
-  }, [opener]);
-  return createPortal(
-    <div className="st-sheet-wrap">
-      <div className="st-backdrop" aria-hidden="true" onClick={onClose} />
-      <div ref={dialog} className="st-sheet" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
-        <header className="st-sheet-head">
-          <h2 className="st-sheet-title">{title}</h2>
-          <button type="button" className="st-x" onClick={onClose}>{COPY.cancel}</button>
-        </header>
-        <form className="st-form" onSubmit={e => { e.preventDefault(); if (canSave) onSave(); }}>
-          {children}
-          <button type="submit" hidden />
-        </form>
-        <footer className="st-sheet-foot">
-          <button type="button" className="cta" disabled={!canSave} onClick={onSave}>{COPY.save}</button>
-        </footer>
-      </div>
-    </div>,
-    document.body,
+  return (
+    <BaseSheet title={title} closeLabel={COPY.cancel} onClose={onClose} onSubmit={() => { if (canSave) onSave(); }}
+      footer={<button type="button" className="cta" disabled={!canSave} onClick={onSave}>{COPY.save}</button>}>
+      {children}
+      <button type="submit" hidden />
+    </BaseSheet>
   );
 }
 

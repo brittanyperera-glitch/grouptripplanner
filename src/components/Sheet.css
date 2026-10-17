@@ -1,0 +1,10 @@
+/* Bottom sheet (Sheet.tsx): one scroll region (the body), head and foot stay put. */
+.shs-wrap { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; justify-content: flex-end; }
+.shs-backdrop { position: absolute; inset: 0; background: rgba(30, 42, 38, .45); }
+.shs-panel { position: relative; display: flex; flex-direction: column; width: 100%; max-width: 440px; margin: 0 auto; max-height: 92dvh; background: var(--bg); color: var(--ink); border-radius: var(--r-card) var(--r-card) 0 0; box-shadow: 0 -10px 30px rgba(60, 40, 20, .18); outline: none; }
+.shs-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.shs-title { margin: 0; min-width: 0; font: 800 22px/1 var(--font-head); text-transform: uppercase; }
+.shs-x { all: unset; box-sizing: border-box; cursor: pointer; flex: none; min-height: 44px; padding: 0 16px; display: grid; place-items: center; border-radius: var(--r-pill); font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.shs-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+.shs-foot { flex: none; display: flex; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--bg); }
+.shs-foot > button { flex: 1; }

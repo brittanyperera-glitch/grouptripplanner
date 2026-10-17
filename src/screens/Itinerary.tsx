@@ -3,14 +3,14 @@ import { useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import RouteMap, { hubName } from '../components/Map';
 import { hm, transportOf, transportText } from '../components/TransportLine';
-import { outcome, stayCtx } from '../lib/stayflow';
+import { nightsNote, outcome, STAY_COPY, stayCtx } from '../lib/stayflow';
 import { voteOpen } from '../lib/stays';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
 import type { AppState, Area, Item, Leg, Plan, Player, StayType } from '../types';
 import { bookOf, tipsOf } from './BookCard';
 
-export interface ChosenStay { area: Area; title: string; stayType?: StayType; priceGbp?: number; nights: number; link?: string }
+export interface ChosenStay { area: Area; title: string; stayType?: StayType; priceGbp?: number; nights: number; itineraryNights?: number; link?: string }
 
 const TYPE_NAME: Record<StayType, string> = { hostel: 'Hostel', guesthouse: 'Guesthouse', boutique: 'Boutique stay', hotel: 'Hotel', villa: 'Villa', other: 'Stay' };
 
@@ -22,7 +22,7 @@ export function chosenStays(state: AppState, me: Player | null, plan: Plan): Cho
   return ctx.areas.flatMap(area => {
     const o = outcome(ctx, area);
     const s = o.kind === 'decided' && (o.via === 'pin' || open) ? ctx.suggestions.find(x => x.id === o.id && x.kind === 'stay' && x.status === 'live') : undefined;
-    return s ? [{ area, title: s.title, stayType: s.stayType, priceGbp: s.priceGbp, nights: ctx.nights[area] ?? 0, link: s.link }] : [];
+    return s ? [{ area, title: s.title, stayType: s.stayType, priceGbp: s.priceGbp, nights: ctx.nights[area] ?? 0, ...(nightsNote(ctx, area) ? { itineraryNights: ctx.derivedNights?.[area] } : {}), link: s.link }] : [];
   });
 }
 
@@ -104,6 +104,7 @@ export function Itinerary({ plan, items, legs, heading, stays = [], provisional 
               <li key={s.area} className="it-act">
                 <span className="it-name">{s.area}: {s.title}</span>{' '}
                 <span className="it-dur">{s.nights} {s.nights === 1 ? 'night' : 'nights'}</span>
+                {s.itineraryNights !== undefined && <span className="it-sub">{STAY_COPY.nightsNote(s.itineraryNights)}</span>}
                 {(s.stayType || s.priceGbp !== undefined) && (
                   <span className="it-sub">{[s.stayType && TYPE_NAME[s.stayType], s.priceGbp !== undefined && `about £${s.priceGbp} a night`].filter(Boolean).join(', ')}</span>
                 )}

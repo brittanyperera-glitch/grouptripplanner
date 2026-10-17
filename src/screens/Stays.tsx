@@ -5,7 +5,7 @@ import BigState from '../components/BigState';
 import { IconCheck, IconLeft } from '../components/Icons';
 import { canCloseRanking } from '../lib/override';
 import { routePlan } from '../lib/openItems';
-import { outcome, rankedBy, scoutOf, STAY_COPY, STEPS, stayCtx, stayStatus } from '../lib/stayflow';
+import { nightsNote, outcome, rankedBy, scoutOf, STAY_COPY, STEPS, stayCtx, stayStatus } from '../lib/stayflow';
 import type { Outcome, Step } from '../lib/stayflow';
 import { rankPoints } from '../lib/stays';
 import { useApp } from '../state';
@@ -174,6 +174,7 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
             <li key={area}>
               <button type="button" className="st-row" onClick={() => setView({ kind: 'board', area })}>
                 <span className="st-row-main">{C.row(area, ctx.nights[area] ?? 0, count)}</span>
+                {nightsNote(ctx, area) && <span className="st-row-sub">{nightsNote(ctx, area)}</span>}
                 {scout === me ? <span className="stamp-label">{C.scoutTag}</span> : scout && <span className="st-scout-av" role="img" aria-label={`Scout: ${scout}`}><Avatar name={scout} size={22} /></span>}
                 {o?.kind === 'decided' && (
                   <span className="st-row-res">{titleOf(o.id) ?? ''}{o.via === 'pin' && <span className="stamp-label red">{C.vote.pinned}</span>}</span>

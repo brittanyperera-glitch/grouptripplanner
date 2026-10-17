@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useState } from 'react';
+import Sheet from '../components/Sheet';
 import { hostelOf, hostelPrice, hostelsFor, KIND_LABEL, parseUrl, ROOM_LABEL, STAY_COPY, TYPE_LABEL } from '../lib/stayflow';
 import { useApp } from '../state';
 import type { Area, PlaceDraft, PlaceKind, PlaceSuggestion, RoomType, StayType } from '../types';
@@ -23,18 +23,6 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
   const [type, setType] = useState<StayType | undefined>(editing?.stayType);
   const [why, setWhy] = useState(editing?.why ?? '');
   const [photo, setPhoto] = useState(editing?.photo ?? '');
-  const dialog = useRef<HTMLDivElement>(null);
-  const closeNow = useRef(onClose);
-  closeNow.current = onClose;
-
-  useEffect(() => {
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    dialog.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeNow.current(); };
-    document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('keydown', onKey); opener?.focus(); };
-  }, []);
-
   const hostels = hostelsFor(where);
   const chosen = hostelOf(hostelId);
   const linkOk = parseUrl(link), photoOk = parseUrl(photo);
@@ -81,77 +69,65 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
     </div>
   );
 
-  return createPortal(
-    <div className="st-sheet-wrap">
-      <div className="st-backdrop" aria-hidden="true" onClick={onClose} />
-      <div ref={dialog} className="st-sheet" role="dialog" aria-modal="true" aria-label={editing ? C.edit : isStay ? C.title : C.titleIdea} tabIndex={-1}>
-        <header className="st-sheet-head">
-          <h2 className="st-sheet-title">{editing ? C.edit : isStay ? C.title : C.titleIdea}</h2>
-          <button type="button" className="st-x" onClick={onClose}>{C.close}</button>
-        </header>
-        <div className="st-form">
-          {!editing && (
-            <div className="st-field" role="group" aria-label={C.kind}>
-              <span className="st-label">{C.kind}</span>
-              <div className="st-chips">
-                {(Object.keys(KIND_LABEL) as PlaceKind[]).map(k => (
-                  <button key={k} type="button" className="st-pill" aria-pressed={kind === k} onClick={() => setKind(k)}>{KIND_LABEL[k]}</button>
-                ))}
-              </div>
-            </div>
-          )}
-          <label className="st-field">
-            <span className="st-label">{C.where}</span>
-            <select className="st-select" value={where} onChange={e => { setWhere(e.target.value as Area); setHostelId(''); }}>
-              {areas.map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
-          </label>
-          {isStay && hostels.length > 0 && (
-            <label className="st-field">
-              <span className="st-label">{C.guide}</span>
-              <select className="st-select" value={hostelId} onChange={e => pickHostel(e.target.value)}>
-                <option value="">{C.guideNone}</option>
-                {hostels.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
-              </select>
-            </label>
-          )}
-          <div className="st-field">
-            <label className="st-field">
-              <span className="st-label">{C.link}</span>
-              <input className="field" inputMode="url" autoCapitalize="none" placeholder="https://" value={link} onChange={e => setLink(e.target.value)} />
-            </label>
-            {!linkOk.ok && <span className="st-err" role="alert">{C.badLink}</span>}
-          </div>
-          <label className="st-field">
-            <span className="st-label">{C.name}</span>
-            <input className="field" maxLength={MAX_TITLE} value={name} onChange={e => setName(e.target.value)} />
-          </label>
-          <div className="st-field">
-            <label className="st-field">
-              <span className="st-label">{isStay ? C.price : C.cost}</span>
-              <input className="field" inputMode="decimal" placeholder="12" value={price} onChange={e => setPrice(e.target.value)} />
-            </label>
-            {isStay && !chosen && <span className="st-hint">{C.priceHint}</span>}
-          </div>
-          {isStay && chips(C.rooms, ROOM_LABEL, rooms, setRooms)}
-          {isStay && chips(C.type, TYPE_LABEL, type, setType)}
-          <label className="st-field">
-            <span className="st-label">{isStay ? C.why : C.whyIdea}</span>
-            <input className="field" maxLength={MAX_WHY} value={why} onChange={e => setWhy(e.target.value)} />
-          </label>
-          <div className="st-field">
-            <label className="st-field">
-              <span className="st-label">{C.photo}</span>
-              <input className="field" inputMode="url" autoCapitalize="none" placeholder="https://" value={photo} onChange={e => setPhoto(e.target.value)} />
-            </label>
-            {!photoOk.ok && <span className="st-err" role="alert">{C.badLink}</span>}
+  return (
+    <Sheet title={editing ? C.edit : isStay ? C.title : C.titleIdea} closeLabel={C.close} onClose={onClose}
+      footer={<button type="button" className="cta" disabled={!ready} onClick={save}>{editing ? C.saveEdit : isStay ? C.save : C.saveIdea}</button>}>
+      {!editing && (
+        <div className="st-field" role="group" aria-label={C.kind}>
+          <span className="st-label">{C.kind}</span>
+          <div className="st-chips">
+            {(Object.keys(KIND_LABEL) as PlaceKind[]).map(k => (
+              <button key={k} type="button" className="st-pill" aria-pressed={kind === k} onClick={() => setKind(k)}>{KIND_LABEL[k]}</button>
+            ))}
           </div>
         </div>
-        <footer className="st-sheet-foot">
-          <button type="button" className="cta" disabled={!ready} onClick={save}>{editing ? C.saveEdit : isStay ? C.save : C.saveIdea}</button>
-        </footer>
+      )}
+      <label className="st-field">
+        <span className="st-label">{C.where}</span>
+        <select className="st-select" value={where} onChange={e => { setWhere(e.target.value as Area); setHostelId(''); }}>
+          {areas.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
+      </label>
+      {isStay && hostels.length > 0 && (
+        <label className="st-field">
+          <span className="st-label">{C.guide}</span>
+          <select className="st-select" value={hostelId} onChange={e => pickHostel(e.target.value)}>
+            <option value="">{C.guideNone}</option>
+            {hostels.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+          </select>
+        </label>
+      )}
+      <div className="st-field">
+        <label className="st-field">
+          <span className="st-label">{C.link}</span>
+          <input className="field" inputMode="url" autoCapitalize="none" placeholder="https://" value={link} onChange={e => setLink(e.target.value)} />
+        </label>
+        {!linkOk.ok && <span className="st-err" role="alert">{C.badLink}</span>}
       </div>
-    </div>,
-    document.body,
+      <label className="st-field">
+        <span className="st-label">{C.name}</span>
+        <input className="field" maxLength={MAX_TITLE} value={name} onChange={e => setName(e.target.value)} />
+      </label>
+      <div className="st-field">
+        <label className="st-field">
+          <span className="st-label">{isStay ? C.price : C.cost}</span>
+          <input className="field" inputMode="decimal" placeholder="12" value={price} onChange={e => setPrice(e.target.value)} />
+        </label>
+        {isStay && !chosen && <span className="st-hint">{C.priceHint}</span>}
+      </div>
+      {isStay && chips(C.rooms, ROOM_LABEL, rooms, setRooms)}
+      {isStay && chips(C.type, TYPE_LABEL, type, setType)}
+      <label className="st-field">
+        <span className="st-label">{isStay ? C.why : C.whyIdea}</span>
+        <input className="field" maxLength={MAX_WHY} value={why} onChange={e => setWhy(e.target.value)} />
+      </label>
+      <div className="st-field">
+        <label className="st-field">
+          <span className="st-label">{C.photo}</span>
+          <input className="field" inputMode="url" autoCapitalize="none" placeholder="https://" value={photo} onChange={e => setPhoto(e.target.value)} />
+        </label>
+        {!photoOk.ok && <span className="st-err" role="alert">{C.badLink}</span>}
+      </div>
+    </Sheet>
   );
 }

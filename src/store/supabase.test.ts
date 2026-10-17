@@ -14,6 +14,7 @@ const fake = vi.hoisted(() => ({
   upsertTables: [] as string[],
   upsertOpts: [] as unknown[],
   failUpsert: false,
+  missingNights: false,
   places: 'ok' as 'ok' | 'error' | 'throw',
   placeRows: [] as unknown[],
   admin: 'ok' as 'ok' | 'error' | 'throw',
@@ -63,6 +64,7 @@ vi.mock('@supabase/supabase-js', () => ({
         },
         upsert: async (cols: unknown, opts?: unknown) => {
           fake.upserts.push(cols); fake.upsertTables.push(table); fake.upsertOpts.push(opts);
+          if (fake.missingNights && cols && typeof cols === 'object' && 'nights' in cols) return { error: { code: 'PGRST204', message: "Could not find the 'nights' column of 'stays_admin' in the schema cache" } };
           return { error: fake.failUpsert ? new Error('500') : null };
         },
         insert: async (cols: unknown) => {
@@ -107,7 +109,7 @@ const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 beforeEach(() => {
   fake.handler = null; fake.delays = []; fake.loads = 0; fake.upserts = []; fake.reads = 0; fake.ranking = null;
-  fake.crew = 'ok'; fake.crewRows = []; fake.upsertTables = []; fake.upsertOpts = []; fake.failUpsert = false;
+  fake.crew = 'ok'; fake.crewRows = []; fake.upsertTables = []; fake.upsertOpts = []; fake.failUpsert = false; fake.missingNights = false;
   fake.places = 'ok'; fake.placeRows = []; fake.admin = 'ok'; fake.adminRows = []; fake.trip = 'ok'; fake.tripRows = []; fake.inserts = []; fake.updates = []; fake.tripLose = 0; fake.tripStored = null; fake.tripInsertCode = undefined; fake.selects = [];
 });
 
@@ -298,6 +300,33 @@ describe('SupabaseStore place suggestions and stays admin', () => {
     await store().saveStaysAdmin({ closed: ['Ella'] });
     expect(fake.selects.filter(([t]) => t === 'stays_admin')).toEqual([]);
     expect(fake.upserts[0]).toEqual({ id: 1, closed: ['Ella'] });
+  });
+
+  it('nights load as stored, and a row from before the column loads with none', async () => {
+    fake.adminRows = [{ pins: [], scouts: {}, closed: [] }];
+    expect((await store().load()).stays?.admin.nights).toBeUndefined();
+    fake.adminRows = [{ pins: [], scouts: {}, closed: [], nights: { Ella: 3, Colombo: 40 } }];
+    expect((await store().load()).stays?.admin.nights).toEqual({ Ella: 3 });
+  });
+
+  it('saveStaysAdmin with nights writes just nights, clamped to whole numbers 1 to 14', async () => {
+    await store().saveStaysAdmin({ nights: { Ella: 3, Colombo: 99 } });
+    expect(fake.upserts[0]).toEqual({ id: 1, nights: { Ella: 3 } });
+  });
+
+  it('a live table without the nights column still takes the rest of the admin row, and the queue is not wedged', async () => {
+    fake.missingNights = true;
+    const pins = [{ area: 'Ella' as const, suggestionId: 'p1', at: 't' }];
+    await expect(store().saveStaysAdmin({ pins, nights: { Ella: 3 } })).resolves.toBeUndefined();
+    expect(fake.upserts).toEqual([{ id: 1, pins, nights: { Ella: 3 } }, { id: 1, pins }]);
+    fake.upserts = [];
+    await expect(store().saveStaysAdmin({ nights: { Ella: 3 } })).resolves.toBeUndefined();
+    expect(fake.upserts).toEqual([{ id: 1, nights: { Ella: 3 } }]);
+  });
+
+  it('a different upsert failure alongside nights still throws, so the queue keeps it', async () => {
+    fake.failUpsert = true;
+    await expect(store().saveStaysAdmin({ nights: { Ella: 3 } })).rejects.toThrow('500');
   });
 
   it('saveStaysAdmin merges scouts by area into the stored map, and undefined clears one area', async () => {

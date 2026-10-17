@@ -65,8 +65,19 @@ export const ROOM_LABEL: Record<RoomType, string> = { dorm: 'Dorm', shared: 'Sha
 export interface StayCtx {
   me: Player; participants: Player[]; crew: CrewStays[]; crewOf: Partial<Record<Player, CrewStays>>;
   suggestions: PlaceSuggestion[]; admin: StaysAdmin; votes: Vote[];
-  areas: Area[]; nights: Partial<Record<Area, number>>; maxNights: Record<string, Record<string, number>>;
+  areas: Area[]; nights: Partial<Record<Area, number>>; derivedNights?: Partial<Record<Area, number>>; maxNights: Record<string, Record<string, number>>;
 }
+
+/** Accommodation nights: Brittany's override where she set one, else the itinerary's count. The day plan itself is never changed. */
+export const effectiveNights = (derived: Partial<Record<Area, number>>, override: StaysAdmin['nights']): Partial<Record<Area, number>> =>
+  Object.fromEntries(Object.entries(derived).map(([a, n]) => [a, override?.[a as Area] ?? n])) as Partial<Record<Area, number>>;
+
+/** One short line when the stay nights differ from the itinerary, else null. */
+export const nightsNote = (ctx: StayCtx, area: Area): string | null => {
+  const d = ctx.derivedNights?.[area];
+  const n = ctx.nights[area];
+  return d !== undefined && n !== undefined && n !== d ? STAY_COPY.nightsNote(d) : null;
+};
 
 export function stayCtx(state: AppState, me: Player, plan: Plan | null): StayCtx {
   const stays = state.stays ?? EMPTY_STAYS;
@@ -74,7 +85,7 @@ export function stayCtx(state: AppState, me: Player, plan: Plan | null): StayCtx
   const crew = participants.flatMap(p => stays.crew[p] ?? []);
   return {
     me, participants, crew, crewOf: stays.crew, suggestions: stays.suggestions, admin: stays.admin, votes: state.votes,
-    areas: plan ? stayAreas(plan) : [], nights: plan ? nightsByArea(plan) : {},
+    areas: plan ? stayAreas(plan) : [], nights: plan ? effectiveNights(nightsByArea(plan), stays.admin.nights) : {}, derivedNights: plan ? nightsByArea(plan) : {},
     maxNights: Object.fromEntries(crew.map(c => [c.name, maxNightsOf(c.prefs)])),
   };
 }
@@ -163,6 +174,8 @@ export const STAY_COPY = {
   scout: (names: string) => `You scout ${names}`,
   scoutTag: 'You scout',
   destinations: 'Where we stay',
+  nightsNote: (itinerary: number) => `Brittany set these stay nights. The itinerary still has ${itinerary}.`,
+  nightsStep: { label: (area: string) => `Stay nights in ${area}`, less: 'Fewer nights', more: 'More nights', unit: (n: number) => (n === 1 ? 'night' : 'nights') },
   row: (area: string, nights: number, stays: number) => `${area}, ${plural(nights, 'night')}, ${plural(stays, 'stay')}`,
   board: { header: (area: string, nights: number) => `${area}, ${plural(nights, 'night')}`, add: '+ Add a stay', quizFirst: 'Do your travel profile first, 3 min', lockedLine: 'You locked in. Edits stop here.', none: 'No stays yet.', noneOther: 'Nothing here yet.', addIdea: '+ Add an idea', pin: 'Pin as final', unpin: 'Unpin', locked: 'Locked', edit: 'Edit', withdraw: 'Withdraw', book: 'See and book', night: 'per person per night', offRoute: 'Not on the route now.' },
   react: { yes: 'Interested', no: 'Not for me' },

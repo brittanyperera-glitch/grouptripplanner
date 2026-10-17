@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { tripClient } from './tripKey';
-import { applyAdmin, EMPTY_STAYS, emptyRanking, mergeAdminItems } from '../types';
+import { applyAdmin, cleanNights, EMPTY_STAYS, emptyRanking, mergeAdminItems } from '../types';
 import type { AdminItems, AppState, TripAdminState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
 
 type RankingCol = Response['ranking'] & { final?: Response['final'] };
@@ -36,7 +36,12 @@ const toPlace = (r: PlaceRow): PlaceSuggestion => {
   };
 };
 interface TripRow { name: Person; items: AdminItems | null; updated_at: string | null }
-interface AdminRow { pins: StaysAdmin['pins'] | null; scouts: StaysAdmin['scouts'] | null; closed?: StaysAdmin['closed'] | null }
+const nightsOf = (raw: unknown): Pick<StaysAdmin, 'nights'> => { const n = cleanNights(raw); return Object.keys(n).length ? { nights: n } : {}; };
+const missingColumn = (e: unknown, col: string): boolean => {
+  const x = e as { code?: string; message?: string } | null;
+  return x?.code === 'PGRST204' || x?.code === '42703' || (typeof x?.message === 'string' && x.message.includes(col) && /column|schema cache/i.test(x.message));
+};
+interface AdminRow { pins: StaysAdmin['pins'] | null; scouts: StaysAdmin['scouts'] | null; closed?: StaysAdmin['closed'] | null; nights?: unknown }
 
 // The Finalize list is kept inside the ranking jsonb column under "final", so the live table needs
 // no new column.
@@ -170,7 +175,7 @@ export class SupabaseStore implements Store {
       soft(() => this.db.from('place_suggestions').select('*').order('created_at'), rows => { stays.suggestions = (rows as PlaceRow[]).map(toPlace); }),
       soft(() => this.db.from('stays_admin').select('*'), rows => {
         const a = (rows as AdminRow[])[0];
-        if (a) stays.admin = { pins: a.pins ?? [], scouts: a.scouts ?? {}, closed: Array.isArray(a.closed) ? a.closed : [] };
+        if (a) stays.admin = { pins: a.pins ?? [], scouts: a.scouts ?? {}, closed: Array.isArray(a.closed) ? a.closed : [], ...nightsOf(a.nights) };
       }),
     ]);
     return stays;
@@ -221,13 +226,19 @@ export class SupabaseStore implements Store {
     const cols: Record<string, unknown> = { id: 1 };
     if (patch.pins !== undefined) cols.pins = patch.pins;
     if (patch.closed !== undefined) cols.closed = patch.closed;
+    if (patch.nights !== undefined) cols.nights = cleanNights(patch.nights);
     if (patch.scouts !== undefined) {
       const { data, error } = await this.db.from('stays_admin').select('scouts');
       if (error) throw error;
       const stored = ((data ?? []) as AdminRow[])[0]?.scouts ?? {};
       cols.scouts = applyAdmin({ pins: [], scouts: stored, closed: [] }, { scouts: patch.scouts }).scouts;
     }
-    const { error } = await this.db.from('stays_admin').upsert(cols, { onConflict: 'id' });
+    let { error } = await this.db.from('stays_admin').upsert(cols, { onConflict: 'id' });
+    // A live table without the nights column rejects the whole row: write the rest, so one missing column cannot wedge the queue.
+    if (error && 'nights' in cols && missingColumn(error, 'nights')) {
+      const rest = Object.fromEntries(Object.entries(cols).filter(([k]) => k !== 'nights'));
+      ({ error } = Object.keys(rest).length > 1 ? await this.db.from('stays_admin').upsert(rest, { onConflict: 'id' }) : { error: null });
+    }
     if (error) throw error;
     this.ping();
   }

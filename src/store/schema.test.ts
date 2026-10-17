@@ -40,14 +40,13 @@ describe('supabase/schema.sql', () => {
     expect(sql).toMatch(/check \(length\(note\) <= 300\)/);
   });
 
-  it('keeps the name check, the flex column and the realtime publication', () => {
+  it('keeps the name check and the flex column, and adds nothing to the realtime publication', () => {
     // 4 since crew_stays (2026-10-16): responses, suggestions, knockout_votes, crew_stays; measured 4 in schema.sql.
     // 5 since place_suggestions (2026-10-16); stays_admin has no name column; measured 5 in schema.sql.
     // 6 since trip_admin (2026-10-17), one row per person; measured 6 in schema.sql.
     expect(sql.match(/check \(name in \('Brittany','Alex','Antek','Lazza','Saulie'\)\)/g)).toHaveLength(6);
     expect(sql).toMatch(/flex boolean not null default false/);
-    // Added through a guarded loop so a re-run does not fail on a table that is already published.
-    expect(sql).toMatch(/array\['responses','suggestions','knockout_votes'\]/);
-    expect(sql).toMatch(/alter publication supabase_realtime add table %I/);
+    // Changed deliberately (Brittany 2026-10-17): row events deliver nothing under the trip lock (supabase.ts syncs on a broadcast ping), so the publication block was dead config and is gone.
+    expect(sql).not.toMatch(/alter publication/);
   });
 });

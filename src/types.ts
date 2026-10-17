@@ -77,7 +77,7 @@ export interface Store {
   addPlaceSuggestion(s: PlaceDraft): Promise<void>;
   // Anon cannot delete, so taking a suggestion down is a status change.
   setPlaceStatus(id: string, status: PlaceSuggestion['status']): Promise<void>;
-  // pins and closed replace the stored list whole; scouts merge by area (an undefined value clears that area).
+  // pins, closed and nights replace the stored value whole; scouts merge by area (an undefined value clears that area).
   saveStaysAdmin(patch: Partial<StaysAdmin>): Promise<void>;
   // Trip admin checklist: the items in the patch replace those items whole; other items keep their stored value.
   saveTripAdmin(name: Player, patch: AdminItems): Promise<void>;
@@ -140,7 +140,16 @@ export interface CrewStays {
 // Brittany's overrides: a pin skips the vote (suggestionId null = unpinned); scouts name who fills which destination.
 export interface StayPin { area: Area; suggestionId: string | null; at: string }
 // closed = destinations where Brittany stopped waiting on the rest of the top 2s; stored whole like pins.
-export interface StaysAdmin { pins: StayPin[]; scouts: Partial<Record<Area, Player>>; closed: Area[] }
+// nights = Brittany's accommodation-only nights per destination (1 to 14), stored whole; absent means the itinerary's count. Optional so a row from before the column reads as no override.
+export interface StaysAdmin { pins: StayPin[]; scouts: Partial<Record<Area, Player>>; closed: Area[]; nights?: Partial<Record<Area, number>> }
+
+export const MIN_NIGHTS = 1;
+export const MAX_NIGHTS = 14;
+/** A stored nights map cleaned for use: only whole numbers from 1 to 14 survive. */
+export function cleanNights(raw: unknown): Partial<Record<Area, number>> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  return Object.fromEntries(Object.entries(raw).filter(([, n]) => Number.isInteger(n) && (n as number) >= MIN_NIGHTS && (n as number) <= MAX_NIGHTS)) as Partial<Record<Area, number>>;
+}
 // Reactions (kind eat/do/gem) and the stay head to head ride the existing knockout votes:
 // forkId `react:<suggestionId>` (choice a = interested, b = not) and `stay:<area>:<idA>:<idB>` (a or b).
 export interface StaysState { crew: Partial<Record<Player, CrewStays>>; suggestions: PlaceSuggestion[]; admin: StaysAdmin }
@@ -157,7 +166,8 @@ export function mergeAdmin(prev: Partial<StaysAdmin>, next: Partial<StaysAdmin>)
 export function applyAdmin(stored: StaysAdmin, patch: Partial<StaysAdmin>): StaysAdmin {
   const m = mergeAdmin(stored, patch);
   const scouts = Object.fromEntries(Object.entries(m.scouts ?? {}).filter(([, p]) => p !== undefined)) as StaysAdmin['scouts'];
-  return { pins: m.pins ?? [], scouts, closed: m.closed ?? [] };
+  const nights = cleanNights(m.nights);
+  return { pins: m.pins ?? [], scouts, closed: m.closed ?? [], ...(Object.keys(nights).length ? { nights } : {}) };
 }
 export const stayForkId = (area: Area, a: string, b: string) => `stay:${area}:${a}:${b}`;
 export const reactForkId = (suggestionId: string) => `react:${suggestionId}`;

@@ -1,3 +1,4 @@
+import { MAX_NIGHTS, MIN_NIGHTS } from '../types';
 import type { Area, CrewStays, PlaceSuggestion, Player, StayPin } from '../types';
 import { livePin } from './stays';
 
@@ -26,4 +27,12 @@ export const unlockable = (me: Player | null | undefined, crewOf: Partial<Record
  */
 export function canCloseRanking(me: Player | null | undefined, distinctStays: number, ranked: number, participants: number, closed: Area[], area: Area): boolean {
   return isAdmin(me) && distinctStays >= 3 && ranked < participants && !closed.includes(area);
+}
+
+/** The full nights map to store (saveStaysAdmin replaces it whole): n is clamped to 1..14, and a value equal to the itinerary's count drops the override. */
+export function withNights(nights: Partial<Record<Area, number>>, area: Area, n: number, derived: number | undefined): Partial<Record<Area, number>> {
+  const v = Math.min(MAX_NIGHTS, Math.max(MIN_NIGHTS, Math.round(Number.isFinite(n) ? n : MIN_NIGHTS)));
+  const { [area]: _old, ...rest } = nights;
+  void _old;
+  return v === derived ? rest : { ...rest, [area]: v };
 }

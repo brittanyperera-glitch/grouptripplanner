@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import Avatar from '../components/Avatar';
 import { IconLeft } from '../components/Icons';
-import { isAdmin, pinnedId, withPin } from '../lib/override';
-import { KIND_LABEL, liveStays, STAY_COPY, warnLines } from '../lib/stayflow';
+import { isAdmin, pinnedId, withNights, withPin } from '../lib/override';
+import { KIND_LABEL, liveStays, nightsNote, STAY_COPY, warnLines } from '../lib/stayflow';
 import type { StayCtx, StayStatus } from '../lib/stayflow';
 import { tallySides } from '../lib/votes';
 import { useApp } from '../state';
-import { reactForkId } from '../types';
+import { MAX_NIGHTS, MIN_NIGHTS, reactForkId } from '../types';
 import type { Area, PlaceKind, PlaceSuggestion } from '../types';
 import { StayFace, StayPhoto, Suggester } from './StayCard';
 import './Stays.css';
@@ -27,6 +27,9 @@ export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, on
   const admin = isAdmin(ctx.me);
   const pinned = pinnedId(ctx.admin.pins, area, ctx.suggestions);
   const setPin = (id: string | null) => { void store.saveStaysAdmin({ pins: withPin(ctx.admin.pins, area, id, new Date().toISOString()) }); };
+  const setNights = (n: number) => { void store.saveStaysAdmin({ nights: withNights(ctx.admin.nights ?? {}, area, n, ctx.derivedNights?.[area]) }); };
+  const note = nightsNote(ctx, area);
+  const N = STAY_COPY.nightsStep;
   const stays = liveStays(ctx, area);
   const others = ctx.suggestions.filter(s => s.kind === kind && s.area === area && s.status === 'live');
 
@@ -86,6 +89,14 @@ export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, on
         <button type="button" className="st-back" aria-label={STAY_COPY.back} onClick={onBack}><IconLeft size={20} /></button>
       </div>
       <h2 className="big display small st-h">{B.header(area, nights)}</h2>
+      {note && <p className="sub st-nightsnote">{note}</p>}
+      {admin && (
+        <div className="st-nights" role="group" aria-label={N.label(area)}>
+          <button type="button" className="st-pill st-nstep" aria-label={N.less} disabled={nights <= MIN_NIGHTS} onClick={() => setNights(nights - 1)}>-</button>
+          <span className="st-nval" aria-live="polite">{nights} {N.unit(nights)}</span>
+          <button type="button" className="st-pill st-nstep" aria-label={N.more} disabled={nights >= MAX_NIGHTS} onClick={() => setNights(nights + 1)}>+</button>
+        </div>
+      )}
       <div className="st-kinds" role="group" aria-label="Kind">
         {KINDS.map(k => <button key={k} type="button" className="st-pill" aria-pressed={kind === k} onClick={() => setKind(k)}>{KIND_LABEL[k]}</button>)}
       </div>
