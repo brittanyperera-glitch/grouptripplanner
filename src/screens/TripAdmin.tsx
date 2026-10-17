@@ -12,15 +12,14 @@ import './TripAdmin.css';
 const COPY = {
   title: 'Trip admin',
   back: 'Back',
-  sub: 'Tick what you have sorted. The group sees who is done. Prices, references and notes are shown only to you in the app.',
+  sub: 'Tick what you have sorted. The group sees who is done. Prices and notes are shown only to you in the app.',
   groupEmpty: 'Group bookings appear once the route is set and each stay is decided.',
   nobody: 'Nobody yet',
   details: 'Details',
   save: 'Save',
   price: 'Price',
-  ref: 'Booking reference',
   note: 'Note',
-  private: 'Only you can see these.',
+  private: 'Not secret: anyone with the trip password can read this.',
   loading: 'Loading',
 };
 
@@ -41,7 +40,7 @@ export default function TripAdmin({ onBack }: { onBack: () => void }) {
   const { state, me, store, items, legs } = useApp();
   const { data: group, loading } = useGroupResult(state, items, legs);
   const [open, setOpen] = useState<string | null>(null);
-  const [form, setForm] = useState({ price: '', ref: '', note: '' });
+  const [form, setForm] = useState({ price: '', note: '' });
   if (!me) return null;
   // The route is unknown until the worker answers; rendering then would flash the empty text.
   const pending = loading && group === null;
@@ -56,7 +55,7 @@ export default function TripAdmin({ onBack }: { onBack: () => void }) {
   const edit = (d: AdminDef) => {
     if (open === d.id) { setOpen(null); return; }
     const e = entry(d.id);
-    setForm({ price: e?.price ?? '', ref: e?.ref ?? '', note: e?.note ?? '' });
+    setForm({ price: e?.price ?? '', note: e?.note ?? '' });
     setOpen(d.id);
   };
   const save = (d: AdminDef) => {
@@ -68,7 +67,7 @@ export default function TripAdmin({ onBack }: { onBack: () => void }) {
     const mineDone = entry(d.id)?.done === true;
     const done = doneBy(state, d.id).length > 0;
     const mineEntry = entry(d.id);
-    const saved = [mineEntry?.price, mineEntry?.ref].filter(Boolean).join(', ');
+    const saved = [mineEntry?.price].filter(Boolean).join(', ');
     return (
       <li key={d.id} className="ta-row" data-done={done}>
         <button type="button" role="checkbox" aria-checked={mineDone} aria-label={d.label} className="ta-box" onClick={() => tick(d, !mineDone)}>
@@ -83,7 +82,7 @@ export default function TripAdmin({ onBack }: { onBack: () => void }) {
           </div>
           {open === d.id && (
             <form className="ta-form" onSubmit={e => { e.preventDefault(); save(d); }}>
-              {(['price', 'ref', 'note'] as const).map(k => (
+              {(['price', 'note'] as const).map(k => (
                 <label key={k} className="ta-field">
                   <span className="ta-fl">{COPY[k]}</span>
                   <input className="field" maxLength={FIELD_MAX[k]} value={form[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} />

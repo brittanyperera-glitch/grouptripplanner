@@ -69,13 +69,16 @@ describe('TripAdmin', () => {
     const user = await mount('Alex');
     await user.click(screen.getByRole('button', { name: 'Details: Sigiriya Rock' }));
     await user.type(screen.getByLabelText('Price'), 'USD 41');
-    await user.type(screen.getByLabelText('Booking reference'), 'SG-77');
+    // Changed deliberately (Brittany 2026-10-17): no booking reference field; the form says plainly it is not secret.
+    expect(screen.queryByLabelText('Booking reference')).toBeNull();
+    expect(screen.getByText(/anyone with the trip password can read this/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(stored('Alex')?.items['book:sigiriya']).toMatchObject({ price: 'USD 41', ref: 'SG-77' }));
-    expect(await screen.findByText('USD 41, SG-77')).toBeInTheDocument();
+    await waitFor(() => expect(stored('Alex')?.items['book:sigiriya']).toMatchObject({ price: 'USD 41' }));
+    expect(stored('Alex')?.items['book:sigiriya']?.ref).toBeUndefined();
+    expect(await screen.findByText('USD 41')).toBeInTheDocument();
     cleanup();
     await mount('Lazza');
-    expect(document.body.textContent).not.toMatch(/SG-77|USD 41/);
+    expect(document.body.textContent).not.toMatch(/USD 41/);
   });
 
   it('a group item ticked by anyone shows as done for everyone', async () => {

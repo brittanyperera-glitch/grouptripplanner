@@ -89,7 +89,8 @@ describe('entry patches', () => {
   });
 
   it('details are trimmed, capped and dropped when empty, and keep the tick', () => {
-    const out = withDetails({ done: true, doneAt: 't', price: 'old' }, { price: '  ', ref: ' R1 ', note: 'x'.repeat(500) });
-    expect(out).toEqual({ done: true, doneAt: 't', ref: 'R1', note: 'x'.repeat(200) });
+    // Changed deliberately (Brittany 2026-10-17): the booking reference is gone; an old stored one is dropped on the next save.
+    const out = withDetails({ done: true, doneAt: 't', price: 'old', ref: 'OLD-REF' }, { price: '  ', note: 'x'.repeat(500) });
+    expect(out).toEqual({ done: true, doneAt: 't', note: 'x'.repeat(200) });
   });
 });

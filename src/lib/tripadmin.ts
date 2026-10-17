@@ -61,17 +61,17 @@ export function visibleEntry(viewer: Player | null, owner: Player, entry: AdminE
   return entry.doneAt === undefined ? { done: entry.done } : { done: entry.done, doneAt: entry.doneAt };
 }
 
-export const FIELD_MAX = { price: 30, ref: 60, note: 200 } as const;
+export const FIELD_MAX = { price: 30, note: 200 } as const;
 /** The patch for ticking or unticking one item; details already entered are kept. */
 export function toggleDone(prev: AdminEntry | undefined, done: boolean, now: string): AdminEntry {
   const { doneAt: _at, ...rest } = prev ?? { done: false };
   return done ? { ...rest, done: true, doneAt: now } : { ...rest, done: false };
 }
-/** The patch for saving the details of one item: trimmed, capped, and empty fields dropped. */
-export function withDetails(prev: AdminEntry | undefined, f: { price: string; ref: string; note: string }): AdminEntry {
+/** The patch for saving the details of one item: trimmed, capped, and empty fields dropped. A booking reference from before it was removed is dropped too. */
+export function withDetails(prev: AdminEntry | undefined, f: { price: string; note: string }): AdminEntry {
   const { price: _p, ref: _r, note: _n, ...rest } = prev ?? { done: false };
   const out: AdminEntry = { ...rest };
-  for (const k of ['price', 'ref', 'note'] as const) {
+  for (const k of ['price', 'note'] as const) {
     const v = f[k].trim().slice(0, FIELD_MAX[k]);
     if (v) out[k] = v;
   }
