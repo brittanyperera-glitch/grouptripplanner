@@ -8,11 +8,9 @@ import { Cover } from '../components/PhotoCard';
 import type { SideQuest } from '../lib/sideQuests';
 import { useApp } from '../state';
 import type { DayEntry, Item, Leg, Plan } from '../types';
-import { useOpenAdmin } from '../components/AdminNav';
 import { unlock } from '../components/sound';
 import TransportLine, { transportOf } from '../components/TransportLine';
 import type { DayTip } from './BookCard';
-import { TripAdminLink } from './TripAdmin';
 import { useJourneyNotes } from './GroupAnswers';
 import { factPills } from './Rate';
 import { Reveal } from './Reveal';
@@ -126,9 +124,8 @@ export function DayRows({ plan, items = [], legs = [], skippedBy, quests = [], t
 export const REVEAL_SEEN_KEY = 'tp:reveal-mine';
 const seen = () => { try { return localStorage.getItem(REVEAL_SEEN_KEY) !== null; } catch { return true; } };
 
-export default function MyTrip({ plan, days, showBook = false }: { plan: Plan & { mustFit: number | null }; days: number; showBook?: boolean }) {
+export default function MyTrip({ plan, days }: { plan: Plan & { mustFit: number | null }; days: number }) {
   const { items, legs, me } = useApp();
-  const openAdmin = useOpenAdmin();
   const name = (id: string) => items.find(i => i.id === id)?.name ?? id;
   // The first visit with motion on plays the reveal; the map's own drive waits until it closes.
   const [revealing, setRevealing] = useState(() => motion() === 'full' && !!me && !seen());
@@ -145,7 +142,6 @@ export default function MyTrip({ plan, days, showBook = false }: { plan: Plan & 
           {plan.missingMusts.length > 0 && `. Left out: ${plan.missingMusts.map(name).join(', ')}`}
         </div>
       )}
-      {showBook && <TripAdminLink group={null} onOpen={openAdmin ?? (() => {})} />}
       <RouteMap route={plan.route} drive={!revealing} />
       {me && <button type="button" className="cta mytrip-reveal" onClick={() => { unlock(); setRevealing(true); }}>Play my route reveal</button>}
       {revealing && me && <Reveal plan={plan} who={me} onClose={() => setRevealing(false)} />}

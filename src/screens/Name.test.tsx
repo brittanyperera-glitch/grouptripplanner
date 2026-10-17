@@ -32,28 +32,20 @@ describe('opening page', () => {
 });
 
 describe('The Homecoming opening', () => {
-  it('reads like the reference: a SRI LANKA / DEC 2026 kicker, a plain title, a pill button with an arrow', () => {
+  // Changed deliberately (Brittany 2026-10-17): intro matches Landing, photo slideshow removed.
+  it('matches Landing: a SRI LANKA / DEC 2026 stamp, the title, a red button with an arrow, no photo slideshow', () => {
     setMotion(false);
     render(<Name welcome="The Homecoming." welcomeSub="Sub line" players={players} onPick={() => {}} />);
-    const kicker = document.querySelector('.intro-kicker');
-    expect(kicker?.textContent).toMatch(/Sri Lanka/i);
-    expect(kicker?.textContent).toMatch(/Dec 2026/i);
+    const stamp = document.querySelector('.landing-stamp');
+    expect(stamp?.textContent).toMatch(/Sri Lanka/i);
+    expect(stamp?.textContent).toMatch(/Dec 2026/i);
     const h1 = screen.getByRole('heading', { level: 1, name: 'The Homecoming.' });
-    expect(h1).toHaveClass('intro-title');
-    expect(h1).not.toHaveClass('display');
+    expect(h1).toHaveClass('landing-title');
     const btn = screen.getByRole('button', { name: /choose your character/i });
-    expect(btn).toHaveClass('intro-pill');
+    expect(btn).toHaveClass('landing-cta');
     expect(btn.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
-  });
-
-  it('puts the most scenic covers first: Nine Arch Bridge leads, then Sigiriya', () => {
-    setMotion(false);
-    const covers = ['pettah', 'kottu', 'sigiriya', 'crab', 'ninearch', 'tea', 'galle', 'rooftop'].map(id => ({ id, photo: id })) as never[];
-    render(<Name welcome="The Homecoming." covers={covers} players={players} onPick={() => {}} />);
-    const srcs = Array.from(document.querySelectorAll('.slides img')).map(i => i.getAttribute('src'));
-    expect(srcs.slice(0, 2)).toEqual(['/img/ninearch.jpg', '/img/sigiriya.jpg']);
-    expect(srcs.length).toBeLessThanOrEqual(6);
-    expect(document.querySelector('.slides img.on')?.getAttribute('src')).toBe('/img/ninearch.jpg');
+    expect(document.querySelector('.landing-road .tuk, .landing-road svg')).not.toBeNull();
+    expect(document.querySelector('.slides, .scrim, .credit-wrap')).toBeNull();
   });
 });
 

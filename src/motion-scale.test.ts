@@ -12,7 +12,7 @@ const ms = (name: string) => Number(root.match(new RegExp(`--${name}:\\s*(\\d+)m
 
 // Loops that idle or drive a character, and the opening Brittany kept as it is. Each is slow or mechanical, never a UI change.
 const AMBIENT = [
-  '.slides img', '.intro-kicker', '.intro-title', '.intro-sub', '.intro-pill', '.bob', '.char .bob', '.tuktuk svg',
+  '.bob', '.char .bob', '.tuktuk svg',
   '.bar.over', '.rv-ring', '.rv-crew img', '.tuk[data-driving="true"]', '.tuk[data-idle="true"]',
 ];
 

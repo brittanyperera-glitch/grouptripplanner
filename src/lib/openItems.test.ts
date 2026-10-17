@@ -123,6 +123,10 @@ describe('bingo', () => {
     for (const bingo of [[], undefined]) {
       expect(ids(ctx({ state: withCrew(crewOf({ bingo })) }))).toEqual(['bingo']);
     }
+    // Added 2026-10-17 (review): a card created but never written in is not done; one written square is.
+    const blank = { ...card, squares: Array.from({ length: 9 }, () => ({ text: '', ticked: false })) };
+    expect(ids(ctx({ state: withCrew(crewOf({ bingo: [blank] })) }))).toEqual(['bingo']);
+    expect(ids(ctx({ state: withCrew(crewOf({ bingo: [{ ...blank, squares: [{ text: 'x', ticked: false }, ...blank.squares.slice(1)] }] })) }))).toEqual([]);
     expect(ids(ctx({ state: { ...empty, stays: undefined } }))).toEqual(['stayQuiz', 'bingo']);
     expect(ids(ctx({ state: { ...empty, stays: { ...doneStays(), crew: {} } } }))).toEqual(['stayQuiz', 'bingo']);
     expect(openItems(ctx({ state: withCrew(crewOf({ bingo: [] })) }))[0]).toMatchObject({ id: 'bingo', label: 'Make your travel bingo card', target: { tab: 'Bingo' } });

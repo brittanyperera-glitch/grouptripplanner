@@ -62,7 +62,8 @@ export function openItems({ me, group, state, unrated, ratingsLocked, awardsUnse
   // Once the route is final, finding somewhere to stay is everyone's job until they lock in their stays (zero is allowed).
   if (routePlan(group, state) && !state.stays?.crew[me]?.locked) out.push({ id: 'stayAdd', label: 'Find somewhere to stay', count: 1, target: { tab: 'Stays' } });
   // Ratings are not checked here: the caller only builds this list once the member has submitted, as for stayQuiz.
-  if (!state.stays?.crew[me]?.bingo?.length) out.push({ id: 'bingo', label: 'Make your travel bingo card', target: { tab: 'Bingo' } });
+  // A card with no written square is not a card yet: the to-do clears once something is written.
+  if (!state.stays?.crew[me]?.bingo?.some(c => c.squares.some(s => s.text.trim() !== ''))) out.push({ id: 'bingo', label: 'Make your travel bingo card', target: { tab: 'Bingo' } });
   if (group?.locked && awardsUnseen) out.push({ id: 'awards', label: 'See the group awards', target: { tab: 'Awards' } });
   return out;
 }

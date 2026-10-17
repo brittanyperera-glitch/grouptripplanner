@@ -1,16 +1,22 @@
 /* Title size: widest word is about 3em in the fallback font, so the box width / 3.2 keeps it whole at any width. */
 .landing { display: flex; color: var(--ink); }
-div.landing { background: var(--bg); }
 .landing-body { position: relative; z-index: 2; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; padding: calc(6dvh + env(safe-area-inset-top)) 24px calc(144px + env(safe-area-inset-bottom)); }
 .landing-stamp { all: unset; display: inline-flex; align-self: flex-start; gap: 8px; padding: 5px 10px; border: var(--stamp-border) var(--red-ink); border-radius: var(--r-stamp); color: var(--red-ink); font: 800 11.5px/1.3 var(--font-body); letter-spacing: .16em; text-transform: uppercase; transform: rotate(-3deg); }
 .landing-stamp span + span::before { content: "·"; margin-right: 8px; }
 .landing-title { margin: 18px 0 0; color: var(--red); font-family: var(--font-head); font-size: min(calc((100cqi - 48px) / 3.2), 14dvh, 150px); font-weight: 800; line-height: .84; text-transform: uppercase; overflow-wrap: anywhere; }
+.landing-title.long { font-size: min(calc((100cqi - 48px) / 5.6), 14dvh, 96px); }
 .landing-title span { display: block; }
 .landing-title span:last-child { color: var(--ink); }
 .landing-trip { margin: 14px 0 0; padding-bottom: 14px; border-bottom: var(--route-line); color: var(--teal); font: 700 clamp(22px, 7cqi, 30px)/1 var(--font-head); letter-spacing: .02em; text-transform: uppercase; }
 .landing-cards { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 360px; }
 .landing-card { all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; gap: 3px; min-height: 72px; justify-content: center; padding: 12px 18px; border-radius: var(--r-btn); background: var(--card); color: var(--card-ink); border: 1.5px solid var(--line-strong); transition: transform var(--dur-fast) var(--ease); }
 .landing-card.primary { background: var(--red-deep); color: var(--on-red); border-color: var(--red-deep); box-shadow: var(--shadow-btn); }
+.landing-cta { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; max-width: 360px; min-height: 56px; padding: 12px 18px; border-radius: var(--r-btn); background: var(--red-deep); color: var(--on-red); font: 800 21px/1 var(--font-head); letter-spacing: .04em; text-transform: uppercase; box-shadow: var(--shadow-btn); transition: transform var(--dur-fast) var(--ease); }
+.landing-cta svg { flex: none; }
+.landing-cta:active { transform: scale(.98); }
+.landing-cta:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+.landing-cta[disabled] { opacity: .3; cursor: default; }
+.landing-sub-copy { margin: 14px 0 0; color: var(--ink); font: 600 15px/1.35 var(--font-body); }
 .landing-card:active { transform: scale(.98); }
 .landing-card:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
 .landing-h { font: 800 clamp(24px, 7cqi, 30px)/1 var(--font-head); letter-spacing: .04em; text-transform: uppercase; overflow-wrap: anywhere; }
@@ -19,7 +25,7 @@ div.landing { background: var(--bg); }
 .landing-road { position: absolute; left: 0; right: 0; bottom: 0; height: calc(112px + env(safe-area-inset-bottom)); z-index: 1; overflow: hidden; border-top: 2px solid var(--ink); background: var(--paper-deep); }
 .landing-road::after { content: ""; position: absolute; left: 0; right: 0; bottom: calc(14px + env(safe-area-inset-bottom)); height: 3px; background: repeating-linear-gradient(90deg, var(--red) 0 20px, transparent 20px 38px); }
 @media (prefers-reduced-motion: no-preference) {
-  .landing-title, .landing-card { animation: land-in var(--dur-slow) var(--ease) both; }
+  .landing-title, .landing-card, .landing-cta { animation: land-in var(--dur-slow) var(--ease) both; }
   .landing-card:nth-child(1) { animation-delay: var(--dur-fast); }
   .landing-card:nth-child(2) { animation-delay: var(--dur); }
   }

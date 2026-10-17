@@ -3,18 +3,15 @@ import type { CSSProperties } from 'react';
 import Avatar from '../components/Avatar';
 import { IconLeft, IconRight } from '../components/Icons';
 import { motion, navigate } from '../components/motion';
-import { CreditButton } from '../components/PhotoCard';
+import LandingRoad from '../components/LandingRoad';
+import './Landing.css';
 import type { Copy } from '../state';
 import './Lockin.css';
 import { PEOPLE } from '../types';
-import type { Item, Player } from '../types';
+import type { Player } from '../types';
 
-const SLIDE_MS = 6000;
 // Lock-in: ease in, stay readable, ease out, then continue.
 export const FLASH = { in: 400, hold: 1700, out: 400 };
-// Cover order on the opening: the most scenic first, the rest after.
-const SCENIC = ['ninearch', 'sigiriya', 'coconut', 'galle', 'hiriketiya', 'train'];
-const scenicRank = (id: string) => { const i = SCENIC.indexOf(id); return i < 0 ? SCENIC.length : i; };
 
 type Players = NonNullable<Copy["players"]>;
 
@@ -57,31 +54,20 @@ function FlashName({ name }: { name: string }) {
   return <span ref={ref} className="flash-name">{name}</span>;
 }
 
-export default function Name({ welcome, welcomeSub, covers = [], players = {}, roster = PEOPLE, onPick, onLogout }: {
-  welcome: string; welcomeSub?: string; covers?: Item[]; players?: Players; roster?: readonly Player[]; onPick: (p: Player) => void; onLogout?: () => void;
+export default function Name({ welcome, welcomeSub, players = {}, roster = PEOPLE, onPick, onLogout }: {
+  welcome: string; welcomeSub?: string; players?: Players; roster?: readonly Player[]; onPick: (p: Player) => void; onLogout?: () => void;
 }) {
   const [mode] = useState(motion);
   const still = mode === 'still';
   const bobOk = mode === 'full';
   const [page, setPage] = useState<'intro' | 'select'>('intro');
-  const [slide, setSlide] = useState(0);
-  const [broken, setBroken] = useState<Set<string>>(new Set());
   const [idx, setIdx] = useState(0);
   const [flash, setFlash] = useState<Player | null>(null);
   const lockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (lockTimer.current) clearTimeout(lockTimer.current); }, []);
   const [selfie, setSelfie] = useState(false);
   const lane = useRef<HTMLDivElement>(null);
-  const shots = covers.filter(c => c.photo && !broken.has(c.id))
-    .map((c, i) => ({ c, i })).sort((a, b) => scenicRank(a.c.id) - scenicRank(b.c.id) || a.i - b.i)
-    .slice(0, 6).map(x => x.c);
   const chosen = roster[idx];
-
-  useEffect(() => {
-    if (mode !== 'full' || shots.length < 2 || page !== 'intro') return;
-    const t = setInterval(() => setSlide(s => s + 1), SLIDE_MS);
-    return () => clearInterval(t);
-  }, [mode, shots.length, page]);
 
   const centre = useCallback((i: number) => {
     const el = lane.current;
@@ -142,34 +128,24 @@ export default function Name({ welcome, welcomeSub, covers = [], players = {}, r
   const stats = (card?.stats ?? [])
     .filter(st => st.label && Number.isFinite(st.value))
     .map(st => ({ label: st.label, value: Math.max(0, st.value) }));
-  const current = shots.length ? shots[slide % shots.length] : undefined;
 
   return (
     <div className="welcome">
       {onLogout && <button type="button" className="link name-out" onClick={onLogout}>Log out</button>}
       {page === 'intro' ? (
-        <div className="intro scene">
-          <div className="slides" aria-hidden="true">
-            {shots.map((c, i) => (
-              <img key={c.id} src={`/img/${c.photo}.jpg`} alt="" className={c === current ? 'on' : ''}
-                style={{ animationDelay: `${-i * 4}s` }}
-                onError={() => setBroken(b => new Set(b).add(c.id))} />
-            ))}
-          </div>
-          <div className="scrim" />
-          <div className="intro-kicker">
-            <span>Sri Lanka</span>
-            <span>Dec 2026</span>
-          </div>
-          <div className="intro-copy">
-            {welcome && <h1 className="intro-title">{welcome}</h1>}
-            {welcome && welcomeSub && <div className="intro-sub">{welcomeSub}</div>}
-          </div>
-          <button className="intro-pill" onClick={() => navigate('fwd', () => setPage('select'))}>
-            <span>Choose your character</span>
-            <svg aria-hidden="true" width="22" height="12" viewBox="0 0 22 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M1 6h19M15 1l5 5-5 5" /></svg>
-          </button>
-          {current?.credit && <CreditButton credit={current.credit} />}
+        <div className="intro landing">
+          <main className="landing-body">
+            <div className="landing-top">
+              <p className="landing-stamp"><span>Sri Lanka</span><span>Dec 2026</span></p>
+              {welcome && <h1 className="landing-title long">{welcome}</h1>}
+              {welcome && welcomeSub && <p className="landing-sub-copy">{welcomeSub}</p>}
+            </div>
+            <button className="landing-cta" onClick={() => navigate('fwd', () => setPage('select'))}>
+              <span>Choose your character</span>
+              <svg aria-hidden="true" width="22" height="12" viewBox="0 0 22 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M1 6h19M15 1l5 5-5 5" /></svg>
+            </button>
+          </main>
+          <LandingRoad />
         </div>
       ) : (
         <div className="select scene">

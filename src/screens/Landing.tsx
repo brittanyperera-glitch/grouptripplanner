@@ -1,4 +1,4 @@
-import TukTuk from '../components/TukTuk';
+import LandingRoad from '../components/LandingRoad';
 import './Landing.css';
 
 /** Entry screen: the Group Trip Hero postcard, with the trip and guest doors. */
@@ -22,9 +22,7 @@ export default function Landing({ onTrip, onGuest }: { onTrip(): void; onGuest()
           </button>
         </div>
       </main>
-      <div className="landing-road" aria-hidden="true">
-        <div className="landing-tuk"><TukTuk width={104} driving /></div>
-      </div>
+      <LandingRoad />
     </div>
   );
 }

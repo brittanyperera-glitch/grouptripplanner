@@ -6,7 +6,8 @@ import App from './App';
 import { seenWalkToday, mkItem as mk } from './__fixtures__/seed';
 // These tests exercise the tabs, not the once-a-day welcome-back walkthrough (it has its own tests), so it counts as seen today.
 
-const cat = vi.hoisted(() => ({ items: [] as unknown[] }));
+// tripadmin.ts reads the bookable places once at import, so the first items must already carry the booking note for 'a'.
+const cat = vi.hoisted(() => ({ items: [{ id: 'a', name: 'Alpha Rock', book: 'Book a week ahead' }] as unknown[] }));
 const grp = vi.hoisted(() => ({ current: null as unknown }));
 const copy = vi.hoisted(() => ({
   welcome: '', guestWelcome: '', guestWelcomeSub: '',
@@ -86,11 +87,12 @@ describe('Group trip puts the important parts first', () => {
     expect(within(trip).queryByText('Good to know')).toBeNull();
   });
 
-  it('before Group trip opens, the Trip admin link sits on My trip', async () => {
+  // Changed deliberately (Brittany 2026-10-17): the personal checklist is gone, so before the route is set there is nothing to book and no link.
+  it('before Group trip opens, My trip shows no Trip admin link', async () => {
     localStorage.setItem('tp:resp:Saulie', JSON.stringify({ ...row('Saulie'), submitted: false }));
     render(<App />);
     const region = await screen.findByRole('region', { name: 'My trip' });
-    expect(await within(region).findByRole('button', { name: /^Trip admin/ })).toBeInTheDocument();
+    expect(within(region).queryByRole('button', { name: /^Trip admin/ })).toBeNull();
   });
   it('My trip has no book card once Group trip is open', async () => {
     render(<App />);

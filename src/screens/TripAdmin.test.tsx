@@ -20,7 +20,7 @@ const mount = async (me: Player = 'Alex') => {
   localStorage.setItem('tp:me', me);
   const user = userEvent.setup();
   render(<AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} /></AppProvider>);
-  await screen.findByRole('checkbox', { name: 'Flights in and out' });
+  await screen.findByRole('checkbox', { name: 'Sigiriya Rock' });
   return user;
 };
 
@@ -31,28 +31,29 @@ beforeEach(() => { localStorage.clear(); grp.current = decided; });
 afterEach(() => cleanup());
 
 describe('TripAdmin', () => {
-  it('lists my items, then the group bookings from the plan', async () => {
+  // Changed deliberately (Brittany 2026-10-17): the personal flights/insurance checklist is gone, only group bookings remain.
+  it('lists only the group bookings from the plan', async () => {
     await mount();
     const boxes = screen.getAllByRole('checkbox').map(b => b.getAttribute('aria-label'));
-    expect(boxes).toEqual(['Flights in and out', 'Sri Lanka ETA', 'Travel insurance', 'Vaccines and meds check', 'Phone or eSIM', 'Money plan', 'Sigiriya Rock', 'Nanu Oya to Ella train']);
+    expect(boxes).toEqual(['Sigiriya Rock', 'Nanu Oya to Ella train']);
   });
 
   it('ticking saves my entry and the count drops', async () => {
     const user = await mount();
-    expect(screen.getByRole('status')).toHaveTextContent('8 still to do');
-    await user.click(screen.getByRole('checkbox', { name: 'Sri Lanka ETA' }));
-    await waitFor(() => expect(stored('Alex')?.items.eta?.done).toBe(true));
-    expect(screen.getByRole('checkbox', { name: 'Sri Lanka ETA' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('status')).toHaveTextContent('7 still to do');
+    expect(screen.getByRole('status')).toHaveTextContent('2 still to do');
+    await user.click(screen.getByRole('checkbox', { name: 'Sigiriya Rock' }));
+    await waitFor(() => expect(stored('Alex')?.items['book:sigiriya']?.done).toBe(true));
+    expect(screen.getByRole('checkbox', { name: 'Sigiriya Rock' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('status')).toHaveTextContent('1 still to do');
   });
 
   it('shows who has done an item, but never another person\'s price or reference', async () => {
-    seed('Brittany', { flights: { done: true, doneAt: 't', price: 'GBP 612', ref: 'SECRETREF', note: 'window seat' } });
+    seed('Brittany', { 'book:sigiriya': { done: true, doneAt: 't', price: 'GBP 612', ref: 'SECRETREF', note: 'window seat' } });
     await mount('Alex');
-    const row = screen.getByRole('checkbox', { name: 'Flights in and out' }).closest('li')!;
+    const row = screen.getByRole('checkbox', { name: 'Sigiriya Rock' }).closest('li')!;
     expect(within(row).getByRole('list', { name: 'Done by Brittany' })).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/SECRETREF|GBP 612|window seat/);
-    expect(screen.getByRole('checkbox', { name: 'Flights in and out' })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByRole('checkbox', { name: 'Sigiriya Rock' })).toHaveAttribute('aria-checked', 'false');
   });
 
   it('my own details save, show back to me and stay off other people\'s view', async () => {
@@ -73,7 +74,7 @@ describe('TripAdmin', () => {
     await mount('Alex');
     const row = screen.getByRole('checkbox', { name: 'Nanu Oya to Ella train' }).closest('li')!;
     expect(row).toHaveAttribute('data-done', 'true');
-    expect(screen.getByRole('status')).toHaveTextContent('7 still to do');
+    expect(screen.getByRole('status')).toHaveTextContent('1 still to do');
   });
 
   it('the link counts what I still owe and opens the page', async () => {
@@ -81,7 +82,7 @@ describe('TripAdmin', () => {
     const onOpen = vi.fn();
     const user = userEvent.setup();
     render(<AppProvider store={new LocalStore()}><TripAdminLink group={decided} onOpen={onOpen} /></AppProvider>);
-    await user.click(await screen.findByRole('button', { name: /Trip admin.*8 to do/ }));
+    await user.click(await screen.findByRole('button', { name: /Trip admin.*2 to do/ }));
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
@@ -100,16 +101,20 @@ describe('TripAdmin', () => {
       await mount();
       expect(screen.getAllByRole('checkbox').map(b => b.getAttribute('aria-label'))).toContain('Sigiriya Rock');
       cleanup();
-      expect(await linkText(reopened)).toMatch(/8 to do/);
+      expect(await linkText(reopened)).toMatch(/2 to do/);
     });
 
-    it('a provisional route lists no group bookings, and the link counts the same six', async () => {
+    it('a provisional route lists nothing to book, and the link is not shown', async () => {
       grp.current = provisional;
-      await mount();
-      expect(screen.getAllByRole('checkbox')).toHaveLength(6);
-      expect(screen.getByText(/Group bookings appear once the route is set/)).toBeInTheDocument();
+      localStorage.setItem('tp:me', 'Alex');
+      render(<AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} /></AppProvider>);
+      expect(await screen.findByText(/Group bookings appear once the route is set/)).toBeInTheDocument();
+      expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+      expect(screen.queryByRole('status')).toBeNull();
       cleanup();
-      expect(await linkText(provisional)).toMatch(/6 to do/);
+      localStorage.setItem('tp:me', 'Alex');
+      render(<AppProvider store={new LocalStore()}><TripAdminLink group={provisional} onOpen={vi.fn()} /></AppProvider>);
+      expect(screen.queryByRole('button', { name: /Trip admin/ })).toBeNull();
     });
 
     it('does not promise privacy it cannot keep', async () => {

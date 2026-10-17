@@ -48,7 +48,6 @@ import Landing from './screens/Landing';
 import Stays from './screens/Stays';
 import TripAdmin from './screens/TripAdmin';
 import { AppProvider, ME_KEY, pickQuip, useApp } from './state';
-import type { Copy } from './state';
 import { connectionMissingNow, supabaseConfigured } from './store';
 import { clearTripKey, readTripKey } from './store/tripKey';
 import { clearLocalProgress } from './store/fresh';
@@ -102,8 +101,7 @@ function MyTripTab() {
   else if (view === 'group') content = <section className="body" aria-label="Group trip, not open yet"><BigState headline="The plan is locked." sub="It opens when all five have finished rating. Ask the slow ones." crew={{ label: 'Who has finished rating', done: p => !!state.responses[p]?.submitted, doneLabel: 'finished rating', waitLabel: 'still rating', caption: `${PEOPLE.filter(p => state.responses[p]?.submitted).length} of ${PEOPLE.length} done` }} /></section>;
   else if (!resp) content = <div className="body"><div className="sub">Loading</div></div>;
   else if (!plan) content = <div className="body"><div className="sub">Working out the plan...</div></div>;
-  // Before you go lives on My trip until Group trip opens, then only there (one home at a time).
-  else content = <MyTrip plan={plan} days={resp.flex ? 14 : resp.days ?? 9} showBook={!open} />;
+  else content = <MyTrip plan={plan} days={resp.flex ? 14 : resp.days ?? 9} />;
   const shown: TripView = view;
   return (
     <>
@@ -455,9 +453,6 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   );
 }
 
-// Intro slideshow: Brittany-approved places first; Name puts the most scenic first and keeps six.
-const coverItems = (items: Item[], copy: Copy) => [...items.filter(i => i.photo && copy.items[i.id]?.approved), ...items.filter(i => i.photo && !copy.items[i.id]?.approved)];
-
 type Entry = 'landing' | 'trip' | 'guest';
 
 function firstEntry(store?: Store): Entry {
@@ -471,7 +466,7 @@ function firstEntry(store?: Store): Entry {
 }
 
 function Shell() {
-  const { me, setMe, copy, error, retry, items, store, sandbox, finishSandbox } = useApp();
+  const { me, setMe, copy, error, retry, store, sandbox, finishSandbox } = useApp();
   const logout = useContext(LogoutCtx);
   const [resets, setResets] = useState(0);
   // My row goes back to blank on the server (the choice log keeps its history), this browser forgets my
@@ -487,14 +482,13 @@ function Shell() {
   const say = useCallback<Say>((text, kind = 'hi') => {
     if (text) setToast({ text, kind, id: ++seq.current });
   }, []);
-  const covers = coverItems(items, copy);
   const clear = useCallback(() => setToast(null), []);
   return (
     <div className="app">
       {error && <button className="errbar" onClick={retry}>{error}. Tap to retry</button>}
       {me
         ? <Flow key={`${me}:${resets}`} me={me} say={say} onStartOver={startOver} />
-        : <Name welcome={sandbox ? copy.guestWelcome ?? copy.welcome : copy.welcome} welcomeSub={sandbox ? copy.guestWelcomeSub : copy.welcomeSub} covers={covers} players={copy.players}
+        : <Name welcome={sandbox ? copy.guestWelcome ?? copy.welcome : copy.welcome} welcomeSub={sandbox ? copy.guestWelcomeSub : copy.welcomeSub} players={copy.players}
             roster={sandbox ? GUESTS : PEOPLE} onPick={p => { setMe(p); say(pickQuip(copy.quips.name[p])); }} onLogout={finishSandbox ?? logout ?? undefined} />}
       {toast && <QuipBurst key={toast.id} text={toast.text} kind={toast.kind} onDone={clear} />}
     </div>

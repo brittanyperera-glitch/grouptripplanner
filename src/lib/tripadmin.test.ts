@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import catalogue from '../data/catalogue.json';
 import { AREAS } from '../types';
 import type { AppState, Item, Plan, PlaceSuggestion } from '../types';
-import { ADMIN_IDS, adminChecklist, adminOutstanding, BOOK_IDS, doneBy, PERSON_IDS, stayItemId, toggleDone, visibleEntry, withDetails } from './tripadmin';
+import { ADMIN_IDS, adminChecklist, adminOutstanding, BOOK_IDS, doneBy, stayItemId, toggleDone, visibleEntry, withDetails } from './tripadmin';
 
 const day = (n: number, area: Plan['days'][number]['area']) => ({ n, area, entries: [], spare: 0, rainSlack: false });
 const plan = (chosen: string[]): Plan => ({
@@ -15,10 +15,10 @@ const tick = (who: 'Alex' | 'Brittany', ids: string[]): AppState['tripAdmin'] =>
   ({ [who]: { name: who, updatedAt: 't', items: Object.fromEntries(ids.map(i => [i, { done: true }])) } });
 
 describe('item ids', () => {
-  it('are a stable list: person items, bookable places from the catalogue, one stay per area', () => {
-    expect(PERSON_IDS).toEqual(['flights', 'eta', 'insurance', 'health', 'phone', 'money']);
+  // Changed deliberately (Brittany 2026-10-17: remove the flights/insurance checklist, she does not want to babysit): no personal items remain.
+  it('are a stable list: bookable places from the catalogue, one stay per area', () => {
     expect(BOOK_IDS).toEqual(['book:crab', 'book:sigiriya', 'book:rafting', 'book:train']);
-    expect(ADMIN_IDS).toEqual([...PERSON_IDS, ...BOOK_IDS, ...AREAS.map(a => `stay:${a}`)]);
+    expect(ADMIN_IDS).toEqual([...BOOK_IDS, ...AREAS.map(a => `stay:${a}`)]);
     expect(new Set(ADMIN_IDS).size).toBe(ADMIN_IDS.length);
   });
 
@@ -29,7 +29,7 @@ describe('item ids', () => {
 
   it('every shown string is plain: under 25 words, no em dash, no emoji', () => {
     const all = adminChecklist(withStay(), 'Alex', plan(['crab', 'sigiriya', 'rafting', 'train']));
-    expect(all.length).toBeGreaterThan(PERSON_IDS.length);
+    expect(all.length).toBeGreaterThan(0);
     for (const d of all) {
       for (const text of [d.label, d.hint, d.info ?? '']) {
         expect(text.split(/\s+/).filter(Boolean).length, text).toBeLessThanOrEqual(25);
@@ -40,39 +40,34 @@ describe('item ids', () => {
 });
 
 describe('adminChecklist', () => {
-  it('without a plan only the person items apply', () => {
-    expect(adminChecklist(base(), 'Alex', null).map(d => d.id)).toEqual(PERSON_IDS);
+  it('without a plan there is nothing to book', () => {
+    expect(adminChecklist(base(), 'Alex', null)).toEqual([]);
   });
 
   it('group places appear only when the plan holds them', () => {
     const ids = adminChecklist(base(), 'Alex', plan(['sigiriya', 'train'])).map(d => d.id);
-    expect(ids).toEqual([...PERSON_IDS, 'book:sigiriya', 'book:train']);
+    expect(ids).toEqual(['book:sigiriya', 'book:train']);
   });
 
   it('a stay item appears only once that stop is decided, and names the stay and its price', () => {
     expect(adminChecklist(base(), 'Alex', plan([])).some(d => d.id === stayItemId('Ella'))).toBe(false);
     const d = adminChecklist(withStay(), 'Alex', plan([])).find(x => x.id === 'stay:Ella');
-    expect(d).toMatchObject({ scope: 'group', label: 'Stay in Ella', hint: 'Book Hill hut.', info: 'about £40 a night' });
+    expect(d).toMatchObject({ label: 'Stay in Ella', hint: 'Book Hill hut.', info: 'about £40 a night' });
   });
 });
 
 describe('adminOutstanding', () => {
-  it('lists my unticked person items; a tick by someone else does not clear mine', () => {
-    const s = base({ tripAdmin: { ...tick('Brittany', ['flights', 'eta']), ...tick('Alex', ['flights']) } });
-    expect(adminOutstanding('Alex', s).map(d => d.id)).toEqual(['eta', 'insurance', 'health', 'phone', 'money']);
-    expect(adminOutstanding('Brittany', s).map(d => d.id)).toEqual(['insurance', 'health', 'phone', 'money']);
-  });
-
   it('a group item is owed until anyone ticks it, then nobody owes it', () => {
     const p = plan(['sigiriya']);
-    expect(adminOutstanding('Alex', base(), p).find(d => d.id === 'book:sigiriya')).toEqual({ id: 'book:sigiriya', scope: 'group', label: 'Sigiriya Rock' });
+    expect(adminOutstanding('Alex', base(), p).find(d => d.id === 'book:sigiriya')).toEqual({ id: 'book:sigiriya', label: 'Sigiriya Rock' });
     const s = base({ tripAdmin: tick('Brittany', ['book:sigiriya']) });
     expect(adminOutstanding('Alex', s, p).some(d => d.id === 'book:sigiriya')).toBe(false);
     expect(doneBy(s, 'book:sigiriya')).toEqual(['Brittany']);
   });
 
   it('is empty once everything applicable is ticked', () => {
-    expect(adminOutstanding('Alex', base({ tripAdmin: tick('Alex', PERSON_IDS) }))).toEqual([]);
+    expect(adminOutstanding('Alex', base())).toEqual([]);
+    expect(adminOutstanding('Alex', base({ tripAdmin: tick('Brittany', BOOK_IDS) }), plan(['crab', 'sigiriya', 'rafting', 'train']))).toEqual([]);
   });
 });
 

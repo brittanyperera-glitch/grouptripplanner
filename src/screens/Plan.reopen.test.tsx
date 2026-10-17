@@ -53,11 +53,16 @@ describe('Trip admin link on a reopened route', () => {
     render(<AppProvider store={new LocalStore()}><Plan group={reopened({ held: onePlace(BOOKABLE) })} /></AppProvider>);
     return (await screen.findByRole('button', { name: /Trip admin/ })).textContent;
   };
+  // Changed deliberately (Brittany 2026-10-17): the personal checklist is gone, so only the held plan's bookings count.
   it('counts the held plan\'s bookings once all five lists are saved', async () => {
-    expect(await link(5)).toMatch(/7 to do/);
+    expect(await link(5)).toMatch(/1 to do/);
   });
-  it('counts only personal items while lists are still being saved', async () => {
-    expect(await link(4)).toMatch(/6 to do/);
+  it('shows no link while lists are still being saved', async () => {
+    seed(4);
+    localStorage.setItem('tp:me', 'Alex');
+    render(<AppProvider store={new LocalStore()}><Plan group={reopened({ held: onePlace(BOOKABLE) })} /></AppProvider>);
+    await screen.findByText('Provisional until the knockouts are done');
+    expect(screen.queryByRole('button', { name: /Trip admin/ })).toBeNull();
   });
 });
 

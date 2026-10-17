@@ -13,8 +13,6 @@ const COPY = {
   title: 'Trip admin',
   back: 'Back',
   sub: 'Tick what you have sorted. The group sees who is done. Prices, references and notes are shown only to you in the app.',
-  mine: 'Yours',
-  group: 'The group',
   groupEmpty: 'Group bookings appear once the route is set and each stay is decided.',
   nobody: 'Nobody yet',
   details: 'Details',
@@ -36,7 +34,7 @@ function Who({ people, id }: { people: Player[]; id: string }) {
 }
 
 /**
- * The trip checklist: per-person items, then group bookings. Everyone sees who ticked what; price, reference and note
+ * The booking checklist: places and stays the group needs to book. Everyone sees who ticked what; price, reference and note
  * are shown only to the person who entered them. That is the UI only: the table is readable by anyone with the shared trip password.
  */
 export default function TripAdmin({ onBack }: { onBack: () => void }) {
@@ -47,10 +45,8 @@ export default function TripAdmin({ onBack }: { onBack: () => void }) {
   if (!me) return null;
 
   const list = adminChecklist(state, me, routePlan(group, state));
-  const mine = list.filter(d => d.scope === 'person');
-  const shared = list.filter(d => d.scope === 'group');
   const entry = (id: string) => visibleEntry(me, me, state.tripAdmin?.[me]?.items[id]);
-  const left = list.filter(d => (d.scope === 'person' ? !entry(d.id)?.done : doneBy(state, d.id).length === 0)).length;
+  const left = list.filter(d => doneBy(state, d.id).length === 0).length;
 
   const tick = (d: AdminDef, done: boolean) => {
     void store.saveTripAdmin(me, { [d.id]: toggleDone(entry(d.id), done, new Date().toISOString()) });
@@ -68,7 +64,7 @@ export default function TripAdmin({ onBack }: { onBack: () => void }) {
 
   const row = (d: AdminDef) => {
     const mineDone = entry(d.id)?.done === true;
-    const done = d.scope === 'person' ? mineDone : doneBy(state, d.id).length > 0;
+    const done = doneBy(state, d.id).length > 0;
     const mineEntry = entry(d.id);
     const saved = [mineEntry?.price, mineEntry?.ref].filter(Boolean).join(', ');
     return (
@@ -108,11 +104,8 @@ export default function TripAdmin({ onBack }: { onBack: () => void }) {
       </div>
       <h2 className="big display small ta-h">{COPY.title}</h2>
       <p className="sub">{COPY.sub}</p>
-      <p className="ta-count" role="status">{left === 0 ? 'All done' : `${left} still to do`}</p>
-      <h3 className="ta-sec">{COPY.mine}</h3>
-      <ul className="ta-list">{mine.map(row)}</ul>
-      <h3 className="ta-sec">{COPY.group}</h3>
-      {shared.length === 0 ? <p className="empty">{COPY.groupEmpty}</p> : <ul className="ta-list">{shared.map(row)}</ul>}
+      {list.length > 0 && <p className="ta-count" role="status">{left === 0 ? 'All done' : `${left} still to do`}</p>}
+      {list.length === 0 ? <p className="empty">{COPY.groupEmpty}</p> : <ul className="ta-list">{list.map(row)}</ul>}
     </section>
   );
 }
@@ -124,7 +117,9 @@ export default function TripAdmin({ onBack }: { onBack: () => void }) {
 export function TripAdminLink({ group, onOpen }: { group: GroupResult | null; onOpen: () => void }) {
   const { state, me } = useApp();
   if (!me) return null;
-  const n = adminOutstanding(me, state, routePlan(group, state)).length;
+  const plan = routePlan(group, state);
+  if (adminChecklist(state, me, plan).length === 0) return null;
+  const n = adminOutstanding(me, state, plan).length;
   return (
     <button type="button" className="ta-link" onClick={onOpen}>
       <span className="ta-link-name">{COPY.title}</span>

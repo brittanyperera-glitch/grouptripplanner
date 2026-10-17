@@ -3,38 +3,27 @@ import { AREAS } from '../types';
 import type { AdminEntry, AppState, Area, Item, Plan, Player } from '../types';
 import { outcome, stayCtx } from './stayflow';
 
-export type AdminScope = 'person' | 'group';
 export interface AdminDef {
-  id: string; scope: AdminScope; label: string; hint: string;
-  /** Group items only: what is being booked, so the page can show its price and booking note. */
+  id: string; label: string; hint: string;
+  /** What is being booked, so the page can show its price and booking note. */
   info?: string;
 }
-export interface AdminDue { id: string; scope: AdminScope; label: string }
-
-const PERSON: AdminDef[] = [
-  { id: 'flights', scope: 'person', label: 'Flights in and out', hint: 'Booked both ways. Add the booking reference.' },
-  { id: 'eta', scope: 'person', label: 'Sri Lanka ETA', hint: 'Electronic travel authorisation. Check whether your passport needs one before you fly.' },
-  { id: 'insurance', scope: 'person', label: 'Travel insurance', hint: 'Bought, and it covers the activities you plan to do.' },
-  { id: 'health', scope: 'person', label: 'Vaccines and meds check', hint: 'Checked with a clinic or pharmacist, and any meds packed.' },
-  { id: 'phone', scope: 'person', label: 'Phone or eSIM', hint: 'Sorted data for the trip, so you can reach the group.' },
-  { id: 'money', scope: 'person', label: 'Money plan', hint: 'How you will pay: card, cash, and a spare.' },
-];
-export const PERSON_IDS: string[] = PERSON.map(d => d.id);
+export interface AdminDue { id: string; label: string }
 
 const BOOKABLE = (catalogue as unknown as { items: Item[] }).items.filter(i => i.book);
 /** Catalogue places that carry a booking note. Group item ids are `book:<item id>`. */
 export const BOOK_IDS: string[] = BOOKABLE.map(i => `book:${i.id}`);
 export const stayItemId = (area: Area) => `stay:${area}`;
-/** Every item id that can ever appear, in a stable order: person items, bookable places, one stay per area. */
-export const ADMIN_IDS: string[] = [...PERSON_IDS, ...BOOK_IDS, ...AREAS.map(stayItemId)];
+/** Every item id that can ever appear, in a stable order: bookable places, one stay per area. */
+export const ADMIN_IDS: string[] = [...BOOK_IDS, ...AREAS.map(stayItemId)];
 
-/** The items that apply to this trip: person items always; places only if the plan holds them; a stay only once decided. */
+/** The group bookings that apply to this trip: places only if the plan holds them; a stay only once decided. */
 export function adminChecklist(state: AppState, me: Player, plan: Plan | null): AdminDef[] {
-  const out: AdminDef[] = [...PERSON];
+  const out: AdminDef[] = [];
   if (!plan) return out;
   for (const i of BOOKABLE) {
     if (plan.chosen.includes(i.id)) {
-      out.push({ id: `book:${i.id}`, scope: 'group', label: i.name, hint: i.book ?? '', info: i.fee });
+      out.push({ id: `book:${i.id}`, label: i.name, hint: i.book ?? '', info: i.fee });
     }
   }
   const ctx = stayCtx(state, me, plan);
@@ -43,7 +32,7 @@ export function adminChecklist(state: AppState, me: Player, plan: Plan | null): 
     if (o.kind !== 'decided') continue;
     const s = ctx.suggestions.find(x => x.id === o.id);
     out.push({
-      id: stayItemId(area), scope: 'group', label: `Stay in ${area}`, hint: s ? `Book ${s.title}.` : 'Book the chosen stay.',
+      id: stayItemId(area), label: `Stay in ${area}`, hint: s ? `Book ${s.title}.` : 'Book the chosen stay.',
       info: s?.priceGbp !== undefined ? `about £${s.priceGbp} a night` : undefined,
     });
   }
@@ -55,14 +44,11 @@ const entryOf = (state: AppState, who: Player, id: string): AdminEntry | undefin
 export const doneBy = (state: AppState, id: string): Player[] =>
   (Object.keys(state.tripAdmin ?? {}) as Player[]).filter(p => entryOf(state, p, id)?.done);
 
-/**
- * What `me` still owes: each person item they have not ticked, and each group item nobody has ticked yet.
- * Pass the locked plan to include group items; without one only person items count.
- */
+/** The bookings nobody has ticked yet. Needs the locked plan: without one there is nothing to book. */
 export function adminOutstanding(me: Player, state: AppState, plan: Plan | null = null): AdminDue[] {
   return adminChecklist(state, me, plan)
-    .filter(d => (d.scope === 'person' ? !entryOf(state, me, d.id)?.done : doneBy(state, d.id).length === 0))
-    .map(({ id, scope, label }) => ({ id, scope, label }));
+    .filter(d => doneBy(state, d.id).length === 0)
+    .map(({ id, label }) => ({ id, label }));
 }
 
 /**

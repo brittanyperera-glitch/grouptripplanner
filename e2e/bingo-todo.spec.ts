@@ -22,10 +22,13 @@ for (const w of [320, 390, 1280]) {
 
     await expect(page.getByRole('button', { name: 'New card' })).toBeVisible();
     await page.getByRole('button', { name: 'New card' }).click();
-    await page.getByPlaceholder('e.g. Things that will go wrong').fill('Sri Lanka chaos');
-    for (let i = 1; i <= 9; i++) await page.getByLabel(`Square ${i}`, { exact: true }).fill(`Thing ${i}`);
-    await page.getByRole('button', { name: 'Save card' }).click();
-    await expect(page.getByRole('button', { name: /Sri Lanka chaos/ })).toBeVisible();
+    // Changed deliberately (Brittany 2026-10-17): New card opens a 3x3 grid and a square is written in a sheet; there is no nine-field form.
+    await page.getByRole('button', { name: 'Add square 1' }).click();
+    await page.getByPlaceholder('e.g. Monkey steals food').fill('Thing 1');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByRole('button', { name: /Thing 1, not ticked/ })).toBeVisible();
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    await expect(page.getByRole('button', { name: /Card 1/ })).toBeVisible();
     await expect(page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).resolves.toBe(true);
 
     await page.getByRole('button', { name: 'Back', exact: true }).click();

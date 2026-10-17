@@ -36,10 +36,10 @@ for (const w of [320, 390, 1280]) {
     await expect(page.getByRole('tablist')).toHaveCount(0);
 
     await page.getByRole('button', { name: /New card/ }).click();
-    await page.getByLabel('Card title').fill('Things that go wrong');
-    for (let i = 1; i <= 9; i++) await page.getByLabel(`Square ${i}`, { exact: true }).fill(`Thing ${i}`);
-    await page.getByRole('button', { name: 'Save card' }).click();
-    await page.getByRole('button', { name: /Things that go wrong/ }).click();
+    // Changed deliberately (Brittany 2026-10-17): New card opens the grid and a square is written in a sheet; there is no nine-box form.
+    await page.getByRole('button', { name: 'Add square 1' }).click();
+    await page.getByPlaceholder('e.g. Monkey steals food').fill('Thing 1');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     const sq = page.getByRole('button', { name: 'Thing 1, not ticked' });
     await sq.click();
     await expect(page.getByRole('button', { name: 'Thing 1, ticked' })).toHaveAttribute('aria-pressed', 'true');
