@@ -50,7 +50,7 @@ export function usePersonPlan(resp: Response | undefined, items: Item[], legs: L
   return useCompute<PersonPlan, NonNullable<typeof payload>>('person', payload, p => personPlan(p.resp, p.items, p.legs));
 }
 
-export function useGroupResult(state: AppState, items: Item[], legs: Leg[], release: Release | null = null): Out<GroupResult> {
+export function useGroupResult(state: AppState, items: Item[], legs: Leg[], release: Release | null): Out<GroupResult> {
   const payload = useMemo(() => ({ state, items, legs, genres: GENRES, release }), [state, items, legs, release]);
   return useCompute<GroupResult, typeof payload>('group', payload, p => groupResult(p.state, p.items, p.legs, p.genres, p.release));
 }

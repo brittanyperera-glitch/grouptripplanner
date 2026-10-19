@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.unmock('./release');
 import catalogue from '../data/catalogue.json';
 import legs from '../data/legs.json';
 import { seedState } from '../guest/seed';

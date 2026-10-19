@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import RouteMap from '../components/Map';
 import { useOpenAdmin } from '../components/AdminNav';
+import { useOpenStays } from '../components/StaysNav';
 import { useApp } from '../state';
 import { isReopened } from '../lib/openItems';
 import { tierOf } from '../lib/ranking';
@@ -15,6 +16,7 @@ import { DayRows } from './MyTrip';
 export default function Plan({ group, reveal }: { group: GroupResult; reveal?: ReactNode }) {
   const { state, items, legs, me } = useApp();
   const openAdmin = useOpenAdmin();
+  const openStays = useOpenStays();
   // S1: while only late votes are open, show the plan they are asked against, never the pre-vote base.
   const plan = group.final ?? group.held ?? group.base;
   if (!plan) return null;
@@ -33,6 +35,7 @@ export default function Plan({ group, reveal }: { group: GroupResult; reveal?: R
             : `Provisional until all five finalize their lists (${group.finalized.length} of 5 done)`}
       </div>
       {reveal}
+      {openStays && <button type="button" className="cta" onClick={openStays}>Next: find somewhere to stay</button>}
       <TripAdminLink group={group} onOpen={openAdmin ?? (() => {})} />
       <RouteMap route={plan.route} />
       <SaveItinerary plan={plan} kind="Group" provisional={!(reopened || (group.final && group.locked))} />

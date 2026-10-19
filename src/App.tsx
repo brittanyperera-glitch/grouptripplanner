@@ -30,7 +30,10 @@ import Interview from './screens/Interview';
 import { markSeen as markWalkSeen, readSeen as readWalkSeen, shouldShow as walkShould, todayKey } from './lib/walkthrough';
 import Pace from './screens/Pace';
 import Plan from './screens/Plan';
-import Premiere from './screens/Reveal';
+import Premiere, { Reveal } from './screens/Reveal';
+import { compromises } from './lib/compromises';
+import { RELEASE, releaseFor } from './lib/release';
+import { StaysNav } from './components/StaysNav';
 import Profile from './screens/Profile';
 import profileCopy from './content/profile.json';
 import Raw, { wantsRaw } from './screens/Raw';
@@ -64,6 +67,10 @@ const TABS: Tab[] = ['My trip', 'Picks', 'Group', 'Stays', 'Suggest', 'Guide', '
 const GENRES = genresJson.genres as Genre[];
 const AWARDS_SEEN_KEY = 'tp:awards-seen';
 const readSeen = (): string | null => { try { return localStorage.getItem(AWARDS_SEEN_KEY); } catch { return null; } };
+// The released route plays once per device; a new release (different places or days) plays again.
+const REVEAL_SEEN_KEY = 'tp:reveal-seen';
+const readRevealSeen = (): string | null => { try { return localStorage.getItem(REVEAL_SEEN_KEY); } catch { return null; } };
+const releaseKey = RELEASE ? `${RELEASE.days}:${RELEASE.items.join(',')}` : null;
 const TAB_ICON: Record<Tab, (p: { size?: number }) => JSX.Element> = { 'My trip': IconRoute, 'Picks': IconList, 'Group': IconGroup, 'Stays': IconPin, 'Suggest': IconSpark, 'Guide': IconBook, 'Profile': IconGroup };
 type Say = (t?: string, kind?: QuipKind) => void;
 
@@ -200,7 +207,7 @@ function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLog
 function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): void }) {
   const { state, store, items, legs, copy, clearMe, finishSandbox } = useApp();
   const logout = useContext(LogoutCtx);
-  const { data: group } = useGroupResult(state, items, legs);
+  const { data: group } = useGroupResult(state, items, legs, releaseFor(me));
   const [draft, setDraft] = useState<Response>(() => {
     const saved = state.responses[me];
     return saved ? structuredClone(saved) : blank(me);
@@ -214,6 +221,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   // quiz, Travel Bingo, Awards); closing it leaves that screen as it was. pickScreen decides what shows.
   const [overlay, setOverlay] = useState<Overlay | null>(null);
   const [awardsSeen, setAwardsSeen] = useState<string | null>(readSeen);
+  const [revealSeen, setRevealSeen] = useState<string | null>(readRevealSeen);
   // The welcome-back walkthrough shows once a day, to someone who opens the app already submitted.
   const [walkDay, setWalkDay] = useState<string | null>(readWalkSeen);
   const scrollBack = useRef<number | null>(null);
@@ -317,7 +325,13 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const arrivedSubmitted = useRef(draft.submitted).current;
   // Awards open on their own first; the walkthrough follows with whatever is still to do.
   const walkEligible = arrivedSubmitted && !isGuest(me) && walkShould(todo, today, walkDay);
-  const screen = pickScreen({ shown, overlay, awardsUnseen, walkEligible });
+  const revealUnseen = !isGuest(me) && releaseKey !== null && revealSeen !== releaseKey && !!group?.final && group.locked;
+  const screen = pickScreen({ shown, overlay, awardsUnseen, revealUnseen, walkEligible });
+  const closeReveal = () => {
+    try { localStorage.setItem(REVEAL_SEEN_KEY, releaseKey ?? ''); } catch { /* storage unavailable: plays again next visit */ }
+    setRevealSeen(releaseKey);
+  };
+  const openStays = () => navigate('tab', () => setTab('Stays'));
   const finishWalk = () => { setWalkDay(today); markWalkSeen(); };
 
   const changeDays = () => navigate('back', () => { setOverlay(null); setEditing(true); setStep('days'); });
@@ -404,13 +418,14 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   } else {
     const Panel = tab === 'Group' || tab === 'My trip' ? null : PANELS[tab];
     content = (
-      <div role="tabpanel" aria-label={tab} className="panel"><AdminNav.Provider value={() => navigate('fwd', () => showOverlay('admin'))}><GuideNav.Provider value={() => navigate('tab', () => setTab('Guide'))}>
+      <div role="tabpanel" aria-label={tab} className="panel"><AdminNav.Provider value={() => navigate('fwd', () => showOverlay('admin'))}><GuideNav.Provider value={() => navigate('tab', () => setTab('Guide'))}><StaysNav.Provider value={routeFinal ? openStays : null}>
         {Panel ? <Panel /> : tab === 'My trip' ? <MyTripTab /> : <GroupTab view={groupView} onView={setGroupView} />}
-      </GuideNav.Provider></AdminNav.Provider></div>
+      </StaysNav.Provider></GuideNav.Provider></AdminNav.Provider></div>
     );
   }
 
   const enter = cssEnter() ? lastNav() : null;
+  if (screen === 'reveal' && group?.final) content = <Reveal plan={group.final} cards={compromises(group, state, items)} onClose={closeReveal} />;
   if (screen === 'items') content = <OpenItems items={todo} onGo={goItem} onBack={closeOverlay} />;
   if (screen === 'walkthrough') content = <Walkthrough name={me} items={todo} onGo={goItem} onDone={finishWalk} />;
   if (screen === 'quiz') content = <Interview me={me} initial={state.stays?.crew[me]?.prefs} onSave={prefs => { void store.saveCrewStays(me, { prefs, quizDone: prefs.some(a => !a.skipped && (a.noPreference || Object.keys(a.picks).length > 0)) }); }} onDone={closeOverlay} onClose={closeOverlay} />;
@@ -419,8 +434,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   // The quiz and Bingo only exist on the tabs, so the card before them leaves their rows out.
   if (screen === 'profile') content = <Profile name={me} players={copy.players} onBack={closeProfile} />;
   const baseKey = shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
-  const screenKey = screen === 'base' || screen === 'awards' ? baseKey : screen;
-  useLayoutEffect(() => {
+  const screenKey = screen === 'base' || screen === 'awards' ? baseKey : screen;  useLayoutEffect(() => {
     const over = screenKey === 'profile' || screenKey === 'items' || screenKey === 'quiz' || screenKey === 'bingo' || screenKey === 'admin';
     if (!/jsdom/.test(navigator.userAgent)) window.scrollTo(0, over ? 0 : scrollBack.current ?? 0);
     if (!over) scrollBack.current = null;
