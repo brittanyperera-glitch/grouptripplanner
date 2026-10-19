@@ -1,6 +1,7 @@
 import { PEOPLE, type AppState, type Genre, type GroupResult, type Item, type Knockout, type Leg, type Pace, type Player, type Plan, type Response } from '../types';
 import { mustFitDays, plan } from './planner';
 import { KNOCKED_MUST, score, scoresFor, tierOf } from './ranking';
+import type { Release } from './release';
 import { genreForkId, genreRoundForkId, NORTH_AREAS, REGION_FORK, tallySides } from './votes';
 
 export const VOTES_TO_RESOLVE = 3; // majority of 5
@@ -43,11 +44,11 @@ function medianPace(paces: Pace[]): Pace {
 }
 
 // genres: src/data/genres.json in the app; none means no same-type keep vote.
-export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genres: Genre[] = []): GroupResult {
+export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genres: Genre[] = [], release: Release | null = null): GroupResult {
   const rs = PEOPLE.map(p => state.responses[p]).filter((r): r is Response => !!r);
   const open = allSubmitted(state.responses);
-  const days = rs.length ? Math.min(...rs.map(daysOf)) : 9;
-  const pace = medianPace(rs.flatMap(r => (r.pace === null ? [] : [r.pace])));
+  const days = release?.days ?? (rs.length ? Math.min(...rs.map(daysOf)) : 9);
+  const pace = release?.pace ?? medianPace(rs.flatMap(r => (r.pace === null ? [] : [r.pace])));
   if (!open) return { open, days, pace, base: null, knockouts: [], results: [], final: null, extras: [], knocked: [], finalized: [], locked: false };
 
   const sealed = rs.length === PEOPLE.length && rs.every(r => r.final);
@@ -59,6 +60,20 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
   const scores: Record<string, number> = Object.fromEntries(ids.map(id => [id, rs.reduce((n, r) => n + score(r.ranking, id), 0)]));
   // No mustIds: a group plan never claims "doesn't fit" (plan C.5).
   const run = (F: Set<string>, O: Set<string>, d = days) => plan({ items: pool, scores, days: d, pace, legs, forceIn: [...F], forceOut: [...O] });
+  // The plan's own items stay in, so "you'd also get" holds for the whole list at once.
+  // A place the group skipped in a keep vote is not offered back as an extra.
+  const extrasFor = (kept: Set<string>, skipped: Set<string>) => (days >= EXTRAS_DAYS ? [] : run(kept, skipped, EXTRAS_DAYS).chosen)
+    .filter(id => !kept.has(id))
+    .map(id => ({ id, who: rs.flatMap(r => { const t = tierOf(r.ranking, id); return t === 'must' || t === 'keen' ? [{ name: r.name, tier: t }] : []; }) }))
+    .filter(e => e.who.length > 0)
+    .sort((x, y) => scores[y.id] - scores[x.id] || (x.id < y.id ? -1 : 1));
+
+  // Released (Brittany 2026-10-19): the group's decided list is the plan, so no vote or Finalize list is needed or faked.
+  if (release) {
+    const keep = new Set(release.items);
+    const P = run(keep, new Set(ids.filter(id => !keep.has(id))));
+    return { open, days, pace, base: P, knockouts: [], results: [], final: P, extras: extrasFor(keep, new Set()), knocked: [], finalized: [...PEOPLE], locked: true };
+  }
 
   const F = new Set<string>(), O = new Set<string>();
   // D5 (Brittany 2026-10-15): the losing side of an item head to head is knocked down, not out. Each
@@ -330,13 +345,7 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
   if (!knockouts.length) floor();
   const final = knockouts.length ? null : P;
   const kept = new Set((final ?? baseP).chosen);
-  // The plan's own items stay in, so "you'd also get" holds for the whole list at once.
-  // A place the group skipped in a keep vote is not offered back as an extra.
-  const extras = (days >= EXTRAS_DAYS ? [] : run(kept, genreDropped, EXTRAS_DAYS).chosen)
-    .filter(id => !kept.has(id))
-    .map(id => ({ id, who: rs.flatMap(r => { const t = tierOf(r.ranking, id); return t === 'must' || t === 'keen' ? [{ name: r.name, tier: t }] : []; }) }))
-    .filter(e => e.who.length > 0)
-    .sort((x, y) => scores[y.id] - scores[x.id] || (x.id < y.id ? -1 : 1));
+  const extras = extrasFor(kept, genreDropped);
   const out: GroupResult = { open, days, pace, base: baseP, knockouts, results, final, extras, knocked: [...knocked].sort(), finalized, locked: finalized.length === PEOPLE.length, ...(held ? { held } : {}) };
   measuredOn.set(out, P);
   return out;
