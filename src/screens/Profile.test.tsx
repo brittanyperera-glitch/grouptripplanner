@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import copyData from '../content/copy.json';
@@ -13,7 +13,7 @@ import { friendStats } from '../lib/friendship';
 import { AppProvider, useApp } from '../state';
 import Friends from './Friends';
 import ConnectedProfile, { ProfileView as Profile, VIEW_KEY } from './Profile';
-import { artSrc, cardColours, cardData, cardLayout, CARD_H, CARD_W, contrast, FRIEND_LABELS, rarityOf, renderCardBlob, selfieSrc, tierOf } from './profileCard';
+import { artSrc, cardColours, cardData, cardLayout, cardNo, CARD_H, CARD_W, contrast, FRIEND_LABELS, rarityOf, renderCardBlob, selfieSrc, tierOf, tripStats } from './profileCard';
 
 function PickThen({ who, children }: { who: Player; children: ReactNode }) {
   const { setMe, me } = useApp();
@@ -301,6 +301,69 @@ describe('friendship strip on the card', () => {
     const y = calls.find(k => k[0] === 'fillText' && k[1] === `${f.twin!.pct}%`)![3] as number;
     expect(y).toBeGreaterThanOrEqual(L.friends!.y);
     expect(y).toBeLessThanOrEqual(L.friends!.y + L.friends!.h);
+  });
+});
+
+describe('flip to the poster back', () => {
+  it('shows the card first, the poster after Flip card with Save poster, and the card again after See the front', async () => {
+    const user = userEvent.setup();
+    render(<Profile name="Saulie" players={players} onBack={() => {}} />);
+    const back = document.querySelector('.pf-poster') as HTMLElement;
+    const front = back.previousElementSibling as HTMLElement;
+    expect(front).toHaveAttribute('aria-hidden', 'false');
+    expect(back).toHaveAttribute('aria-hidden', 'true');
+    expect(back.querySelector('img')).toHaveAttribute('src', '/img/poster/homecoming.jpg');
+    await user.click(screen.getByRole('button', { name: profile.flip }));
+    expect(front).toHaveAttribute('aria-hidden', 'true');
+    expect(back).toHaveAttribute('aria-hidden', 'false');
+    expect(screen.getByRole('button', { name: profile.saveBack })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: profile.save })).toBeNull();
+    await user.click(screen.getByRole('button', { name: profile.flipBack }));
+    expect(screen.getByRole('button', { name: profile.save })).toBeInTheDocument();
+    expect(front).toHaveAttribute('aria-hidden', 'false');
+  });
+
+  it('names the card on the back as the same one as the front', () => {
+    render(<Profile name="Alex" players={players} onBack={() => {}} />);
+    const tag = (document.querySelector('.pf-poster-tag') as HTMLElement).textContent;
+    expect(tag).toContain(profile.backTitle);
+    expect(tag).toContain(cardNo(cardData('Alex', PEOPLE.indexOf('Alex') + 1, PEOPLE.length)));
+  });
+});
+
+describe('trip numbers on the card', () => {
+  const ranked = () => { const r = emptyRanking(); r.must.push(['a'], ['b'], ['c']); return r; };
+  const submittedState = (musts: string[]) => {
+    const s = seedState();
+    for (const p of PEOPLE) {
+      const ranking = emptyRanking();
+      musts.forEach(m => ranking.must.push([m]));
+      s.responses[p] = { ...s.responses[p]!, ranking, rated: musts, submitted: true };
+    }
+    return s;
+  };
+  const inApp = (who: Player, state = submittedState(['x', 'y'])) =>
+    render(<AppProvider store={new MemoryStore(state)} sandbox={{ onFinish: () => {} }}><ConnectedProfile name={who} players={players} onBack={() => {}} /></AppProvider>);
+
+  it('counts the Musts, and the Musts in the plan only when a plan is released', () => {
+    expect(tripStats(ranked())).toEqual([{ label: profile.tripMusts, value: 3 }]);
+    expect(tripStats(ranked(), ['a', 'c', 'z'])).toEqual([{ label: profile.tripMusts, value: 3 }, { label: profile.tripInPlan, value: 2 }]);
+  });
+
+  it('are a row on the connected card once all five have submitted', async () => {
+    inApp('Alex');
+    const card = await screen.findByRole('article', { name: 'Alex trip card' });
+    expect(within(card).getByRole('meter', { name: profile.tripMusts })).toHaveAttribute('aria-valuenow', '2');
+  });
+
+  it('are absent for a guest and until all five have submitted', async () => {
+    inApp('Aunty');
+    expect(within(await screen.findByRole('article', { name: 'Aunty trip card' })).queryByRole('meter', { name: profile.tripMusts })).toBeNull();
+    cleanup();
+    const s = submittedState(['x']);
+    s.responses.Lazza = { ...s.responses.Lazza!, submitted: false };
+    inApp('Alex', s);
+    expect(within(await screen.findByRole('article', { name: 'Alex trip card' })).queryByRole('meter', { name: profile.tripMusts })).toBeNull();
   });
 });
 

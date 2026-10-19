@@ -16,6 +16,17 @@
 
 /* The card is as large as the screen allows: the column's width, or the height left under the header and above the buttons. */
 .pf-card { container-type: inline-size; position: relative; align-self: center; width: min(100%, max(260px, calc((100dvh - 215px) * 800 / 1056))); aspect-ratio: 800 / 1056; perspective: 900px; touch-action: pan-y; }
+/* The flip: the card is the front and the poster the back, one face visible at a time. It is as large as the card alone would be. */
+.pf-flip { container-type: inline-size; position: relative; align-self: center; width: min(100%, max(260px, calc((100dvh - 215px) * 800 / 1056))); aspect-ratio: 800 / 1056; perspective: 1400px; }
+.pf-flip .pf-card { width: 100%; align-self: auto; }
+.pf-flip-in { position: absolute; inset: 0; transform-style: preserve-3d; }
+.pf-flip[data-flipped] .pf-flip-in { transform: rotateY(180deg); }
+.pf-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.pf-poster { transform: rotateY(180deg); box-sizing: border-box; padding: 2.6cqw; border-radius: 7cqw; background: #17231f; box-shadow: var(--shadow-2); }
+.pf-poster img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 4.6cqw; }
+.pf-poster-tag { position: absolute; left: 0; right: 0; bottom: 6cqw; display: flex; flex-direction: column; align-items: center; gap: 1.4cqw; color: #f4ede0; text-shadow: 0 1px 10px rgba(0, 0, 0, .75); font: 800 4.6cqw/1 var(--font-head); letter-spacing: .12em; text-transform: uppercase; }
+.pf-poster-tag span { font: 700 3.1cqw/1 var(--font-body); letter-spacing: .14em; opacity: .9; }
+@media (prefers-reduced-motion: no-preference) { .pf-flip-in { transition: transform var(--dur-slow) var(--ease); } }
 .pf-c-in { --p: .125cqw; position: absolute; inset: 0; border-radius: calc(56 * var(--p)); color: #fff;
   background: linear-gradient(135deg, #f8dc86, #c98a10 35%, #f8dc86 60%, #a86d0a); box-shadow: var(--shadow-2);
   transform: rotateX(var(--pf-rx, 0deg)) rotateY(var(--pf-ry, 0deg)); transition: transform var(--dur) var(--ease); }
@@ -75,8 +86,9 @@
 /* Foil: a rainbow sheen. It sweeps once when the card appears, then follows the pointer as the card tilts (--pf-fx). */
 .pf-c-foil { inset: calc(16 * var(--p)); border-radius: calc(42 * var(--p)); pointer-events: none; background: linear-gradient(115deg, transparent 25%, rgba(255, 80, 160, .14) 36%, rgba(255, 220, 80, .17) 45%, rgba(80, 255, 200, .14) 54%, rgba(100, 140, 255, .13) 64%, transparent 75%) var(--pf-fx, 40%) 0 / 300% 100%; transition: background-position var(--dur-fast) var(--ease); }
 
-.pf-actions { display: flex; gap: 8px; margin-top: 4px; }
-.pf-actions > button { flex: 1 1 0; min-width: 0; padding: 13px 6px; font-size: 18px; white-space: nowrap; }
+/* Each button is at least as wide as its own label; when the row is too narrow for all of them the last ones wrap, never squeeze. */
+.pf-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.pf-actions > button { flex: 1 1 0; min-width: max-content; padding: 13px 10px; font-size: 18px; white-space: nowrap; }
 .pf-actions > button:first-child { flex-grow: 1.6; }
 .pf-fail { text-align: center; font-size: 13px; font-weight: 700; color: var(--red-ink); }
 

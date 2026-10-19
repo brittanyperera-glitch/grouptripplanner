@@ -134,7 +134,7 @@ export async function shareOrDownload(file: File): Promise<'shared' | 'downloade
   return 'downloaded';
 }
 
-const TRAVEL_POSTER = '/img/poster/homecoming.jpg';
+export const TRAVEL_POSTER = '/img/poster/homecoming.jpg';
 
 /** The illustrated group poster, shown at the end of the route reveal. Save shares or downloads the same file. */
 export function TravelPoster() {
