@@ -97,6 +97,27 @@ test('the poster at the end of the reveal is the travel poster art, loaded, with
   expect(box.x + box.width).toBeLessThanOrEqual(390);
 });
 
+test('the Awards dialog does not open over the itinerary after the reveal', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seenWalkthroughToday(page);
+  await page.goto('/');
+  // Different ratings per person, so there are awards to win (the identical seed above has none).
+  const tiers = (must: string[], keen: string[]) => ({ must: must.map(m => [m]), keen: keen.map(k => [k]), meh: ids.filter(i => !must.includes(i) && !keen.includes(i)).map(i => [i]), skip: [] });
+  const varied = NAMES.map((name, n) => ({ name, days: 9, flex: false, pace: 0, rated: ids, submitted: true, updatedAt: '2026-10-14T00:00:00Z',
+    ranking: tiers(ids.slice(n, n + 4), ids.slice(n + 4, n + 12)) }));
+  await page.evaluate(([rows]) => {
+    localStorage.clear();
+    for (const r of rows as { name: string }[]) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
+    localStorage.setItem('tp:me', 'Brittany');
+  }, [varied]);
+  await page.reload();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
+  await expect(page.getByText('The group awards', { exact: false })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await expect(page.getByRole('button', { name: 'Awards' })).toBeVisible();
+});
+
 test('the group plan holds the released places and none of the ruled-out ones', async ({ page }) => {
   await seenWalkthroughToday(page);
   await page.goto('/');

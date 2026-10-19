@@ -326,7 +326,8 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   // Awards open on their own first; the walkthrough follows with whatever is still to do.
   const walkEligible = arrivedSubmitted && !isGuest(me) && walkShould(todo, today, walkDay);
   const revealUnseen = !isGuest(me) && releaseKey !== null && revealSeen !== releaseKey && !!group?.final && group.locked;
-  const screen = pickScreen({ shown, overlay, awardsUnseen, revealUnseen, walkEligible });
+  // With a released plan the itinerary comes first (Brittany 2026-10-19): awards stay in the Menu and the to-do list.
+  const screen = pickScreen({ shown, overlay, awardsUnseen: awardsUnseen && !releaseFor(me), revealUnseen, walkEligible });
   const closeReveal = () => {
     try { localStorage.setItem(REVEAL_SEEN_KEY, releaseKey ?? ''); } catch { /* storage unavailable: plays again next visit */ }
     setRevealSeen(releaseKey);
