@@ -15,7 +15,7 @@ import { useApp } from '../state';
 import { PEOPLE } from '../types';
 import type { GroupResult, Hub, Item, Leg, Plan, Player } from '../types';
 import { tipsOf } from './BookCard';
-import Poster from './Poster';
+import { TravelPoster } from './Poster';
 
 export const INTRO_MS = 3000; // HUD stamps, title, then the island fades in
 export const HOLD_MS = 2500;  // each day card, unless Next stop is tapped
@@ -474,7 +474,7 @@ export function Reveal({ plan, cards = NO_CARDS, who, onClose }: { plan: Plan; c
   );
 
   let body;
-  if (stage === 'poster') body = <><button type="button" className="rv-chip rv-close" onClick={onClose}>Close</button><Poster areas={plan.areas} /></>;
+  if (stage === 'poster') body = <><button type="button" className="rv-chip rv-close" onClick={onClose}>Close</button><TravelPoster /></>;
   else if (!animate) {
     body = (
       <div className="rv-scroll">

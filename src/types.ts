@@ -101,6 +101,8 @@ export interface GroupResult {
   extras: { id: string; who: { name: Player; tier: Tier }[] }[];
   // Items that lost a head to head; who has saved a Finalize list; locked once all five have.
   knocked: string[]; finalized: Player[]; locked: boolean;
+  // Set when the plan is a released list rather than the result of votes: no vote explains it, so none is invented for it.
+  released?: boolean;
   // Set only while late votes are the sole open questions: the plan they are asked against.
   held?: Plan;
 }

@@ -9,6 +9,12 @@
 .pf-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 36px; }
 .pf-back { min-height: 32px; display: inline-flex; align-items: center; font-size: 13px; padding: 4px 14px; }
 
+/* Flips the card to its poster back. An icon, so it never competes with the action row for width (named by aria-label). */
+.pf-flipbtn { all: unset; box-sizing: border-box; cursor: pointer; flex-shrink: 0; width: 36px; height: 36px; display: grid; place-items: center; border-radius: var(--r-pill); background: var(--chip); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
+.pf-flipbtn svg { width: 18px; height: 18px; }
+.pf-flipbtn[data-flipped] { background: var(--red-deep); color: var(--on-red); box-shadow: var(--shadow-btn); }
+.pf-flipbtn:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
+
 .pf-switch { display: flex; padding: 3px; border-radius: var(--r-pill); background: var(--chip); box-shadow: inset 0 0 0 1px var(--line); }
 .pf-switch button { all: unset; box-sizing: border-box; cursor: pointer; padding: 7px 16px; border-radius: var(--r-pill); font: 800 13px/1 var(--font-body); color: var(--muted); transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
 .pf-switch button[aria-pressed="true"] { background: var(--red-deep); color: var(--on-red); box-shadow: var(--shadow-btn); }
@@ -16,6 +22,17 @@
 
 /* The card is as large as the screen allows: the column's width, or the height left under the header and above the buttons. */
 .pf-card { container-type: inline-size; position: relative; align-self: center; width: min(100%, max(260px, calc((100dvh - 215px) * 800 / 1056))); aspect-ratio: 800 / 1056; perspective: 900px; touch-action: pan-y; }
+/* The flip: the card is the front and the poster the back, one face visible at a time. It is as large as the card alone would be. */
+.pf-flip { container-type: inline-size; position: relative; align-self: center; width: min(100%, max(260px, calc((100dvh - 215px) * 800 / 1056))); aspect-ratio: 800 / 1056; perspective: 1400px; }
+.pf-flip .pf-card { width: 100%; align-self: auto; }
+.pf-flip-in { position: absolute; inset: 0; transform-style: preserve-3d; }
+.pf-flip[data-flipped] .pf-flip-in { transform: rotateY(180deg); }
+.pf-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.pf-poster { transform: rotateY(180deg); box-sizing: border-box; padding: 2.6cqw; border-radius: 7cqw; background: #17231f; box-shadow: var(--shadow-2); }
+.pf-poster img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 4.6cqw; }
+.pf-poster-tag { position: absolute; left: 0; right: 0; bottom: 6cqw; display: flex; flex-direction: column; align-items: center; gap: 1.4cqw; color: #f4ede0; text-shadow: 0 1px 10px rgba(0, 0, 0, .75); font: 800 4.6cqw/1 var(--font-head); letter-spacing: .12em; text-transform: uppercase; }
+.pf-poster-tag span { font: 700 3.1cqw/1 var(--font-body); letter-spacing: .14em; opacity: .9; }
+@media (prefers-reduced-motion: no-preference) { .pf-flip-in { transition: transform var(--dur-slow) var(--ease); } }
 .pf-c-in { --p: .125cqw; position: absolute; inset: 0; border-radius: calc(56 * var(--p)); color: #fff;
   background: linear-gradient(135deg, #f8dc86, #c98a10 35%, #f8dc86 60%, #a86d0a); box-shadow: var(--shadow-2);
   transform: rotateX(var(--pf-rx, 0deg)) rotateY(var(--pf-ry, 0deg)); transition: transform var(--dur) var(--ease); }

@@ -35,7 +35,7 @@ afterEach(() => { (globalThis as { Worker?: unknown }).Worker = original; FakeWo
 describe('useGroupResult', () => {
   it('without Worker returns the same result as groupResult', () => {
     const s = state(['sigiriya']);
-    const { result } = renderHook(() => useGroupResult(s, items, L));
+    const { result } = renderHook(() => useGroupResult(s, items, L, null));
     expect(result.current.loading).toBe(false);
     expect(result.current.data).toEqual(groupResult(s, items, L));
   });
@@ -43,7 +43,7 @@ describe('useGroupResult', () => {
   it('ignores a stale reply and keeps last data while recomputing', () => {
     (globalThis as { Worker?: unknown }).Worker = FakeWorker;
     const a = state(['sigiriya']), b = state(['galle']);
-    const { result, rerender } = renderHook(({ s }) => useGroupResult(s, items, L), { initialProps: { s: a } });
+    const { result, rerender } = renderHook(({ s }) => useGroupResult(s, items, L, null), { initialProps: { s: a } });
     const w = FakeWorker.all[0];
     expect(result.current).toEqual({ data: null, loading: true });
     const ra = groupResult(a, items, L), rb = groupResult(b, items, L);

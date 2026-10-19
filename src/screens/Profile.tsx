@@ -9,8 +9,10 @@ import type { Copy } from '../state';
 import { GUESTS, isGuest, PEOPLE } from '../types';
 import { allSubmitted } from '../lib/group';
 import type { Player } from '../types';
-import { artSrc, cardColours, cardData, cardLayout, cardNo, FRIEND_LABELS, metaText, PALETTE, renderCardBlob, textSize, tierOf } from './profileCard';
-import type { Box, CardData, CardFriends } from './profileCard';
+import { artSrc, cardColours, cardData, cardLayout, cardNo, FRIEND_LABELS, metaText, PALETTE, renderCardBlob, textSize, tierOf, tripStats } from './profileCard';
+import type { Box, CardData, CardFriends, CardStat } from './profileCard';
+import { posterFile, shareOrDownload, TRAVEL_POSTER } from './Poster';
+import { releaseFor } from '../lib/release';
 import './Profile.css';
 
 type Players = NonNullable<Copy['players']>;
@@ -133,10 +135,16 @@ export default function Profile(props: ProfileProps) {
     const { twin, clash } = friendStats(state.responses, name);
     return twin || clash ? { twin, clash } : null;
   }, [name, state.responses]);
-  return <ProfileView {...props} friends={friends} quizDone={!!state.stays?.crew[name]?.quizDone} />;
+  // Real numbers from this person's own ratings, on the same gate as the friendship strip.
+  const ranking = state.responses[name]?.ranking;
+  const trip = useMemo<CardStat[] | null>(() => {
+    if (isGuest(name) || !allSubmitted(state.responses) || !ranking) return null;
+    return tripStats(ranking, releaseFor(name)?.items);
+  }, [name, ranking, state.responses]);
+  return <ProfileView {...props} friends={friends} trip={trip} quizDone={!!state.stays?.crew[name]?.quizDone} />;
 }
 
-export function ProfileView({ name, players = {}, onBack, friends, onQuiz, onBingo, quizDone = false }: ProfileProps & { friends?: CardFriends | null; quizDone?: boolean }) {
+export function ProfileView({ name, players = {}, onBack, friends, trip, onQuiz, onBingo, quizDone = false }: ProfileProps & { friends?: CardFriends | null; trip?: CardStat[] | null; quizDone?: boolean }) {
   const [mode] = useState(motion);
   // Each tap remounts the figure, which restarts its one jump; nothing animates until the first tap.
   const [jumps, setJumps] = useState(0);
@@ -147,7 +155,11 @@ export function ProfileView({ name, players = {}, onBack, friends, onQuiz, onBin
   };
   // A guest is numbered within the guest roster, so Aunty is card 2 of 3 rather than card 1 of the trip's five.
   const roster: readonly Player[] = isGuest(name) ? GUESTS : PEOPLE;
-  const d = useMemo(() => cardData(name, Math.max(roster.indexOf(name), 0) + 1, roster.length, players[name], friends), [name, players, roster, friends]);
+  const d = useMemo(() => {
+    const copy = players[name];
+    return cardData(name, Math.max(roster.indexOf(name), 0) + 1, roster.length, trip ? { ...copy, stats: [...(copy?.stats ?? []), ...trip] } : copy, friends);
+  }, [name, players, roster, friends, trip]);
+  const [flipped, setFlipped] = useState(false);
   const [done, setDone] = useState<Done | null>(null);
   const [busy, setBusy] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -181,6 +193,9 @@ export function ProfileView({ name, players = {}, onBack, friends, onQuiz, onBin
     await navigator.share({ files: [new File([blob], fileName(name), { type: 'image/png' })], title: `${name}, trip card` });
   });
 
+  // The back is the poster file itself, so saving it shares or downloads that file as it is.
+  const saveBack = () => run('saved', async () => { await shareOrDownload(await posterFile()); });
+
   const label = (key: 'saved' | 'copied' | 'sent', idle: string) => (done === key ? profile[key] : idle);
   return (
     <div className="body pf-screen" data-view={view}>
@@ -190,6 +205,11 @@ export function ProfileView({ name, players = {}, onBack, friends, onQuiz, onBin
           <button aria-pressed={view === 'card'} onClick={() => setView('card')}>{profile.viewCard}</button>
           <button aria-pressed={view === 'character'} onClick={() => setView('character')}>{profile.viewCharacter}</button>
         </div>
+        {view === 'card' && (
+          <button className="pf-flipbtn" data-flipped={flipped ? '' : undefined} aria-label={flipped ? profile.flipBack : profile.flip} title={flipped ? profile.flipBack : profile.flip} onClick={() => setFlipped(f => !f)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9a8 8 0 0 1 14-3l2 2" /><path d="M20 4v4h-4" /><path d="M20 15a8 8 0 0 1-14 3l-2-2" /><path d="M4 20v-4h4" /></svg>
+          </button>
+        )}
       </div>
       {onQuiz && view === 'card' && (
         <div className="pf-quiz">
@@ -205,11 +225,19 @@ export function ProfileView({ name, players = {}, onBack, friends, onQuiz, onBin
       )}
       {view === 'card' ? (
         <>
-          <Card d={d} tilt={mode === 'full'} />
+          <div className="pf-flip" data-flipped={flipped ? '' : undefined}>
+            <div className="pf-flip-in">
+              <div className="pf-face" aria-hidden={flipped}><Card d={d} tilt={mode === 'full' && !flipped} /></div>
+              <div className="pf-face pf-poster" aria-hidden={!flipped}>
+                <img src={TRAVEL_POSTER} alt={profile.backAlt} />
+                <div className="pf-poster-tag"><b>{profile.backTitle}</b><span>{cardNo(d)}</span></div>
+              </div>
+            </div>
+          </div>
           <div className="pf-actions" aria-live="polite">
-            <button className="cta" onClick={save}>{label('saved', profile.save)}</button>
-            {copyOk && <button className="cta alt" onClick={copy}>{label('copied', profile.copy)}</button>}
-            {sendOk && <button className="cta alt" onClick={send}>{label('sent', profile.send)}</button>}
+            <button className="cta" onClick={flipped ? saveBack : save}>{label('saved', flipped ? profile.saveBack : profile.save)}</button>
+            {!flipped && copyOk && <button className="cta alt" onClick={copy}>{label('copied', profile.copy)}</button>}
+            {!flipped && sendOk && <button className="cta alt" onClick={send}>{label('sent', profile.send)}</button>}
           </div>
           {done === 'failed' && <div className="pf-fail" role="alert">{profile.failed}</div>}
         </>

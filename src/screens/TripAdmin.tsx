@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Avatar from '../components/Avatar';
 import { IconCheck, IconLeft } from '../components/Icons';
 import { routePlan } from '../lib/openItems';
+import { releaseFor } from '../lib/release';
 import { adminChecklist, adminOutstanding, doneBy, FIELD_MAX, toggleDone, visibleEntry, withDetails } from '../lib/tripadmin';
 import type { AdminDef } from '../lib/tripadmin';
 import { useApp } from '../state';
@@ -38,7 +39,7 @@ function Who({ people, id }: { people: Player[]; id: string }) {
  */
 export default function TripAdmin({ onBack }: { onBack: () => void }) {
   const { state, me, store, items, legs } = useApp();
-  const { data: group, loading } = useGroupResult(state, items, legs);
+  const { data: group, loading } = useGroupResult(state, items, legs, releaseFor(me));
   const [open, setOpen] = useState<string | null>(null);
   const [form, setForm] = useState({ price: '', note: '' });
   if (!me) return null;

@@ -5,6 +5,7 @@ import BigState from '../components/BigState';
 import { IconCheck, IconLeft } from '../components/Icons';
 import { canCloseRanking } from '../lib/override';
 import { routePlan } from '../lib/openItems';
+import { releaseFor } from '../lib/release';
 import { nightsNote, outcome, rankedBy, scoutOf, STAY_COPY, STEPS, stayCtx, stayStatus } from '../lib/stayflow';
 import type { Outcome, Step } from '../lib/stayflow';
 import { rankPoints } from '../lib/stays';
@@ -25,7 +26,7 @@ type View = { kind: 'home' } | { kind: 'lock' } | { kind: 'vote' } | { kind: 'bo
 /** The accommodation flow: where I am in it, one button for the next thing, and the destinations underneath. */
 export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
   const { state, me, store, items, legs } = useApp();
-  const { data: group } = useGroupResult(state, items, legs);
+  const { data: group } = useGroupResult(state, items, legs, releaseFor(me));
   const [view, setView] = useState<View>({ kind: 'home' });
   const [sheet, setSheet] = useState<{ area: Area; kind?: PlaceKind; editing?: PlaceSuggestion } | null>(null);
   const root = useRef<HTMLDivElement>(null);

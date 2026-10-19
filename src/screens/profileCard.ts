@@ -1,6 +1,6 @@
 // The canvas twin of the DOM card in Profile.tsx/Profile.css: both read cardLayout, cardColours and textSize from here, so Save image draws the same card.
 import { IMAGE_CM, LOOKS } from '../components/Avatar';
-import type { Person, Player } from '../types';
+import type { Person, Player, Ranking } from '../types';
 import profile from '../content/profile.json';
 
 export interface CardStat { label: string; value: number }
@@ -81,6 +81,14 @@ export const cardNo = (d: Pick<CardData, 'no' | 'total'>) =>
   profile.cardNo.replace('{n}', String(d.no).padStart(2, '0')).replace('{total}', String(d.total).padStart(2, '0'));
 export const kitText = (d: Pick<CardData, 'kit'>) => (d.kit.length ? d.kit.join(', ') : profile.noKit);
 export const metaText = (d: Pick<CardData, 'heightCm' | 'kit'>) => [`${profile.height} ${d.heightCm} cm`, `${profile.kit} ${kitText(d)}`];
+
+/** Real trip numbers for the card: the Musts someone rated and, when a plan is released, how many of them are in it. */
+export function tripStats(ranking: Ranking, planned?: readonly string[]): CardStat[] {
+  const musts = ranking.must.flat();
+  const stats = [{ label: profile.tripMusts, value: musts.length }];
+  if (planned) stats.push({ label: profile.tripInPlan, value: musts.filter(id => planned.includes(id)).length });
+  return stats;
+}
 
 // Card geometry in canvas pixels (800 x 1056). The face is inset 16; the figure stands on the plate, feet over its gold top edge.
 export const FACE = 16;
