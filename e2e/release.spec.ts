@@ -77,6 +77,26 @@ for (const w of [320, 375]) {
   });
 }
 
+test('the poster at the end of the reveal is the travel poster art, loaded, with a way to save it', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seenWalkthroughToday(page);
+  await page.goto('/');
+  await page.evaluate(([rows]) => {
+    localStorage.clear();
+    for (const r of rows as { name: string }[]) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
+    localStorage.setItem('tp:me', 'Brittany');
+  }, [seed]);
+  await page.reload();
+  await page.getByRole('button', { name: 'See the poster' }).click();
+  const art = page.getByRole('img', { name: /Sri Lanka, The Homecoming/ });
+  await expect(art).toBeVisible();
+  await expect.poll(() => art.evaluate((im: HTMLImageElement) => im.complete && im.naturalWidth)).toBe(1024);
+  await expect(page.getByRole('button', { name: 'Save poster' })).toBeVisible();
+  const box = (await art.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(390);
+});
+
 test('the group plan holds the released places and none of the ruled-out ones', async ({ page }) => {
   await seenWalkthroughToday(page);
   await page.goto('/');
