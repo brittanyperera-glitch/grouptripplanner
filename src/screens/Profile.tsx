@@ -11,7 +11,7 @@ import { allSubmitted } from '../lib/group';
 import type { Player } from '../types';
 import { artSrc, cardColours, cardData, cardLayout, cardNo, FRIEND_LABELS, metaText, PALETTE, renderCardBlob, textSize, tierOf, tripStats } from './profileCard';
 import type { Box, CardData, CardFriends, CardStat } from './profileCard';
-import { shareOrDownload, TRAVEL_POSTER } from './Poster';
+import { posterFile, shareOrDownload, TRAVEL_POSTER } from './Poster';
 import { releaseFor } from '../lib/release';
 import './Profile.css';
 
@@ -194,10 +194,7 @@ export function ProfileView({ name, players = {}, onBack, friends, trip, onQuiz,
   });
 
   // The back is the poster file itself, so saving it shares or downloads that file as it is.
-  const saveBack = () => run('saved', async () => {
-    const blob = await (await fetch(TRAVEL_POSTER)).blob();
-    await shareOrDownload(new File([blob], 'the-homecoming-poster.jpg', { type: 'image/jpeg' }));
-  });
+  const saveBack = () => run('saved', async () => { await shareOrDownload(await posterFile()); });
 
   const label = (key: 'saved' | 'copied' | 'sent', idle: string) => (done === key ? profile[key] : idle);
   return (
@@ -208,6 +205,11 @@ export function ProfileView({ name, players = {}, onBack, friends, trip, onQuiz,
           <button aria-pressed={view === 'card'} onClick={() => setView('card')}>{profile.viewCard}</button>
           <button aria-pressed={view === 'character'} onClick={() => setView('character')}>{profile.viewCharacter}</button>
         </div>
+        {view === 'card' && (
+          <button className="pf-flipbtn" data-flipped={flipped ? '' : undefined} aria-label={flipped ? profile.flipBack : profile.flip} title={flipped ? profile.flipBack : profile.flip} onClick={() => setFlipped(f => !f)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9a8 8 0 0 1 14-3l2 2" /><path d="M20 4v4h-4" /><path d="M20 15a8 8 0 0 1-14 3l-2-2" /><path d="M4 20v-4h4" /></svg>
+          </button>
+        )}
       </div>
       {onQuiz && view === 'card' && (
         <div className="pf-quiz">
@@ -234,7 +236,6 @@ export function ProfileView({ name, players = {}, onBack, friends, trip, onQuiz,
           </div>
           <div className="pf-actions" aria-live="polite">
             <button className="cta" onClick={flipped ? saveBack : save}>{label('saved', flipped ? profile.saveBack : profile.save)}</button>
-            <button className="cta alt" onClick={() => setFlipped(f => !f)}>{flipped ? profile.flipBack : profile.flip}</button>
             {!flipped && copyOk && <button className="cta alt" onClick={copy}>{label('copied', profile.copy)}</button>}
             {!flipped && sendOk && <button className="cta alt" onClick={send}>{label('sent', profile.send)}</button>}
           </div>

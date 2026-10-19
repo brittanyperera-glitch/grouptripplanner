@@ -5,6 +5,7 @@ import catalogue from '../data/catalogue.json';
 import legs from '../data/legs.json';
 import { seedState } from '../guest/seed';
 import { PEOPLE, type Item, type Leg } from '../types';
+import { compromises } from './compromises';
 import { groupResult } from './group';
 import { routePlan } from './openItems';
 import { RELEASE } from './release';
@@ -41,6 +42,26 @@ describe('the released group plan', () => {
   it('leaves out everything the group ruled out, and has one safari', () => {
     for (const id of RULED_OUT) expect(g.final!.chosen, id).not.toContain(id);
     expect(SAFARIS.filter(id => g.final!.chosen.includes(id))).toEqual(['elephants']);
+  });
+
+  it('does not offer a ruled-out place back as "you would also get", and the list is not empty', () => {
+    expect(RELEASE!.ruledOut).toEqual(expect.arrayContaining(RULED_OUT));
+    expect(g.extras.length).toBeGreaterThan(0);
+    for (const e of g.extras) expect(RELEASE!.ruledOut, e.id).not.toContain(e.id);
+  });
+
+  it('stays released when one member starts over: the other four keep the plan', () => {
+    const s = seedState();
+    s.responses.Lazza = { ...s.responses.Lazza!, submitted: false };
+    const one = groupResult(s, ALL, L, [], RELEASE);
+    expect(one.locked).toBe(true);
+    expect([...one.final!.chosen].sort()).toEqual([...RELEASE!.items].sort());
+    expect(routePlan(one, s)).toBe(one.final);
+  });
+
+  it('is marked released and carries no invented "missed out" explanations', () => {
+    expect(g.released).toBe(true);
+    expect(compromises(g, seedState(), ALL)).toEqual([]);
   });
 
   it('does nothing without a release: the vote path still runs', () => {

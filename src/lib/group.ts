@@ -49,7 +49,8 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
   const open = allSubmitted(state.responses);
   const days = release?.days ?? (rs.length ? Math.min(...rs.map(daysOf)) : 9);
   const pace = release?.pace ?? medianPace(rs.flatMap(r => (r.pace === null ? [] : [r.pace])));
-  if (!open) return { open, days, pace, base: null, knockouts: [], results: [], final: null, extras: [], knocked: [], finalized: [], locked: false };
+  // A released plan is already decided, so one member starting over must not take it away from the other four.
+  if (!open && !release) return { open, days, pace, base: null, knockouts: [], results: [], final: null, extras: [], knocked: [], finalized: [], locked: false };
 
   const sealed = rs.length === PEOPLE.length && rs.every(r => r.final);
   // Late items never enter the rated stages, sealed or not, so the fifth Finalize list cannot change them (B1).
@@ -72,7 +73,8 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
   if (release) {
     const keep = new Set(release.items);
     const P = run(keep, new Set(ids.filter(id => !keep.has(id))));
-    return { open, days, pace, base: P, knockouts: [], results: [], final: P, extras: extrasFor(keep, new Set()), knocked: [], finalized: [...PEOPLE], locked: true };
+    // Places the group ruled out are not offered back as "you'd also get" on a longer trip.
+    return { open: true, days, pace, base: P, knockouts: [], results: [], final: P, extras: extrasFor(keep, new Set(release.ruledOut)), knocked: [], finalized: [...PEOPLE], locked: true, released: true };
   }
 
   const F = new Set<string>(), O = new Set<string>();

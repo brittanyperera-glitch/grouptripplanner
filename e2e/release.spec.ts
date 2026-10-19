@@ -8,6 +8,8 @@ const ids = cat.items.map(i => i.id);
 const ranking = { must: [['sigiriya']], keen: [], meh: ids.filter(i => i !== 'sigiriya').map(i => [i]), skip: [] };
 const NAMES = ['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie'];
 const seed = NAMES.map(name => ({ name, days: 9, flex: false, pace: 0, ranking, rated: ids, submitted: true, updatedAt: '2026-10-14T00:00:00Z' }));
+const release = JSON.parse(fs.readFileSync('src/content/release.json', 'utf8')) as { days: number; items: string[] };
+const REVEAL_KEY = `${release.days}:${release.items.join(',')}`;
 const SHOTS = process.env.SHOTS_DIR;
 const shot = async (page: import('@playwright/test').Page, name: string) => { if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.png` }); };
 
@@ -116,6 +118,65 @@ test('the Awards dialog does not open over the itinerary after the reveal', asyn
   await expect(page.getByText('The group awards', { exact: false })).toHaveCount(0);
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(page.getByRole('button', { name: 'Awards' })).toBeVisible();
+});
+
+for (const [w, h] of [[320, 640], [390, 844], [1280, 800]]) {
+  test(`the Profile card flips to the poster and nothing spills out at ${w}x${h}`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await seenWalkthroughToday(page);
+    await page.goto('/');
+    await page.evaluate(([rows, key]) => {
+      localStorage.clear();
+      for (const r of rows as { name: string }[]) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
+      localStorage.setItem('tp:me', 'Brittany');
+      localStorage.setItem('tp:reveal-seen', key as string);
+    }, [seed, REVEAL_KEY]);
+    await page.reload();
+    await page.getByRole('tab', { name: 'Profile' }).click();
+    const spill = () => page.evaluate(() => {
+      const vw = document.documentElement.clientWidth;
+      const bad = [...document.querySelectorAll<HTMLElement>('.pf-top > *, .pf-flip, .pf-actions, .pf-actions > button')].filter(e => { const r = e.getBoundingClientRect(); return r.right > vw + 1 || r.left < -1; });
+      return { page: document.documentElement.scrollWidth - vw, bad: bad.map(e => e.className || e.tagName) };
+    });
+    await expect(page.getByRole('article', { name: 'Brittany trip card' })).toBeVisible();
+    expect(await spill(), 'front').toEqual({ page: 0, bad: [] });
+    await page.getByRole('button', { name: 'Flip card' }).click();
+    await expect(page.getByRole('img', { name: /The Homecoming/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save poster' })).toBeVisible();
+    expect(await spill(), 'back').toEqual({ page: 0, bad: [] });
+    await page.getByRole('button', { name: 'See the front' }).click();
+    await expect(page.getByRole('button', { name: 'Save image' })).toBeVisible();
+  });
+}
+
+test('closing the reveal lands on the itinerary even on the first visit of the day, with the welcome-back walkthrough not yet seen', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.evaluate(([rows]) => {
+    localStorage.clear();
+    for (const r of rows as { name: string }[]) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
+    localStorage.setItem('tp:me', 'Brittany');
+  }, [seed]);
+  await page.reload();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
+  await expect(page.getByRole('tablist')).toBeVisible();
+});
+
+test('one member starting over does not take the released plan away from the others', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seenWalkthroughToday(page);
+  await page.goto('/');
+  const open = seed.map(r => (r.name === 'Lazza' ? { ...r, submitted: false } : r));
+  await page.evaluate(([rows, key]) => {
+    localStorage.clear();
+    for (const r of rows as { name: string }[]) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
+    localStorage.setItem('tp:me', 'Brittany');
+    localStorage.setItem('tp:reveal-seen', key as string);
+  }, [open, REVEAL_KEY]);
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Stays' })).toBeVisible();
 });
 
 test('the group plan holds the released places and none of the ruled-out ones', async ({ page }) => {

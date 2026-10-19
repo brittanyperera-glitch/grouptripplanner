@@ -1,8 +1,9 @@
 import releaseJson from '../content/release.json';
 import { isGuest, type Pace, type Player } from '../types';
 
-/** The group's decided list: when set, it is the plan, in place of the head to head votes. Empty items turns it off. */
-export interface Release { days: number; pace: Pace; items: string[] }
+/** The group's decided list: when set, it is the plan, in place of the head to head votes. Empty items turns the released plan off.
+ *  `ruledOut` are places the group chose against, so a longer trip does not offer them back. */
+export interface Release { days: number; pace: Pace; items: string[]; ruledOut: string[] }
 
 // VITE_RELEASE=off builds the app with the vote flow, which the vote-flow browser specs run against (playwright.config.ts).
 export const RELEASE: Release | null = releaseJson.items.length && import.meta.env.VITE_RELEASE !== 'off' ? (releaseJson as Release) : null;

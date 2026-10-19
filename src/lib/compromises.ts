@@ -18,7 +18,7 @@ const fit = (...variants: string[]) => variants.find(v => v.length <= MAX_CHARS)
 /** One-line cards for the route reveal, biggest first, at most MAX_CARDS. Reads only; nothing here changes the plan. */
 export function compromises(group: GroupResult, state: Pick<AppState, 'responses' | 'votes'>, items: Item[]): Compromise[] {
   const plan = group.final ?? group.base;
-  if (!plan) return [];
+  if (!plan || group.released) return [];
   const byId = new Map(items.map(i => [i.id, i]));
   const name = (id: string) => byId.get(id)?.name ?? id;
   const stops: Hub[] = routeStops(plan.route).filter(h => h !== 'AIR');

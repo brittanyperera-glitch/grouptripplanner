@@ -101,7 +101,8 @@ function MyTripTab() {
   const resp = me ? state.responses[me] : undefined;
   const { data: plan } = usePersonPlan(resp, items, legs);
   // Same test as group.open in lib/group.ts: all five trip members have submitted.
-  const open = PEOPLE.every(p => state.responses[p]?.submitted);
+  // A released plan is already decided: it does not wait for everyone to have submitted, or one person starting over would hide it.
+  const open = PEOPLE.every(p => state.responses[p]?.submitted) || !!releaseFor(me);
   const view: TripView = picked ?? (open ? 'group' : 'mine');
   let content;
   if (view === 'group' && open) content = <GroupTrip />;
@@ -331,6 +332,8 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const closeReveal = () => {
     try { localStorage.setItem(REVEAL_SEEN_KEY, releaseKey ?? ''); } catch { /* storage unavailable: plays again next visit */ }
     setRevealSeen(releaseKey);
+    // The reveal is today's welcome: closing it lands on the itinerary, not on the welcome-back walkthrough.
+    finishWalk();
   };
   const openStays = () => navigate('tab', () => setTab('Stays'));
   const finishWalk = () => { setWalkDay(today); markWalkSeen(); };
