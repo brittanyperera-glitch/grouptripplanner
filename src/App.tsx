@@ -297,8 +297,13 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
 
   // A second tab that finishes the reveal writes the seen key; this one closes its own reveal too.
   useEffect(() => {
-    // Closing the reveal also marks today's walkthrough seen (finishWalk), so both are re-read together.
-    const onStorage = (e: StorageEvent) => { if (e.key === REVEAL_SEEN_KEY) { setRevealSeen(readRevealSeen()); setWalkDay(readWalkSeen()); } };
+    // Only a write of this release's key counts: Start over and the guest sandbox in another tab REMOVE it, which must not replay the reveal here.
+    // Closing the reveal also marks today's walkthrough seen (finishWalk), so this tab does the same rather than rely on write order.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== REVEAL_SEEN_KEY || releaseKey === null || e.newValue !== releaseKey) return;
+      setRevealSeen(releaseKey);
+      setWalkDay(todayKey(new Date()));
+    };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, []);

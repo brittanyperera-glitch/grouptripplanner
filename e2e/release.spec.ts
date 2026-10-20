@@ -183,6 +183,13 @@ test('a second tab on the reveal closes it when the first tab finishes watching'
   await page.getByRole('button', { name: 'Close' }).click();
   await expect(other.getByText('Mission unlocked')).toHaveCount(0);
   await expect(other.getByRole('tablist')).toBeVisible();
+  // Start over or the guest sandbox in a third tab REMOVES the key; that must not bring the reveal back over what this tab is doing.
+  const third = await context.newPage();
+  await third.goto('/');
+  await third.evaluate(() => localStorage.removeItem('tp:reveal-seen'));
+  await other.evaluate(() => new Promise(r => setTimeout(r, 500)));
+  await expect(other.getByText('Mission unlocked')).toHaveCount(0);
+  await expect(other.getByRole('tablist')).toBeVisible();
 });
 
 test('one member starting over does not take the released plan away from the others', async ({ page }) => {

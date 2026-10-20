@@ -230,6 +230,22 @@ describe('card hero layout (all 8 players)', () => {
     const img = calls.find(k => k[0] === 'drawImage')!;
     expect((img[3] as number) + (img[5] as number)).toBeCloseTo(L.figBottom, 0);
   });
+
+  it('the PNG draws the trip chips as text in the trip row, not as bars', async () => {
+    stubCanvas();
+    vi.stubGlobal('Image', class { onload: (() => void) | null = null; width = 400; height = 900; set src(_: string) { queueMicrotask(() => this.onload?.()); } });
+    const d = cardData('Alex', 2, 5, { ...players.Alex, trip: [{ label: profile.tripMusts, value: 14 }, { label: profile.tripInPlan, value: 9 }] });
+    await renderCardBlob(d);
+    const L = cardLayout(d);
+    for (const [label, value] of [[profile.tripMusts, '14'], [profile.tripInPlan, '9']]) {
+      for (const t of [label.toUpperCase(), value]) {
+        const c = calls.find(k => k[0] === 'fillText' && k[1] === t);
+        expect(c, t).toBeDefined();
+        expect(c![3] as number).toBeGreaterThanOrEqual(L.trip!.y);
+        expect(c![3] as number).toBeLessThanOrEqual(L.trip!.y + L.trip!.h);
+      }
+    }
+  });
 });
 
 // Brittany 2026-10-16: "Once we start getting friendship stats we should put the top one the top 2 on the Pokemon cards".
