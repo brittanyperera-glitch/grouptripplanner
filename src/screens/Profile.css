@@ -21,9 +21,10 @@
 .pf-switch button:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
 
 /* The card is as large as the screen allows: the column's width, or the height left under the header and above the buttons. */
-.pf-card { container-type: inline-size; position: relative; align-self: center; width: min(100%, max(260px, calc((100dvh - 215px) * 800 / 1056))); aspect-ratio: 800 / 1056; perspective: 900px; touch-action: pan-y; }
+.pf-card, .pf-flip { container-type: inline-size; position: relative; align-self: center; width: min(100%, max(260px, calc((100dvh - 215px) * 800 / 1056))); aspect-ratio: 800 / 1056; }
+.pf-card { perspective: 900px; touch-action: pan-y; }
 /* The flip: the card is the front and the poster the back, one face visible at a time. It is as large as the card alone would be. */
-.pf-flip { container-type: inline-size; position: relative; align-self: center; width: min(100%, max(260px, calc((100dvh - 215px) * 800 / 1056))); aspect-ratio: 800 / 1056; perspective: 1400px; }
+.pf-flip { perspective: 1400px; }
 .pf-flip .pf-card { width: 100%; align-self: auto; }
 .pf-flip-in { position: absolute; inset: 0; transform-style: preserve-3d; }
 .pf-flip[data-flipped] .pf-flip-in { transform: rotateY(180deg); }

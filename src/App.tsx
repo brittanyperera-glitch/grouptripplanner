@@ -295,6 +295,14 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     return () => window.removeEventListener('popstate', onPop);
   }, [step]);
 
+  // A second tab that finishes the reveal writes the seen key; this one closes its own reveal too.
+  useEffect(() => {
+    // Closing the reveal also marks today's walkthrough seen (finishWalk), so both are re-read together.
+    const onStorage = (e: StorageEvent) => { if (e.key === REVEAL_SEEN_KEY) { setRevealSeen(readRevealSeen()); setWalkDay(readWalkSeen()); } };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   const save = useCallback((patch: Partial<Omit<Response, 'name'>>) => {
     ref.current = { ...ref.current, ...patch };
     setDraft(ref.current);
@@ -326,14 +334,19 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const arrivedSubmitted = useRef(draft.submitted).current;
   // Awards open on their own first; the walkthrough follows with whatever is still to do.
   const walkEligible = arrivedSubmitted && !isGuest(me) && walkShould(todo, today, walkDay);
-  const revealUnseen = !isGuest(me) && releaseKey !== null && revealSeen !== releaseKey && !!group?.final && group.locked;
+  const revealDue = !isGuest(me) && releaseKey !== null && revealSeen !== releaseKey && !!group?.final && group.locked;
+  // A slow plan worker can finish after someone has opened a page (Trip admin): the reveal waits for the next visit rather than pulling them out.
+  const revealWaived = useRef(false);
+  if (overlay && !revealDue && releaseKey !== null && revealSeen !== releaseKey) revealWaived.current = true;
+  const revealUnseen = revealDue && !revealWaived.current;
   // With a released plan the itinerary comes first (Brittany 2026-10-19): awards stay in the Menu and the to-do list.
   const screen = pickScreen({ shown, overlay, awardsUnseen: awardsUnseen && !releaseFor(me), revealUnseen, walkEligible });
   const closeReveal = () => {
+    // The reveal is today's welcome: closing it lands on the itinerary, not on the welcome-back walkthrough.
+    // Written first so another tab reacting to the seen key already finds the walkthrough marked.
+    finishWalk();
     try { localStorage.setItem(REVEAL_SEEN_KEY, releaseKey ?? ''); } catch { /* storage unavailable: plays again next visit */ }
     setRevealSeen(releaseKey);
-    // The reveal is today's welcome: closing it lands on the itinerary, not on the welcome-back walkthrough.
-    finishWalk();
   };
   const openStays = () => navigate('tab', () => setTab('Stays'));
   const finishWalk = () => { setWalkDay(today); markWalkSeen(); };

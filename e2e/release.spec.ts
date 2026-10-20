@@ -132,6 +132,8 @@ for (const [w, h] of [[320, 640], [390, 844], [1280, 800]]) {
       localStorage.setItem('tp:reveal-seen', key as string);
     }, [seed, REVEAL_KEY]);
     await page.reload();
+    const posterRequests: string[] = [];
+    page.on('request', r => { if (r.url().includes('/img/poster/')) posterRequests.push(r.url()); });
     await page.getByRole('tab', { name: 'Profile' }).click();
     const spill = () => page.evaluate(() => {
       const vw = document.documentElement.clientWidth;
@@ -140,8 +142,10 @@ for (const [w, h] of [[320, 640], [390, 844], [1280, 800]]) {
     });
     await expect(page.getByRole('article', { name: 'Brittany trip card' })).toBeVisible();
     expect(await spill(), 'front').toEqual({ page: 0, bad: [] });
+    expect(posterRequests, 'the 938 KB poster is not fetched until someone reaches for the flip').toEqual([]);
     await page.getByRole('button', { name: 'Flip card' }).click();
     await expect(page.getByRole('img', { name: /The Homecoming/ })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => (document.querySelector('.pf-poster img') as HTMLImageElement | null)?.naturalWidth ?? 0)).toBeGreaterThan(0);
     await expect(page.getByRole('button', { name: 'Save poster' })).toBeVisible();
     expect(await spill(), 'back').toEqual({ page: 0, bad: [] });
     await page.getByRole('button', { name: 'See the front' }).click();
@@ -161,6 +165,24 @@ test('closing the reveal lands on the itinerary even on the first visit of the d
   await page.getByRole('button', { name: 'Close' }).click();
   await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
   await expect(page.getByRole('tablist')).toBeVisible();
+});
+
+test('a second tab on the reveal closes it when the first tab finishes watching', async ({ page, context }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.evaluate(([rows]) => {
+    localStorage.clear();
+    for (const r of rows as { name: string }[]) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
+    localStorage.setItem('tp:me', 'Brittany');
+  }, [seed]);
+  await page.reload();
+  const other = await context.newPage();
+  await other.setViewportSize({ width: 390, height: 844 });
+  await other.goto('/');
+  await expect(other.getByText('Mission unlocked')).toBeVisible();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(other.getByText('Mission unlocked')).toHaveCount(0);
+  await expect(other.getByRole('tablist')).toBeVisible();
 });
 
 test('one member starting over does not take the released plan away from the others', async ({ page }) => {

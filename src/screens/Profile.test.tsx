@@ -312,8 +312,9 @@ describe('flip to the poster back', () => {
     const front = back.previousElementSibling as HTMLElement;
     expect(front).toHaveAttribute('aria-hidden', 'false');
     expect(back).toHaveAttribute('aria-hidden', 'true');
-    expect(back.querySelector('img')).toHaveAttribute('src', '/img/poster/homecoming.jpg');
+    expect(back.querySelector('img'), 'the poster is not requested before the flip').toBeNull();
     await user.click(screen.getByRole('button', { name: profile.flip }));
+    expect(back.querySelector('img')).toHaveAttribute('src', '/img/poster/homecoming.jpg');
     expect(front).toHaveAttribute('aria-hidden', 'true');
     expect(back).toHaveAttribute('aria-hidden', 'false');
     expect(screen.getByRole('button', { name: profile.saveBack })).toBeInTheDocument();

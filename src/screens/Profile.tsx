@@ -160,6 +160,8 @@ export function ProfileView({ name, players = {}, onBack, friends, trip, onQuiz,
     return cardData(name, Math.max(roster.indexOf(name), 0) + 1, roster.length, trip ? { ...copy, stats: [...(copy?.stats ?? []), ...trip] } : copy, friends);
   }, [name, players, roster, friends, trip]);
   const [flipped, setFlipped] = useState(false);
+  // The 938 KB poster is fetched when someone reaches for the flip, not on every Profile visit: lazy loading cannot defer an image in a 3D-hidden face.
+  const [wantBack, setWantBack] = useState(false);
   const [done, setDone] = useState<Done | null>(null);
   const [busy, setBusy] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -206,7 +208,7 @@ export function ProfileView({ name, players = {}, onBack, friends, trip, onQuiz,
           <button aria-pressed={view === 'character'} onClick={() => setView('character')}>{profile.viewCharacter}</button>
         </div>
         {view === 'card' && (
-          <button className="pf-flipbtn" data-flipped={flipped ? '' : undefined} aria-label={flipped ? profile.flipBack : profile.flip} title={flipped ? profile.flipBack : profile.flip} onClick={() => setFlipped(f => !f)}>
+          <button className="pf-flipbtn" data-flipped={flipped ? '' : undefined} aria-label={flipped ? profile.flipBack : profile.flip} title={flipped ? profile.flipBack : profile.flip} onPointerEnter={() => setWantBack(true)} onFocus={() => setWantBack(true)} onPointerDown={() => setWantBack(true)} onClick={() => { setWantBack(true); setFlipped(f => !f); }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 9a8 8 0 0 1 14-3l2 2" /><path d="M20 4v4h-4" /><path d="M20 15a8 8 0 0 1-14 3l-2-2" /><path d="M4 20v-4h4" /></svg>
           </button>
         )}
@@ -229,7 +231,7 @@ export function ProfileView({ name, players = {}, onBack, friends, trip, onQuiz,
             <div className="pf-flip-in">
               <div className="pf-face" aria-hidden={flipped}><Card d={d} tilt={mode === 'full' && !flipped} /></div>
               <div className="pf-face pf-poster" aria-hidden={!flipped}>
-                <img src={TRAVEL_POSTER} alt={profile.backAlt} />
+                {wantBack && <img src={TRAVEL_POSTER} alt={profile.backAlt} />}
                 <div className="pf-poster-tag"><b>{profile.backTitle}</b><span>{cardNo(d)}</span></div>
               </div>
             </div>
