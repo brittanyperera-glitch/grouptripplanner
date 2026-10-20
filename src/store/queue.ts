@@ -66,6 +66,8 @@ export class WriteQueue {
       setSuggestionStatus: (id, status) => this.add({ kind: 'sugg', key: `s:${id}`, id, status, waiters: [] }),
       logChoice: c => this.logAll([c]),
       loadLog: () => base.loadLog(),
+      addComplaint: c => this.add({ kind: 'op', key: null, run: () => base.addComplaint(c), waiters: [] }),
+      loadComplaints: () => base.loadComplaints(),
     };
   }
 
