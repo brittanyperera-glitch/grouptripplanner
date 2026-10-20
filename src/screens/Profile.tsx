@@ -102,6 +102,11 @@ function Card({ d, tilt }: { d: CardData; tilt: boolean }) {
             ))}
           </div>
         )}
+        {L.trip && (
+          <div className="pf-c-trip" role="group" aria-label={profile.tripGroup} style={at(L.trip)}>
+            {d.trip.slice(0, 2).map(t => <div key={t.label} className="pf-c-chip"><small>{t.label}</small><b>{t.value}</b></div>)}
+          </div>
+        )}
         {L.friends && d.friends && (
           <div className="pf-c-friends" style={at(L.friends)}>
             {(['twin', 'clash'] as const).map(k => {
@@ -157,7 +162,7 @@ export function ProfileView({ name, players = {}, onBack, friends, trip, onQuiz,
   const roster: readonly Player[] = isGuest(name) ? GUESTS : PEOPLE;
   const d = useMemo(() => {
     const copy = players[name];
-    return cardData(name, Math.max(roster.indexOf(name), 0) + 1, roster.length, trip ? { ...copy, stats: [...(copy?.stats ?? []), ...trip] } : copy, friends);
+    return cardData(name, Math.max(roster.indexOf(name), 0) + 1, roster.length, trip ? { ...copy, trip } : copy, friends);
   }, [name, players, roster, friends, trip]);
   const [flipped, setFlipped] = useState(false);
   // The 938 KB poster is fetched when someone reaches for the flip, not on every Profile visit: lazy loading cannot defer an image in a 3D-hidden face.

@@ -351,20 +351,35 @@ describe('trip numbers on the card', () => {
     expect(tripStats(ranked(), ['a', 'c', 'z'])).toEqual([{ label: profile.tripMusts, value: 3 }, { label: profile.tripInPlan, value: 2 }]);
   });
 
-  it('are a row on the connected card once all five have submitted', async () => {
+  it('are count chips on the connected card once all five have submitted, not bars on the 0 to 10 scale', async () => {
     inApp('Alex');
     const card = await screen.findByRole('article', { name: 'Alex trip card' });
-    expect(within(card).getByRole('meter', { name: profile.tripMusts })).toHaveAttribute('aria-valuenow', '2');
+    const chips = within(card).getByRole('group', { name: profile.tripGroup });
+    expect(chips).toHaveTextContent(`${profile.tripMusts}2`);
+    expect(within(card).queryByRole('meter', { name: profile.tripMusts })).toBeNull();
+  });
+
+  it('take one row under the bars, and a count over 10 is never styled as an over-the-scale joke stat', () => {
+    const base = cardData('Alex', 2, 5, players.Alex);
+    const withTrip = cardData('Alex', 2, 5, { ...players.Alex, trip: [{ label: profile.tripMusts, value: 14 }, { label: profile.tripInPlan, value: 9 }] });
+    const a = cardLayout(base), b = cardLayout(withTrip);
+    expect(b.trip).not.toBeNull();
+    expect(b.trip!.h).toBe(a.stats!.h / base.stats.length);
+    expect(b.trip!.y).toBeGreaterThan(b.stats!.y + b.stats!.h - 1);
+    expect(withTrip.stats).toEqual(base.stats);
+    render(<Profile name="Alex" players={players} onBack={() => {}} trip={withTrip.trip} />);
+    expect(document.querySelector('.pf-c-trip .over')).toBeNull();
+    expect(document.querySelector('.pf-c-trip')).toHaveTextContent('14');
   });
 
   it('are absent for a guest and until all five have submitted', async () => {
     inApp('Aunty');
-    expect(within(await screen.findByRole('article', { name: 'Aunty trip card' })).queryByRole('meter', { name: profile.tripMusts })).toBeNull();
+    expect(within(await screen.findByRole('article', { name: 'Aunty trip card' })).queryByRole('group', { name: profile.tripGroup })).toBeNull();
     cleanup();
     const s = submittedState(['x']);
     s.responses.Lazza = { ...s.responses.Lazza!, submitted: false };
     inApp('Alex', s);
-    expect(within(await screen.findByRole('article', { name: 'Alex trip card' })).queryByRole('meter', { name: profile.tripMusts })).toBeNull();
+    expect(within(await screen.findByRole('article', { name: 'Alex trip card' })).queryByRole('group', { name: profile.tripGroup })).toBeNull();
   });
 });
 

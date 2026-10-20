@@ -39,7 +39,7 @@
   transform: rotateX(var(--pf-rx, 0deg)) rotateY(var(--pf-ry, 0deg)); transition: transform var(--dur) var(--ease); }
 .pf-card[data-tilting] .pf-c-in { transition-duration: var(--dur-fast); }
 .pf-c-in > * { position: absolute; margin: 0; }
-.pf-c-in > :is(.pf-c-plate, .pf-c-art, .pf-c-name, .pf-c-title, .pf-c-stats, .pf-c-friends, .pf-c-fact, .pf-c-meta) { left: calc(56 * var(--p)); right: calc(56 * var(--p)); top: calc(var(--y) * var(--p)); height: calc(var(--h) * var(--p)); }
+.pf-c-in > :is(.pf-c-plate, .pf-c-art, .pf-c-name, .pf-c-title, .pf-c-stats, .pf-c-trip, .pf-c-friends, .pf-c-fact, .pf-c-meta) { left: calc(56 * var(--p)); right: calc(56 * var(--p)); top: calc(var(--y) * var(--p)); height: calc(var(--h) * var(--p)); }
 .pf-c-face { inset: calc(16 * var(--p)); border-radius: calc(42 * var(--p)); --pf-ray-at: calc((var(--pf-ray-y) - 16) * var(--p)); }
 
 /* The plate: the player's deep colour under a gold edge; the figure's feet stand over that edge. */
@@ -71,6 +71,11 @@
 .pf-c-val { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: center; font: 800 calc(34 * var(--p))/1 var(--font-head); font-variant-numeric: tabular-nums; }
 .pf-c-val.over { color: #f2b632; }
 .pf-c-stat:has(.pf-c-val.over) { --pf-fill: #f2b632; }
+
+.pf-c-in > .pf-c-trip { display: grid; grid-template-columns: 1fr 1fr; column-gap: calc(16 * var(--p)); }
+.pf-c-chip { position: relative; min-width: 0; margin: calc(2 * var(--p)) 0; border-radius: calc(32 * var(--p)); background: rgba(255, 255, 255, .14); }
+.pf-c-chip > small { position: absolute; left: calc(20 * var(--p)); right: calc(80 * var(--p)); top: 0; bottom: 0; display: flex; align-items: center; color: var(--pf-tint); font: 800 max(11px, calc(28 * var(--p)))/1 var(--font-head); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-c-chip > b { position: absolute; right: calc(20 * var(--p)); top: 0; bottom: 0; display: flex; align-items: center; font: 800 calc(34 * var(--p))/1 var(--font-head); font-variant-numeric: tabular-nums; }
 
 /* Friendship strip: travel twin left, biggest clash right; each a head on the friend's colour, label over name, then the %. */
 .pf-c-friends { display: grid; grid-template-columns: 1fr 1fr; column-gap: calc(16 * var(--p)); }
