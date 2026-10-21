@@ -1,9 +1,10 @@
 import { applyAdmin, cleanNights, mergeAdminItems, blankCrew, EMPTY_STAYS, emptyRanking, PEOPLE } from '../types';
-import type { AdminItems, AppState, TripAdminRow, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, Store, Suggestion, Vote } from '../types';
+import type { AdminItems, AppState, TripAdminRow, ChoiceEntry, ChoiceInput, Complaint, CrewStays, Person, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, Store, Suggestion, Vote } from '../types';
 
 const SUGG = 'tp:sugg';
 const VOTES = 'tp:votes';
 const LOG = 'tp:log';
+const COMPLAINTS = 'tp:complaints';
 const PLACES = 'tp:placesug';
 const ADMIN = 'tp:staysadmin';
 const tripKey = (n: Person) => `tp:tripadmin:${n}`;
@@ -12,7 +13,7 @@ const staysKey = (n: Person) => `tp:stays:${n}`;
 
 /** The keys that are this store's shared data (everyone's rows, votes, suggestions, log), not one person's progress. */
 export const isLocalStoreKey = (k: string) =>
-  k === SUGG || k === VOTES || k === LOG || k === PLACES || k === ADMIN || k.startsWith('tp:tripadmin:') || k.startsWith('tp:resp:') || k.startsWith('tp:stays:');
+  k === SUGG || k === VOTES || k === LOG || k === COMPLAINTS || k === PLACES || k === ADMIN || k.startsWith('tp:tripadmin:') || k.startsWith('tp:resp:') || k.startsWith('tp:stays:');
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -129,6 +130,15 @@ export class LocalStore implements Store {
 
   async logChoice(c: ChoiceInput): Promise<void> {
     write(LOG, [...(await this.loadLog()), { ...c, id: crypto.randomUUID(), at: new Date().toISOString() }]);
+  }
+
+  async addComplaint(c: { name: Player; text: string }): Promise<void> {
+    write(COMPLAINTS, [...(await this.loadComplaints()), { ...c, id: crypto.randomUUID(), createdAt: new Date().toISOString() }]);
+  }
+
+  async loadComplaints(): Promise<Complaint[]> {
+    const list = read<Complaint[]>(COMPLAINTS, []);
+    return Array.isArray(list) ? list : [];
   }
 
   async loadLog(): Promise<ChoiceEntry[]> {

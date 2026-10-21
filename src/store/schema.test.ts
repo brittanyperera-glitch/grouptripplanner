@@ -44,7 +44,8 @@ describe('supabase/schema.sql', () => {
     // 4 since crew_stays (2026-10-16): responses, suggestions, knockout_votes, crew_stays; measured 4 in schema.sql.
     // 5 since place_suggestions (2026-10-16); stays_admin has no name column; measured 5 in schema.sql.
     // 6 since trip_admin (2026-10-17), one row per person; measured 6 in schema.sql.
-    expect(sql.match(/check \(name in \('Brittany','Alex','Antek','Lazza','Saulie'\)\)/g)).toHaveLength(6);
+    // 7 since complaints (2026-10-20), one row per complaint; measured 7 in schema.sql.
+    expect(sql.match(/check \(name in \('Brittany','Alex','Antek','Lazza','Saulie'\)\)/g)).toHaveLength(7);
     expect(sql).toMatch(/flex boolean not null default false/);
     // Changed deliberately (Brittany 2026-10-17): row events deliver nothing under the trip lock (supabase.ts syncs on a broadcast ping), so the publication block was dead config and is gone.
     expect(sql).not.toMatch(/alter publication/);

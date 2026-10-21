@@ -86,7 +86,16 @@ create table if not exists trip_admin (
   updated_at timestamptz not null default now()
 );
 
+/* Complaints from the Group tab: append-only, so anon gets insert and select but no update. */
+create table if not exists complaints (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (name in ('Brittany','Alex','Antek','Lazza','Saulie')),
+  text text not null check (length(text) between 1 and 500),
+  created_at timestamptz not null default now()
+);
+
 alter table crew_stays enable row level security;
+alter table complaints enable row level security;
 alter table place_suggestions enable row level security;
 alter table stays_admin enable row level security;
 alter table trip_admin enable row level security;
@@ -127,6 +136,8 @@ drop policy if exists "anon insert" on knockout_votes;
 drop policy if exists "anon update" on knockout_votes;
 drop policy if exists "anon select" on choice_log;
 drop policy if exists "anon insert" on choice_log;
+drop policy if exists "anon select" on complaints;
+drop policy if exists "anon insert" on complaints;
 drop policy if exists "anon select" on crew_stays;
 drop policy if exists "anon insert" on crew_stays;
 drop policy if exists "anon update" on crew_stays;
@@ -154,6 +165,9 @@ create policy "anon update" on knockout_votes for update to anon using (public.t
 
 create policy "anon select" on choice_log for select to anon using (public.trip_ok());
 create policy "anon insert" on choice_log for insert to anon with check (public.trip_ok());
+
+create policy "anon select" on complaints for select to anon using (public.trip_ok());
+create policy "anon insert" on complaints for insert to anon with check (public.trip_ok());
 
 create policy "anon select" on crew_stays for select to anon using (public.trip_ok());
 create policy "anon insert" on crew_stays for insert to anon with check (public.trip_ok());

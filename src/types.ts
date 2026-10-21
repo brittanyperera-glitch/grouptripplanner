@@ -72,6 +72,9 @@ export interface Store {
   subscribe(cb: (s: AppState) => void): () => void;
   logChoice(c: ChoiceInput): Promise<void>;
   loadLog(): Promise<ChoiceEntry[]>;
+  // Append-only, like the choice log: a complaint is never edited or deleted.
+  addComplaint(c: { name: Player; text: string }): Promise<void>;
+  loadComplaints(): Promise<Complaint[]>;
   // Stays phase: one row per person (quiz answers, lock, ranks, bingo); latest write wins field by field.
   saveCrewStays(name: Player, patch: Partial<Omit<CrewStays, 'name'>>): Promise<void>;
   addPlaceSuggestion(s: PlaceDraft): Promise<void>;
@@ -82,6 +85,7 @@ export interface Store {
   // Trip admin checklist: the items in the patch replace those items whole; other items keep their stored value.
   saveTripAdmin(name: Player, patch: AdminItems): Promise<void>;
 }
+export interface Complaint { id: string; name: Player; text: string; createdAt: string }
 export type PlaceDraft = Omit<PlaceSuggestion, 'id' | 'createdAt' | 'status'>;
 // a = contested item first, then anything else forcing it in adds; b = items it would displace
 export interface Knockout {

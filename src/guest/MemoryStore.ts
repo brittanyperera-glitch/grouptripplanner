@@ -4,7 +4,7 @@ import { groupResult, VOTES_TO_RESOLVE } from '../lib/group';
 import { finalListFrom } from '../lib/ranking';
 import { liveItems } from '../state';
 import { applyAdmin, blankCrew, mergeAdminItems, EMPTY_STAYS, emptyRanking, isGuest, PEOPLE } from '../types';
-import type { AdminItems, AppState, ChoiceEntry, ChoiceInput, CrewStays, Genre, Leg, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
+import type { AdminItems, AppState, ChoiceEntry, ChoiceInput, Complaint, CrewStays, Genre, Leg, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
 import { seedState } from './seed';
 
 const defaultRow = (name: Player): Response => ({
@@ -15,6 +15,7 @@ const defaultRow = (name: Player): Response => ({
 export class MemoryStore implements Store {
   private state: AppState;
   private log: ChoiceEntry[] = [];
+  private complaints: Complaint[] = [];
   private listeners = new Set<(s: AppState) => void>();
 
   // Crew rows start empty unless the caller passes some: the guest takes the quiz themselves.
@@ -93,6 +94,14 @@ export class MemoryStore implements Store {
 
   async logChoice(c: ChoiceInput): Promise<void> {
     this.log.push(structuredClone({ ...c, id: crypto.randomUUID(), at: new Date().toISOString() }));
+  }
+
+  async addComplaint(c: { name: Player; text: string }): Promise<void> {
+    this.complaints.push({ ...c, id: crypto.randomUUID(), createdAt: new Date().toISOString() });
+  }
+
+  async loadComplaints(): Promise<Complaint[]> {
+    return structuredClone(this.complaints);
   }
 
   async loadLog(): Promise<ChoiceEntry[]> {

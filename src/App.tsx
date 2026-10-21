@@ -140,7 +140,7 @@ function GroupTab({ view, onView }: { view: GroupView; onView(v: GroupView): voi
   return (
     <>
       {finalizing && view === 'hub' && <EditListRow group={group} onEdit={() => setEditing(true)} />}
-      <GroupHub group={group} view={view} onView={onView} />
+      <GroupHub group={group} view={view} onView={onView} onFinalize={finalizing ? () => setEditing(true) : undefined} />
     </>
   );
 }
