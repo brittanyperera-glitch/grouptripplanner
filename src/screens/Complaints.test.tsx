@@ -42,11 +42,28 @@ describe('Complaints', () => {
     expect(await store.loadComplaints()).toMatchObject([{ name: 'Alex', text: 'Too many temples' }]);
   });
 
-  it('hides Finalize again once the plan is locked', async () => {
+  it('offers neither action once the plan is locked, and says why', async () => {
     view('Alex', <GroupHub group={{ ...GROUP, locked: true }} view="complaints" onView={() => {}} onFinalize={() => {}} />);
-    await screen.findByRole('button', { name: /Check knockouts again/ });
+    expect(await screen.findByText(/plan is locked/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Check knockouts again/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Finalize again/ })).toBeNull();
-    expect(screen.getByText(/plan is locked/)).toBeTruthy();
+  });
+
+  it('says finalizing is not open yet when there is no Finalize to go back to', async () => {
+    view('Alex', <GroupHub group={GROUP} view="complaints" onView={() => {}} />);
+    expect(await screen.findByText(/Finalizing opens once the knockouts are decided/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Finalize again/ })).toBeNull();
+  });
+
+  it('keeps the text and says so when the send fails, and does not list it as sent', async () => {
+    const store = new MemoryStore(seedState());
+    store.addComplaint = () => Promise.reject(new Error('no complaints table'));
+    view('Alex', <GroupHub group={GROUP} view="complaints" onView={() => {}} />, store);
+    fireEvent.change(await screen.findByLabelText('Your complaint'), { target: { value: 'Too hot' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Couldn't send/);
+    expect((screen.getByLabelText('Your complaint') as HTMLTextAreaElement).value).toBe('Too hot');
+    expect(screen.queryByText('You said')).toBeNull();
   });
 
   it("shows Brittany everyone's complaints and others only their own", async () => {

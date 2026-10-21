@@ -75,9 +75,12 @@ export default function GroupHub({ group, view, onView, onFinalize }: { group: G
         {view === 'picks' && <Everyone open />}
         {view === 'complaints' && (
           <Complaints>
-            <Block icon={<IconSpark size={26} />} title="Check knockouts again" lines={['Change a vote']} onOpen={() => go('knockouts')} />
-            {onFinalize && !group.locked && <Block icon={<IconList size={26} />} title="Finalize again" lines={['Edit my list']} onOpen={onFinalize} />}
-            {group.locked && <div className="sub">The plan is locked, so votes and lists can't change.</div>}
+            {group.locked
+              ? <div className="sub">The plan is locked, so votes and lists can't change.</div>
+              : <Block icon={<IconSpark size={26} />} title="Check knockouts again" lines={['Change a vote']} onOpen={() => go('knockouts')} />}
+            {!group.locked && (onFinalize
+              ? <Block icon={<IconList size={26} />} title="Finalize again" lines={['Edit my list']} onOpen={onFinalize} />
+              : <div className="sub">Finalizing opens once the knockouts are decided.</div>)}
           </Complaints>
         )}
       </>
@@ -91,8 +94,8 @@ export default function GroupHub({ group, view, onView, onFinalize }: { group: G
         {stats && <Block icon={<IconGroup size={26} />} title="Group stats" lines={[twin ? `Travel twin: ${twin.name} ${twin.pct}%` : 'Who travels like who']} onOpen={() => go('stats')} />}
         <Block icon={<IconSpark size={26} />} title="Group knockouts" lines={koLines(open, mine, others)} onOpen={() => go('knockouts')} alert={owing} pulse={pulse} />
         <Block icon={<IconList size={26} />} title="Everyone's picks" lines={[`${items.length} places, ${withMust} Musts`]} onOpen={() => go('picks')} />
-        {/* Brittany 2026-10-16: shown once I have voted on all my knockouts (or the plan is locked); the real feature comes later. */}
         <Block icon={<IconWarn size={26} />} title="Complaints" lines={['Re-check, finalize or leave a comment']} onOpen={() => go('complaints')} />
+        {/* Brittany 2026-10-16: shown once I have voted on all my knockouts (or the plan is locked); the real feature comes later. */}
         {(group.locked || (group.open && !owing)) && (
           <div className="gh-block gh-soon" role="status">
             <span className="gh-icon" aria-hidden="true"><IconSpark size={26} /></span>

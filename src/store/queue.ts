@@ -66,7 +66,8 @@ export class WriteQueue {
       setSuggestionStatus: (id, status) => this.add({ kind: 'sugg', key: `s:${id}`, id, status, waiters: [] }),
       logChoice: c => this.logAll([c]),
       loadLog: () => base.loadLog(),
-      addComplaint: c => this.add({ kind: 'op', key: null, run: () => base.addComplaint(c), waiters: [] }),
+      // Not queued: a failed complaint must reach the screen, not sit in the retry queue and flag every later save as unsaved.
+      addComplaint: c => base.addComplaint(c),
       loadComplaints: () => base.loadComplaints(),
     };
   }
