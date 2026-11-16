@@ -54,3 +54,20 @@ describe('stayCtx areas are where the group sleeps', () => {
     expect(stayCtx(state, 'Alex', null).areas).toEqual([]);
   });
 });
+
+describe('stayCtx on an organiser-edited plan', () => {
+  // Night 1 has no hub: day 1 has no area and no drive, and the route names no second stop.
+  const broken = { ...plan, days: [null, 'Ella', 'Ella'].map((area, i) => ({ ...plan.days[i], area, entries: [] })), route: ['AIR'] } as unknown as typeof plan;
+
+  it('falls back to counting nights, not days, when a night has no area hub, instead of throwing', () => {
+    expect(() => nightBlocks(broken, null)).toThrow(RangeError);
+    const ctx = stayCtx(state, 'Alex', broken);
+    expect(ctx.derivedNights).toEqual({ Ella: 1 });
+    expect(ctx.nights).toEqual({ Ella: 1 });
+  });
+
+  it('lets any other error through rather than hiding it', () => {
+    const malformed = { ...plan, days: [{ area: null }, { area: null }] } as unknown as typeof plan;
+    expect(() => stayCtx(state, 'Alex', malformed)).toThrow(TypeError);
+  });
+});

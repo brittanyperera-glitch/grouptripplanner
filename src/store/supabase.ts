@@ -41,6 +41,9 @@ const missingColumn = (e: unknown, col: string): boolean => {
   const x = e as { code?: string; message?: string } | null;
   return x?.code === 'PGRST204' || x?.code === '42703' || (typeof x?.message === 'string' && x.message.includes(col) && /column|schema cache/i.test(x.message));
 };
+// A code decides alone; the message is read only when there is none, and only for the two wordings a missing table uses.
+const missingTable = (e: { code?: string; message?: string }): boolean =>
+  e.code ? ['42P01', 'PGRST205', 'PGRST204'].includes(e.code) : /in the schema cache|relation "[^"]+" does not exist/i.test(e.message ?? '');
 interface AdminRow { pins: StaysAdmin['pins'] | null; scouts: StaysAdmin['scouts'] | null; closed?: StaysAdmin['closed'] | null; nights?: unknown; fallen?: unknown }
 interface SettingsRow { start_date: string | null; plan: TripSettings['plan']; booking_dates: TripSettings['bookingDates'] | null; overrides: TripSettings['overrides'] | null; updated_at: string | null }
 interface TravellerRow { name: Person; arrive_local: string | null; arrive_flight: string | null; depart_local: string | null; depart_flight: string | null; updated_at: string | null }
@@ -139,12 +142,14 @@ export class SupabaseStore implements Store, FinalStore {
     };
   }
 
-  /** Each of these three never throws: the tables are missing until the migration is run, and that must not blank the app. */
+  /** A missing table reads as absent (the migration may not be run yet); any other error fails the whole load, so a blip never overwrites the snapshot. */
   private async soft<T>(table: string, empty: T, use: (rows: unknown[]) => T): Promise<T> {
-    try {
-      const { data, error } = await this.db.from(table).select('*');
-      return error ? empty : use(data ?? []);
-    } catch { return empty; }
+    let res;
+    // A thrown (not returned) failure keeps the old absent reading: supabase.final.test.ts pins it.
+    try { res = await this.db.from(table).select('*'); } catch { return empty; }
+    if (!res.error) return use(res.data ?? []);
+    if (missingTable(res.error)) return empty;
+    throw res.error;
   }
 
   private loadTripSettings(): Promise<TripSettings | null> {

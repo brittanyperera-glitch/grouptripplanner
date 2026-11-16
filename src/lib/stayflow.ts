@@ -85,7 +85,16 @@ export function stayCtx(state: AppState, me: Player, plan: Plan | null): StayCtx
   const stays = state.stays ?? EMPTY_STAYS;
   const participants = stayParticipants(me);
   const crew = participants.flatMap(p => stays.crew[p] ?? []);
-  const derived = plan ? nightsFromBlocks(nightBlocks(plan, null)) : {};
+  let derived: Partial<Record<Area, number>> = {};
+  if (plan) {
+    // An organiser-edited plan can leave a night with no area hub, which nightBlocks rejects; the screens must still render.
+    // The fallback counts each day's area except the last day's (no night); it can differ from the blocks on travel days.
+    try { derived = nightsFromBlocks(nightBlocks(plan, null)); } catch (e) {
+      if (!(e instanceof RangeError)) throw e;
+      derived = {};
+      for (const d of plan.days.slice(0, -1)) if (d.area) derived[d.area] = (derived[d.area] ?? 0) + 1;
+    }
+  }
   return {
     me, participants, crew, crewOf: stays.crew, suggestions: stays.suggestions, admin: stays.admin, votes: state.votes,
     areas: Object.keys(derived) as Area[], nights: effectiveNights(derived, stays.admin.nightsOff ? undefined : stays.admin.nights), derivedNights: derived,
