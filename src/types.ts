@@ -234,7 +234,7 @@ export function applyAdmin(stored: StaysAdmin, patch: Partial<StaysAdmin>): Stay
   const m = mergeAdmin(stored, patch);
   const scouts = Object.fromEntries(Object.entries(m.scouts ?? {}).filter(([, p]) => p !== undefined)) as StaysAdmin['scouts'];
   const nights = cleanNights(m.nights);
-  return { pins: m.pins ?? [], scouts, closed: m.closed ?? [], ...(Object.keys(nights).length ? { nights } : {}), ...(stored.nightsOff ? { nightsOff: true as const } : {}) };
+  return { pins: m.pins ?? [], scouts, closed: m.closed ?? [], ...(Object.keys(nights).length ? { nights } : {}), ...(m.fallen ? { fallen: m.fallen } : {}), ...(stored.nightsOff ? { nightsOff: true as const } : {}) };
 }
 export const stayForkId = (area: Area, a: string, b: string) => `stay:${area}:${a}:${b}`;
 export const reactForkId = (suggestionId: string) => `react:${suggestionId}`;
