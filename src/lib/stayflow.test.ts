@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AREAS, PEOPLE } from '../types';
-import type { Area, CrewStays, PlaceSuggestion, Player } from '../types';
+import type { Area, CrewStays, Hub, PlaceSuggestion, Player } from '../types';
+import { hubArea } from './calendar';
 import { flow, HOSTELS, HUB_AREA, hostelPrice, hostelsFor, outcome, parseUrl, rankAreas, STAY_COPY, STEPS, stayCtx } from './stayflow';
 import type { FlowInput, StayCtx } from './stayflow';
 
@@ -54,6 +55,10 @@ describe('guide hostels', () => {
     expect(new Set(offered).size).toBe(offered.length);
     expect(offered.length).toBe(HOSTELS.filter(h => HUB_AREA[h.hub] !== null).length);
     expect(hostelsFor('Wild south').some(h => h.hub === 'Tissa')).toBe(true);
+  });
+  it('agrees with calendar hubArea everywhere except the airport and the off-route hub', () => {
+    for (const [hub, area] of Object.entries(HUB_AREA)) if (hub !== 'AIR' && hub !== 'Off route') expect(area, hub).toBe(hubArea(hub as Hub));
+    expect(HUB_AREA.AIR).toBe('Colombo');
   });
   it('a price is the bunk, else the room shared out, else none', () => {
     const base = { id: 'x', name: 'x', hub: 'Ella', bookUrl: '', photo: { file: 'x.jpg' } };
@@ -161,6 +166,18 @@ describe('a stay that fell through', () => {
   it('a pin still on the fallen stay does not count', () => {
     const admin = adminOf({ fallen: [fell('a1')], pins: [{ area: 'Ella', suggestionId: 'a1', at: 't1' }] });
     expect(outcome(ctxOf(four, locked, { admin }), 'Ella')).toEqual({ kind: 'replacing' });
+  });
+  it('a pin on the same stay made after it fell decides the area again, and one made before does not', () => {
+    const later = adminOf({ fallen: [fell('a1', 'Ella', '2026-11-01T10:00')], pins: [{ area: 'Ella', suggestionId: 'a1', at: '2026-11-02T09:00' }] });
+    expect(outcome(ctxOf(four, locked, { admin: later }), 'Ella')).toEqual({ kind: 'decided', id: 'a1', via: 'pin' });
+    const earlier = adminOf({ fallen: [fell('a1', 'Ella', '2026-11-03T10:00')], pins: [{ area: 'Ella', suggestionId: 'a1', at: '2026-11-02T09:00' }] });
+    expect(outcome(ctxOf(four, locked, { admin: earlier }), 'Ella')).toEqual({ kind: 'replacing' });
+  });
+  it('compares a local stamp with a UTC one as instants, so a later pin counts across the two formats', () => {
+    const fellLocal = adminOf({ fallen: [fell('a1', 'Ella', '2026-11-01T10:00')], pins: [{ area: 'Ella', suggestionId: 'a1', at: '2026-11-01T04:31:00.000Z' }] });
+    expect(outcome(ctxOf(four, locked, { admin: fellLocal }), 'Ella')).toEqual({ kind: 'decided', id: 'a1', via: 'pin' });
+    const sameInstant = adminOf({ fallen: [fell('a1', 'Ella', '2026-11-01T10:00')], pins: [{ area: 'Ella', suggestionId: 'a1', at: '2026-11-01T04:30:00.000Z' }] });
+    expect(outcome(ctxOf(four, locked, { admin: sameInstant }), 'Ella')).toEqual({ kind: 'replacing' });
   });
   it('a fall in another destination leaves this one alone', () => {
     const admin = adminOf({ fallen: [fell('b1', 'Kandy and Knuckles')] });

@@ -1,15 +1,11 @@
 import type { BookingDates, DayBooking, Item, Person, Plan } from '../types';
+import { addDays } from './calendar';
 
 /** Lead times live on the catalogue source (data/catalogue.json); Item is frozen and does not name them. */
 export type LeadRule = { opensDaysBefore?: number; bookByDaysBefore?: number };
 type Bookable = Item & LeadRule;
 
-const DAY_MS = 86_400_000;
-/** 'YYYY-MM-DD' plus n days, on UTC so the local timezone never shifts the date. */
-export function addDays(date: string, n: number): string {
-  const [y, m, d] = date.split('-').map(Number);
-  return new Date(Date.UTC(y, m - 1, d) + n * DAY_MS).toISOString().slice(0, 10);
-}
+export { addDays };
 
 export interface StatusArgs {
   id: string; label: string; today: string; done: boolean; owner: Person | null;

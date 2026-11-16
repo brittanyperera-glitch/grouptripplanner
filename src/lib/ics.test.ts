@@ -40,3 +40,34 @@ describe('tripIcs', () => {
     expect(count(tripIcs([], []), 'BEGIN:VEVENT')).toBe(0);
   });
 });
+
+describe('tripIcs bookings and folding', () => {
+  it('leaves out an event whose date cannot be read instead of throwing', () => {
+    const ics = tripIcs([{ n: 1, date: 'soon', title: 'Day 1' }], [bk('book:train', 'Train', 'garbage', '2026-11-24')]);
+    expect(count(ics, 'BEGIN:VEVENT')).toBe(1);
+    expect(ics).toContain('SUMMARY:Book by: Train');
+    expect(ics).not.toContain('garbage');
+  });
+  it('gives a booking with both dates two events, opens and book-by', () => {
+    const ics = tripIcs([], [bk('book:train', 'Train', '2026-11-12', '2026-11-24')]);
+    expect(count(ics, 'BEGIN:VEVENT')).toBe(2);
+    expect(ics).toContain('SUMMARY:Booking opens: Train');
+    expect(ics).toContain('SUMMARY:Book by: Train');
+    expect(ics).toContain('DTSTART;VALUE=DATE:20261112');
+    expect(ics).toContain('DTSTART;VALUE=DATE:20261124');
+  });
+  it('gives a done booking no events', () => {
+    const done: DayBooking = { ...bk('book:train', 'Train', '2026-11-12', '2026-11-24'), status: 'done' };
+    expect(count(tripIcs([], [done]), 'BEGIN:VEVENT')).toBe(0);
+  });
+  it('folds lines over 75 octets with CRLF and one space, without splitting a character', () => {
+    const long = `${'Booking '.repeat(14)}caf\u00e9 \u{1F334}`.repeat(2);
+    const ics = tripIcs([{ n: 1, date: '2026-12-08', title: long }], []);
+    const lines = ics.split('\r\n');
+    for (const l of lines) expect(Buffer.byteLength(l), l).toBeLessThanOrEqual(75);
+    expect(lines.some(l => l.startsWith(' '))).toBe(true);
+    const unfolded = ics.replace(/\r\n /g, '');
+    expect(unfolded).toContain(`SUMMARY:${long}`);
+  });
+});
+

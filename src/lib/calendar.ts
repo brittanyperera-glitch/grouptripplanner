@@ -3,13 +3,15 @@ import type { Area, Hub, NightBlock, Plan } from '../types';
 
 const DAY_MS = 86_400_000;
 
-/** `date` ('YYYY-MM-DD') plus n days, on UTC dates so no timezone or daylight-saving shift can move it. */
-export function addDays(date: string, n: number): string {
+/** `date` ('YYYY-MM-DD') plus n days, on UTC dates so no timezone or daylight-saving shift can move it; null for a malformed date. */
+export function addDays(date: string, n: number): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}/.test(date)) return null;
   const [y, m, d] = date.split('-').map(Number);
-  return new Date(Date.UTC(y, m - 1, d) + n * DAY_MS).toISOString().slice(0, 10);
+  const ms = Date.UTC(y, m - 1, d) + n * DAY_MS;
+  return Number.isFinite(ms) ? new Date(ms).toISOString().slice(0, 10) : null;
 }
 
-/** Day n's date, with day 1 the start; null while no start date is set. */
+/** Day n's date, with day 1 the start; null while no start date is set or it is malformed. */
 export const dateOf = (n: number, start: string | null): string | null => (start ? addDays(start, n - 1) : null);
 
 /** The area a hub belongs to. Tissa is Wild south's second hub, which AREA_HUB does not name; AIR belongs to none. */

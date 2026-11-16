@@ -1,6 +1,7 @@
 import { PEOPLE } from '../types';
 import type { Area, DayBooking, DayEdit, DayView, NightBlock, Person, Plan, Traveller } from '../types';
 import { dateOf, nightHub } from './calendar';
+import { EPS } from './planner';
 
 export interface DayViewInput {
   plan: Plan; start: string | null; blocks: NightBlock[];
@@ -27,7 +28,8 @@ export function dayView(input: DayViewInput, n: number): DayView {
   const customHours = custom.reduce((s, e) => s + (e.hours ?? 0), 0);
   // The plan's own spare is clamped at 0; once a stop is added only the pace can say what is left, and the planner caps the first and last day at half of it.
   const cap = n === 1 || n === plan.days.length ? paceHours / 2 : paceHours;
-  const spare = custom.length ? cap - day.entries.reduce((s, e) => s + e.hours, 0) - customHours : day.spare;
+  // The trailing + 0 turns -0 into 0, which toFixed would print as "-0.0".
+  const spare = custom.length ? Math.round((cap - day.entries.reduce((s, e) => s + e.hours, 0) - customHours) * 100) / 100 + 0 : day.spare;
 
   const block = blocks.find(b => b.fromDay <= n && n <= b.toDay);
   const stay = block ? stays[block.area] : undefined;
@@ -41,7 +43,7 @@ export function dayView(input: DayViewInput, n: number): DayView {
   }).sort((a, b) => a.time.localeCompare(b.time));
 
   return {
-    n, date, area: day.area, entries: day.entries, spare, overBudget: spare < 0, legs,
+    n, date, area: day.area, entries: day.entries, spare, overBudget: spare < -EPS, legs,
     parkAt: (n > 1 ? nightHub(plan, n - 1) : null) ?? plan.route[0],
     tonight: block ? { area: block.area, stayId: stay?.id ?? null, title: stay?.title ?? null, link: stay?.link ?? null, checkIn: n === block.fromDay } : null,
     bookings: bookingsByDay[n] ?? [], flights, custom,

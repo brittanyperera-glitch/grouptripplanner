@@ -52,3 +52,30 @@ describe('leaveBy', () => {
     expect(leaveBy({ Alex: tr('Alex', null, null) }, day(drive(2)))).toBeNull();
   });
 });
+
+describe('malformed dates and times', () => {
+  it('flags a malformed arrival or departure as missing, and a malformed start as no start', () => {
+    const t = { Alex: tr('Alex', 'tomorrow', '2026-12-09T20:00'), Antek: tr('Antek', '2026-12-05T09:00', '9 Dec 8pm') };
+    expect(arrivalFlags(t, '2026-12-01', 9).map(x => [x.name, x.kind])).toEqual([['Alex', 'missing'], ['Antek', 'missing']]);
+    const ok = { Alex: tr('Alex', '2026-12-05T09:00', '2026-12-02T20:00') };
+    expect(arrivalFlags(ok, 'soon', 9)).toEqual([]);
+  });
+  it('lastArrival and leaveBy ignore them', () => {
+    const t = { Alex: tr('Alex', 'soon', '2026-12-09T9pm'), Lazza: tr('Lazza', '2026-12-02T01:10', '2026-12-09T14:30') };
+    expect(lastArrival(t)).toBe('2026-12-02T01:10');
+    expect(lastArrival({ Alex: tr('Alex', '2026-12-02', null) })).toBeNull();
+    expect(leaveBy(t, day(drive(0)))).toBe('2026-12-09T11:30');
+    expect(leaveBy({ Alex: tr('Alex', null, 'soon') }, day())).toBeNull();
+  });
+});
+
+describe('all flags, airport drive only', () => {
+  it('returns both late and early for a traveller who lands after day 1 and leaves before the last day', () => {
+    const f = arrivalFlags({ Alex: tr('Alex', '2026-12-03T09:00', '2026-12-07T20:00') }, '2026-12-01', 9);
+    expect(f.map(x => [x.name, x.kind])).toEqual([['Alex', 'late'], ['Alex', 'early']]);
+  });
+  it('subtracts only the drive to the airport, not the other drives that day', () => {
+    const leg = (hours: number, to: 'AIR' | 'Kandy'): DayEntry => ({ kind: 'drive', label: 'drive', hours, from: 'Ella', to });
+    expect(leaveBy({ Alex: tr('Alex', null, '2026-12-09T14:30') }, day(leg(2, 'Kandy'), leg(1.5, 'AIR')))).toBe('2026-12-09T10:00');
+  });
+});

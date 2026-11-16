@@ -10,7 +10,7 @@ export const RAIN_AREAS: Area[] = ['Hill country', 'Ella'];
 const DUSK_SLOTS: Slot[] = ['afternoon', 'sunset', 'evening', 'late'];
 export const CHECKIN = 3;
 const TRAIN = 'train';
-const EPS = 1e-9;
+export const EPS = 1e-9;
 const place = (h: Hub) => (h === 'AIR' ? 'the airport' : h);
 
 type Dist = (a: Hub, b: Hub) => number;

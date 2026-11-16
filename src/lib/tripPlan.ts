@@ -1,4 +1,4 @@
-import type { DayEdit, Item, Plan, ReleasePlan, ReleaseState, TripSettings } from '../types';
+import type { DayEdit, DayEntry, Item, Plan, ReleasePlan, ReleaseState, TripSettings } from '../types';
 import { isEve, RAIN_AREAS } from './planner';
 import type { Release } from './release';
 
@@ -9,6 +9,8 @@ export const releaseState = (settings: TripSettings | null | undefined): Release
 export const effectiveRelease = (rs: ReleaseState, seed: Release | null, snapshot: ReleasePlan | null): ReleasePlan | null =>
   rs.state === 'value' ? rs.plan : rs.state === 'loading' ? snapshot : seed && { ...seed, dayEdits: [] };
 
+// The planner's departure tail (planner.ts assemble): the drive to the airport and the 'Check in and fly' entry.
+const isTail = (e: DayEntry) => (e.kind === 'drive' && e.to === 'AIR') || (e.kind === 'free' && e.label === 'Check in and fly');
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Organiser edits laid over a plan. Pure. Drive and train entries are never moved or hidden: the map's legs depend on them. */
@@ -33,7 +35,7 @@ export function applyDayEdits(plan: Plan, edits: DayEdit[], paceHours: number, i
       continue;
     }
     const at = find(e.id);
-    if (!at) { warnings.push(`"${e.id}" is not in the plan any more, so its ${e.kind} edit was skipped.`); continue; }
+    if (!at) { warnings.push(`"${items.find(i => i.id === e.id)?.name ?? e.id}" is not in the plan any more, so its ${e.kind} edit was skipped.`); continue; }
     const entry = at.d.entries[at.k];
     if (entry.kind === 'drive' || entry.kind === 'train') { warnings.push(`"${entry.label}" is travel and cannot be ${e.kind === 'move' ? 'moved' : 'hidden'}.`); continue; }
     if (e.kind === 'hide') { at.d.entries.splice(at.k, 1); touched.add(at.d.n); hidden.add(e.id); continue; }
@@ -41,7 +43,8 @@ export function applyDayEdits(plan: Plan, edits: DayEdit[], paceHours: number, i
     if (!to) { warnings.push(`"${entry.label}" cannot move to day ${e.day}, which is not in the plan.`); continue; }
     if (to.area !== at.d.area) warnings.push(`"${entry.label}" moves from ${at.d.area ?? 'travel'} to day ${to.n} in ${to.area ?? 'travel'}.`);
     at.d.entries.splice(at.k, 1);
-    to.entries.push(entry);
+    const tail = to.entries.findIndex(isTail);
+    to.entries.splice(tail < 0 ? to.entries.length : tail, 0, entry);
     touched.add(at.d.n).add(to.n);
   }
   for (const d of days) {

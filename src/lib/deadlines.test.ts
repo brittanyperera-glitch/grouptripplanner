@@ -49,6 +49,10 @@ describe('bookingStatus', () => {
 });
 
 describe('bookingsByDay', () => {
+  it('has no dates for a start that cannot be read, rather than throwing', () => {
+    const t = bookingsByDay({ ...base, start: 'soon', plan: plan({ 5: ['train'] }) })[5].find(b => b.id === 'book:train')!;
+    expect(t).toMatchObject({ opensOn: null, bookBy: null });
+  });
   it('puts the train on its day, opening 30 days before that day\'s date', () => {
     const out = bookingsByDay({ ...base, plan: plan({ 1: ['crab'], 5: ['train'] }) });
     const t = out[5].find(b => b.id === 'book:train')!;

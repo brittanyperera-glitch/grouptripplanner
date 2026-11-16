@@ -1,6 +1,7 @@
 import hostelData from '../content/hostels.json';
 import { AREAS, AREA_HUB, EMPTY_STAYS, stayForkId } from '../types';
-import type { AppState, Area, CrewStays, PlaceKind, PlaceSuggestion, Plan, Player, RoomType, StayType, StaysAdmin, Vote } from '../types';
+import type { AppState, Area, CrewStays, Hub, PlaceKind, PlaceSuggestion, Plan, Player, RoomType, StayType, StaysAdmin, Vote } from '../types';
+import { hubArea } from './calendar';
 import { finalists, livePin, maxNightsOf, nightsByArea, nightsWarnings, rankPoints, scoutAssignments, stayAreas, stayParticipants, stayResult, voteOpen, warnings } from './stays';
 import type { RanksByPerson } from './stays';
 
@@ -25,11 +26,12 @@ export interface Hostel {
 }
 export const HOSTELS = (hostelData as unknown as { hostels: Hostel[] }).hostels;
 
-// The guide's hubs are not all areas. Tissa and Yala sit in the same area as Udawalawe (AREA_HUB names only Udawalawe), the
+// The guide's hubs are not all areas: hubArea (calendar.ts) is the one map, and the guide differs in two places only. The
 // airport night at Negombo hangs off the Colombo end of the route, and Arugam Bay is off the route entirely.
+const HUBS: Hub[] = [...AREAS.map(a => AREA_HUB[a]), 'Tissa'];
 export const HUB_AREA: Record<string, Area | null> = {
-  ...Object.fromEntries(AREAS.map(a => [AREA_HUB[a], a])),
-  Tissa: 'Wild south', AIR: 'Colombo', 'Off route': null,
+  ...Object.fromEntries(HUBS.map(h => [h, hubArea(h)])),
+  AIR: 'Colombo', 'Off route': null,
 };
 export const hostelsFor = (area: Area): Hostel[] => HOSTELS.filter(h => HUB_AREA[h.hub] === area);
 export const hostelOf = (id?: string): Hostel | undefined => (id ? HOSTELS.find(h => h.id === id) : undefined);

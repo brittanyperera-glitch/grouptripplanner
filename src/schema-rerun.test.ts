@@ -3,10 +3,8 @@ import fs from 'node:fs';
 
 // The Supabase SQL editor runs the script as one transaction, so one statement that fails on a re-run rolls back
 // everything, including tables added since the last run (choice_log went missing live this way).
-const files = ['supabase/schema.sql', 'supabase/migrations/2026-11-16-final-stage.sql'];
-
-describe.each(files)('%s can be re-run', file => {
-  const sql = fs.readFileSync(file, 'utf8');
+describe('supabase/schema.sql can be re-run', () => {
+  const sql = fs.readFileSync('supabase/schema.sql', 'utf8');
 
   it('drops every policy before creating it', () => {
     const created = [...sql.matchAll(/create policy "([^"]+)" on (\w+)/g)].map(m => `${m[1]} on ${m[2]}`);
@@ -43,10 +41,28 @@ describe.each(files)('%s can be re-run', file => {
     }
   });
 
+  // The client sets only x-trip-key. While no app code sends x-admin-key, the organiser writes above are rejected, and the
+  // README and schema must say so rather than tell the organiser that setting a password makes them work.
+  it('says organiser writes are rejected while the app does not send x-admin-key', () => {
+    const walk = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+      e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.tsx?$/.test(e.name) && !/\.test\./.test(e.name) ? [`${dir}/${e.name}`] : []);
+    const sends = walk('src').some(f => fs.readFileSync(f, 'utf8').toLowerCase().includes('x-admin-key'));
+    if (sends) return;
+    expect(sql).toMatch(/app does not send that header yet/);
+    expect(fs.readFileSync('README.md', 'utf8')).toMatch(/does not send one/);
+  });
+
   it('reads the organiser key from the x-admin-key header', () => {
     const body = sql.match(/create or replace function public\.admin_ok\(\)[\s\S]*?\$\$;?[\s\S]*?\$\$/)?.[0] ?? '';
     expect(body).toContain("'x-admin-key'");
     expect(body).toContain('admin_secret');
+  });
+
+  it('refuses a request with no organiser key before it hashes anything', () => {
+    const body = sql.match(/create or replace function public\.admin_ok\(\)[\s\S]*?\$\$;?[\s\S]*?\$\$/)?.[0] ?? '';
+    const guard = body.search(/btrim\(coalesce\([^;]*'x-admin-key'[^;]*, ''\)\) = ''/);
+    expect(guard).toBeGreaterThan(-1);
+    expect(guard).toBeLessThan(body.indexOf('digest('));
   });
 
   it('lets only the organiser change the trip password', () => {
@@ -88,5 +104,16 @@ describe.each(files)('%s can be re-run', file => {
   it('has no delete policy and adds nothing to the publication', () => {
     expect(sql.match(/for delete/g)).toBeNull();
     expect(sql.match(/alter publication/g)).toBeNull();
+  });
+});
+
+describe('supabase/set-admin-password.sql', () => {
+  const sql = fs.readFileSync('supabase/set-admin-password.sql', 'utf8');
+
+  it('raises on a blank or placeholder password before it inserts', () => {
+    const guard = sql.search(/btrim\(coalesce\(pw, ''\)\) = ''[\s\S]*?raise exception/);
+    expect(guard).toBeGreaterThan(-1);
+    expect(sql).toMatch(/pw like 'PUT-THE-%'/);
+    expect(guard).toBeLessThan(sql.indexOf('insert into admin_secret'));
   });
 });

@@ -36,6 +36,19 @@ describe('dates', () => {
   });
 });
 
+describe('malformed dates', () => {
+  it('give null from addDays and dateOf instead of throwing', () => {
+    for (const bad of ['', 'soon', '8/12/2026', '2026-12', '12-08-2026']) {
+      expect(addDays(bad, 1), bad).toBeNull();
+      expect(dateOf(2, bad), bad).toBeNull();
+    }
+    expect(addDays('2026-12-08', Number.NaN)).toBeNull();
+  });
+  it('leave the night blocks without dates rather than throwing', () => {
+    expect(nightBlocks(towardsAirport('Kandy and Knuckles'), 'soon').every(b => b.checkIn === null && b.checkOut === null)).toBe(true);
+  });
+});
+
 describe('hubArea', () => {
   it('reverses AREA_HUB, covers the Tissa safari hub, and gives AIR nothing', () => {
     expect(hubArea('Sigiriya')).toBe('Cultural Triangle');
