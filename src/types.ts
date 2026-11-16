@@ -62,7 +62,66 @@ export interface TripAdminRow { name: Player; items: AdminItems; updatedAt: stri
 export type TripAdminState = Partial<Record<Player, TripAdminRow>>;
 /** Latest write wins per item id: `next` replaces that item whole, other items are untouched. */
 export const mergeAdminItems = (prev: AdminItems, next: AdminItems): AdminItems => ({ ...prev, ...next });
-export interface AppState { responses: Partial<Record<Player, Response>>; suggestions: Suggestion[]; votes: Vote[]; stays?: StaysState; tripAdmin?: TripAdminState }
+// tripSettings: undefined while loading, null when the table or row is absent (then release.json applies).
+export interface AppState {
+  responses: Partial<Record<Player, Response>>; suggestions: Suggestion[]; votes: Vote[]; stays?: StaysState; tripAdmin?: TripAdminState;
+  tripSettings?: TripSettings | null; travellers?: Partial<Record<Person, Traveller>>; bookingClaims?: Record<string, BookingClaim>;
+}
+
+/* Final stage: trip dates, organiser overrides, flights, booking owners, fallen stays. Dates are 'YYYY-MM-DD' and
+   times 'YYYY-MM-DDTHH:mm', both Sri Lanka local, so no timezone maths. */
+export interface DayEdit {
+  kind: 'move' | 'hide' | 'custom';
+  /** Item id for move and hide; 'c:<n>' for a custom stop. */
+  id: string;
+  /** 1-based target day, for move and custom. */
+  day?: number;
+  title?: string; area?: Area; hours?: number; note?: string;
+  /** Custom stop only: a booking note makes it a Trip admin item. */
+  book?: string;
+}
+export interface ReleasePlan { days: number; pace: Pace; items: string[]; ruledOut: string[]; dayEdits: DayEdit[] }
+export interface BookingDates { opensOn?: string; bookBy?: string }
+export interface OverrideLogEntry { at: string; what: string }
+export interface TripSettings {
+  startDate: string | null;
+  /** null: the seed in src/content/release.json applies. */
+  plan: ReleasePlan | null;
+  /** Organiser overrides of a booking's dates, by Trip admin item id. */
+  bookingDates: Record<string, BookingDates>;
+  /** Newest last, capped at 100 entries. */
+  overrides: OverrideLogEntry[];
+  updatedAt: string;
+}
+export type ReleaseState = { state: 'loading' } | { state: 'absent' } | { state: 'value'; plan: ReleasePlan };
+export interface Traveller {
+  name: Person; arriveLocal: string | null; arriveFlight: string | null; departLocal: string | null; departFlight: string | null; updatedAt: string;
+}
+export interface BookingClaim { itemId: string; owner: Person | null; updatedAt: string }
+export interface Fallen { id: string; area: Area; at: string }
+export interface NightBlock { area: Area; hub: Hub; checkIn: string | null; checkOut: string | null; nights: number; fromDay: number; toDay: number }
+export type BookingStatus = 'undated' | 'not-open' | 'open' | 'overdue' | 'done';
+export interface DayBooking { id: string; label: string; status: BookingStatus; opensOn: string | null; bookBy: string | null; owner: Person | null }
+export interface DayView {
+  n: number; date: string | null; area: Area | null;
+  entries: DayEntry[]; spare: number; overBudget: boolean;
+  /** Indices into the route's legs (leg k joins route[k] and route[k+1]), in order. */
+  legs: number[];
+  /** Where the tuk-tuk waits on a day with no leg. */
+  parkAt: Hub;
+  tonight: { area: Area; stayId: string | null; title: string | null; link: string | null; checkIn: boolean } | null;
+  bookings: DayBooking[];
+  flights: { name: Person; kind: 'arrive' | 'depart'; time: string; flight: string | null }[];
+  custom: DayEdit[];
+}
+/** Final-stage store methods; every store implements these alongside Store. */
+export interface FinalStore {
+  /** Organiser only: the server refuses without the organiser key. */
+  saveTripSettings(patch: Partial<Omit<TripSettings, 'updatedAt'>>): Promise<void>;
+  saveTraveller(name: Person, patch: Partial<Omit<Traveller, 'name' | 'updatedAt'>>): Promise<void>;
+  /** owner null unclaims (there is no delete). */
+  saveBookingClaim(itemId: string, owner: Person | null): Promise<void>;
+}
 export interface Store {
   load(): Promise<AppState>;
   saveResponse(name: Player, patch: Partial<Omit<Response, 'name'>>): Promise<void>;
@@ -147,7 +206,7 @@ export interface CrewStays {
 export interface StayPin { area: Area; suggestionId: string | null; at: string }
 // closed = destinations where Brittany stopped waiting on the rest of the top 2s; stored whole like pins.
 // nights = Brittany's accommodation-only nights per destination (1 to 14), stored whole; absent means the itinerary's count. Optional so a row from before the column reads as no override.
-export interface StaysAdmin { pins: StayPin[]; scouts: Partial<Record<Area, Player>>; closed: Area[]; nights?: Partial<Record<Area, number>>; nightsOff?: true }
+export interface StaysAdmin { pins: StayPin[]; scouts: Partial<Record<Area, Player>>; closed: Area[]; nights?: Partial<Record<Area, number>>; nightsOff?: true; fallen?: Fallen[] }
 
 export const MIN_NIGHTS = 1;
 export const MAX_NIGHTS = 14;
