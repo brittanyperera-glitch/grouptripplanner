@@ -201,7 +201,7 @@ export function groupSummary(crew: CrewStays[]): GroupSummary {
   return { total: crew.length, happy, hardNos: nos, conflicts };
 }
 
-/** Nights spent per area: each day counts once, travel days (null area) count nowhere. */
+/** Nights spent per area: each day counts once, travel days (null area) count nowhere. The last day has no night, so the final area is over by one; nightsFromBlocks (calendar.ts) counts real nights. */
 export function nightsByArea(plan: Plan): Partial<Record<Area, number>> {
   const out: Partial<Record<Area, number>> = {};
   for (const d of plan.days) if (d.area !== null) out[d.area] = (out[d.area] ?? 0) + 1;

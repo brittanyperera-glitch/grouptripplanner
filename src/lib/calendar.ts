@@ -30,14 +30,17 @@ export function nightHub(plan: Plan, d: number): Hub | null {
 export function nightBlocks(plan: Plan, start: string | null): NightBlock[] {
   const blocks: NightBlock[] = [];
   for (let n = 1; n < plan.days.length; n++) {
-    const hub = nightHub(plan, n)!;
+    const hub = nightHub(plan, n);
+    const area = hub && hubArea(hub);
+    if (!hub || !area) throw new RangeError(`nightBlocks: night ${n} has no hub in an area (${hub ?? 'no hub'})`);
     const last = blocks[blocks.length - 1];
     if (last && last.hub === hub) { last.toDay = n; last.nights++; last.checkOut = dateOf(n + 1, start); continue; }
-    blocks.push({ area: hubArea(hub)!, hub, checkIn: dateOf(n, start), checkOut: dateOf(n + 1, start), nights: 1, fromDay: n, toDay: n });
+    blocks.push({ area, hub, checkIn: dateOf(n, start), checkOut: dateOf(n + 1, start), nights: 1, fromDay: n, toDay: n });
   }
   return blocks;
 }
 
+/** Real nights per area: the last day has none, so this is one less than nightsByArea (stays.ts) counts for the final area. Supersedes it once the stays screen is moved over. */
 export function nightsFromBlocks(blocks: NightBlock[]): Partial<Record<Area, number>> {
   const out: Partial<Record<Area, number>> = {};
   for (const b of blocks) out[b.area] = (out[b.area] ?? 0) + b.nights;

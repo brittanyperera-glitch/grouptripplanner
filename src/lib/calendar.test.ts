@@ -8,6 +8,7 @@ import type { Day, DayEntry, Hub, Item, Leg, Plan } from '../types';
 import { addDays, dateOf, hubArea, nightBlocks, nightHub, nightsFromBlocks } from './calendar';
 import { groupResult } from './group';
 import { RELEASE } from './release';
+import { nightsByArea } from './stays';
 
 const plan = groupResult(seedState(), (catalogue as unknown as { items: Item[] }).items, legs as Leg[], [], RELEASE).final!;
 const START = '2026-12-08';
@@ -95,5 +96,24 @@ describe('nightHub', () => {
     const p = towardsAirport('Kandy and Knuckles');
     p.days[1] = day(2, 'Ella', [{ kind: 'free', label: 'Free day', hours: 0 }]);
     expect(nightHub(p, 2)).toBe('Ella');
+  });
+});
+
+describe('nightBlocks on a plan with no hub for a night', () => {
+  const lone = (route: Hub[], area: Day['area']): Plan => ({ ...towardsAirport('Kandy and Knuckles'), route, days: [day(1, area, [free]), day(2, null, [free])] });
+  it('throws instead of making a block with a null hub when day 1 has no area and the route is too short', () => {
+    expect(() => nightBlocks(lone(['AIR'], null), START)).toThrow(RangeError);
+  });
+  it('throws instead of making a block with a null area when the night lands on AIR', () => {
+    expect(() => nightBlocks(lone(['AIR', 'AIR'], null), START)).toThrow(RangeError);
+  });
+});
+
+describe('nights per area against the stays screen count', () => {
+  it('drops exactly the last day from the final area, the one night the stays count over-reports', () => {
+    const byBlocks = nightsFromBlocks(nightBlocks(plan, START));
+    const byDays = nightsByArea(plan);
+    expect(byDays).toEqual({ ...byBlocks, Colombo: 2 });
+    expect(byBlocks.Colombo).toBe(1);
   });
 });

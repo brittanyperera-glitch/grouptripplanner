@@ -111,6 +111,18 @@ describe('flights, custom stops and spare', () => {
     const big: DayEdit[] = [{ kind: 'custom', id: 'c:1', day: 3, hours: 20 }];
     expect(dayView(input({ custom: big }), 3).overBudget).toBe(true);
   });
+  it('caps the first and last day at half the pace once a stop is added, as the planner does', () => {
+    const lastN = plan.days.length;
+    for (const n of [1, lastN]) {
+      const used = plan.days[n - 1].entries.reduce((s, e) => s + e.hours, 0);
+      const v = dayView(input({ custom: [{ kind: 'custom', id: 'c:1', day: n, hours: 1 }] }), n);
+      expect(v.spare).toBeCloseTo(11 / 2 - used - 1);
+      // The plan's own spare for the day, less the stop, is what the planner would leave.
+      expect(v.spare).toBeCloseTo(plan.days[n - 1].spare - 1);
+    }
+    const tight = dayView(input({ custom: [{ kind: 'custom', id: 'c:1', day: lastN, hours: plan.days[lastN - 1].spare + 0.5 }] }), lastN);
+    expect(tight.overBudget).toBe(true);
+  });
   it('carries the day\'s area and entries', () => {
     const v = dayView(input(), 4);
     expect(v.n).toBe(4);
