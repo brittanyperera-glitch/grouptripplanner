@@ -52,8 +52,8 @@ const afterFall = (at: string | undefined, fallen: Fallen[], area: Area): boolea
 export const claimIsFresh = (claim: BookingClaim | undefined, fallen: Fallen[], area: Area): boolean =>
   claim !== undefined && afterFall(claim.updatedAt, fallen, area);
 
-/** Everyone who has marked this item done. A stay tick only counts if it is newer than that area's latest fall. */
-export const doneBy = (state: AppState, id: string, fallen: Fallen[] = []): Player[] =>
+/** Everyone who has marked this item done. A stay tick only counts if it is newer than that area's latest fall (the stored list unless one is given). */
+export const doneBy = (state: AppState, id: string, fallen: Fallen[] = state.stays?.admin.fallen ?? []): Player[] =>
   (Object.keys(state.tripAdmin ?? {}) as Player[]).filter(p => {
     const e = entryOf(state, p, id);
     const area = AREAS.find(a => stayItemId(a) === id);
@@ -61,7 +61,7 @@ export const doneBy = (state: AppState, id: string, fallen: Fallen[] = []): Play
   });
 
 /** The bookings nobody has ticked yet. Needs the locked plan: without one there is nothing to book. */
-export function adminOutstanding(me: Player, state: AppState, plan: Plan | null = null, fallen: Fallen[] = state.stays?.admin.fallen ?? []): AdminDue[] {
+export function adminOutstanding(me: Player, state: AppState, plan: Plan | null = null, fallen?: Fallen[]): AdminDue[] {
   return adminChecklist(state, me, plan)
     .filter(d => doneBy(state, d.id, fallen).length === 0)
     .map(({ id, label }) => ({ id, label }));

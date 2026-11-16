@@ -109,8 +109,8 @@ export const rankedBy = (ctx: StayCtx, p: Player, area: Area): boolean => {
   const r = ctx.crewOf[p]?.ranks[area];
   return !!r?.first && !!r?.second;
 };
-/** Areas with three or more distinct stays are ranked; fewer skip straight on, and so do a pinned and a closed area. */
-export const rankAreas = (ctx: StayCtx): Area[] => ctx.areas.filter(a => !livePin(a, ctx.admin.pins, ctx.suggestions, null).pinned && !ctx.admin.closed.includes(a) && rankPoints(ctx.suggestions, {}, a).length >= 3);
+/** Areas with three or more distinct stays are ranked; fewer skip straight on, and so do a pinned, a closed and a fallen-through area (that one waits for a replacement, not ranks). */
+export const rankAreas = (ctx: StayCtx): Area[] => ctx.areas.filter(a => !livePin(a, ctx.admin.pins, ctx.suggestions, null, ctx.admin.fallen).pinned && !(ctx.admin.fallen ?? []).some(f => f.area === a) && !ctx.admin.closed.includes(a) && rankPoints(ctx.suggestions, {}, a).length >= 3);
 
 export type Outcome =
   | { kind: 'empty' }
@@ -193,7 +193,7 @@ export const STAY_COPY = {
   rankPage: { title: (area: string) => `Your top 2 in ${area}`, sub: 'Tap your first pick, then your second. Tap again to clear.', go: 'Submit my top 2', card: (t: string) => `Rank ${t}`, auto: 'Only one stay here, so it is picked.', two: 'Two stays here, so on to the head to head.', zero: 'Nobody suggested a stay here.' },
   vote: {
     title: 'Head to head', price: (p: string) => `${p} pp/night`, heads: (n: number) => (n === 1 ? '1 heads-up' : `${n} heads-ups`), vs: 'VS', vote: 'Vote', voteFor: 'Vote for this', voted: 'Voted', tally: (n: number, of: number) => `${n} of ${of} voted`, details: (t: string) => `Details of ${t}`,
-    nothing: 'Nothing to vote on yet.', waitRank: 'Waiting on the others to pick their top 2.', empty: 'Nobody suggested a stay here.', decided: (n: number) => `Decided ${n}`,
+    nothing: 'Nothing to vote on yet.', replacing: (area: string) => `${area}: Brittany is finding a replacement`, waitRank: 'Waiting on the others to pick their top 2.', empty: 'Nobody suggested a stay here.', decided: (n: number) => `Decided ${n}`,
     pinned: "Brittany's pick", only: 'the only stay suggested', byVote: 'won the vote', close: 'Close', yours: 'Your vote',
   },
 };

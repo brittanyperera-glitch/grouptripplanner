@@ -98,6 +98,36 @@ describe('TripAdmin', () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
+  describe('a stay that fell through after it was ticked', () => {
+    const stayRow = { id: 's1', name: 'Alex', area: 'Ella', kind: 'stay', title: 'Stay s1', status: 'live', createdAt: '2026-10-10' };
+    // LocalStore does not persist a fallen list yet, so the test hands the screen the state a store that does would give it.
+    class FallenStore extends LocalStore {
+      async load() { const s = await super.load(); return { ...s, stays: { ...s.stays!, admin: { ...s.stays!.admin, fallen: [{ id: 'gone', area: 'Ella' as const, at: '2026-11-02T10:00' }] } } }; }
+    }
+    const mountStay = async (doneAt: string) => {
+      localStorage.setItem('tp:placesug', JSON.stringify([stayRow]));
+      localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-11-03T09:00' }], scouts: {}, closed: [] }));
+      seed('Brittany', { 'stay:Ella': { done: true, doneAt } });
+      localStorage.setItem('tp:me', 'Alex');
+      render(<AppProvider store={new FallenStore()}><TripAdmin onBack={vi.fn()} /></AppProvider>);
+      return (await screen.findByRole('checkbox', { name: 'Stay in Ella' })).closest('li')!;
+    };
+
+    it('a tick from before the fall is not shown as done, not counted, and has no avatar', async () => {
+      const row = await mountStay('2026-11-01T08:00');
+      expect(row).toHaveAttribute('data-done', 'false');
+      expect(within(row).queryByRole('list', { name: /Done by/ })).toBeNull();
+      expect(screen.getByRole('status')).toHaveTextContent('3 still to do');
+    });
+
+    it('a tick from after the fall still counts', async () => {
+      const row = await mountStay('2026-11-04T08:00');
+      expect(row).toHaveAttribute('data-done', 'true');
+      expect(within(row).getByRole('list', { name: 'Done by Brittany' })).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent('2 still to do');
+    });
+  });
+
   describe('the route behind the group bookings', () => {
     const reopened = { final: null, held: plan, locked: false, knockouts: [{ forkId: 'ko:s:late' }] } as unknown as GroupResult;
     const provisional = { final: plan, locked: false } as unknown as GroupResult;

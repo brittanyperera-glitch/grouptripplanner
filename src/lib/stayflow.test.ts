@@ -166,6 +166,13 @@ describe('a stay that fell through', () => {
     const admin = adminOf({ fallen: [fell('b1', 'Kandy and Knuckles')] });
     expect(outcome(ctxOf(four, locked, { admin }), 'Ella')).toEqual(outcome(ctxOf(four, locked), 'Ella'));
   });
+  it('a fallen area is not asked to rank, whether or not its pin is still on the fallen stay', () => {
+    const fallen = [fell('a1')];
+    const stale = adminOf({ fallen, pins: [{ area: 'Ella', suggestionId: 'a1', at: 't1' }] });
+    expect(rankAreas(ctxOf(four, locked, { admin: stale }))).toEqual([]);
+    expect(rankAreas(ctxOf(four, locked, { admin: adminOf({ fallen }) }))).toEqual([]);
+    expect(rankAreas(ctxOf(four, locked, { admin: adminOf({ fallen: [fell('b1', 'Kandy and Knuckles')] }) }))).toEqual(['Ella']);
+  });
   it('no fallen data changes nothing', () => {
     expect(outcome(ctxOf(four, locked, { admin: adminOf({ fallen: [] }) }), 'Ella')).toEqual(outcome(ctxOf(four, locked), 'Ella'));
   });

@@ -119,7 +119,7 @@ export default function StayVote({ ctx, onBack }: Props) {
         </div>
       ))}
       {waiting.map(({ area, o }) => <p key={area} className="sub">{`${area}: ${STAY_COPY.rank.caption(o.kind === 'wait' ? o.ranked : 0, total)}`}</p>)}
-      {replacing.map(({ area }) => <p key={area} className="sub">{`${area}: Brittany is finding a replacement`}</p>)}
+      {replacing.map(({ area }) => <p key={area} className="sub">{V.replacing(area)}</p>)}
       {decided.length > 0 && (
         <div>
           <button type="button" className="st-fold" aria-expanded={showDecided} onClick={() => setDecidedOpen(d => !d)}><IconCheck size={16} />{V.decided(decided.length)}</button>
