@@ -13,9 +13,9 @@ const goodDate = (s: string | null | undefined): s is string => !!s && /^\d{4}-\
 const goodTime = (s: string | null | undefined): s is string => !!s && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s);
 const people = (t: Travellers) => Object.values(t).filter((x): x is Traveller => !!x);
 
-export function arrivalFlags(travellers: Travellers, rawStart: string | null, days: number): ArrivalFlag[] {
+export function arrivalFlags(travellers: Travellers, rawStart: string | null, days: number | null): ArrivalFlag[] {
   const start = goodDate(rawStart) ? rawStart : null;
-  const last = start ? fmt(utc(start) + (days - 1) * 1440 * MIN).slice(0, 10) : null;
+  const last = start && days !== null ? fmt(utc(start) + (days - 1) * 1440 * MIN).slice(0, 10) : null;
   return people(travellers).flatMap((t): ArrivalFlag[] => {
     const { name } = t;
     const a = goodTime(t.arriveLocal) ? t.arriveLocal : null, d = goodTime(t.departLocal) ? t.departLocal : null;
