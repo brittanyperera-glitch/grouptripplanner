@@ -46,8 +46,19 @@ interface AppValue {
 type SettingsPatch = Parameters<FinalStore['saveTripSettings']>[0];
 type TravellerPatch = Parameters<FinalStore['saveTraveller']>[1];
 export const MAX_OVERRIDES = 100;
-/** 100 entries of this length plus their timestamps stay well under the column's 20000-byte check. */
-const MAX_WHAT = 120;
+/** Bytes of a log entry's text as jsonb prints it: 100 entries of this size plus their timestamps stay under the column's 20000-byte check. */
+const MAX_WHAT_BYTES = 120;
+const enc = new TextEncoder();
+/** Cuts on whole characters (never a surrogate pair), counting each as the JSON text the column measures, so multi-byte and escaped text cannot slip past. */
+export function capWhat(text: string): string {
+  let out = '', bytes = 0;
+  for (const ch of text) {
+    bytes += enc.encode(JSON.stringify(ch)).length - 2;
+    if (bytes > MAX_WHAT_BYTES) break;
+    out += ch;
+  }
+  return out;
+}
 
 export const ME_KEY = 'tp:me';
 // My own saves, kept here until the server has them, so a failed save survives a reload of the page.
@@ -413,9 +424,14 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   // A trip password changed under an open app makes every read come back empty with no error, so an empty
   // or failed read asks the access hook to re-verify the key (it rate-limits, and only a rejected key leaves).
   const recheck = access.recheck;
+  const checkingKey = access.status === 'checking';
+  const checkingRef = useRef(checkingKey);
+  checkingRef.current = checkingKey;
   const accepted = useCallback((s: AppState) => {
-    setServer(s);
     const empty = !Object.keys(s.responses).length;
+    // Until the key is verified an empty read may only be a stale key hidden by row-level security; it must not replace the snapshot (the load reruns once the key is accepted).
+    if (empty && checkingRef.current) return;
+    setServer(s);
     // An empty read never replaces a good snapshot.
     if (!sandbox && !empty) writeSnapshot(s);
     if (!injected && empty && !s.suggestions.length && !s.votes.length) recheck();
@@ -437,6 +453,12 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
     void load();
     return base?.subscribe(accepted);
   }, [base, load, accepted]);
+
+  const wasChecking = useRef(false);
+  useEffect(() => {
+    if (wasChecking.current && access.status === 'open') void load();
+    wasChecking.current = access.status === 'checking';
+  }, [access.status, load]);
 
   // Starts at boot, not once the store exists, so a key check that hangs does not delay the offline flag.
   useEffect(() => {
@@ -513,7 +535,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
       const prev = settings.ref.current;
       const edited = patch.plan !== undefined || patch.startDate !== undefined || patch.bookingDates !== undefined;
       // Capped so the jsonb never reaches its size check, which would refuse every later save.
-      const log = [...(prev?.patch.overrides ?? stateRef.current?.tripSettings?.overrides ?? []), { at, what: (what ?? Object.keys(patch).join(', ')).slice(0, MAX_WHAT) }].slice(-MAX_OVERRIDES);
+      const log = [...(prev?.patch.overrides ?? stateRef.current?.tripSettings?.overrides ?? []), { at, what: capWhat(what ?? Object.keys(patch).join(', ')) }].slice(-MAX_OVERRIDES);
       const full = edited ? { ...patch, overrides: log } : patch;
       // Set the ref now as well, so two saves in one tick chain their log entries.
       const next = { patch: { ...prev?.patch, ...full }, updatedAt: at };

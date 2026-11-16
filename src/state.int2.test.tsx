@@ -1,7 +1,7 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LocalStore } from './store/local';
-import { AppProvider, MAX_OVERRIDES, useApp } from './state';
+import { AppProvider, capWhat, MAX_OVERRIDES, useApp } from './state';
 import { applyAdmin } from './types';
 import type { Fallen, StaysAdmin } from './types';
 
@@ -77,6 +77,18 @@ describe('a pending fallen overlay', () => {
 });
 
 describe('the overrides log', () => {
+  it('caps by bytes as the column counts them: three-byte text, escapes, and no split surrogate pair', async () => {
+    const store = new LocalStore();
+    await mount(store);
+    const nasty = ['\u20ac'.repeat(500), '"'.repeat(500), '\u0001'.repeat(500), '\u{1F600}'.repeat(500), 'a' + '\u{1F600}'.repeat(500)];
+    for (let i = 0; i < MAX_OVERRIDES; i++) await act(async () => { await ctx.saveTripSettings({ startDate: `2026-12-${String(i % 28 + 1).padStart(2, '0')}` }, nasty[i % nasty.length]); });
+    const log = (await store.load()).tripSettings?.overrides ?? [];
+    expect(log).toHaveLength(MAX_OVERRIDES);
+    expect(new TextEncoder().encode(JSON.stringify(log)).length).toBeLessThan(20000);
+    expect(log.every(e => !/[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/.test(e.what))).toBe(true);
+    expect(capWhat('\u{1F600}'.repeat(500))).toBe('\u{1F600}'.repeat(30));
+  });
+
   it('caps each entry, so 100 long entries stay under the 20000-byte column check', async () => {
     const store = new LocalStore();
     await mount(store);

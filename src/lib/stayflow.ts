@@ -88,7 +88,11 @@ export function stayCtx(state: AppState, me: Player, plan: Plan | null): StayCtx
   let derived: Partial<Record<Area, number>> = {};
   if (plan) {
     // An organiser-edited plan can leave a night with no area hub, which nightBlocks rejects; the screens must still render.
-    try { derived = nightsFromBlocks(nightBlocks(plan, null)); } catch { derived = nightsByArea(plan); }
+    // The fallback drops the last day, which has no night, so it counts the same nights as the blocks do.
+    try { derived = nightsFromBlocks(nightBlocks(plan, null)); } catch (e) {
+      if (!(e instanceof RangeError)) throw e;
+      derived = nightsByArea({ ...plan, days: plan.days.slice(0, -1) });
+    }
   }
   return {
     me, participants, crew, crewOf: stays.crew, suggestions: stays.suggestions, admin: stays.admin, votes: state.votes,

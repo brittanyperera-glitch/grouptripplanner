@@ -34,6 +34,16 @@ describe('a read error on the three soft tables', () => {
     expect(s.bookingClaims).toEqual({});
   });
 
+  it.each([
+    ['42704', 'role "anon" does not exist'],
+    ['42501', 'permission denied for relation trip_settings'],
+    [undefined, 'permission denied for relation trip_settings'],
+    [undefined, 'role "anon" does not exist'],
+  ])('an unrelated error (%s: %s) is not a missing table and fails the load', async (code, message) => {
+    fake.errors = { trip_settings: { code, message } };
+    await expect(store().load()).rejects.toMatchObject({ message });
+  });
+
   it.each(['trip_settings', 'travellers', 'booking_claims'])('a 500 on %s fails the whole load instead of reading as absent', async table => {
     fake.errors = { [table]: { code: '500', message: 'Internal Server Error' } };
     await expect(store().load()).rejects.toMatchObject({ message: 'Internal Server Error' });
