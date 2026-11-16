@@ -49,6 +49,13 @@ describe.each(files)('%s can be re-run', file => {
     expect(body).toContain('admin_secret');
   });
 
+  it('refuses a request with no organiser key before it hashes anything', () => {
+    const body = sql.match(/create or replace function public\.admin_ok\(\)[\s\S]*?\$\$;?[\s\S]*?\$\$/)?.[0] ?? '';
+    const guard = body.search(/btrim\(coalesce\([^;]*'x-admin-key'[^;]*, ''\)\) = ''/);
+    expect(guard).toBeGreaterThan(-1);
+    expect(guard).toBeLessThan(body.indexOf('digest('));
+  });
+
   it('lets only the organiser change the trip password', () => {
     const body = sql.match(/create or replace function public\.set_trip_password[\s\S]*?\$\$;/)?.[0] ?? '';
     expect(body).toMatch(/security definer/);
@@ -88,5 +95,16 @@ describe.each(files)('%s can be re-run', file => {
   it('has no delete policy and adds nothing to the publication', () => {
     expect(sql.match(/for delete/g)).toBeNull();
     expect(sql.match(/alter publication/g)).toBeNull();
+  });
+});
+
+describe('supabase/set-admin-password.sql', () => {
+  const sql = fs.readFileSync('supabase/set-admin-password.sql', 'utf8');
+
+  it('raises on a blank or placeholder password before it inserts', () => {
+    const guard = sql.search(/btrim\(coalesce\(pw, ''\)\) = ''[\s\S]*?raise exception/);
+    expect(guard).toBeGreaterThan(-1);
+    expect(sql).toMatch(/pw like 'PUT-THE-%'/);
+    expect(guard).toBeLessThan(sql.indexOf('insert into admin_secret'));
   });
 });
