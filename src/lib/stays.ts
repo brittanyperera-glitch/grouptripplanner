@@ -167,12 +167,16 @@ export function finalStay(area: Area, pins: StayPin[], winner: string | null): {
   return { id: winner, pinned: false };
 }
 
-/** finalStay, but a pin whose suggestion is gone, no longer live in that area, or fallen through stops counting and the vote decides. */
+/** Same rule as tripadmin.ts instant (it imports this file, so it cannot be shared): local 'YYYY-MM-DDTHH:mm' is Sri Lanka time, a UTC ISO stamp keeps its zone; unreadable is NaN, which is never later. */
+const instant = (t: string): number => Date.parse(/(Z|[+-]\d\d:?\d\d)$/.test(t) ? t : `${t}+05:30`);
+
+/** finalStay, but a pin whose suggestion is gone, no longer live in that area, or fallen through stops counting and the vote decides; a pin made after the fall is live again. */
 export function livePin(area: Area, pins: StayPin[], suggestions: PlaceSuggestion[], winner: string | null, fallen: Fallen[] = []): { id: string | null; pinned: boolean } {
   const f = finalStay(area, pins, winner);
   if (!f.pinned) return f;
-  const ok = suggestions.some(s => s.id === f.id && s.kind === 'stay' && s.area === area && s.status === 'live')
-    && !fallen.some(x => x.area === area && x.id === f.id);
+  const pinAt = pins.filter(p => p.area === area && p.suggestionId === f.id).reduce((m, p) => (instant(p.at) > m ? instant(p.at) : m), Number.NEGATIVE_INFINITY);
+  const stillFallen = fallen.some(x => x.area === area && x.id === f.id && !(pinAt > instant(x.at)));
+  const ok = suggestions.some(s => s.id === f.id && s.kind === 'stay' && s.area === area && s.status === 'live') && !stillFallen;
   return ok ? f : { id: winner, pinned: false };
 }
 
