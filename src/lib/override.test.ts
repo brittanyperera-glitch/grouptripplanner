@@ -26,6 +26,12 @@ describe('pins', () => {
     expect(next).toEqual([]);
     expect(pinnedId(next, 'Ella', [live('a2')])).toBeNull();
   });
+  it('a pin on a stay that fell through is not the pinned one, a replacement pin is', () => {
+    const fallen = [{ id: 'a1', area: 'Ella' as const, at: '3' }];
+    expect(pinnedId([pin('a1', '1')], 'Ella', [live('a1')], fallen)).toBeNull();
+    expect(pinnedId([pin('a1', '1'), pin('a2', '4')], 'Ella', [live('a1'), live('a2')], fallen)).toBe('a2');
+    expect(pinnedId([pin('a1', '1')], 'Ella', [live('a1')], [{ id: 'k', area: 'Kandy and Knuckles', at: '3' }])).toBe('a1');
+  });
   it('a stored null pin reads as unpinned', () => {
     expect(pinnedId([pin('a1', '1'), pin(null, '2')], 'Ella', [live('a1')])).toBeNull();
   });

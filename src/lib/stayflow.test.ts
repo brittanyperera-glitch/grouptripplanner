@@ -141,3 +141,39 @@ describe('outcome per destination', () => {
     expect(outcome(ctxOf(two, locked, { votes }), 'Ella')).toEqual({ kind: 'decided', id: 'a2', via: 'vote' });
   });
 });
+
+describe('a stay that fell through', () => {
+  const locked = Object.fromEntries(PEOPLE.map(p => [p, crewRow(p)])) as Record<Player, CrewStays>;
+  const four = ['a1', 'a2', 'a3', 'a4'].map(id => stay(id, 'Ella'));
+  const adminOf = (o: Partial<StayCtx['admin']>): StayCtx['admin'] => ({ pins: [], scouts: {}, closed: [], ...o });
+  const fell = (id: string, area: Area = 'Ella', at = '2026-11-01T10:00') => ({ id, area, at });
+  it('with no pin the area is replacing, never a vote or a wait, even with ranked suggestions', () => {
+    const admin = adminOf({ fallen: [fell('a1')] });
+    expect(outcome(ctxOf(four, locked, { admin }), 'Ella')).toEqual({ kind: 'replacing' });
+    expect(outcome(ctxOf(four.slice(0, 2), locked, { admin }), 'Ella')).toEqual({ kind: 'replacing' });
+    const ranked = Object.fromEntries(PEOPLE.map(p => [p, crewRow(p, { ranks: { Ella: { first: 'a2', second: 'a3' } } })])) as Record<Player, CrewStays>;
+    expect(outcome(ctxOf(four, ranked, { admin }), 'Ella')).toEqual({ kind: 'replacing' });
+  });
+  it('a pin on a different live stay decides the area again', () => {
+    const admin = adminOf({ fallen: [fell('a1')], pins: [{ area: 'Ella', suggestionId: 'a1', at: 't1' }, { area: 'Ella', suggestionId: 'a3', at: 't2' }] });
+    expect(outcome(ctxOf(four, locked, { admin }), 'Ella')).toEqual({ kind: 'decided', id: 'a3', via: 'pin' });
+  });
+  it('a pin still on the fallen stay does not count', () => {
+    const admin = adminOf({ fallen: [fell('a1')], pins: [{ area: 'Ella', suggestionId: 'a1', at: 't1' }] });
+    expect(outcome(ctxOf(four, locked, { admin }), 'Ella')).toEqual({ kind: 'replacing' });
+  });
+  it('a fall in another destination leaves this one alone', () => {
+    const admin = adminOf({ fallen: [fell('b1', 'Kandy and Knuckles')] });
+    expect(outcome(ctxOf(four, locked, { admin }), 'Ella')).toEqual(outcome(ctxOf(four, locked), 'Ella'));
+  });
+  it('a fallen area is not asked to rank, whether or not its pin is still on the fallen stay', () => {
+    const fallen = [fell('a1')];
+    const stale = adminOf({ fallen, pins: [{ area: 'Ella', suggestionId: 'a1', at: 't1' }] });
+    expect(rankAreas(ctxOf(four, locked, { admin: stale }))).toEqual([]);
+    expect(rankAreas(ctxOf(four, locked, { admin: adminOf({ fallen }) }))).toEqual([]);
+    expect(rankAreas(ctxOf(four, locked, { admin: adminOf({ fallen: [fell('b1', 'Kandy and Knuckles')] }) }))).toEqual(['Ella']);
+  });
+  it('no fallen data changes nothing', () => {
+    expect(outcome(ctxOf(four, locked, { admin: adminOf({ fallen: [] }) }), 'Ella')).toEqual(outcome(ctxOf(four, locked), 'Ella'));
+  });
+});

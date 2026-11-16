@@ -25,7 +25,7 @@ export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, on
   const [kind, setKind] = useState<PlaceKind>('stay');
   const nights = ctx.nights[area] ?? 0;
   const admin = isAdmin(ctx.me);
-  const pinned = pinnedId(ctx.admin.pins, area, ctx.suggestions);
+  const pinned = pinnedId(ctx.admin.pins, area, ctx.suggestions, ctx.admin.fallen);
   const setPin = (id: string | null) => { void store.saveStaysAdmin({ pins: withPin(ctx.admin.pins, area, id, new Date().toISOString()) }); };
   const setNights = (n: number) => { void store.saveStaysAdmin({ nights: withNights(ctx.admin.nights ?? {}, area, n, ctx.derivedNights?.[area]) }); };
   const note = nightsNote(ctx, area);
