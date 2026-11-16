@@ -12,6 +12,8 @@ export type TripAccess = { status: 'open' | 'checking' | 'gate'; password: strin
  * RECHECK_MIN_MS; an unreachable server never clears the key.
  */
 export const RECHECK_MIN_MS = 30_000;
+/** A check or first load that has not answered by now counts as offline: the app opens on its saved snapshot. */
+export const LOAD_TIMEOUT_MS = 4_000;
 
 export function useTripAccess(enabled: boolean): TripAccess {
   const [password, setPassword] = useState<string | null>(() => (enabled ? readTripKey() : null));
@@ -20,6 +22,7 @@ export function useTripAccess(enabled: boolean): TripAccess {
   useEffect(() => {
     if (!enabled || !password || verified) return;
     let live = true;
+    const timer = setTimeout(() => { if (live) setVerified(true); }, LOAD_TIMEOUT_MS);
     verifyTripKey(password).then(
       ok => {
         if (!live) return;
@@ -27,7 +30,7 @@ export function useTripAccess(enabled: boolean): TripAccess {
       },
       () => { if (live) setVerified(true); },
     );
-    return () => { live = false; };
+    return () => { live = false; clearTimeout(timer); };
   }, [enabled, password, verified]);
 
   const accept = useCallback((p: string) => { writeTripKey(p); setPassword(p); setVerified(true); }, []);
