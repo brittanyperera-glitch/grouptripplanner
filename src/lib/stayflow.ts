@@ -116,12 +116,15 @@ export type Outcome =
   | { kind: 'empty' }
   | { kind: 'wait'; ranked: number }
   | { kind: 'vote'; pair: [string, string]; tieBreak: string | null; a: Player[]; b: Player[]; warns: Record<string, string[]> }
-  | { kind: 'decided'; id: string; via: 'vote' | 'only' | 'pin' };
+  | { kind: 'decided'; id: string; via: 'vote' | 'only' | 'pin' }
+  | { kind: 'replacing' };
 
-/** Where a destination stands once voting is open. A pin beats everything; 3+ stays wait for everyone's top 2 unless Brittany closed ranking, then the ranks in are used. */
+/** Where a destination stands once voting is open. A pin beats everything; 3+ stays wait for everyone's top 2 unless Brittany closed ranking, then the ranks in are used. A fallen stay with no live pin waits for her replacement, never a new vote. */
 export function outcome(ctx: StayCtx, area: Area): Outcome {
-  const pin = livePin(area, ctx.admin.pins, ctx.suggestions, null);
+  const fallen = ctx.admin.fallen ?? [];
+  const pin = livePin(area, ctx.admin.pins, ctx.suggestions, null, fallen);
   if (pin.pinned && pin.id) return { kind: 'decided', id: pin.id, via: 'pin' };
+  if (fallen.some(f => f.area === area)) return { kind: 'replacing' };
   const scored = rankPoints(ctx.suggestions, {}, area).length;
   if (scored >= 3) {
     const ranked = ctx.participants.filter(p => rankedBy(ctx, p, area)).length;

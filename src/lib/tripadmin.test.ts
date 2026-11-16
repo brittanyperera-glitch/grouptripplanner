@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import catalogue from '../data/catalogue.json';
 import { AREAS } from '../types';
-import type { AppState, Item, Plan, PlaceSuggestion } from '../types';
-import { ADMIN_IDS, adminChecklist, adminOutstanding, BOOK_IDS, doneBy, stayItemId, toggleDone, visibleEntry, withDetails } from './tripadmin';
+import type { AppState, Fallen, Item, Plan, PlaceSuggestion } from '../types';
+import { ADMIN_IDS, adminChecklist, adminOutstanding, BOOK_IDS, claimIsFresh, doneBy, stayItemId, toggleDone, visibleEntry, withDetails } from './tripadmin';
 
 const day = (n: number, area: Plan['days'][number]['area']) => ({ n, area, entries: [], spare: 0, rainSlack: false });
 const plan = (chosen: string[]): Plan => ({
@@ -92,5 +92,54 @@ describe('entry patches', () => {
     // Changed deliberately (Brittany 2026-10-17): the booking reference is gone; an old stored one is dropped on the next save.
     const out = withDetails({ done: true, doneAt: 't', price: 'old', ref: 'OLD-REF' }, { price: '  ', note: 'x'.repeat(500) });
     expect(out).toEqual({ done: true, doneAt: 't', note: 'x'.repeat(200) });
+  });
+});
+
+describe('freshness after a stay falls through', () => {
+  const stay2: PlaceSuggestion = { ...stay, id: 's2', title: 'Tea cabin' };
+  const fell = (at: string, id = 's1', area: Fallen['area'] = 'Ella'): Fallen => ({ id, area, at });
+  const stateWith = (doneAt: string | undefined, fallen: Fallen[], pin = 's2'): AppState => base({
+    stays: { crew: {}, suggestions: [stay, stay2], admin: { pins: [{ area: 'Ella', suggestionId: pin, at: '2026-11-03T09:00' }], scouts: {}, closed: [], fallen } },
+    tripAdmin: { Brittany: { name: 'Brittany', updatedAt: 't', items: { 'stay:Ella': { done: true, ...(doneAt ? { doneAt } : {}) } } } },
+  });
+  const owed = (s: AppState) => adminOutstanding('Alex', s, plan([])).some(d => d.id === 'stay:Ella');
+
+  it('a tick dated before the fall does not count, one after does', () => {
+    expect(owed(stateWith('2026-11-01T08:00', [fell('2026-11-02T10:00')]))).toBe(true);
+    expect(owed(stateWith('2026-11-04T08:00', [fell('2026-11-02T10:00')]))).toBe(false);
+    expect(owed(stateWith('2026-11-01T08:00', []))).toBe(false);
+  });
+  it('ticks stamped in UTC are read as the same instant as Sri Lanka local falls', () => {
+    expect(owed(stateWith('2026-11-02T04:00:00.000Z', [fell('2026-11-02T10:00')]))).toBe(true);
+    expect(owed(stateWith('2026-11-02T05:00:00.000Z', [fell('2026-11-02T10:00')]))).toBe(false);
+  });
+  it('with two falls in one area the latest wins', () => {
+    const both = [fell('2026-11-02T10:00'), fell('2026-11-05T10:00', 's9')];
+    expect(owed(stateWith('2026-11-04T08:00', both))).toBe(true);
+    expect(owed(stateWith('2026-11-06T08:00', both))).toBe(false);
+  });
+  it('a fall in another area does not matter; a tick with no time does not count once something fell', () => {
+    expect(owed(stateWith('2026-11-01T08:00', [fell('2026-11-02T10:00', 'x', 'Kitulgala')]))).toBe(false);
+    expect(owed(stateWith(undefined, [fell('2026-11-02T10:00')]))).toBe(true);
+  });
+  it('doneBy takes the fallen list directly and leaves other items alone', () => {
+    const s = stateWith('2026-11-01T08:00', []);
+    expect(doneBy(s, 'stay:Ella', [fell('2026-11-02T10:00')])).toEqual([]);
+    expect(doneBy(s, 'stay:Ella')).toEqual(['Brittany']);
+    expect(doneBy(base({ tripAdmin: tick('Brittany', ['book:crab']) }), 'book:crab', [fell('2026-11-02T10:00')])).toEqual(['Brittany']);
+  });
+});
+
+describe('claimIsFresh', () => {
+  const claim = (updatedAt: string) => ({ itemId: 'stay:Ella', owner: 'Alex' as const, updatedAt });
+  const fallen: Fallen[] = [{ id: 's1', area: 'Ella', at: '2026-11-02T10:00' }, { id: 's0', area: 'Ella', at: '2026-11-05T10:00' }, { id: 'k', area: 'Kitulgala', at: '2026-11-09T10:00' }];
+  it('counts only after the latest fall in that area', () => {
+    expect(claimIsFresh(claim('2026-11-04T10:00'), fallen, 'Ella')).toBe(false);
+    expect(claimIsFresh(claim('2026-11-06T10:00'), fallen, 'Ella')).toBe(true);
+    expect(claimIsFresh(claim('2026-11-04T10:00'), fallen, 'Colombo')).toBe(true);
+  });
+  it('no claim is never fresh, and no fallen data leaves a claim as it was', () => {
+    expect(claimIsFresh(undefined, [], 'Ella')).toBe(false);
+    expect(claimIsFresh(claim('2020-01-01T00:00'), [], 'Ella')).toBe(true);
   });
 });

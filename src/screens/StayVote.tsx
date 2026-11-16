@@ -62,6 +62,7 @@ export default function StayVote({ ctx, onBack }: Props) {
   const open = rows.filter((r): r is { area: Area; o: Vote } => r.o.kind === 'vote');
   const waiting = rows.filter(r => r.o.kind === 'wait');
   const decided = rows.filter(r => r.o.kind === 'decided' || r.o.kind === 'empty');
+  const replacing = rows.filter(r => r.o.kind === 'replacing');
   const total = ctx.participants.length;
 
   const cast = (area: Area, vote: Vote, choice: 'a' | 'b') => { void store.vote({ forkId: forkOf(area, vote.pair), name: ctx.me, choice }); };
@@ -105,7 +106,7 @@ export default function StayVote({ ctx, onBack }: Props) {
         <button type="button" className="st-back" aria-label={STAY_COPY.back} onClick={onBack}><IconLeft size={20} /></button>
       </div>
       <h2 className="big display small st-h">{V.title}</h2>
-      {open.length === 0 && waiting.length === 0 && decided.length === 0 && <p className="empty">{V.nothing}</p>}
+      {open.length === 0 && waiting.length === 0 && decided.length === 0 && replacing.length === 0 && <p className="empty">{V.nothing}</p>}
       {open.map(({ area, o }) => (
         <div key={area} role="group" aria-label={`Stay vote: ${area}`} className="ko">
           <div className="big display small">{area}</div>
@@ -118,6 +119,7 @@ export default function StayVote({ ctx, onBack }: Props) {
         </div>
       ))}
       {waiting.map(({ area, o }) => <p key={area} className="sub">{`${area}: ${STAY_COPY.rank.caption(o.kind === 'wait' ? o.ranked : 0, total)}`}</p>)}
+      {replacing.map(({ area }) => <p key={area} className="sub">{`${area}: Brittany is finding a replacement`}</p>)}
       {decided.length > 0 && (
         <div>
           <button type="button" className="st-fold" aria-expanded={showDecided} onClick={() => setDecidedOpen(d => !d)}><IconCheck size={16} />{V.decided(decided.length)}</button>

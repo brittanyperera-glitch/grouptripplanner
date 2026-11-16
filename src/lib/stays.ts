@@ -1,5 +1,5 @@
 import { PEOPLE, isGuest, stayForkId } from '../types';
-import type { Area, CrewStays, Hub, Leg, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, StayType, Vote } from '../types';
+import type { Area, CrewStays, Fallen, Hub, Leg, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, StayType, Vote } from '../types';
 import { VOTES_TO_RESOLVE } from './group';
 import { isExtraKey, parseNights, stretchLevel } from './prefs';
 import { tallySides } from './votes';
@@ -167,11 +167,12 @@ export function finalStay(area: Area, pins: StayPin[], winner: string | null): {
   return { id: winner, pinned: false };
 }
 
-/** finalStay, but a pin whose suggestion is gone or no longer live in that area stops counting and the vote decides. */
-export function livePin(area: Area, pins: StayPin[], suggestions: PlaceSuggestion[], winner: string | null): { id: string | null; pinned: boolean } {
+/** finalStay, but a pin whose suggestion is gone, no longer live in that area, or fallen through stops counting and the vote decides. */
+export function livePin(area: Area, pins: StayPin[], suggestions: PlaceSuggestion[], winner: string | null, fallen: Fallen[] = []): { id: string | null; pinned: boolean } {
   const f = finalStay(area, pins, winner);
   if (!f.pinned) return f;
-  const ok = suggestions.some(s => s.id === f.id && s.kind === 'stay' && s.area === area && s.status === 'live');
+  const ok = suggestions.some(s => s.id === f.id && s.kind === 'stay' && s.area === area && s.status === 'live')
+    && !fallen.some(x => x.area === area && x.id === f.id);
   return ok ? f : { id: winner, pinned: false };
 }
 
