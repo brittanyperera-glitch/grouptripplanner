@@ -44,6 +44,16 @@ describe('a read error on the three soft tables', () => {
     await expect(store().load()).rejects.toMatchObject({ message });
   });
 
+  it.each(['crew_stays', 'place_suggestions', 'stays_admin', 'trip_admin'])('a 500 on %s fails the whole load, so the snapshot keeps the stays and checklist', async table => {
+    fake.errors = { [table]: { code: '500', message: 'Internal Server Error' } };
+    await expect(store().load()).rejects.toMatchObject({ message: 'Internal Server Error' });
+  });
+
+  it.each(['crew_stays', 'place_suggestions', 'stays_admin', 'trip_admin'])('a missing %s still reads as empty', async table => {
+    fake.errors = { [table]: { code: 'PGRST205', message: 'Could not find the table' } };
+    await expect(store().load()).resolves.toBeDefined();
+  });
+
   it.each(['trip_settings', 'travellers', 'booking_claims'])('a 500 on %s fails the whole load instead of reading as absent', async table => {
     fake.errors = { [table]: { code: '500', message: 'Internal Server Error' } };
     await expect(store().load()).rejects.toMatchObject({ message: 'Internal Server Error' });

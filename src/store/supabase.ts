@@ -198,16 +198,15 @@ export class SupabaseStore implements Store, FinalStore {
     this.ping();
   }
 
-  /** Never throws: the trip_admin table is missing until the schema is re-run, and that must not blank the app. */
+  /** A missing trip_admin table reads as empty; any other read error fails the load, so a blip never empties the snapshot. */
   private async loadTripAdmin(): Promise<TripAdminState> {
     const out: TripAdminState = {};
-    try {
-      const { data, error } = await this.db.from('trip_admin').select('*');
-      if (error) return out;
-      for (const row of (data ?? []) as TripRow[]) {
-        out[row.name] = { name: row.name, items: row.items ?? {}, updatedAt: row.updated_at ?? new Date(0).toISOString() };
-      }
-    } catch { /* same as an error result: the checklist starts empty */ }
+    let res;
+    try { res = await this.db.from('trip_admin').select('*'); } catch { return out; }
+    if (res.error) { if (missingTable(res.error)) return out; throw res.error; }
+    for (const row of (res.data ?? []) as TripRow[]) {
+      out[row.name] = { name: row.name, items: row.items ?? {}, updatedAt: row.updated_at ?? new Date(0).toISOString() };
+    }
     return out;
   }
 
@@ -237,16 +236,16 @@ export class SupabaseStore implements Store, FinalStore {
   }
 
   /**
-   * Never throws: a stays table missing on a database whose schema was not re-run must not blank the whole app.
-   * Each table fails on its own, so a missing place_suggestions does not hide crew rows that exist.
+   * A stays table missing on a database whose schema was not re-run reads as empty, each table on its own, so a missing
+   * place_suggestions does not hide crew rows that exist. Any other read error fails the load, keeping the snapshot.
    */
   private async loadStays(): Promise<StaysState> {
     const stays: StaysState = structuredClone(EMPTY_STAYS);
     const soft = async (read: () => PromiseLike<{ data: unknown[] | null; error: unknown }>, use: (rows: unknown[]) => void) => {
-      try {
-        const { data, error } = await read();
-        if (!error) use(data ?? []);
-      } catch { /* same as an error result: that piece starts empty */ }
+      let res;
+      try { res = await read(); } catch { return; }
+      if (!res.error) { use(res.data ?? []); return; }
+      if (!missingTable(res.error as { code?: string; message?: string })) throw res.error;
     };
     await Promise.all([
       soft(() => this.db.from('crew_stays').select('*'), rows => { for (const row of rows as CrewRow[]) stays.crew[row.name] = toCrew(row); }),
