@@ -2,8 +2,9 @@ import { useState } from 'react';
 import Avatar from '../components/Avatar';
 import { IconLeft } from '../components/Icons';
 import { isAdmin, pinnedId, withNights, withPin } from '../lib/override';
-import { KIND_LABEL, liveStays, nightsNote, STAY_COPY, warnLines } from '../lib/stayflow';
+import { KIND_LABEL, liveStays, nightsNote, outcome, STAY_COPY, warnLines } from '../lib/stayflow';
 import type { StayCtx, StayStatus } from '../lib/stayflow';
+import { stayItemId } from '../lib/tripadmin';
 import { tallySides } from '../lib/votes';
 import { useApp } from '../state';
 import { MAX_NIGHTS, MIN_NIGHTS, reactForkId } from '../types';
@@ -13,6 +14,9 @@ import './Stays.css';
 
 const B = STAY_COPY.board;
 const KINDS: PlaceKind[] = ['stay', 'eat', 'do', 'gem'];
+// Not in STAY_COPY: lib/stayflow.ts is outside this screen's files.
+const FELL = 'Fell through';
+const PIN_REPLACEMENT = 'Pin the replacement.';
 
 interface Props {
   ctx: StayCtx; status: StayStatus; area: Area;
@@ -21,12 +25,18 @@ interface Props {
 
 /** One destination: stays I can add to, and eat / do / gem ideas the crew just react to. */
 export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, onQuiz }: Props) {
-  const { store } = useApp();
+  const { store, claimBooking } = useApp();
   const [kind, setKind] = useState<PlaceKind>('stay');
   const nights = ctx.nights[area] ?? 0;
   const admin = isAdmin(ctx.me);
   const pinned = pinnedId(ctx.admin.pins, area, ctx.suggestions, ctx.admin.fallen);
   const setPin = (id: string | null) => { void store.saveStaysAdmin({ pins: withPin(ctx.admin.pins, area, id, new Date().toISOString()) }); };
+  const out = status.open ? outcome(ctx, area) : null;
+  // The claim goes with the stay: a replacement must never show as already booked.
+  const fellThrough = (id: string) => {
+    void store.saveStaysAdmin({ fallen: [...(ctx.admin.fallen ?? []), { id, area, at: new Date().toISOString() }] });
+    void claimBooking(stayItemId(area), null);
+  };
   const setNights = (n: number) => { void store.saveStaysAdmin({ nights: withNights(ctx.admin.nights ?? {}, area, n, ctx.derivedNights?.[area]) }); };
   const note = nightsNote(ctx, area);
   const N = STAY_COPY.nightsStep;
@@ -44,6 +54,7 @@ export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, on
           {admin && (isPin
             ? <button type="button" className="st-ghost" onClick={() => setPin(null)}>{B.unpin}</button>
             : <button type="button" className="st-ghost" onClick={() => setPin(s.id)}>{B.pin}</button>)}
+          {admin && out?.kind === 'decided' && out.id === s.id && <button type="button" className="st-ghost" onClick={() => fellThrough(s.id)}>{FELL}</button>}
           {mine && status.locked && <span className="stamp-label">{B.locked}</span>}
           {mine && !status.locked && (
             <>
@@ -100,6 +111,7 @@ export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, on
       <div className="st-kinds" role="group" aria-label="Kind">
         {KINDS.map(k => <button key={k} type="button" className="st-pill" aria-pressed={kind === k} onClick={() => setKind(k)}>{KIND_LABEL[k]}</button>)}
       </div>
+      {kind === 'stay' && out?.kind === 'replacing' && <p className="sub">{admin ? PIN_REPLACEMENT : STAY_COPY.vote.replacing(area)}</p>}
       {kind === 'stay' && (status.locked
         ? <p className="sub">{B.lockedLine}</p>
         : status.quizDone

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import Avatar from '../components/Avatar';
+import { useOpenAdmin } from '../components/AdminNav';
 import BigState from '../components/BigState';
 import { IconCheck, IconLeft } from '../components/Icons';
 import { canCloseRanking } from '../lib/override';
@@ -21,11 +22,16 @@ import StayVote from './StayVote';
 import './Stays.css';
 
 const C = STAY_COPY;
+// Not in STAY_COPY: lib/stayflow.ts is outside this screen's files.
+const NEXT = 'Next: book your stays';
+const SUGGEST = 'Suggest a stay';
+const REPLACING = 'Brittany is finding a replacement';
 type View = { kind: 'home' } | { kind: 'lock' } | { kind: 'vote' } | { kind: 'board' | 'rank'; area: Area };
 
 /** The accommodation flow: where I am in it, one button for the next thing, and the destinations underneath. */
 export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
   const { state, me, store, items, legs } = useApp();
+  const openAdmin = useOpenAdmin();
   const { data: group } = useGroupResult(state, items, legs, releaseFor(me));
   const [view, setView] = useState<View>({ kind: 'home' });
   const [sheet, setSheet] = useState<{ area: Area; kind?: PlaceKind; editing?: PlaceSuggestion } | null>(null);
@@ -142,6 +148,7 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
               <button key={a} type="button" className="st-ghost st-close" title={C.closeRank.hint} onClick={() => { void store.saveStaysAdmin({ closed: [...ctx.admin.closed, a] }); }}>{C.closeRank.go(a)}</button>
             ))}
             {votable && <button type="button" className="cta" onClick={() => setView({ kind: 'vote' })}>{C.final.go}</button>}
+            {finished && openAdmin && <button type="button" className="cta" onClick={openAdmin}>{NEXT}</button>}
           </>
         );
     }
@@ -177,10 +184,12 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
                 <span className="st-row-main">{C.row(area, ctx.nights[area] ?? 0, count)}</span>
                 {nightsNote(ctx, area) && <span className="st-row-sub">{nightsNote(ctx, area)}</span>}
                 {scout === me ? <span className="stamp-label">{C.scoutTag}</span> : scout && <span className="st-scout-av" role="img" aria-label={`Scout: ${scout}`}><Avatar name={scout} size={22} /></span>}
+                {o?.kind === 'replacing' && <span className="st-row-sub">{REPLACING}</span>}
                 {o?.kind === 'decided' && (
                   <span className="st-row-res">{titleOf(o.id) ?? ''}{o.via === 'pin' && <span className="stamp-label red">{C.vote.pinned}</span>}</span>
                 )}
               </button>
+              {o?.kind === 'empty' && <button type="button" className="st-ghost" onClick={() => setSheet({ area })}>{SUGGEST}</button>}
             </li>
           );
         })}
