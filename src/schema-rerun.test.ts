@@ -109,7 +109,7 @@ describe('supabase/set-admin-password.sql', () => {
   it('raises on a blank or placeholder password before it inserts', () => {
     const guard = sql.search(/btrim\(coalesce\(pw, ''\)\) = ''[\s\S]*?raise exception/);
     expect(guard).toBeGreaterThan(-1);
-    expect(sql).toMatch(/pw like 'PUT-THE-%'/);
+    expect(sql).toMatch(/upper\(btrim\(pw\)\) like 'PUT-THE-%'/);
     expect(guard).toBeLessThan(sql.indexOf('insert into admin_secret'));
   });
 });
@@ -120,7 +120,7 @@ describe('supabase/set-trip-password.sql', () => {
   it('raises on a blank or placeholder password before it inserts', () => {
     const guard = sql.search(/btrim\(coalesce\(pw, ''\)\) = ''[\s\S]*?raise exception/);
     expect(guard).toBeGreaterThan(-1);
-    expect(sql).toMatch(/pw like 'PUT-THE-%'/);
+    expect(sql).toMatch(/upper\(btrim\(pw\)\) like 'PUT-THE-%'/);
     expect(guard).toBeLessThan(sql.indexOf('insert into trip_secret'));
   });
 });
