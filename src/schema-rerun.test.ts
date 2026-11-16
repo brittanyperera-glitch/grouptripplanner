@@ -55,6 +55,36 @@ describe.each(files)('%s can be re-run', file => {
     expect(body).toMatch(/not public\.admin_ok\(\)[\s\S]*raise exception/);
   });
 
+  it('never lets an or widen a policy past the trip password', () => {
+    const policies = [...sql.matchAll(/create policy [^;]+;/g)].map(m => m[0]);
+    expect(policies.filter(p => /\bor\b/i.test(p))).toEqual([]);
+  });
+
+  it('gives travellers and booking_claims select, insert and update on the trip password alone', () => {
+    for (const table of ['travellers', 'booking_claims']) {
+      for (const op of ['select', 'insert', 'update']) {
+        const found = policiesOn(table, [op]);
+        expect(found.length, `${table} ${op}`).toBe(1);
+        expect(found[0], `${table} ${op}`).toMatch(/public\.trip_ok\(\)/);
+        expect(found[0], `${table} ${op}`).not.toMatch(/admin_ok/);
+      }
+    }
+  });
+
+  it('closes both organiser functions to public and opens them to anon only', () => {
+    for (const fn of ['admin_ok\\(\\)', 'set_trip_password\\(text\\)']) {
+      expect(sql, `${fn} revoke`).toMatch(new RegExp(`revoke all on function public\\.${fn} from public;`));
+      expect(sql, `${fn} grant`).toMatch(new RegExp(`grant execute on function public\\.${fn} to anon;`));
+    }
+  });
+
+  it('refuses a blank trip password, which trip_ok would match on a request with no key', () => {
+    const body = sql.match(/create or replace function public\.set_trip_password[\s\S]*?\$\$;/)?.[0] ?? '';
+    const guard = body.search(/btrim\(coalesce\(new_key, ''\)\) = ''[\s\S]*?raise exception/);
+    expect(guard).toBeGreaterThan(-1);
+    expect(guard).toBeLessThan(body.indexOf('insert into trip_secret'));
+  });
+
   it('has no delete policy and adds nothing to the publication', () => {
     expect(sql.match(/for delete/g)).toBeNull();
     expect(sql.match(/alter publication/g)).toBeNull();

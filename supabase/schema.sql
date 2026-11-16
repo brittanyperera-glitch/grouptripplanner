@@ -152,7 +152,7 @@ create table if not exists trip_settings (
 
 /* Final stage: arrival and departure per traveller, as Sri Lanka local 'YYYY-MM-DDTHH:mm' text. */
 create table if not exists travellers (
-  name text primary key check (name in ('Brittany','Alex','Antek','Lazza','Saulie')),
+  name text primary key check (name = any (array['Brittany','Alex','Antek','Lazza','Saulie'])),
   arrive_local text,
   arrive_flight text check (char_length(arrive_flight) <= 12),
   depart_local text,
@@ -177,6 +177,9 @@ language plpgsql security definer set search_path = public, extensions as $$
 begin
   if not public.admin_ok() then
     raise exception 'organiser key required';
+  end if;
+  if btrim(coalesce(new_key, '')) = '' then
+    raise exception 'trip password cannot be blank';
   end if;
   insert into trip_secret (id, key_hash) values (1, encode(digest(lower(btrim(new_key)), 'sha256'), 'hex'))
   on conflict (id) do update set key_hash = excluded.key_hash;
