@@ -535,7 +535,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
       const prev = settings.ref.current;
       const edited = patch.plan !== undefined || patch.startDate !== undefined || patch.bookingDates !== undefined;
       // Capped so the jsonb never reaches its size check, which would refuse every later save.
-      const log = [...(prev?.patch.overrides ?? stateRef.current?.tripSettings?.overrides ?? []), { at, what: capWhat(what ?? Object.keys(patch).join(', ')) }].slice(-MAX_OVERRIDES);
+      const log = [...(prev?.patch.overrides ?? stateRef.current?.tripSettings?.overrides ?? []), { at, what: what ?? Object.keys(patch).join(', ') }].slice(-MAX_OVERRIDES).map(o => ({ ...o, what: capWhat(o.what) }));
       const full = edited ? { ...patch, overrides: log } : patch;
       // Set the ref now as well, so two saves in one tick chain their log entries.
       const next = { patch: { ...prev?.patch, ...full }, updatedAt: at };

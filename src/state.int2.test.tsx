@@ -89,6 +89,17 @@ describe('the overrides log', () => {
     expect(capWhat('\u{1F600}'.repeat(500))).toBe('\u{1F600}'.repeat(30));
   });
 
+  it('re-caps entries saved before the cap, so an old long log cannot wedge the next save', async () => {
+    const store = new LocalStore();
+    const old = Array.from({ length: MAX_OVERRIDES }, (_, i) => ({ at: `2026-11-${String(i % 28 + 1).padStart(2, '0')}T00:00`, what: 'y'.repeat(500) }));
+    await store.saveTripSettings({ overrides: old });
+    await mount(store);
+    await act(async () => { await ctx.saveTripSettings({ startDate: '2026-12-08' }, 'set the start date'); });
+    const log = (await store.load()).tripSettings?.overrides ?? [];
+    expect(log).toHaveLength(MAX_OVERRIDES);
+    expect(new TextEncoder().encode(JSON.stringify(log)).length).toBeLessThan(20000);
+  });
+
   it('caps each entry, so 100 long entries stay under the 20000-byte column check', async () => {
     const store = new LocalStore();
     await mount(store);
