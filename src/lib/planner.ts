@@ -8,7 +8,7 @@ const RAIN_AREAS: Area[] = ['Hill country', 'Ella'];
 // Activities after which nobody drives that day. Afternoon ones (park safaris, a sunset beach) run until
 // the parks close at 18:00 (research/google_listings.md: Kaudulla and Hurulu "Closes 6 PM").
 const DUSK_SLOTS: Slot[] = ['afternoon', 'sunset', 'evening', 'late'];
-const CHECKIN = 3;
+export const CHECKIN = 3;
 const TRAIN = 'train';
 const EPS = 1e-9;
 const place = (h: Hub) => (h === 'AIR' ? 'the airport' : h);
