@@ -16,7 +16,7 @@ Without Supabase keys the app saves to this browser only, which is good for tryi
 ## Go live (about 15 minutes)
 
 1. Supabase: create a free project at supabase.com and copy the Project URL and the anon public key (Project Settings, API). Do not run any SQL yet.
-2. GitHub: create an empty private repo (no README). The app lives on the branch `worktree-trip-picker-build`, so bring main up to it first, from the main project folder: `git merge --ff-only worktree-trip-picker-build`, then `git remote add origin <url>` and `git push -u origin main`.
+2. GitHub: the repo is `brittanyperera-glitch/grouptripplanner`; the live branch is `homecoming`, which Vercel deploys.
 3. Vercel: choose Add New Project, import the repo, add three environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY with the two Supabase values, and VITE_RAW_KEY with a secret word of your own. Click Deploy.
 4. Database, after the app is deployed. In Supabase open SQL Editor and run these in order, one at a time:
    1. supabase/schema.sql, pasted whole. It creates the tables and the password tables, and is safe to run again.

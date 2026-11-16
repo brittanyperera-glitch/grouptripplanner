@@ -2,7 +2,7 @@
 do $$
 declare pw text := 'PUT-THE-PASSWORD-HERE';
 begin
-  if btrim(coalesce(pw, '')) = '' or pw like 'PUT-THE-%' then
+  if btrim(coalesce(pw, '')) = '' or upper(btrim(pw)) like 'PUT-THE-%' then
     raise exception 'trip password must be set to a real value';
   end if;
   insert into trip_secret (id, key_hash) values (1, encode(extensions.digest(lower(btrim(pw)), 'sha256'), 'hex')) on conflict (id) do update set key_hash = excluded.key_hash;
