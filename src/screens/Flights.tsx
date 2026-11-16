@@ -35,7 +35,7 @@ function MyRow({ mine, onSave }: { mine: Traveller | undefined; onSave: FlightsP
   const field = (label: string, type: string, value: string, set: (v: string) => void) => (
     <label className="fx-field">
       <span className="fx-fl">{label}</span>
-      <input className="field" type={type} aria-label={label} value={value} onChange={e => { setDone(false); set(e.target.value); }} />
+      <input className="field fx-in" type={type} aria-label={label} value={value} onChange={e => { setDone(false); set(e.target.value); }} />
     </label>
   );
   const submit = () => {
@@ -52,7 +52,7 @@ function MyRow({ mine, onSave }: { mine: Traveller | undefined; onSave: FlightsP
           {field(`${name} ${COPY.flight}`, 'text', f[kF], v => setF(s => ({ ...s, [kF]: v })))}
         </fieldset>
       ))}
-      <button type="submit" className="cta">{COPY.save}</button>
+      <button type="submit" className="cta fx-save">{COPY.save}</button>
       {done && <span className="fx-saved" role="status">{COPY.saved}</span>}
     </form>
   );
