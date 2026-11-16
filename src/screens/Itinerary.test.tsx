@@ -61,7 +61,8 @@ describe('chosenStays', () => {
   });
   it('takes a pin over everything, with the nights the plan spends there', () => {
     const s = base({ suggestions: [stay], admin: { pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-10-16T01:00:00Z' }], scouts: {}, closed: [] } });
-    expect(chosenStays(s, 'Brittany', plan)).toEqual([{ area: 'Ella', title: 'Hill hut', stayType: 'guesthouse', priceGbp: 40, nights: 2, link: 'https://example.com/hut' }]);
+    // Calendar nights: the departure day is not a night (plan 16 Nov, finding 8).
+    expect(chosenStays(s, 'Brittany', plan)).toEqual([{ area: 'Ella', title: 'Hill hut', stayType: 'guesthouse', priceGbp: 40, nights: 1, link: 'https://example.com/hut' }]);
   });
   it('takes a lone stay only once all five have locked in', () => {
     const lockedCrew = Object.fromEntries(PEOPLE.map(n => [n, { ...crew('Brittany', true), name: n }]));
