@@ -1,5 +1,5 @@
-import { AREAS, AREA_HUB } from '../types';
-import type { AppState, Area, Day, DayEntry, Hub, Item, Plan, Player, Slot } from '../types';
+import type { AppState, Area, Day, DayEntry, Item, Plan, Player, Slot } from '../types';
+import { hubArea } from './calendar';
 import { tierOf } from './ranking';
 
 type Half = 'morning' | 'afternoon';
@@ -9,8 +9,6 @@ export interface SideQuest {
 }
 
 const DAYTIME: Slot[] = ['any', 'morning', 'afternoon'];
-// Wild south has two hubs; AREA_HUB only names the default one.
-const hubArea = (h: Hub): Area | undefined => AREAS.find(a => AREA_HUB[a] === h) ?? (h === 'Tissa' ? 'Wild south' : undefined);
 const hrs = (h: number) => (Number.isInteger(h) ? String(h) : h.toFixed(1));
 const halvesOf = (slot: Slot): Half[] => (slot === 'morning' ? ['morning'] : slot === 'afternoon' ? ['afternoon'] : ['morning', 'afternoon']);
 // The half an activity sits in; null for evening and late, which sit outside the daytime.
