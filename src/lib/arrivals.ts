@@ -20,9 +20,10 @@ export function arrivalFlags(travellers: Travellers, rawStart: string | null, da
     const { name } = t;
     const a = goodTime(t.arriveLocal) ? t.arriveLocal : null, d = goodTime(t.departLocal) ? t.departLocal : null;
     if (!a || !d) return [{ name, kind: 'missing', text: `${name} has not entered ${a ? 'a departure' : d ? 'an arrival' : 'flights'}` }];
-    if (start && dateOf(a) > start) return [{ name, kind: 'late', text: `${name} lands on ${dateOf(a)}, after day 1 (${start})` }];
-    if (last && dateOf(d) < last) return [{ name, kind: 'early', text: `${name} leaves on ${dateOf(d)}, before the last day (${last})` }];
-    return [];
+    const flags: ArrivalFlag[] = [];
+    if (start && dateOf(a) > start) flags.push({ name, kind: 'late', text: `${name} lands on ${dateOf(a)}, after day 1 (${start})` });
+    if (last && dateOf(d) < last) flags.push({ name, kind: 'early', text: `${name} leaves on ${dateOf(d)}, before the last day (${last})` });
+    return flags;
   });
 }
 
@@ -37,6 +38,7 @@ export function leaveBy(travellers: Travellers, lastDay: Day): string | null {
   if (!deps.length) return null;
   const date = deps.reduce((x, y) => (dateOf(y) > dateOf(x) ? y : x)).slice(0, 10);
   const first = deps.filter(d => dateOf(d) === date).reduce((x, y) => (y < x ? y : x));
-  const drive = lastDay.entries.reduce((s, e) => s + (e.kind === 'drive' ? e.hours : 0), 0);
+  // A drive with no recorded destination still counts: only a drive known to go elsewhere is left out.
+  const drive = lastDay.entries.reduce((s, e) => s + (e.kind === 'drive' && (e.to === undefined || e.to === 'AIR') ? e.hours : 0), 0);
   return fmt(utc(first) - Math.round((CHECKIN + drive) * 60) * MIN);
 }

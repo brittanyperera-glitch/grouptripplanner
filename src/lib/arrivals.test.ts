@@ -68,3 +68,14 @@ describe('malformed dates and times', () => {
     expect(leaveBy({ Alex: tr('Alex', null, 'soon') }, day())).toBeNull();
   });
 });
+
+describe('all flags, airport drive only', () => {
+  it('returns both late and early for a traveller who lands after day 1 and leaves before the last day', () => {
+    const f = arrivalFlags({ Alex: tr('Alex', '2026-12-03T09:00', '2026-12-07T20:00') }, '2026-12-01', 9);
+    expect(f.map(x => [x.name, x.kind])).toEqual([['Alex', 'late'], ['Alex', 'early']]);
+  });
+  it('subtracts only the drive to the airport, not the other drives that day', () => {
+    const leg = (hours: number, to: 'AIR' | 'Kandy'): DayEntry => ({ kind: 'drive', label: 'drive', hours, from: 'Ella', to });
+    expect(leaveBy({ Alex: tr('Alex', null, '2026-12-09T14:30') }, day(leg(2, 'Kandy'), leg(1.5, 'AIR')))).toBe('2026-12-09T10:00');
+  });
+});
