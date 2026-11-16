@@ -1,5 +1,8 @@
-// Bump VERSION to drop every cache on the next activate.
-const VERSION = 'homecoming-v1';
+// The build stamps __BUILD__ with a hash of the manifest (see vite.config.ts), so every release
+// is a new sw.js, a new precache and a new cache name; activate then drops the old ones.
+const VERSION = 'homecoming-__BUILD__';
+const FONTS = 'homecoming-fonts';
+const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 const SHELL = ['/', '/index.html', '/manifest.webmanifest'];
 const NAV_TIMEOUT_MS = 3000;
 
@@ -11,9 +14,10 @@ async function killSwitchTripped() {
     return false; // offline is the case this worker exists for
   }
   try {
-    return (await res.json()).sw === false;
+    // A captive portal, a 404 or a 5xx must not kill the worker; only an explicit sw:false does.
+    return res.ok && (await res.json()).sw === false;
   } catch {
-    return true; // an SPA rewrite answering with index.html lands here
+    return false;
   }
 }
 
@@ -50,6 +54,17 @@ async function networkFirst(request) {
   }
 }
 
+async function fontFetch(request) {
+  const hit = await caches.match(request);
+  const refresh = fetch(request).then(async (res) => {
+    if (res.status === 200) (await caches.open(FONTS)).put(request, res.clone());
+    return res;
+  });
+  if (!hit) return refresh;
+  refresh.catch(() => {});
+  return hit;
+}
+
 async function cacheFirst(request) {
   const hit = await caches.match(request);
   if (hit) return hit;
@@ -66,7 +81,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      for (const name of await caches.keys()) if (name !== VERSION) await caches.delete(name);
+      for (const name of await caches.keys()) if (name !== VERSION && name !== FONTS) await caches.delete(name);
       await self.clients.claim();
       await checkKillSwitch();
     })(),
@@ -76,6 +91,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
+  if (request.method === 'GET' && FONT_HOSTS.includes(url.hostname)) {
+    event.respondWith(fontFetch(request));
+    return;
+  }
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
   if (request.mode === 'navigate') {
     event.waitUntil(checkKillSwitch());

@@ -31,3 +31,9 @@ Brittany's welcome message, quips and per-place lines live in src/content/copy.j
 - Activities: data/catalogue.json, rebuilt into src/data by `npm run data`.
 - Drive times: measured in Google Maps, see research/.
 - Photos: Wikimedia Commons, with credits in docs/mockups/img/credits.json.
+
+## Offline service worker
+
+`public/sw.js` precaches the built shell and every file in `dist/.vite/manifest.json` (including the plan worker chunk) and serves navigations network first with a 3 s fallback to the cached `index.html`. `vite build` stamps `__BUILD__` in `sw.js` with a hash of the manifest, so each release gets a new cache name and the old caches are deleted on activate. There is no VERSION to bump by hand. Google Fonts are cached in a separate `homecoming-fonts` cache that survives releases.
+
+Kill switch: deploy `public/version.json` as `{"sw": false}`. The worker unregisters, deletes every cache and reloads open tabs, and `src/main.tsx` stops registering it. Only a successful response with `sw: false` trips it; a 404, a 5xx, a captive-portal page or being offline leaves the worker alone. Set it back to `{"sw": true}` to re-enable.

@@ -3,6 +3,7 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { createHash } from 'node:crypto'
 
 // Vite 5 leaves emitted worker bundles out of build.manifest, and sw.js precaches from that manifest.
 const workerChunksInManifest = (): Plugin => ({
@@ -14,7 +15,11 @@ const workerChunksInManifest = (): Plugin => ({
     for (const name of Object.keys(bundle)) {
       if (/\/[^/]*\.worker-[^/]*\.js$/.test(name)) manifest[name] = { file: name, isEntry: true }
     }
-    writeFileSync(file, JSON.stringify(manifest, null, 2))
+    const json = JSON.stringify(manifest, null, 2)
+    writeFileSync(file, json)
+    // Without a per-build stamp sw.js stays byte-identical, so browsers never re-run install on a new release.
+    const sw = join(opts.dir ?? 'dist', 'sw.js')
+    writeFileSync(sw, readFileSync(sw, 'utf8').replaceAll('__BUILD__', createHash('sha256').update(json).digest('hex').slice(0, 12)))
   },
 })
 

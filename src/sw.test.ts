@@ -84,7 +84,7 @@ const live: Route = (url) => {
   return res(`body:${url}`);
 };
 
-afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); });
+afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.resetModules(); });
 
 describe('sw.js install', () => {
   it('precaches every manifest file including the plan worker chunk, plus the shell, and skips waiting', async () => {
@@ -107,6 +107,13 @@ describe('sw.js kill switch', () => {
     return sw;
   };
 
+  const installed = async (route: Route) => {
+    const sw = boot(route);
+    await sw.lifecycle('install');
+    await sw.lifecycle('activate');
+    return sw;
+  };
+
   it('unregisters, clears every cache and reloads clients when version.json says sw:false', async () => {
     const sw = await killed((u) => (u === '/version.json' ? res('{"sw": false}') : live(u)));
     expect(sw.self.registration.unregister).toHaveBeenCalled();
@@ -114,10 +121,16 @@ describe('sw.js kill switch', () => {
     expect(sw.client.navigate).toHaveBeenCalledWith(`${ORIGIN}/`);
   });
 
-  it('kills on a version.json that is not JSON (an SPA rewrite swallowing it returns index.html)', async () => {
-    const sw = await killed((u) => (u === '/version.json' ? res('<!doctype html><html>') : live(u)));
-    expect(sw.self.registration.unregister).toHaveBeenCalled();
-    expect(sw.caches.stores.size).toBe(0);
+  it('stays alive on a version.json that is not JSON (captive portal, CDN error page)', async () => {
+    const sw = await installed((u) => (u === '/version.json' ? res('<!doctype html><html>') : live(u)));
+    expect(sw.self.registration.unregister).not.toHaveBeenCalled();
+    expect(sw.caches.stores.size).toBe(1);
+  });
+
+  it('stays alive on a failing version.json even if its body says sw:false', async () => {
+    const sw = await installed((u) => (u === '/version.json' ? res('{"sw": false}', false) : live(u)));
+    expect(sw.self.registration.unregister).not.toHaveBeenCalled();
+    expect(sw.caches.stores.size).toBe(1);
   });
 
   it('stays alive when the network is down, so the offline shell keeps working', async () => {
@@ -143,6 +156,39 @@ describe('sw.js kill switch', () => {
     enabled = false;
     await sw.request(`${ORIGIN}/plan`, 'navigate');
     expect(sw.self.registration.unregister).toHaveBeenCalled();
+  });
+});
+
+describe('sw.js fonts', () => {
+  const GF = 'https://fonts.gstatic.com/s/manrope/v1/a.woff2';
+  const CSS = 'https://fonts.googleapis.com/css2?family=Manrope';
+
+  it('caches Google Fonts on first load and serves them with the network down', async () => {
+    let offline = false;
+    const sw = boot((u) => { if (offline && u === '/version.json') throw new Error('offline'); return live(u); });
+    sw.fetchFn.mockImplementation(async (r: unknown) => {
+      if (offline) throw new Error('offline');
+      return res(`font:${(r as { url: string }).url}`);
+    });
+    expect((await sw.request(CSS)).handled).toBe(true);
+    await sw.request(GF);
+    await vi.waitFor(async () => {
+      expect(await sw.caches.match(CSS)).toBeDefined();
+      expect(await sw.caches.match(GF)).toBeDefined();
+    });
+    offline = true;
+    expect((await sw.request(CSS)).out?.body).toContain('fonts.googleapis.com');
+    expect((await sw.request(GF)).out?.body).toContain('fonts.gstatic.com');
+  });
+
+  it('keeps the fonts cache when old versioned caches are dropped', async () => {
+    const sw = boot(live);
+    await sw.lifecycle('install');
+    await sw.caches.open('homecoming-fonts');
+    await sw.caches.open('old-version');
+    await sw.lifecycle('activate');
+    expect([...sw.caches.stores.keys()]).toContain('homecoming-fonts');
+    expect([...sw.caches.stores.keys()]).not.toContain('old-version');
   });
 });
 
@@ -240,6 +286,26 @@ describe('shipped config', () => {
     expect(noCache).toEqual(expect.arrayContaining(['/sw.js', '/version.json', '/manifest.webmanifest']));
   });
 
+  it('manifest icons include square 192 and 512 PNGs', () => {
+    const m = JSON.parse(readFileSync(join(root, 'public/manifest.webmanifest'), 'utf8'));
+    for (const size of [192, 512]) {
+      const icon = m.icons.find((i: { sizes: string }) => i.sizes === `${size}x${size}`);
+      expect(icon?.type).toBe('image/png');
+      const png = readFileSync(join(root, 'public', icon.src));
+      expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([size, size]);
+    }
+  });
+
+  it('source sw.js carries the build placeholder that the build stamps', () => {
+    expect(swSource).toContain("'homecoming-__BUILD__'");
+  });
+
+  it.skipIf(!existsSync(join(root, 'dist/sw.js')))('the built sw.js has its cache name stamped with the build', () => {
+    const built = readFileSync(join(root, 'dist/sw.js'), 'utf8');
+    expect(built).not.toContain('__BUILD__');
+    expect(built).toMatch(/const VERSION = 'homecoming-[0-9a-f]{12}'/);
+  });
+
   it('vite builds a manifest', () => {
     expect(readFileSync(join(root, 'vite.config.ts'), 'utf8')).toMatch(/manifest:\s*true/);
   });
@@ -253,12 +319,13 @@ describe('shipped config', () => {
 });
 
 describe('main.tsx registration', () => {
-  const load = async (prod: boolean, hasSw: boolean) => {
+  const load = async (prod: boolean, hasSw: boolean, versionJson: () => Promise<unknown> = async () => ({ ok: true, json: async () => ({ sw: true }) })) => {
     vi.doMock('./App', () => ({ default: () => null }));
     vi.doMock('./styles.css', () => ({}));
     vi.doMock('./store/fresh', () => ({ freshStartForEpoch: () => {}, freshStartFromUrl: () => null }));
     vi.doMock('./guest/deviceState', () => ({ recoverGuestOnBoot: () => {} }));
     vi.stubEnv('PROD', prod);
+    vi.stubGlobal('fetch', vi.fn(versionJson));
     document.body.innerHTML = '<div id="root"></div>';
     const register = vi.fn(async () => undefined);
     if (hasSw) Object.defineProperty(navigator, 'serviceWorker', { value: { register }, configurable: true });
@@ -267,16 +334,34 @@ describe('main.tsx registration', () => {
     window.dispatchEvent(new Event('load'));
     return register;
   };
+  const settle = () => new Promise((r) => setTimeout(r, 20));
 
   it('registers /sw.js after load in a production build', async () => {
-    expect(await load(true, true)).toHaveBeenCalledWith('/sw.js');
+    const register = await load(true, true);
+    await vi.waitFor(() => expect(register).toHaveBeenCalledWith('/sw.js'));
   });
 
   it('does not register in dev or tests', async () => {
-    expect(await load(false, true)).not.toHaveBeenCalled();
+    const register = await load(false, true);
+    await settle();
+    expect(register).not.toHaveBeenCalled();
   });
 
   it('does not throw where service workers are unsupported', async () => {
     await expect(load(true, false)).resolves.toBeDefined();
+  });
+
+  it('does not re-register while version.json says sw:false, so the kill switch cannot loop', async () => {
+    const register = await load(true, true, async () => ({ ok: true, json: async () => ({ sw: false }) }));
+    await settle();
+    expect(register).not.toHaveBeenCalled();
+  });
+
+  it('still registers when version.json is unreachable or not JSON', async () => {
+    const offline = await load(true, true, async () => { throw new Error('offline'); });
+    await vi.waitFor(() => expect(offline).toHaveBeenCalledWith('/sw.js'));
+    vi.resetModules();
+    const html = await load(true, true, async () => ({ ok: true, json: async () => { throw new Error('not json'); } }));
+    await vi.waitFor(() => expect(html).toHaveBeenCalledWith('/sw.js'));
   });
 });
