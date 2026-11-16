@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { PEOPLE, stayForkId } from '../types';
-import type { Area, CrewStays, Day, Hub, Leg, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, Vote } from '../types';
+import type { Area, CrewStays, Hub, Leg, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, Vote } from '../types';
 import { VOTES_TO_RESOLVE } from './group';
 import legsJson from '../data/legs.json';
-import { BUDGET_CAP_GBP, budgetCap, finalStay, finalists, groupSummary, hardNos, journeyFlags, nightsByArea, nightsWarnings, rankPoints, scoutAssignments, stayAreas, stayParticipants, stayResult, voteOpen, warnings } from './stays';
+import { BUDGET_CAP_GBP, budgetCap, finalStay, finalists, groupSummary, hardNos, journeyFlags, nightsWarnings, rankPoints, scoutAssignments, stayParticipants, stayResult, voteOpen, warnings } from './stays';
 
 const AREAS: Area[] = ['Colombo', 'Ella', 'Kitulgala', 'Hill country'];
 const TYPES = ['hostel', 'guesthouse', 'boutique', 'hotel', 'villa', 'other'] as const;
@@ -238,17 +238,6 @@ describe('scouts and areas', () => {
     expect(out).toEqual({ Colombo: 'Alex', Ella: 'Saulie', Kitulgala: 'Alex' });
     expect(scoutAssignments(['Ella'], [])).toEqual({});
   });
-  it('stayAreas keeps route order, skips null travel days and repeated areas', () => {
-    const day = (n: number, area: Area | null): Day => ({ n, area, entries: [], spare: 0, rainSlack: false });
-    const plan = { days: [day(1, 'Colombo'), day(2, null), day(3, 'Ella'), day(4, null), day(5, 'Colombo'), day(6, 'Ella')] } as Plan;
-    expect(stayAreas(plan)).toEqual(['Colombo', 'Ella']);
-  });
-  it('stayAreas leaves out an area that is only on the last day, where nobody sleeps', () => {
-    const drive = (from: Hub, to: Hub) => ({ kind: 'drive' as const, label: `Drive from ${from} to ${to}`, hours: 2, from, to });
-    const day = (n: number, area: Area | null, entries: Day['entries']): Day => ({ n, area, entries, spare: 0, rainSlack: false });
-    const plan = { route: ['Colombo', 'Ella', 'Kandy'], days: [day(1, 'Colombo', []), day(2, null, [drive('Colombo', 'Ella')]), day(3, 'Ella', []), day(4, 'Kandy and Knuckles', [drive('Ella', 'Kandy')])] } as Plan;
-    expect(stayAreas(plan)).toEqual(['Colombo', 'Ella']);
-  });
 });
 
 describe('groupSummary', () => {
@@ -271,12 +260,6 @@ describe('groupSummary', () => {
 });
 
 describe('nights and journeys', () => {
-  const day = (n: number, area: Area | null): Day => ({ n, area, entries: [], spare: 0, rainSlack: false });
-  it('nightsByArea counts each day once, skips null travel days, and sums a repeated area', () => {
-    const plan = { days: [day(1, 'Colombo'), day(2, null), day(3, 'Ella'), day(4, 'Ella'), day(5, null), day(6, 'Colombo')] } as Plan;
-    expect(nightsByArea(plan)).toEqual({ Colombo: 2, Ella: 2 });
-    expect(nightsByArea({ days: [day(1, null)] } as Plan)).toEqual({});
-  });
   it('nightsWarnings counts people whose max for this stay type is exceeded, anonymously', () => {
     const maxes = { Alex: { hostel: 2 }, Lazza: { hostel: 3, hotel: 1 }, Antek: { hostel: 2 } };
     expect(nightsWarnings(stay('s1', { stayType: 'hostel' }), 3, maxes)).toEqual({ count: 2, messages: ['2 people want max 2 nights in a hostel'] });

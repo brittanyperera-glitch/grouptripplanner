@@ -8,7 +8,6 @@ import type { Day, DayEntry, Hub, Item, Leg, Plan } from '../types';
 import { addDays, dateOf, hubArea, nightBlocks, nightHub, nightsFromBlocks } from './calendar';
 import { groupResult } from './group';
 import { RELEASE } from './release';
-import { nightsByArea } from './stays';
 
 const plan = groupResult(seedState(), (catalogue as unknown as { items: Item[] }).items, legs as Leg[], [], RELEASE).final!;
 const START = '2026-12-08';
@@ -119,14 +118,5 @@ describe('nightBlocks on a plan with no hub for a night', () => {
   });
   it('throws instead of making a block with a null area when the night lands on AIR', () => {
     expect(() => nightBlocks(lone(['AIR', 'AIR'], null), START)).toThrow(RangeError);
-  });
-});
-
-describe('nights per area against the stays screen count', () => {
-  it('drops exactly the last day from the final area, the one night the stays count over-reports', () => {
-    const byBlocks = nightsFromBlocks(nightBlocks(plan, START));
-    const byDays = nightsByArea(plan);
-    expect(byDays).toEqual({ ...byBlocks, Colombo: 2 });
-    expect(byBlocks.Colombo).toBe(1);
   });
 });

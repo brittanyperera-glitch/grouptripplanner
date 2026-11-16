@@ -2,7 +2,7 @@ import hostelData from '../content/hostels.json';
 import { AREAS, AREA_HUB, EMPTY_STAYS, stayForkId } from '../types';
 import type { AppState, Area, CrewStays, Hub, PlaceKind, PlaceSuggestion, Plan, Player, RoomType, StayType, StaysAdmin, Vote } from '../types';
 import { hubArea, nightBlocks, nightsFromBlocks } from './calendar';
-import { finalists, livePin, maxNightsOf, nightsWarnings, rankPoints, scoutAssignments, stayAreas, stayParticipants, stayResult, voteOpen, warnings } from './stays';
+import { finalists, livePin, maxNightsOf, nightsWarnings, rankPoints, scoutAssignments, stayParticipants, stayResult, voteOpen, warnings } from './stays';
 import type { RanksByPerson } from './stays';
 
 export const STEPS = ['quiz', 'suggest', 'lock', 'rank', 'final'] as const;
@@ -88,7 +88,7 @@ export function stayCtx(state: AppState, me: Player, plan: Plan | null): StayCtx
   const derived = plan ? nightsFromBlocks(nightBlocks(plan, null)) : {};
   return {
     me, participants, crew, crewOf: stays.crew, suggestions: stays.suggestions, admin: stays.admin, votes: state.votes,
-    areas: plan ? stayAreas(plan) : [], nights: effectiveNights(derived, stays.admin.nightsOff ? undefined : stays.admin.nights), derivedNights: derived,
+    areas: Object.keys(derived) as Area[], nights: effectiveNights(derived, stays.admin.nightsOff ? undefined : stays.admin.nights), derivedNights: derived,
     maxNights: Object.fromEntries(crew.map(c => [c.name, maxNightsOf(c.prefs)])),
   };
 }

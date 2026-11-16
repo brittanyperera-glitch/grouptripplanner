@@ -45,6 +45,7 @@ describe('supabase/schema.sql can be re-run', () => {
     const readme = fs.readFileSync('README.md', 'utf8');
     expect(readme).toMatch(/set-admin-password\.sql/);
     expect(readme).not.toContain('does not send');
+    expect(sql).not.toContain('does not send');
   });
 
   it('reads the organiser key from the x-admin-key header', () => {

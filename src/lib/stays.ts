@@ -1,6 +1,5 @@
 import { PEOPLE, isGuest, stayForkId } from '../types';
 import type { Area, CrewStays, Fallen, Hub, Leg, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, StayType, Vote } from '../types';
-import { nightBlocks, nightsFromBlocks } from './calendar';
 import { VOTES_TO_RESOLVE } from './group';
 import { isExtraKey, parseNights, stretchLevel } from './prefs';
 import { tallySides } from './votes';
@@ -189,15 +188,6 @@ export function scoutAssignments(areas: Area[], participants: Player[]): Partial
   return out;
 }
 
-/** Areas where the group sleeps, in route order; an area only on the departure day is left out. A plan nightBlocks cannot read falls back to every area on any day. */
-export function stayAreas(plan: Plan): Area[] {
-  try {
-    return Object.keys(nightsFromBlocks(nightBlocks(plan, null))) as Area[];
-  } catch {
-    return [...new Set(plan.days.map(d => d.area).filter((a): a is Area => a !== null))];
-  }
-}
-
 export interface StayConflict { key: string; no: string[]; happy: string[] }
 export interface GroupSummary { total: number; happy: Record<string, string[]>; hardNos: Record<string, string[]>; conflicts: StayConflict[] }
 
@@ -212,13 +202,6 @@ export function groupSummary(crew: CrewStays[]): GroupSummary {
     .filter(k => (happy[k]?.length ?? 0) * 2 > crew.length)
     .map(k => ({ key: k, no: nos[k], happy: happy[k] }));
   return { total: crew.length, happy, hardNos: nos, conflicts };
-}
-
-/** Nights spent per area: each day counts once, travel days (null area) count nowhere. The last day has no night, so the final area is over by one; nightsFromBlocks (calendar.ts) counts real nights. */
-export function nightsByArea(plan: Plan): Partial<Record<Area, number>> {
-  const out: Partial<Record<Area, number>> = {};
-  for (const d of plan.days) if (d.area !== null) out[d.area] = (out[d.area] ?? 0) + 1;
-  return out;
 }
 
 const DRIVE_CAP_H: Record<string, number> = { under2h: 2, '2to3h': 3, '3to4h': 4 };

@@ -13,10 +13,10 @@ import Stays from './Stays';
 const grp = vi.hoisted(() => ({ current: null as unknown }));
 vi.mock('../workers/usePlan', async orig => ({ ...(await orig<typeof import('../workers/usePlan')>()), useGroupResult: () => ({ data: grp.current, loading: false }) }));
 
-const day = (n: number, area: Plan['days'][number]['area']) => ({ n, area, entries: [], spare: 0, rainSlack: false });
+const day = (n: number, area: Plan['days'][number]['area'], entries: Plan['days'][number]['entries'] = []) => ({ n, area, entries, spare: 0, rainSlack: false });
 const plan: Plan = {
   route: ['AIR', 'Sigiriya', 'Ella', 'AIR'], areas: ['Cultural Triangle', 'Ella'], chosen: [], dropped: [], travelHours: 0, fits: true, missingMusts: [], score: 0,
-  days: [day(1, 'Cultural Triangle'), day(2, 'Cultural Triangle'), day(3, null), day(4, 'Ella'), day(5, 'Kandy and Knuckles'), day(6, 'Kandy and Knuckles')],
+  days: [day(1, 'Cultural Triangle'), day(2, 'Cultural Triangle'), day(3, null, [{ kind: 'drive', label: 'Drive from Sigiriya to Ella', hours: 2, from: 'Sigiriya', to: 'Ella' }]), day(4, 'Ella', [{ kind: 'drive', label: 'Drive from Ella to Kandy', hours: 4, from: 'Ella', to: 'Kandy' }]), day(5, 'Kandy and Knuckles')],
 };
 // Changed deliberately (route decided only once locked or reopened): the fixture carries `locked`, as a real decided route does.
 const routeLocked = (): GroupResult => ({ final: plan, locked: true } as unknown as GroupResult);
@@ -52,8 +52,7 @@ describe('home: steps, one button, destinations', () => {
     expect(steps.map(s => s.getAttribute('data-state'))).toEqual(['now', 'next', 'next', 'next', 'next']);
     await user.click(btn('Start my travel profile'));
     expect(onQuiz).toHaveBeenCalledTimes(1);
-    // Calendar nights: the departure day is not a night (plan 16 Nov, finding 8).
-    expect(row('Cultural Triangle, 3 nights, 0 stays')).toBeInTheDocument();
+    expect(row('Cultural Triangle, 2 nights, 0 stays')).toBeInTheDocument();
     expect(row('Ella, 1 night, 0 stays')).toBeInTheDocument();
     expect(row('Kandy and Knuckles, 1 night, 0 stays')).toBeInTheDocument();
   });
@@ -86,8 +85,7 @@ describe('home: steps, one button, destinations', () => {
     grp.current = { final: null, held: plan, locked: false, knockouts: [{ forkId: 'ko:s:late' }] } as unknown as GroupResult;
     await mount('Brittany');
     expect(screen.queryByText('Stays opens when the route locks.')).toBeNull();
-    // Calendar nights: the departure day is not a night (plan 16 Nov, finding 8).
-    expect(row('Cultural Triangle, 3 nights, 0 stays')).toBeInTheDocument();
+    expect(row('Cultural Triangle, 2 nights, 0 stays')).toBeInTheDocument();
   });
 });
 
@@ -130,7 +128,6 @@ describe('the board and the add sheet', () => {
   it('a guide hostel fills the form, and with no guide price it can be saved without one, keeping its link to the guide', async () => {
     seedCrew('Brittany');
     const user = await mount();
-    // Calendar nights: the departure day is not a night (plan 16 Nov, finding 8).
     await user.click(row('Kandy and Knuckles, 1 night, 0 stays'));
     await user.click(btn('+ Add a stay'));
     await user.selectOptions(screen.getByLabelText("Choose from the guide's hostels"), 'bunkalow-kandy');
@@ -221,8 +218,7 @@ describe('what the cards say about people', () => {
     const user = await mount();
     const home = document.body.textContent ?? '';
     for (const n of ['Alex', 'Antek', 'Lazza', 'Saulie', ...GUESTS]) expect(home, n).not.toContain(n);
-    // Calendar nights: the departure day is not a night (plan 16 Nov, finding 8).
-    await user.click(row('Cultural Triangle, 3 nights, 1 stay'));
+    await user.click(row('Cultural Triangle, 2 nights, 1 stay'));
     const lines = [...document.querySelectorAll('[data-st-warn]')].map(e => e.textContent);
     expect(lines).toEqual(["1 person won't do hostels", "1 person won't do dorms", "1 person's budget is under this", '1 person wants max 1 night in a hostel']);
     const board = document.body.textContent ?? '';

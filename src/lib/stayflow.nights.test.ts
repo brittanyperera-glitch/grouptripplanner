@@ -4,21 +4,20 @@ vi.unmock('./release');
 import catalogue from '../data/catalogue.json';
 import legs from '../data/legs.json';
 import { seedState } from '../guest/seed';
-import type { Item, Leg } from '../types';
+import type { Day, Hub, Item, Leg, Plan } from '../types';
 import { nightBlocks, nightsFromBlocks } from './calendar';
 import { groupResult } from './group';
 import { RELEASE } from './release';
 import { effectiveNights, nightsNote, stayCtx } from './stayflow';
-import { nightsByArea } from './stays';
 
 const plan = groupResult(seedState(), (catalogue as unknown as { items: Item[] }).items, legs as Leg[], [], RELEASE).final!;
 const state = { responses: {}, suggestions: [], votes: [] };
 
 describe('stayCtx nights come from the calendar', () => {
-  it('derives per-area nights from the night blocks, one fewer than nightsByArea for the last area', () => {
+  it('derives per-area nights from the night blocks, and the final area loses the departure day', () => {
     const ctx = stayCtx(state, 'Alex', plan);
     expect(ctx.derivedNights).toEqual(nightsFromBlocks(nightBlocks(plan, null)));
-    expect(ctx.derivedNights?.Colombo).toBe((nightsByArea(plan).Colombo ?? 0) - 1);
+    expect(ctx.derivedNights?.Colombo).toBe(1);
     expect(ctx.nights).toEqual(ctx.derivedNights);
   });
 
@@ -27,5 +26,31 @@ describe('stayCtx nights come from the calendar', () => {
     expect(ctx.nights['South coast']).toBe(4);
     expect(effectiveNights(ctx.derivedNights!, { 'South coast': 4 })['South coast']).toBe(4);
     expect(nightsNote(ctx, 'South coast')).toContain('2');
+  });
+});
+
+describe('stayCtx areas are where the group sleeps', () => {
+  const drive = (from: Hub, to: Hub) => ({ kind: 'drive' as const, label: `Drive from ${from} to ${to}`, hours: 2, from, to });
+  const day = (n: number, area: Day['area'], entries: Day['entries'] = []): Day => ({ n, area, entries, spare: 0, rainSlack: false });
+
+  it('on the real released plan are the areas of its night blocks, route order, none only on the departure day', () => {
+    const ctx = stayCtx(state, 'Alex', plan);
+    expect(ctx.areas).toEqual([...new Set(nightBlocks(plan, null).map(b => b.area))]);
+    expect(ctx.areas).toEqual(['Cultural Triangle', 'Kandy and Knuckles', 'Hill country', 'South coast', 'Colombo']);
+    expect(ctx.areas).toEqual(Object.keys(ctx.derivedNights ?? {}));
+  });
+
+  it('keep route order, skip travel days, and list a revisited area once', () => {
+    const p = { route: ['Colombo', 'Ella', 'Colombo'], days: [day(1, 'Colombo'), day(2, null, [drive('Colombo', 'Ella')]), day(3, 'Ella'), day(4, null, [drive('Ella', 'Colombo')]), day(5, 'Colombo'), day(6, 'Colombo')] } as Plan;
+    expect(stayCtx(state, 'Alex', p).areas).toEqual(['Colombo', 'Ella']);
+  });
+
+  it('leave out an area that is only on the last day, where nobody sleeps', () => {
+    const p = { route: ['Colombo', 'Ella', 'Kandy'], days: [day(1, 'Colombo'), day(2, null, [drive('Colombo', 'Ella')]), day(3, 'Ella'), day(4, 'Kandy and Knuckles', [drive('Ella', 'Kandy')])] } as Plan;
+    expect(stayCtx(state, 'Alex', p).areas).toEqual(['Colombo', 'Ella']);
+  });
+
+  it('are empty with no plan', () => {
+    expect(stayCtx(state, 'Alex', null).areas).toEqual([]);
   });
 });

@@ -42,7 +42,7 @@ export function nightBlocks(plan: Plan, start: string | null): NightBlock[] {
   return blocks;
 }
 
-/** Real nights per area: the last day has none, so this is one less than nightsByArea (stays.ts) counts for the final area. Supersedes it once the stays screen is moved over. */
+/** Real nights per area, in route order: the last day has none, so an area only on the last day is absent. */
 export function nightsFromBlocks(blocks: NightBlock[]): Partial<Record<Area, number>> {
   const out: Partial<Record<Area, number>> = {};
   for (const b of blocks) out[b.area] = (out[b.area] ?? 0) + b.nights;
