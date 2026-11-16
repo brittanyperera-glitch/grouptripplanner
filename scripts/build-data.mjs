@@ -3,9 +3,11 @@
 // "Estimate", which keep "(estimate)" in their src; a missing leg throws.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { withGbp } from './gbp.mjs';
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+// fileURLToPath, not URL.pathname: pathname keeps %20, so a checkout path with a space fails to read.
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 
 function hoursOf(s) {
