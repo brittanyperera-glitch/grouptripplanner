@@ -52,3 +52,19 @@ describe('leaveBy', () => {
     expect(leaveBy({ Alex: tr('Alex', null, null) }, day(drive(2)))).toBeNull();
   });
 });
+
+describe('malformed dates and times', () => {
+  it('flags a malformed arrival or departure as missing, and a malformed start as no start', () => {
+    const t = { Alex: tr('Alex', 'tomorrow', '2026-12-09T20:00'), Antek: tr('Antek', '2026-12-05T09:00', '9 Dec 8pm') };
+    expect(arrivalFlags(t, '2026-12-01', 9).map(x => [x.name, x.kind])).toEqual([['Alex', 'missing'], ['Antek', 'missing']]);
+    const ok = { Alex: tr('Alex', '2026-12-05T09:00', '2026-12-02T20:00') };
+    expect(arrivalFlags(ok, 'soon', 9)).toEqual([]);
+  });
+  it('lastArrival and leaveBy ignore them', () => {
+    const t = { Alex: tr('Alex', 'soon', '2026-12-09T9pm'), Lazza: tr('Lazza', '2026-12-02T01:10', '2026-12-09T14:30') };
+    expect(lastArrival(t)).toBe('2026-12-02T01:10');
+    expect(lastArrival({ Alex: tr('Alex', '2026-12-02', null) })).toBeNull();
+    expect(leaveBy(t, day(drive(0)))).toBe('2026-12-09T11:30');
+    expect(leaveBy({ Alex: tr('Alex', null, 'soon') }, day())).toBeNull();
+  });
+});
