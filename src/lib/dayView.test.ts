@@ -127,7 +127,7 @@ describe('flights, custom stops and spare', () => {
     const p: Plan = structuredClone(plan);
     p.days[2].entries = [{ kind: 'activity', label: 'Long day', hours: 6.83 }];
     const v = dayView(input({ plan: p, paceHours: 7, custom: [{ kind: 'custom', id: 'c:1', day: 3, hours: 0.17 }] }), 3);
-    expect(Math.abs(v.spare)).toBe(0);
+    expect(v.spare).toBe(0);
     expect(v.overBudget).toBe(false);
   });
   it('carries the day\'s area and entries', () => {
