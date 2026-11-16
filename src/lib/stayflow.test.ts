@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AREAS, PEOPLE } from '../types';
-import type { Area, CrewStays, PlaceSuggestion, Player } from '../types';
+import type { Area, CrewStays, Hub, PlaceSuggestion, Player } from '../types';
+import { hubArea } from './calendar';
 import { flow, HOSTELS, HUB_AREA, hostelPrice, hostelsFor, outcome, parseUrl, rankAreas, STAY_COPY, STEPS, stayCtx } from './stayflow';
 import type { FlowInput, StayCtx } from './stayflow';
 
@@ -54,6 +55,10 @@ describe('guide hostels', () => {
     expect(new Set(offered).size).toBe(offered.length);
     expect(offered.length).toBe(HOSTELS.filter(h => HUB_AREA[h.hub] !== null).length);
     expect(hostelsFor('Wild south').some(h => h.hub === 'Tissa')).toBe(true);
+  });
+  it('agrees with calendar hubArea everywhere except the airport and the off-route hub', () => {
+    for (const [hub, area] of Object.entries(HUB_AREA)) if (hub !== 'AIR' && hub !== 'Off route') expect(area, hub).toBe(hubArea(hub as Hub));
+    expect(HUB_AREA.AIR).toBe('Colombo');
   });
   it('a price is the bunk, else the room shared out, else none', () => {
     const base = { id: 'x', name: 'x', hub: 'Ella', bookUrl: '', photo: { file: 'x.jpg' } };
