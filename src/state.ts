@@ -10,7 +10,7 @@ import { verifyAdminKey, writeAdminKey } from './store/tripKey';
 import { LOAD_TIMEOUT_MS, useTripAccess } from './store/useTripAccess';
 import { WriteQueue } from './store/queue';
 import { applyAdmin, blankCrew, EMPTY_STAYS, emptyRanking, mergeAdmin, mergeAdminItems, PEOPLE } from './types';
-import type { AdminItems, AppState, BookingClaim, TripAdminState, CrewStays, FinalStore, Item, Leg, Person, PlaceSuggestion, Player, Response, StayPin, StaysAdmin, Store, Traveller, TripSettings, Vote } from './types';
+import type { AdminItems, AppState, BookingClaim, TripAdminState, CrewStays, Fallen, FinalStore, Item, Leg, Person, PlaceSuggestion, Player, Response, StayPin, StaysAdmin, Store, Traveller, TripSettings, Vote } from './types';
 
 // A quip is one line, or a list the app picks from at random so it doesn't repeat.
 export type Quip = string | string[];
@@ -46,6 +46,8 @@ interface AppValue {
 type SettingsPatch = Parameters<FinalStore['saveTripSettings']>[0];
 type TravellerPatch = Parameters<FinalStore['saveTraveller']>[1];
 export const MAX_OVERRIDES = 100;
+/** 100 entries of this length plus their timestamps stay well under the column's 20000-byte check. */
+const MAX_WHAT = 120;
 
 export const ME_KEY = 'tp:me';
 // My own saves, kept here until the server has them, so a failed save survives a reload of the page.
@@ -84,8 +86,9 @@ function settlePlaces(o: PlaceOverlay, rows: PlaceSuggestion[]): { next: PlaceOv
 
 const samePins = (a: StayPin[], b: StayPin[]) => a.length === b.length && a.every((p, i) => p.area === b[i].area && p.suggestionId === b[i].suggestionId && p.at === b[i].at);
 const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+const sameFallen = (a: Fallen[], b: Fallen[]) => a.length === b.length && a.every((f, i) => f.id === b[i].id && f.area === b[i].area && f.at === b[i].at);
 const sameNights = (a: Record<string, number | undefined>, b: Record<string, number | undefined>) => { const k = Object.keys(a); return k.length === Object.keys(b).length && k.every(x => a[x] === b[x]); };
-/** Drops each admin field (pins, closed and nights whole, scouts per area) the server already holds. */
+/** Drops each admin field (pins, closed, nights and fallen whole, scouts per area) the server already holds. */
 function settleAdmin(o: Partial<StaysAdmin>, server: StaysAdmin): Partial<StaysAdmin> {
   if (Object.keys(o).length === 0) return o;
   const next: Partial<StaysAdmin> = {};
@@ -94,7 +97,8 @@ function settleAdmin(o: Partial<StaysAdmin>, server: StaysAdmin): Partial<StaysA
   if (Object.keys(scouts).length) next.scouts = scouts;
   if (o.closed && !sameList(o.closed, server.closed)) next.closed = o.closed;
   if (o.nights && !sameNights(o.nights, server.nights ?? {})) next.nights = o.nights;
-  const unchanged = !!next.pins === !!o.pins && !!next.closed === !!o.closed && !!next.nights === !!o.nights && Object.keys(scouts).length === Object.keys(o.scouts ?? {}).length;
+  if (o.fallen && !sameFallen(o.fallen, server.fallen ?? [])) next.fallen = o.fallen;
+  const unchanged = !!next.pins === !!o.pins && !!next.closed === !!o.closed && !!next.nights === !!o.nights && !!next.fallen === !!o.fallen && Object.keys(scouts).length === Object.keys(o.scouts ?? {}).length;
   return unchanged ? o : next;
 }
 
@@ -372,7 +376,10 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   const [attempt, setAttempt] = useState(0);
   // The password gate stands in front of the shared database only; an injected or local store skips it.
   const access = useTripAccess(!injected && supabaseConfigured());
-  const open = access.status === 'open';
+  // The snapshot stands in for the server until the first load answers; a sandbox never reads or writes one.
+  const [snap] = useState(() => (sandbox ? null : readSnapshot()));
+  // With a snapshot to show, the app opens on it while the stored key is still being checked; the load runs behind it.
+  const open = access.status === 'open' || (access.status === 'checking' && !!snap);
   const base = useMemo<Store | null>(() => {
     if (injected) return injected;
     if (!open) return null;
@@ -390,8 +397,6 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   const travellers = usePending(TRAVELLERS, !!sandbox);
   const claims = usePending(CLAIMS, !!sandbox);
   const [needsAdminKey, setNeedsAdminKey] = useState(false);
-  // The snapshot stands in for the server until the first load answers; a sandbox never reads or writes one.
-  const [snap] = useState(() => (sandbox ? null : readSnapshot()));
   const [late, setLate] = useState(false);
   const shown = server ?? snap?.state ?? null;
   const serverRef = useRef(shown);
@@ -433,11 +438,12 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
     return base?.subscribe(accepted);
   }, [base, load, accepted]);
 
+  // Starts at boot, not once the store exists, so a key check that hangs does not delay the offline flag.
   useEffect(() => {
-    if (!snap || !base) return;
+    if (!snap) return;
     const t = setTimeout(() => setLate(true), LOAD_TIMEOUT_MS);
     return () => clearTimeout(t);
-  }, [snap, base]);
+  }, [snap]);
 
   // Each server read drops what it now holds; writes left over from an earlier visit go back into the queue once, after the first.
   const replayed = useRef(false);
@@ -507,7 +513,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
       const prev = settings.ref.current;
       const edited = patch.plan !== undefined || patch.startDate !== undefined || patch.bookingDates !== undefined;
       // Capped so the jsonb never reaches its size check, which would refuse every later save.
-      const log = [...(prev?.patch.overrides ?? stateRef.current?.tripSettings?.overrides ?? []), { at, what: what ?? Object.keys(patch).join(', ') }].slice(-MAX_OVERRIDES);
+      const log = [...(prev?.patch.overrides ?? stateRef.current?.tripSettings?.overrides ?? []), { at, what: (what ?? Object.keys(patch).join(', ')).slice(0, MAX_WHAT) }].slice(-MAX_OVERRIDES);
       const full = edited ? { ...patch, overrides: log } : patch;
       // Set the ref now as well, so two saves in one tick chain their log entries.
       const next = { patch: { ...prev?.patch, ...full }, updatedAt: at };
@@ -547,7 +553,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   }, [sandbox]);
 
   if (access.status === 'gate') return createElement(PasswordGate, { onAccept: access.accept });
-  if (access.status === 'checking') return createElement('div', { className: 'app' }, createElement('div', { className: 'body' }, createElement('div', { className: 'sub' }, 'Loading')));
+  if (access.status === 'checking' && !snap) return createElement('div', { className: 'app' }, createElement('div', { className: 'body' }, createElement('div', { className: 'sub' }, 'Loading')));
 
   if (!state) {
     return createElement('div', { className: 'app' },

@@ -29,3 +29,13 @@ describe('stayCtx nights come from the calendar', () => {
     expect(nightsNote(ctx, 'South coast')).toContain('2');
   });
 });
+
+describe('stayCtx on an organiser-edited plan', () => {
+  it('falls back to nightsByArea when a night has no area hub, instead of throwing', () => {
+    const broken = { ...plan, days: plan.days.map(d => ({ ...d, area: null, entries: [] })), route: ['AIR'] } as unknown as typeof plan;
+    expect(() => nightBlocks(broken, null)).toThrow(RangeError);
+    const ctx = stayCtx(state, 'Alex', broken);
+    expect(ctx.derivedNights).toEqual(nightsByArea(broken));
+    expect(ctx.nights).toEqual(nightsByArea(broken));
+  });
+});
