@@ -1,0 +1,16 @@
+/* Postcard day card pieces beyond MyTrip.css: the dated title, tonight's stay, the day's bookings and flights. */
+.td-head { flex-wrap: wrap; row-gap: 2px; max-width: calc(100% - 32px); }
+.td-day { font-family: var(--font-head); font-size: 24px; font-weight: 800; line-height: 1.1; color: var(--coconut-text); font-variant-numeric: tabular-nums; }
+.td-tonight { all: unset; box-sizing: border-box; display: block; margin-top: 8px; padding: 8px 0 2px 34px; font-size: 13.5px; font-weight: 800; line-height: 1.35; color: var(--teal); overflow-wrap: anywhere; }
+button.td-tonight { min-height: 44px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+button.td-tonight:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; border-radius: 6px; }
+.td-list { list-style: none; margin: 0; padding: 4px 0 0 34px; display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.td-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; overflow-wrap: anywhere; }
+.td-name { color: var(--ink); font-weight: 700; }
+.td-chip { padding: 2px 8px; border-radius: var(--r-pill); background: var(--chip); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.td-done { color: var(--tea); }
+.td-overdue { color: var(--skip); }
+.td-open { color: var(--ink); }
+
+/* Sub-headings inside the print document's one Bookings section. */
+@media print { .it-subhead { margin: 3mm 0 1.5mm; font: 800 11pt/1.1 var(--font-head, sans-serif); } }

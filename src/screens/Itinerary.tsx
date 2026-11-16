@@ -2,13 +2,15 @@ import './Itinerary.css';
 import { useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import RouteMap, { hubName } from '../components/Map';
-import { hm, transportOf, transportText } from '../components/TransportLine';
+import { dayView } from '../lib/dayView';
 import { nightsNote, outcome, STAY_COPY, stayCtx } from '../lib/stayflow';
 import { voteOpen } from '../lib/stays';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
-import type { AppState, Area, Item, Leg, Plan, Player, StayType } from '../types';
+import type { AppState, Area, GroupResult, Item, Leg, Plan, Player, StayType } from '../types';
 import { bookOf, tipsOf } from './BookCard';
+import TripDay, { dateLabel, flightText, STATUS_LABEL } from './TripDay';
+import { useTripModel, type TripModel } from './useTripModel';
 
 export interface ChosenStay { area: Area; title: string; stayType?: StayType; priceGbp?: number; nights: number; itineraryNights?: number; link?: string }
 
@@ -32,13 +34,21 @@ const dayLabel = (n: number | null) => (n === null ? '' : `Day ${n}`);
  * The print-only document. It reads the same plan and the same transport and fact helpers as the screen,
  * so the saved file cannot say something the app does not.
  */
-export function Itinerary({ plan, items, legs, heading, stays = [], provisional = false }: {
+export function Itinerary({ plan, items, legs, heading, stays = [], provisional = false, model }: {
   plan: Plan; items: Item[]; legs: Leg[]; heading: string; stays?: ChosenStay[]; provisional?: boolean;
+  /** Dates, nights, bookings and flights; without it the days print undated and the Bookings list has no status. */
+  model?: TripModel;
 }) {
-  const byId = new Map(items.map(i => [i.id, i]));
   const chosen = items.filter(i => plan.chosen.includes(i.id));
   const book = bookOf(plan, chosen);
   const tips = tipsOf(plan, chosen);
+  const m = model?.plan === plan ? model : undefined;
+  const views = m?.views ?? plan.days.map((_, i) => dayView({ plan, start: null, blocks: [], stays: {}, bookingsByDay: {}, travellers: {}, custom: [], paceHours: 0 }, i + 1));
+  const status = new Map((m?.bookings ?? []).map(b => [b.id, b]));
+  const stayBookings = (m?.bookings ?? []).filter(b => b.id.startsWith('stay:'));
+  const flights = views.flatMap(v => v.flights);
+  const blocks = m?.blocks ?? [];
+  const chip = (id: string) => { const b = status.get(id); return b ? `${STATUS_LABEL[b.status]}${b.owner ? `, ${b.owner} is booking` : ''}` : null; };
   return (
     <div className="it-print" data-testid="itinerary">
       <header className="it-top">
@@ -52,38 +62,41 @@ export function Itinerary({ plan, items, legs, heading, stays = [], provisional 
         <div className="it-map"><RouteMap route={plan.route} /></div>
       </header>
 
-      {plan.days.map(d => (
-        <section key={d.n} className="it-day" aria-label={`Day ${d.n}`}>
-          <h2 className="it-dayhead">Day {d.n}{d.area && <span className="it-area">{d.area}</span>}</h2>
-          <ul className="it-list">
-            {d.entries.map((e, i) => {
-              const move = transportOf(e, legs);
-              const item = e.kind === 'activity' && e.itemId ? byId.get(e.itemId) : undefined;
-              if (move) return <li key={i} className="it-move">{transportText(move)}</li>;
-              if (e.kind === 'free') return <li key={i} className="it-move">{e.label}</li>;
-              return (
-                <li key={i} className="it-act">
-                  <span className="it-name">{e.label}</span>{' '}
-                  <span className="it-dur">{hm(e.onSite ?? e.hours)}</span>
-                  {item && (item.when || item.fee) && (
-                    <span className="it-sub">{[item.when && `Best time: ${item.when}`, item.fee && `Cost: ${item.fee}`].filter(Boolean).join('. ')}</span>
-                  )}
-                  {item?.book && <span className="it-sub"><b>Book:</b> {item.book}</span>}
-                  {item?.warn && <span className="it-sub"><b>Heads up:</b> {item.warn}</span>}
-                  {item?.britt && <span className="it-sub"><b>Britt says:</b> {item.britt}</span>}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))}
+      {views.map(v => <TripDay key={v.n} view={v} items={items} legs={legs} rainSlack={plan.days[v.n - 1].rainSlack} compact />)}
 
-      {book.length > 0 && (
+      {(book.length > 0 || stayBookings.length > 0 || flights.length > 0 || blocks.length > 0) && (
         <section className="it-block" aria-label="Bookings">
           <h2 className="it-dayhead">Bookings</h2>
           <ul className="it-list">
-            {book.map(({ item, day }) => <li key={item.id} className="it-act"><span className="it-name">{item.name}</span>{' '}<span className="it-dur">{dayLabel(day)}</span><span className="it-sub">{item.book}</span></li>)}
+            {book.map(({ item, day }) => (
+              <li key={item.id} className="it-act">
+                <span className="it-name">{item.name}</span>{' '}<span className="it-dur">{dayLabel(day)}</span>
+                {chip(`book:${item.id}`) && <span className="it-sub">{chip(`book:${item.id}`)}</span>}
+                <span className="it-sub">{item.book}</span>
+              </li>
+            ))}
+            {stayBookings.map(b => <li key={b.id} className="it-act"><span className="it-name">{b.label}</span> <span className="it-sub">{chip(b.id)}</span></li>)}
           </ul>
+          {flights.length > 0 && (
+            <>
+              <h3 className="it-subhead">Flights</h3>
+              <ul className="it-list" aria-label="Flights">{flights.map(f => <li key={`${f.name}${f.kind}`} className="it-act">{flightText(f)}</li>)}</ul>
+            </>
+          )}
+          {blocks.length > 0 && (
+            <>
+              <h3 className="it-subhead">Nights</h3>
+              <ul className="it-list" aria-label="Nights">
+                {blocks.map(b => (
+                  <li key={b.fromDay} className="it-act">
+                    <span className="it-name">{b.area}</span>{' '}
+                    <span className="it-dur">{`${b.checkIn && b.checkOut ? `${dateLabel(b.checkIn)} to ${dateLabel(b.checkOut)}, ` : ''}${b.nights} ${b.nights === 1 ? 'night' : 'nights'}`}</span>
+                    <span className="it-sub">{m?.staysByArea[b.area]?.title ?? 'No stay chosen yet'}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       )}
 
@@ -118,11 +131,16 @@ export function Itinerary({ plan, items, legs, heading, stays = [], provisional 
   );
 }
 
+/** The model is built only once someone asks to print, so the app holds no second copy of the plan until then. */
+function ModelItinerary({ group, ...rest }: { group: GroupResult } & Omit<Parameters<typeof Itinerary>[0], 'model'>) {
+  return <Itinerary {...rest} model={useTripModel(group)} />;
+}
+
 /**
  * The button. The document mounts on the first tap and stays, hidden on screen, so the app carries no second copy
  * of the plan until someone asks for one. The tab title becomes the default file name for the save dialog.
  */
-export function SaveItinerary({ plan, kind, provisional = false }: { plan: Plan; kind: 'Group' | 'My'; provisional?: boolean }) {
+export function SaveItinerary({ plan, kind, provisional = false, group }: { plan: Plan; kind: 'Group' | 'My'; provisional?: boolean; group?: GroupResult }) {
   const { state, items, legs, me } = useApp();
   const [printing, setPrinting] = useState(false);
   const heading = `${kind} itinerary`;
@@ -137,7 +155,9 @@ export function SaveItinerary({ plan, kind, provisional = false }: { plan: Plan;
     <>
       <button type="button" className="it-save" onClick={save}>Save itinerary as PDF</button>
       {printing && createPortal(
-        <Itinerary plan={plan} items={items} legs={legs} heading={heading} provisional={provisional} stays={chosenStays(state, me, plan)} />,
+        group
+          ? <ModelItinerary group={group} plan={plan} items={items} legs={legs} heading={heading} provisional={provisional} stays={chosenStays(state, me, plan)} />
+          : <Itinerary plan={plan} items={items} legs={legs} heading={heading} provisional={provisional} stays={chosenStays(state, me, plan)} />,
         document.body,
       )}
     </>
