@@ -1,4 +1,4 @@
-import type { Store } from '../types';
+import type { FinalStore, Store } from '../types';
 import { LocalStore } from './local';
 import { SupabaseStore } from './supabase';
 
@@ -29,7 +29,7 @@ export function supabaseConfigured(): boolean {
   return Boolean(keys().url && keys().key);
 }
 
-export function getStore(password?: string): Store {
+export function getStore(password?: string): Store & FinalStore {
   const { url, key } = keys();
   return url && key ? new SupabaseStore(url, key, password) : new LocalStore();
 }

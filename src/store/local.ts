@@ -1,5 +1,6 @@
 import { applyAdmin, cleanNights, mergeAdminItems, blankCrew, EMPTY_STAYS, emptyRanking, PEOPLE } from '../types';
-import type { AdminItems, AppState, TripAdminRow, ChoiceEntry, ChoiceInput, Complaint, CrewStays, Person, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, Store, Suggestion, Vote } from '../types';
+import { readAdminKey } from './tripKey';
+import type { AdminItems, AppState, BookingClaim, TripAdminRow, ChoiceEntry, ChoiceInput, Complaint, CrewStays, FinalStore, Person, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, Store, Suggestion, TripSettings, Traveller, Vote } from '../types';
 
 const SUGG = 'tp:sugg';
 const VOTES = 'tp:votes';
@@ -7,13 +8,18 @@ const LOG = 'tp:log';
 const COMPLAINTS = 'tp:complaints';
 const PLACES = 'tp:placesug';
 const ADMIN = 'tp:staysadmin';
+const SETTINGS = 'tp:settings';
+const TRAVELLERS = 'tp:travellers';
+const CLAIMS = 'tp:claims';
+/** Not a tp: key, like tp-admin-key: tests and e2e set it to stand in for the server's admin_secret. */
+export const LOCAL_ADMIN_KEY = 'tp-local-admin-key';
 const tripKey = (n: Person) => `tp:tripadmin:${n}`;
 const respKey = (n: Person) => `tp:resp:${n}`;
 const staysKey = (n: Person) => `tp:stays:${n}`;
 
 /** The keys that are this store's shared data (everyone's rows, votes, suggestions, log), not one person's progress. */
 export const isLocalStoreKey = (k: string) =>
-  k === SUGG || k === VOTES || k === LOG || k === COMPLAINTS || k === PLACES || k === ADMIN || k.startsWith('tp:tripadmin:') || k.startsWith('tp:resp:') || k.startsWith('tp:stays:');
+  k === SUGG || k === VOTES || k === LOG || k === COMPLAINTS || k === PLACES || k === ADMIN || k === SETTINGS || k === TRAVELLERS || k === CLAIMS || k.startsWith('tp:tripadmin:') || k.startsWith('tp:resp:') || k.startsWith('tp:stays:');
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -37,13 +43,21 @@ const defaultRow = (name: Person): Response => ({
   rated: [], submitted: false, updatedAt: new Date().toISOString(),
 });
 
+/** The fake admin check: with no tp-local-admin-key set every key passes, so existing local flows keep working. */
+export const localAdminKeyOk = (key: string | null): boolean => {
+  try { const need = localStorage.getItem(LOCAL_ADMIN_KEY); return need === null || key === need; } catch { return true; }
+};
+const requireAdmin = (): void => {
+  if (!localAdminKeyOk(readAdminKey())) throw Object.assign(new Error('new row violates row-level security policy'), { code: '42501' });
+};
+
 function readAdmin(): StaysAdmin {
   const a = read<Partial<StaysAdmin> | null>(ADMIN, null);
   if (!a || typeof a !== 'object') return structuredClone(EMPTY_STAYS.admin);
-  return { pins: Array.isArray(a.pins) ? a.pins : [], scouts: a.scouts && typeof a.scouts === 'object' ? a.scouts : {}, closed: Array.isArray(a.closed) ? a.closed : [], ...(Object.keys(cleanNights(a.nights)).length ? { nights: cleanNights(a.nights) } : {}) };
+  return { pins: Array.isArray(a.pins) ? a.pins : [], scouts: a.scouts && typeof a.scouts === 'object' ? a.scouts : {}, closed: Array.isArray(a.closed) ? a.closed : [], ...(Object.keys(cleanNights(a.nights)).length ? { nights: cleanNights(a.nights) } : {}), ...(Array.isArray(a.fallen) && a.fallen.length ? { fallen: a.fallen } : {}) };
 }
 
-export class LocalStore implements Store {
+export class LocalStore implements Store, FinalStore {
   private listeners = new Set<(s: AppState) => void>();
 
   async load(): Promise<AppState> {
@@ -71,6 +85,9 @@ export class LocalStore implements Store {
       votes: Array.isArray(votes) ? votes : [],
       stays: { crew, suggestions: Array.isArray(places) ? places : [], admin: readAdmin() },
       tripAdmin,
+      tripSettings: read<TripSettings | null>(SETTINGS, null) ?? null,
+      travellers: read<AppState['travellers']>(TRAVELLERS, {}) ?? {},
+      bookingClaims: read<AppState['bookingClaims']>(CLAIMS, {}) ?? {},
     };
   }
 
@@ -87,7 +104,30 @@ export class LocalStore implements Store {
   }
 
   async saveStaysAdmin(patch: Partial<StaysAdmin>): Promise<void> {
-    write(ADMIN, applyAdmin(readAdmin(), patch));
+    requireAdmin();
+    const stored = readAdmin();
+    const fallen = patch.fallen ?? stored.fallen;
+    write(ADMIN, { ...applyAdmin(stored, patch), ...(fallen ? { fallen } : {}) });
+    await this.emit();
+  }
+
+  async saveTripSettings(patch: Partial<Omit<TripSettings, 'updatedAt'>>): Promise<void> {
+    requireAdmin();
+    const stored = read<TripSettings | null>(SETTINGS, null) ?? { startDate: null, plan: null, bookingDates: {}, overrides: [], updatedAt: '' };
+    write(SETTINGS, { ...stored, ...patch, updatedAt: new Date().toISOString() });
+    await this.emit();
+  }
+
+  async saveTraveller(name: Person, patch: Partial<Omit<Traveller, 'name' | 'updatedAt'>>): Promise<void> {
+    const all = read<NonNullable<AppState['travellers']>>(TRAVELLERS, {});
+    const blank: Traveller = { name, arriveLocal: null, arriveFlight: null, departLocal: null, departFlight: null, updatedAt: '' };
+    write(TRAVELLERS, { ...all, [name]: { ...blank, ...all[name], ...patch, name, updatedAt: new Date().toISOString() } });
+    await this.emit();
+  }
+
+  async saveBookingClaim(itemId: string, owner: Person | null): Promise<void> {
+    const claim: BookingClaim = { itemId, owner, updatedAt: new Date().toISOString() };
+    write(CLAIMS, { ...read<Record<string, BookingClaim>>(CLAIMS, {}), [itemId]: claim });
     await this.emit();
   }
 

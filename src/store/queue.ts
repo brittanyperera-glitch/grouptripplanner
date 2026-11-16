@@ -1,28 +1,36 @@
 import { diffResponse } from './choices';
 import { mergeAdmin, mergeAdminItems } from '../types';
-import type { AdminItems, ChoiceInput, CrewStays, PlaceSuggestion, Player, Response, StaysAdmin, Store, Suggestion, Vote } from '../types';
+import type { AdminItems, ChoiceInput, CrewStays, FinalStore, Person, PlaceSuggestion, Player, Response, StaysAdmin, Store, Suggestion, Vote } from '../types';
 
 type Patch = Partial<Omit<Response, 'name'>>;
 type CrewPatch = Partial<Omit<CrewStays, 'name'>>;
+type SettingsPatch = Parameters<FinalStore['saveTripSettings']>[0];
+type TravellerPatch = Parameters<FinalStore['saveTraveller']>[1];
 type Job =
   | { kind: 'resp'; key: string; name: Player; patch: Patch; waiters: Array<() => void> }
   | { kind: 'crew'; key: string; name: Player; patch: CrewPatch; waiters: Array<() => void> }
   | { kind: 'trip'; key: string; name: Player; patch: AdminItems; waiters: Array<() => void> }
   | { kind: 'admin'; key: 'a:admin'; patch: Partial<StaysAdmin>; waiters: Array<() => void> }
+  | { kind: 'settings'; key: 'settings'; patch: SettingsPatch; waiters: Array<() => void> }
+  | { kind: 'traveller'; key: string; name: Person; patch: TravellerPatch; waiters: Array<() => void> }
+  | { kind: 'claim'; key: string; itemId: string; owner: Person | null; waiters: Array<() => void> }
   | { kind: 'vote'; key: string; vote: Vote; waiters: Array<() => void> }
   | { kind: 'log'; key: 'log'; entries: ChoiceInput[]; waiters: Array<() => void> }
   | { kind: 'sugg'; key: string; id: string; status: Suggestion['status']; waiters: Array<() => void> }
   | { kind: 'place'; key: string; id: string; status: PlaceSuggestion['status']; waiters: Array<() => void> }
   | { kind: 'op'; key: null; run: () => Promise<void>; waiters: Array<() => void> };
 
-interface Hooks { onFail(): void; onClear(): void }
+/** onAdminDenied: an organiser write the server refused with 42501; the job is dropped, not retried. */
+interface Hooks { onFail(): void; onClear(): void; onAdminDenied?(kind: 'settings' | 'admin'): void }
+// Postgres insufficient_privilege, which row-level security raises for a refused write.
+const refused = (e: unknown) => (e as { code?: string } | null)?.code === '42501';
 
 /**
  * Wraps a Store so writes never run in parallel. Saves for one person, votes for one fork and statuses for one
  * suggestion coalesce into the latest value, so a failed save is never replayed over a newer one.
  */
 export class WriteQueue {
-  readonly store: Store;
+  readonly store: Store & FinalStore;
   private queue: Job[] = [];
   private running = false;
   private current: Promise<boolean> = Promise.resolve(true);
@@ -31,7 +39,7 @@ export class WriteQueue {
   private known = new Map<Player, Response>();
   private lastVote = new Map<string, 'a' | 'b'>();
 
-  constructor(private base: Store, private hooks: Hooks) {
+  constructor(private base: Store & Partial<FinalStore>, private hooks: Hooks) {
     void base.load().then(s => {
       for (const r of Object.values(s.responses)) if (r && !this.known.has(r.name)) this.known.set(r.name, r);
       for (const v of s.votes) if (!this.lastVote.has(`${v.forkId}:${v.name}`)) this.lastVote.set(`${v.forkId}:${v.name}`, v.choice);
@@ -63,6 +71,9 @@ export class WriteQueue {
       setPlaceStatus: (id, status) => this.add({ kind: 'place', key: `p:${id}`, id, status, waiters: [] }),
       saveTripAdmin: (name, patch) => this.add({ kind: 'trip', key: `t:${name}`, name, patch, waiters: [] }),
       saveStaysAdmin: patch => this.add({ kind: 'admin', key: 'a:admin', patch, waiters: [] }),
+      saveTripSettings: patch => this.add({ kind: 'settings', key: 'settings', patch, waiters: [] }),
+      saveTraveller: (name, patch) => this.add({ kind: 'traveller', key: `tv:${name}`, name, patch, waiters: [] }),
+      saveBookingClaim: (itemId, owner) => this.add({ kind: 'claim', key: `bc:${itemId}`, itemId, owner, waiters: [] }),
       setSuggestionStatus: (id, status) => this.add({ kind: 'sugg', key: `s:${id}`, id, status, waiters: [] }),
       logChoice: c => this.logAll([c]),
       loadLog: () => base.loadLog(),
@@ -103,6 +114,9 @@ export class WriteQueue {
     if (j.kind === 'crew') return this.base.saveCrewStays(j.name, j.patch);
     if (j.kind === 'trip') return this.base.saveTripAdmin(j.name, j.patch);
     if (j.kind === 'admin') return this.base.saveStaysAdmin(j.patch);
+    if (j.kind === 'settings') return this.base.saveTripSettings?.(j.patch) ?? Promise.resolve();
+    if (j.kind === 'traveller') return this.base.saveTraveller?.(j.name, j.patch) ?? Promise.resolve();
+    if (j.kind === 'claim') return this.base.saveBookingClaim?.(j.itemId, j.owner) ?? Promise.resolve();
     if (j.kind === 'vote') return this.base.vote(j.vote);
     if (j.kind === 'log') return this.writeLog(j.entries);
     if (j.kind === 'sugg') return this.base.setSuggestionStatus(j.id, j.status);
@@ -126,8 +140,9 @@ export class WriteQueue {
         if (older >= 0) merge(job, failed.splice(older, 1)[0], true);
         try {
           await this.exec(job);
-        } catch {
-          failed.push(job);
+        } catch (e) {
+          if ((job.kind === 'settings' || job.kind === 'admin') && refused(e)) this.hooks.onAdminDenied?.(job.kind);
+          else failed.push(job);
         }
         job.waiters.splice(0).forEach(w => w());
       }
@@ -158,6 +173,12 @@ function merge(into: Job, from: Job, intoIsNewer = false): void {
     into.patch = intoIsNewer ? mergeAdminItems(from.patch, into.patch) : mergeAdminItems(into.patch, from.patch);
   } else if (into.kind === 'admin' && from.kind === 'admin') {
     into.patch = intoIsNewer ? mergeAdmin(from.patch, into.patch) : mergeAdmin(into.patch, from.patch);
+  } else if (into.kind === 'settings' && from.kind === 'settings') {
+    into.patch = intoIsNewer ? { ...from.patch, ...into.patch } : { ...into.patch, ...from.patch };
+  } else if (into.kind === 'traveller' && from.kind === 'traveller') {
+    into.patch = intoIsNewer ? { ...from.patch, ...into.patch } : { ...into.patch, ...from.patch };
+  } else if (into.kind === 'claim' && from.kind === 'claim' && !intoIsNewer) {
+    into.owner = from.owner;
   } else if (into.kind === 'vote' && from.kind === 'vote' && !intoIsNewer) {
     into.vote = from.vote;
   } else if (into.kind === 'sugg' && from.kind === 'sugg' && !intoIsNewer) {
