@@ -41,6 +41,17 @@ describe('supabase/schema.sql can be re-run', () => {
     }
   });
 
+  // The client sets only x-trip-key. While no app code sends x-admin-key, the organiser writes above are rejected, and the
+  // README and schema must say so rather than tell the organiser that setting a password makes them work.
+  it('says organiser writes are rejected while the app does not send x-admin-key', () => {
+    const walk = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+      e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.tsx?$/.test(e.name) && !/\.test\./.test(e.name) ? [`${dir}/${e.name}`] : []);
+    const sends = walk('src').some(f => fs.readFileSync(f, 'utf8').toLowerCase().includes('x-admin-key'));
+    if (sends) return;
+    expect(sql).toMatch(/app does not send that header yet/);
+    expect(fs.readFileSync('README.md', 'utf8')).toMatch(/does not send one/);
+  });
+
   it('reads the organiser key from the x-admin-key header', () => {
     const body = sql.match(/create or replace function public\.admin_ok\(\)[\s\S]*?\$\$;?[\s\S]*?\$\$/)?.[0] ?? '';
     expect(body).toContain("'x-admin-key'");

@@ -26,9 +26,9 @@ export function dayView(input: DayViewInput, n: number): DayView {
 
   const custom = input.custom.filter(e => e.kind === 'custom' && e.day === n);
   const customHours = custom.reduce((s, e) => s + (e.hours ?? 0), 0);
-  // + 0 turns -0 into 0, which toFixed would print as "-0.0".
   // The plan's own spare is clamped at 0; once a stop is added only the pace can say what is left, and the planner caps the first and last day at half of it.
   const cap = n === 1 || n === plan.days.length ? paceHours / 2 : paceHours;
+  // The trailing + 0 turns -0 into 0, which toFixed would print as "-0.0".
   const spare = custom.length ? Math.round((cap - day.entries.reduce((s, e) => s + e.hours, 0) - customHours) * 100) / 100 + 0 : day.spare;
 
   const block = blocks.find(b => b.fromDay <= n && n <= b.toDay);

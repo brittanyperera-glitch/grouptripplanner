@@ -42,6 +42,12 @@ describe('tripIcs', () => {
 });
 
 describe('tripIcs bookings and folding', () => {
+  it('leaves out an event whose date cannot be read instead of throwing', () => {
+    const ics = tripIcs([{ n: 1, date: 'soon', title: 'Day 1' }], [bk('book:train', 'Train', 'garbage', '2026-11-24')]);
+    expect(count(ics, 'BEGIN:VEVENT')).toBe(1);
+    expect(ics).toContain('SUMMARY:Book by: Train');
+    expect(ics).not.toContain('garbage');
+  });
   it('gives a booking with both dates two events, opens and book-by', () => {
     const ics = tripIcs([], [bk('book:train', 'Train', '2026-11-12', '2026-11-24')]);
     expect(count(ics, 'BEGIN:VEVENT')).toBe(2);

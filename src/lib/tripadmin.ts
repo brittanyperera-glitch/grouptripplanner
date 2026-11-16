@@ -2,6 +2,7 @@ import catalogue from '../data/catalogue.json';
 import { AREAS } from '../types';
 import type { AdminEntry, AppState, Area, BookingClaim, Fallen, Item, Plan, Player } from '../types';
 import { outcome, stayCtx } from './stayflow';
+import { instant } from './stays';
 
 export interface AdminDef {
   id: string; label: string; hint: string;
@@ -41,8 +42,6 @@ export function adminChecklist(state: AppState, me: Player, plan: Plan | null): 
 
 const entryOf = (state: AppState, who: Player, id: string): AdminEntry | undefined => state.tripAdmin?.[who]?.items[id];
 
-/** Stamps are 'YYYY-MM-DDTHH:mm' Sri Lanka local or a UTC ISO string from the app's own writes; both become one instant. */
-const instant = (t: string): number => Date.parse(/(Z|[+-]\d\d:?\d\d)$/.test(t) ? t : `${t}+05:30`);
 /** A time counts only if it is later than the latest fall in that area; with no fall, anything counts. A stamp that cannot be read does not. */
 const afterFall = (at: string | undefined, fallen: Fallen[], area: Area): boolean => {
   const falls = fallen.filter(f => f.area === area).map(f => instant(f.at));

@@ -129,7 +129,7 @@ create table if not exists admin_secret (
 );
 alter table admin_secret enable row level security;
 
-/* True when the request carries the organiser password in its x-admin-key header. */
+/* True when the request carries the organiser password in its x-admin-key header. The app does not send that header yet, so with these policies in place the organiser's stays_admin and trip_settings writes are rejected whatever password is set. */
 create or replace function public.admin_ok() returns boolean
 language sql stable security definer set search_path = public, extensions as $$
   select case

@@ -1,5 +1,5 @@
 import type { DayBooking } from '../types';
-import { addDays } from './deadlines';
+import { addDays } from './calendar';
 
 // RFC 5545 text escaping: backslash first, so the ones added for commas and semicolons survive.
 const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/[,;]/g, m => `\\${m}`).replace(/\r?\n/g, '\\n');
@@ -28,11 +28,14 @@ export function tripIcs(days: { n: number; date: string; title: string }[], book
   }
   const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Group Trip Hero//Sri Lanka 2026//EN', 'CALSCALE:GREGORIAN'];
   for (const e of events) {
+    // An unreadable date has no day to put the event on, so it is left out rather than thrown.
+    const end = addDays(e.date, 1);
+    if (end === null) continue;
     lines.push(
       'BEGIN:VEVENT', `UID:${e.uid}@grouptriphero`,
       // DTSTAMP is required; the event's own date keeps the file the same on every download.
       `DTSTAMP:${compact(e.date)}T000000Z`,
-      `DTSTART;VALUE=DATE:${compact(e.date)}`, `DTEND;VALUE=DATE:${compact(addDays(e.date, 1))}`,
+      `DTSTART;VALUE=DATE:${compact(e.date)}`, `DTEND;VALUE=DATE:${compact(end)}`,
       `SUMMARY:${esc(e.summary)}`, 'END:VEVENT',
     );
   }
