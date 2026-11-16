@@ -16,6 +16,7 @@ const settings = (plan: ReleasePlan | null): TripSettings => ({ startDate: null,
 
 describe('releaseState and effectiveRelease', () => {
   it('maps undefined to loading, null and an empty plan to absent, a plan to value', () => {
+    expect(releaseState(settings({ ...plan9, items: [] }))).toEqual({ state: 'absent' });
     expect(releaseState(undefined)).toEqual({ state: 'loading' });
     expect(releaseState(null)).toEqual({ state: 'absent' });
     expect(releaseState(settings(null))).toEqual({ state: 'absent' });
@@ -41,7 +42,7 @@ describe('releaseState and effectiveRelease', () => {
 const act = (itemId: string, hours: number): DayEntry => ({ kind: 'activity', label: itemId, hours, itemId });
 const day = (n: number, area: Plan['days'][number]['area'], entries: DayEntry[]) => ({ n, area, entries, spare: 99, rainSlack: false });
 const small = (): Plan => ({
-  route: [], areas: [], chosen: [], dropped: [], travelHours: 0, fits: true, missingMusts: [], score: 0,
+  route: [], areas: [], chosen: ['kottu', 'pettah', 'galleface', 'surf'], dropped: [], travelHours: 0, fits: true, missingMusts: [], score: 0,
   days: [
     day(1, 'Colombo', [act('kottu', 2), act('pettah', 3)]),
     day(2, 'Colombo', [act('galleface', 1)]),
@@ -55,7 +56,7 @@ describe('applyDayEdits', () => {
     const out = applyDayEdits(p, [{ kind: 'move', id: 'kottu', day: 2 }], 9);
     expect(out.plan.days[0].entries.map(e => e.itemId)).toEqual(['pettah']);
     expect(out.plan.days[1].entries.map(e => e.itemId)).toEqual(['galleface', 'kottu']);
-    expect(out.plan.days.map(d => d.spare)).toEqual([6, 6, 99]);
+    expect(out.plan.days.map(d => d.spare)).toEqual([1.5, 6, 99]);
     expect(out.warnings).toEqual([]);
   });
   it('warns when the move crosses areas, and does not mutate the input', () => {
@@ -69,13 +70,39 @@ describe('applyDayEdits', () => {
   it('hides an entry', () => {
     const out = applyDayEdits(small(), [{ kind: 'hide', id: 'pettah' }], 9);
     expect(out.plan.days[0].entries.map(e => e.itemId)).toEqual(['kottu']);
-    expect(out.plan.days[0].spare).toBe(7);
+    expect(out.plan.days[0].spare).toBe(2.5);
   });
   it('counts custom hours in the spare, and warns on a negative one', () => {
     const out = applyDayEdits(small(), [{ kind: 'custom', id: 'c:1', day: 2, title: 'Long lunch', hours: 9 }], 9);
     expect(out.plan.days[1].entries.map(e => e.itemId)).toEqual(['galleface']);
     expect(out.plan.days[1].spare).toBe(-1);
     expect(out.warnings.join()).toMatch(/day 2/i);
+  });
+  it('caps the first and last day at half the pace, so a move onto them can go over budget', () => {
+    const out = applyDayEdits(small(), [{ kind: 'move', id: 'galleface', day: 3 }, { kind: 'hide', id: 'pettah' }], 9);
+    expect(out.plan.days[0].spare).toBe(2.5);
+    expect(out.plan.days[2].spare).toBe(-2.5);
+    expect(out.warnings.join()).toMatch(/day 3 is over budget by 2.5/i);
+  });
+  it('recomputes rainSlack from the new spare', () => {
+    const p = small();
+    p.days[1].area = 'Ella';
+    const out = applyDayEdits(p, [{ kind: 'hide', id: 'galleface' }], 9);
+    expect(out.plan.days[1].spare).toBe(9);
+    expect(out.plan.days[1].rainSlack).toBe(true);
+    const full = applyDayEdits(p, [{ kind: 'move', id: 'pettah', day: 2 }, { kind: 'move', id: 'kottu', day: 2 }, { kind: 'custom', id: 'c:1', day: 2, hours: 1 }], 9);
+    expect(full.plan.days[1].spare).toBe(2);
+    expect(full.plan.days[1].rainSlack).toBe(false);
+  });
+  it('drops a hidden place from chosen, but keeps a moved one', () => {
+    const out = applyDayEdits(small(), [{ kind: 'hide', id: 'pettah' }, { kind: 'move', id: 'kottu', day: 2 }], 9);
+    expect(out.plan.chosen).toEqual(['kottu', 'galleface', 'surf']);
+  });
+  it('does not charge an evening place against the daytime spare', () => {
+    const p = small();
+    const eveItem = { id: 'kottu', slot: 'late' } as Item;
+    const out = applyDayEdits(p, [{ kind: 'hide', id: 'pettah' }], 9, [eveItem]);
+    expect(out.plan.days[0].spare).toBe(4.5);
   });
   it('refuses to move or hide a train entry', () => {
     const out = applyDayEdits(small(), [{ kind: 'move', id: 'train', day: 1 }, { kind: 'hide', id: 'train' }], 9);
@@ -96,6 +123,9 @@ describe('applyDayEdits', () => {
 });
 
 describe('the released plan through groupResult', () => {
+  // Evening and late places have their own budget in the planner, so they cost the day no spare.
+  const eve = new Set(ALL.filter(i => i.slot === 'evening' || i.slot === 'late').map(i => i.id));
+  const hours = (d: Plan['days'][number]) => d.entries.reduce((s, e) => s + (e.itemId && eve.has(e.itemId) ? 0 : e.hours), 0);
   const run = (release: ReleasePlan | typeof RELEASE, items: Item[] = ALL) => groupResult(seedState(), items, L, [], release);
   const today = run(RELEASE);
 
@@ -109,9 +139,34 @@ describe('the released plan through groupResult', () => {
     const days = g.final!.days;
     expect(days[from.n - 1].entries.some(e => e.itemId === 'kottu')).toBe(false);
     expect(days[to.n - 1].entries.at(-1)?.itemId).toBe('kottu');
-    const hours = (d: Plan['days'][number]) => d.entries.reduce((s, e) => s + e.hours, 0);
-    expect(days[to.n - 1].spare).toBeCloseTo(PACE_HOURS[RELEASE!.pace] - hours(days[to.n - 1]), 5);
-    expect(days[from.n - 1].spare).toBeCloseTo(PACE_HOURS[RELEASE!.pace] - hours(days[from.n - 1]), 5);
+    const cap = (n: number) => (n === 1 || n === days.length ? PACE_HOURS[RELEASE!.pace] / 2 : PACE_HOURS[RELEASE!.pace]);
+    expect(days[to.n - 1].spare).toBeCloseTo(cap(to.n) - hours(days[to.n - 1]), 5);
+    expect(days[from.n - 1].spare).toBeCloseTo(cap(from.n) - hours(days[from.n - 1]), 5);
+  });
+  it('a move onto the capped last day uses half the pace and reports the overrun through groupResult', () => {
+    const last = today.final!.days.length;
+    const movable = today.final!.days.slice(0, -1).flatMap(x => x.entries.filter(e => e.itemId && e.kind !== 'drive' && e.kind !== 'train'));
+    const g = run({ ...RELEASE!, dayEdits: movable.map(e => ({ kind: 'move' as const, id: e.itemId!, day: last })) });
+    const d = g.final!.days[last - 1];
+    expect(d.spare).toBeCloseTo(PACE_HOURS[RELEASE!.pace] / 2 - hours(d), 5);
+    expect(d.spare).toBeLessThan(PACE_HOURS[RELEASE!.pace] - hours(d));
+    expect(g.warnings).toEqual(expect.arrayContaining([expect.stringMatching(new RegExp(`Day ${last} is over budget`))]));
+  });
+  it('hiding an evening place leaves the planner\'s spare alone', () => {
+    const from = today.final!.days.find(d => d.entries.some(e => e.itemId === 'kottu'))!;
+    expect(eve.has('kottu')).toBe(true);
+    const g = run({ ...RELEASE!, dayEdits: [{ kind: 'hide', id: 'kottu' }] });
+    expect(g.final!.days[from.n - 1].spare).toBe(from.spare);
+  });
+  it('a hidden place leaves final.chosen, and warnings reach the result', () => {
+    const g = run({ ...RELEASE!, dayEdits: [{ kind: 'hide', id: 'kottu' }, { kind: 'hide', id: 'nowhere' }] });
+    expect(g.final!.chosen).not.toContain('kottu');
+    expect(g.final!.days.some(d => d.entries.some(e => e.itemId === 'kottu'))).toBe(false);
+    expect(g.warnings?.join()).toMatch(/nowhere/);
+    expect(today.warnings).toBeUndefined();
+  });
+  it('a release with no items is off, so it falls back like no release at all', () => {
+    expect(run({ ...RELEASE!, items: [], dayEdits: [] }).released).toBeUndefined();
   });
   it('a late live suggestion listed in the release items lands in the final plan', () => {
     const beach = ALL.find(i => i.id === 'beachday')!;

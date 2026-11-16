@@ -168,6 +168,8 @@ export interface GroupResult {
   released?: boolean;
   // Set only while late votes are the sole open questions: the plan they are asked against.
   held?: Plan;
+  // Organiser day edits that were skipped or left a day over budget; set only when edits were applied.
+  warnings?: string[];
 }
 export const AREA_HUB: Record<Area, Hub> = {
   'Colombo': 'Colombo', 'North': 'Jaffna', 'East coast': 'Trincomalee', 'Cultural Triangle': 'Sigiriya', 'Kandy and Knuckles': 'Kandy', 'Kitulgala': 'Kitulgala',

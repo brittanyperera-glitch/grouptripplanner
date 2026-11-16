@@ -1,4 +1,4 @@
-import { PACE_HOURS, PEOPLE, type AppState, type DayEdit, type Genre, type GroupResult, type Item, type Knockout, type Leg, type Pace, type Player, type Plan, type Response } from '../types';
+import { PACE_HOURS, PEOPLE, type AppState, type Genre, type GroupResult, type Item, type Knockout, type Leg, type Pace, type Player, type Plan, type ReleasePlan, type Response } from '../types';
 import { mustFitDays, plan } from './planner';
 import { KNOCKED_MUST, score, scoresFor, tierOf } from './ranking';
 import type { Release } from './release';
@@ -45,7 +45,9 @@ function medianPace(paces: Pace[]): Pace {
 }
 
 // genres: src/data/genres.json in the app; none means no same-type keep vote.
-export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genres: Genre[] = [], release: (Release & { dayEdits?: DayEdit[] }) | null = null): GroupResult {
+export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genres: Genre[] = [], releaseIn: Release | ReleasePlan | null = null): GroupResult {
+  // Empty items turns the released plan off (release.ts), so it must not plan with nothing forced in.
+  const release = releaseIn?.items.length ? releaseIn : null;
   const rs = PEOPLE.map(p => state.responses[p]).filter((r): r is Response => !!r);
   const open = allSubmitted(state.responses);
   const days = release?.days ?? (rs.length ? Math.min(...rs.map(daysOf)) : 9);
@@ -77,8 +79,10 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
     const keep = new Set(release.items);
     const P = run(keep, new Set(ids.filter(id => !keep.has(id))));
     // Places the group ruled out are not offered back as "you'd also get" on a longer trip.
-    const final = release.dayEdits?.length ? applyDayEdits(P, release.dayEdits, PACE_HOURS[pace]).plan : P;
-    return { open: true, days, pace, base: P, knockouts: [], results: [], final, extras: extrasFor(keep, new Set(release.ruledOut)), knocked: [], finalized: [...PEOPLE], locked: true, released: true };
+    const edits = (release as Partial<ReleasePlan>).dayEdits ?? []; // a Release is a ReleasePlan without edits
+    const edited = edits.length ? applyDayEdits(P, edits, PACE_HOURS[pace], items) : null;
+    const final = edited?.plan ?? P;
+    return { open: true, days, pace, base: P, knockouts: [], results: [], final, extras: extrasFor(keep, new Set(release.ruledOut)), knocked: [], finalized: [...PEOPLE], locked: true, released: true, ...(edited ? { warnings: edited.warnings } : {}) };
   }
 
   const F = new Set<string>(), O = new Set<string>();
