@@ -18,7 +18,11 @@ Without Supabase keys the app saves to this browser only, which is good for tryi
 1. Supabase: create a free project at supabase.com and copy the Project URL and the anon public key (Project Settings, API). Do not run any SQL yet.
 2. GitHub: create an empty private repo (no README). The app lives on the branch `worktree-trip-picker-build`, so bring main up to it first, from the main project folder: `git merge --ff-only worktree-trip-picker-build`, then `git remote add origin <url>` and `git push -u origin main`.
 3. Vercel: choose Add New Project, import the repo, add three environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY with the two Supabase values, and VITE_RAW_KEY with a secret word of your own. Click Deploy.
-4. Database, after the app is deployed: in Supabase open SQL Editor, paste the contents of supabase/schema.sql and run it. Then immediately run supabase/set-admin-password.sql with your organiser password in place of the placeholder. Once schema.sql has run, saving stays_admin (and trip settings) needs the organiser key in an x-admin-key header, and this build of the app does not send one. Whatever password is set, the database rejects the organiser's stay pins, closed stays, nights and scouts, so they will not reach the shared database until the app sends the header.
+4. Database, after the app is deployed. In Supabase open SQL Editor and run these in order, one at a time:
+   1. supabase/schema.sql, pasted whole. It creates the tables and the password tables, and is safe to run again.
+   2. For a NEW database only: supabase/set-trip-password.sql, with the friends' password in place of the placeholder. It needs the tables from the step above, so it cannot run first. Until it runs, nobody can read or save anything.
+   3. Immediately after: supabase/set-admin-password.sql, with your organiser password in place of the placeholder. Until then the database refuses organiser saves (stay pins, closed stays, nights, scouts, trip settings). The app sends the organiser password in an x-admin-key header.
+   Both password scripts refuse a blank or unchanged placeholder. Close each query tab without saving it.
 5. Send the Vercel link to the group.
 
 The `choice_log` table in supabase/schema.sql is append-only and keeps every swipe, re-rank, head to head, days, pace and suggestion as made; only you read it, at `/#/raw-<VITE_RAW_KEY>` (default key `tp-raw-local`, so set your own in Vercel), with a Download CSV button.

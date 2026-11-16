@@ -41,15 +41,10 @@ describe('supabase/schema.sql can be re-run', () => {
     }
   });
 
-  // The client sets only x-trip-key. While no app code sends x-admin-key, the organiser writes above are rejected, and the
-  // README and schema must say so rather than tell the organiser that setting a password makes them work.
-  it('says organiser writes are rejected while the app does not send x-admin-key', () => {
-    const walk = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e =>
-      e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.tsx?$/.test(e.name) && !/\.test\./.test(e.name) ? [`${dir}/${e.name}`] : []);
-    const sends = walk('src').some(f => fs.readFileSync(f, 'utf8').toLowerCase().includes('x-admin-key'));
-    if (sends) return;
-    expect(sql).toMatch(/app does not send that header yet/);
-    expect(fs.readFileSync('README.md', 'utf8')).toMatch(/does not send one/);
+  it('tells the organiser to set the organiser password after schema.sql, and no longer says the app sends no header', () => {
+    const readme = fs.readFileSync('README.md', 'utf8');
+    expect(readme).toMatch(/set-admin-password\.sql/);
+    expect(readme).not.toContain('does not send');
   });
 
   it('reads the organiser key from the x-admin-key header', () => {
@@ -115,5 +110,16 @@ describe('supabase/set-admin-password.sql', () => {
     expect(guard).toBeGreaterThan(-1);
     expect(sql).toMatch(/pw like 'PUT-THE-%'/);
     expect(guard).toBeLessThan(sql.indexOf('insert into admin_secret'));
+  });
+});
+
+describe('supabase/set-trip-password.sql', () => {
+  const sql = fs.readFileSync('supabase/set-trip-password.sql', 'utf8');
+
+  it('raises on a blank or placeholder password before it inserts', () => {
+    const guard = sql.search(/btrim\(coalesce\(pw, ''\)\) = ''[\s\S]*?raise exception/);
+    expect(guard).toBeGreaterThan(-1);
+    expect(sql).toMatch(/pw like 'PUT-THE-%'/);
+    expect(guard).toBeLessThan(sql.indexOf('insert into trip_secret'));
   });
 });
