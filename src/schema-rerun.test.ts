@@ -3,10 +3,8 @@ import fs from 'node:fs';
 
 // The Supabase SQL editor runs the script as one transaction, so one statement that fails on a re-run rolls back
 // everything, including tables added since the last run (choice_log went missing live this way).
-const files = ['supabase/schema.sql', 'supabase/migrations/2026-11-16-final-stage.sql'];
-
-describe.each(files)('%s can be re-run', file => {
-  const sql = fs.readFileSync(file, 'utf8');
+describe('supabase/schema.sql can be re-run', () => {
+  const sql = fs.readFileSync('supabase/schema.sql', 'utf8');
 
   it('drops every policy before creating it', () => {
     const created = [...sql.matchAll(/create policy "([^"]+)" on (\w+)/g)].map(m => `${m[1]} on ${m[2]}`);

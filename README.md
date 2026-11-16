@@ -15,10 +15,11 @@ Without Supabase keys the app saves to this browser only, which is good for tryi
 
 ## Go live (about 15 minutes)
 
-1. Supabase: create a free project at supabase.com, open SQL Editor, paste the contents of supabase/schema.sql, and run it. Then go to Project Settings, API, and copy the Project URL and the anon public key.
+1. Supabase: create a free project at supabase.com and copy the Project URL and the anon public key (Project Settings, API). Do not run any SQL yet.
 2. GitHub: create an empty private repo (no README). The app lives on the branch `worktree-trip-picker-build`, so bring main up to it first, from the main project folder: `git merge --ff-only worktree-trip-picker-build`, then `git remote add origin <url>` and `git push -u origin main`.
 3. Vercel: choose Add New Project, import the repo, add three environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY with the two Supabase values, and VITE_RAW_KEY with a secret word of your own. Click Deploy.
-4. Send the Vercel link to the group.
+4. Database, after the app is deployed: in Supabase open SQL Editor, paste the contents of supabase/schema.sql and run it. Then immediately run supabase/set-admin-password.sql with your organiser password in place of the placeholder. Once schema.sql has run, saving stays_admin (and trip settings) needs the organiser key, so the app cannot save those until the password is set.
+5. Send the Vercel link to the group.
 
 The `choice_log` table in supabase/schema.sql is append-only and keeps every swipe, re-rank, head to head, days, pace and suggestion as made; only you read it, at `/#/raw-<VITE_RAW_KEY>` (default key `tp-raw-local`, so set your own in Vercel), with a Download CSV button.
 
