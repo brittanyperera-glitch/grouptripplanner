@@ -1,6 +1,6 @@
 import { responseCols, toResponse } from '../supabase';
 import type { RespRow } from '../supabase';
-import type { AdminItems, AppState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, Store, Suggestion, Vote } from '../../types';
+import type { AdminItems, AppState, ChoiceEntry, ChoiceInput, Complaint, CrewStays, Person, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, Store, Suggestion, Vote } from '../../types';
 
 const toRow = (r: Response): RespRow => ({
   name: r.name as Person, days: r.days, flex: r.flex, pace: r.pace, ranking: { ...r.ranking, final: r.final ?? null },
@@ -46,6 +46,8 @@ export class ServerLike implements Store {
     this.log.push(c);
   }
   async loadLog(): Promise<ChoiceEntry[]> { return []; }
+  async addComplaint(_c: { name: Player; text: string }): Promise<void> {}
+  async loadComplaints(): Promise<Complaint[]> { return []; }
   subscribe(cb: (s: AppState) => void): () => void {
     this.listeners.add(cb);
     return () => { this.listeners.delete(cb); };

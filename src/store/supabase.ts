@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { tripClient } from './tripKey';
 import { applyAdmin, cleanNights, EMPTY_STAYS, emptyRanking, mergeAdminItems } from '../types';
-import type { AdminItems, AppState, TripAdminState, ChoiceEntry, ChoiceInput, CrewStays, Person, PlaceDraft, PlaceSuggestion, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
+import type { AdminItems, AppState, TripAdminState, ChoiceEntry, ChoiceInput, Complaint, CrewStays, Person, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
 
 type RankingCol = Response['ranking'] & { final?: Response['final'] };
 export interface RespRow {
@@ -272,6 +272,17 @@ export class SupabaseStore implements Store {
     const { error } = await this.db.from('choice_log').insert({ id: crypto.randomUUID(), name: c.name, kind: c.kind, ref: c.ref, value: c.value });
     if (error) throw error;
     this.ping();
+  }
+
+  async addComplaint(c: { name: Player; text: string }): Promise<void> {
+    const { error } = await this.db.from('complaints').insert({ id: crypto.randomUUID(), name: c.name, text: c.text });
+    if (error) throw error;
+  }
+
+  async loadComplaints(): Promise<Complaint[]> {
+    const { data, error } = await this.db.from('complaints').select('*').order('created_at');
+    if (error) throw error;
+    return ((data ?? []) as { id: string; name: Player; text: string; created_at: string }[]).map(x => ({ id: x.id, name: x.name, text: x.text, createdAt: x.created_at }));
   }
 
   async loadLog(): Promise<ChoiceEntry[]> {

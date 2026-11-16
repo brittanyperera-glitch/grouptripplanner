@@ -319,4 +319,21 @@ describe('WriteQueue trip admin', () => {
     expect(await q.flush()).toBe(true);
     expect(sent).toEqual([{ flights: { done: true }, money: { done: true } }]);
   });
+
+  it('a failed complaint reaches the caller and never marks the queue unsaved', async () => {
+    class NoTable extends LocalStore {
+      override async addComplaint(): Promise<void> { throw new Error('no complaints table'); }
+    }
+    const h = hooks();
+    const q = new WriteQueue(new NoTable(), h);
+    await expect(q.store.addComplaint({ name: 'Alex', text: 'Too hot' })).rejects.toThrow('no complaints table');
+    expect(h.fails).toBe(0);
+    expect(await q.flush()).toBe(true);
+  });
+
+  it('a stored complaint reads back through the local store', async () => {
+    const base = new LocalStore();
+    await new WriteQueue(base, hooks()).store.addComplaint({ name: 'Alex', text: 'Too hot' });
+    expect(await base.loadComplaints()).toMatchObject([{ name: 'Alex', text: 'Too hot' }]);
+  });
 });

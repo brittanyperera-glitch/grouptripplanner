@@ -66,8 +66,8 @@ describe('Group tab as a hub', () => {
     const user = userEvent.setup();
     await guestToTabs(user);
     await user.click(await screen.findByRole('tab', { name: 'Group' }));
-    await waitFor(() => expect(blocks()).toHaveLength(2));
-    expect(blocks().map(b => b.textContent)).toEqual([expect.stringContaining('Group knockouts'), expect.stringContaining("Everyone's picks")]);
+    await waitFor(() => expect(blocks()).toHaveLength(3));
+    expect(blocks().map(b => b.textContent)).toEqual([expect.stringContaining('Group knockouts'), expect.stringContaining("Everyone's picks"), expect.stringContaining('Complaints')]);
     expect(koBlock()).toHaveClass('gh-alert');
     expect(koBlock()).toHaveTextContent('You have 2 to vote on');
 
@@ -83,8 +83,8 @@ describe('Group tab as a hub', () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(await screen.findByRole('tab', { name: 'Group' }));
-    await waitFor(() => expect(blocks()).toHaveLength(3));
-    expect(blocks().map(b => b.textContent)).toEqual([expect.stringContaining('Group stats'), expect.stringContaining('Group knockouts'), expect.stringContaining("Everyone's picks")]);
+    await waitFor(() => expect(blocks()).toHaveLength(4));
+    expect(blocks().map(b => b.textContent)).toEqual([expect.stringContaining('Group stats'), expect.stringContaining('Group knockouts'), expect.stringContaining("Everyone's picks"), expect.stringContaining('Complaints')]);
     expect(koBlock()).toHaveClass('gh-alert');
     expect(koBlock()).toHaveTextContent('You have 2 to vote on');
     expect(koBlock()).toHaveTextContent('Still to vote: Alex, Antek, Lazza, Saulie');
@@ -95,7 +95,7 @@ describe('Group tab as a hub', () => {
     await user.click(blocks()[2]);
     expect(await screen.findByLabelText('Everyone')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Back' }));
-    expect(blocks()).toHaveLength(3);
+    expect(blocks()).toHaveLength(4);
   });
 
   it('shows the Waiting screen, not the hub, until the group is open', async () => {

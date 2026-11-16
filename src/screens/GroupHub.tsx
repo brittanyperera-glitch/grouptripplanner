@@ -1,7 +1,7 @@
 import './GroupHub.css';
 import { useEffect, useState } from 'react';
 import CrewStrip from '../components/CrewStrip';
-import { IconGroup, IconList, IconRight, IconSpark } from '../components/Icons';
+import { IconGroup, IconList, IconRight, IconSpark, IconWarn } from '../components/Icons';
 import { motion, MOTION, navigate } from '../components/motion';
 import { friendStats } from '../lib/friendship';
 import { outstanding } from '../lib/outstanding';
@@ -13,9 +13,10 @@ import type { GroupResult } from '../types';
 import Everyone from './Everyone';
 import GroupAnswers from './GroupAnswers';
 import Friends from './Friends';
+import Complaints from './Complaints';
 import Knockouts from './Knockouts';
 
-export type GroupView = 'hub' | 'stats' | 'knockouts' | 'picks';
+export type GroupView = 'hub' | 'stats' | 'knockouts' | 'picks' | 'complaints';
 
 const PULSE_EVERY_MS = 4000;
 
@@ -40,7 +41,7 @@ function Block({ icon, title, lines, onOpen, alert, pulse }: { icon: JSX.Element
   );
 }
 
-export default function GroupHub({ group, view, onView }: { group: GroupResult; view: GroupView; onView(v: GroupView): void }) {
+export default function GroupHub({ group, view, onView, onFinalize }: { group: GroupResult; view: GroupView; onView(v: GroupView): void; onFinalize?: () => void }) {
   const { state, me, sandbox, items } = useApp();
   const { open, mine, others } = outstanding(group, state.votes, me);
   const stats = !isGuest(me) && allSubmitted(state.responses);
@@ -72,6 +73,16 @@ export default function GroupHub({ group, view, onView }: { group: GroupResult; 
         {view === 'stats' && <Friends />}
         {view === 'knockouts' && <Knockouts group={group} />}
         {view === 'picks' && <Everyone open />}
+        {view === 'complaints' && (
+          <Complaints>
+            {group.locked
+              ? <div className="sub">The plan is locked, so votes and lists can't change.</div>
+              : <Block icon={<IconSpark size={26} />} title="Check knockouts again" lines={['Change a vote']} onOpen={() => go('knockouts')} />}
+            {!group.locked && (onFinalize
+              ? <Block icon={<IconList size={26} />} title="Finalize again" lines={['Edit my list']} onOpen={onFinalize} />
+              : <div className="sub">Finalizing opens once the knockouts are decided.</div>)}
+          </Complaints>
+        )}
       </>
     );
   }
@@ -83,6 +94,7 @@ export default function GroupHub({ group, view, onView }: { group: GroupResult; 
         {stats && <Block icon={<IconGroup size={26} />} title="Group stats" lines={[twin ? `Travel twin: ${twin.name} ${twin.pct}%` : 'Who travels like who']} onOpen={() => go('stats')} />}
         <Block icon={<IconSpark size={26} />} title="Group knockouts" lines={koLines(open, mine, others)} onOpen={() => go('knockouts')} alert={owing} pulse={pulse} />
         <Block icon={<IconList size={26} />} title="Everyone's picks" lines={[`${items.length} places, ${withMust} Musts`]} onOpen={() => go('picks')} />
+        <Block icon={<IconWarn size={26} />} title="Complaints" lines={['Re-check, finalize or leave a comment']} onOpen={() => go('complaints')} />
         {/* Brittany 2026-10-16: shown once I have voted on all my knockouts (or the plan is locked); the real feature comes later. */}
         {(group.locked || (group.open && !owing)) && (
           <div className="gh-block gh-soon" role="status">
