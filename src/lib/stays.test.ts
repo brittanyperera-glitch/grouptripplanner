@@ -243,6 +243,12 @@ describe('scouts and areas', () => {
     const plan = { days: [day(1, 'Colombo'), day(2, null), day(3, 'Ella'), day(4, null), day(5, 'Colombo'), day(6, 'Ella')] } as Plan;
     expect(stayAreas(plan)).toEqual(['Colombo', 'Ella']);
   });
+  it('stayAreas leaves out an area that is only on the last day, where nobody sleeps', () => {
+    const drive = (from: Hub, to: Hub) => ({ kind: 'drive' as const, label: `Drive from ${from} to ${to}`, hours: 2, from, to });
+    const day = (n: number, area: Area | null, entries: Day['entries']): Day => ({ n, area, entries, spare: 0, rainSlack: false });
+    const plan = { route: ['Colombo', 'Ella', 'Kandy'], days: [day(1, 'Colombo', []), day(2, null, [drive('Colombo', 'Ella')]), day(3, 'Ella', []), day(4, 'Kandy and Knuckles', [drive('Ella', 'Kandy')])] } as Plan;
+    expect(stayAreas(plan)).toEqual(['Colombo', 'Ella']);
+  });
 });
 
 describe('groupSummary', () => {

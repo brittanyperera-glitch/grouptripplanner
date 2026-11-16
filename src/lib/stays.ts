@@ -1,5 +1,6 @@
 import { PEOPLE, isGuest, stayForkId } from '../types';
 import type { Area, CrewStays, Fallen, Hub, Leg, Plan, PlaceSuggestion, Player, PrefAnswer, StayPin, StayRank, StayType, Vote } from '../types';
+import { nightBlocks, nightsFromBlocks } from './calendar';
 import { VOTES_TO_RESOLVE } from './group';
 import { isExtraKey, parseNights, stretchLevel } from './prefs';
 import { tallySides } from './votes';
@@ -188,7 +189,14 @@ export function scoutAssignments(areas: Area[], participants: Player[]): Partial
   return out;
 }
 
-export const stayAreas = (plan: Plan): Area[] => [...new Set(plan.days.map(d => d.area).filter((a): a is Area => a !== null))];
+/** Areas where the group sleeps, in route order; an area only on the departure day is left out. A plan nightBlocks cannot read falls back to every area on any day. */
+export function stayAreas(plan: Plan): Area[] {
+  try {
+    return Object.keys(nightsFromBlocks(nightBlocks(plan, null))) as Area[];
+  } catch {
+    return [...new Set(plan.days.map(d => d.area).filter((a): a is Area => a !== null))];
+  }
+}
 
 export interface StayConflict { key: string; no: string[]; happy: string[] }
 export interface GroupSummary { total: number; happy: Record<string, string[]>; hardNos: Record<string, string[]>; conflicts: StayConflict[] }
