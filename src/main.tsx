@@ -10,6 +10,12 @@ freshStartForEpoch();
 const cleaned = freshStartFromUrl(window.location.href);
 if (cleaned) window.history.replaceState(null, '', cleaned);
 
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  const register = () => void navigator.serviceWorker.register('/sw.js').catch(() => {});
+  if (document.readyState === 'complete') register();
+  else window.addEventListener('load', register, { once: true });
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

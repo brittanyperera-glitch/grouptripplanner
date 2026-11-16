@@ -1,0 +1,11 @@
+{
+  "name": "The Homecoming",
+  "short_name": "Homecoming",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#f4ede0",
+  "background_color": "#f4ede0",
+  "icons": [
+    { "src": "/img/poster/homecoming.jpg", "sizes": "1024x1536", "type": "image/jpeg" }
+  ]
+}
