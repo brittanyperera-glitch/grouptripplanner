@@ -123,6 +123,13 @@ describe('flights, custom stops and spare', () => {
     const tight = dayView(input({ custom: [{ kind: 'custom', id: 'c:1', day: lastN, hours: plan.days[lastN - 1].spare + 0.5 }] }), lastN);
     expect(tight.overBudget).toBe(true);
   });
+  it('is not over budget when a custom stop fills exactly what is left, despite float noise', () => {
+    const p: Plan = structuredClone(plan);
+    p.days[2].entries = [{ kind: 'activity', label: 'Long day', hours: 6.83 }];
+    const v = dayView(input({ plan: p, paceHours: 7, custom: [{ kind: 'custom', id: 'c:1', day: 3, hours: 0.17 }] }), 3);
+    expect(Math.abs(v.spare)).toBe(0);
+    expect(v.overBudget).toBe(false);
+  });
   it('carries the day\'s area and entries', () => {
     const v = dayView(input(), 4);
     expect(v.n).toBe(4);
