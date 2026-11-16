@@ -143,6 +143,22 @@ describe('the released plan through groupResult', () => {
     expect(days[to.n - 1].spare).toBeCloseTo(cap(to.n) - hours(days[to.n - 1]), 5);
     expect(days[from.n - 1].spare).toBeCloseTo(cap(from.n) - hours(days[from.n - 1]), 5);
   });
+  it('a place moved to the last day lands before the airport drive, not after the flight', () => {
+    const last = today.final!.days.length;
+    const g = run({ ...RELEASE!, dayEdits: [{ kind: 'move', id: 'pidurangala', day: last }] });
+    const labels = g.final!.days[last - 1].entries.map(e => e.itemId ?? e.label);
+    const at = labels.indexOf('pidurangala');
+    expect(at).toBeGreaterThan(-1);
+    const tail = g.final!.days[last - 1].entries.findIndex(e => (e.kind === 'drive' && e.to === 'AIR') || e.label === 'Check in and fly');
+    expect(tail).toBeGreaterThan(-1);
+    expect(at).toBeLessThan(tail);
+    expect(g.final!.days[last - 1].entries.at(-1)?.label).toBe('Check in and fly');
+  });
+  it('names the place, not its id, in a skipped-edit warning', () => {
+    const g = run({ ...RELEASE!, dayEdits: [{ kind: 'hide', id: 'rooftop' }] });
+    expect(g.warnings?.join()).toContain('Rooftop drinks or Lotus Tower');
+    expect(g.warnings?.join()).not.toContain('"rooftop"');
+  });
   it('a move onto the capped last day uses half the pace and reports the overrun through groupResult', () => {
     const last = today.final!.days.length;
     const movable = today.final!.days.slice(0, -1).flatMap(x => x.entries.filter(e => e.itemId && e.kind !== 'drive' && e.kind !== 'train'));
