@@ -6,9 +6,10 @@ const root = process.cwd();
 const swSource = readFileSync(join(root, 'public/sw.js'), 'utf8');
 const ORIGIN = 'https://trip.test';
 
-interface FakeRes { ok: boolean; status: number; body: string; clone(): FakeRes; json(): Promise<unknown> }
-const res = (body: string, ok = true): FakeRes => ({
+interface FakeRes { ok: boolean; status: number; body: string; headers: { get(k: string): string | null }; clone(): FakeRes; json(): Promise<unknown> }
+const res = (body: string, ok = true, type: string | null = null): FakeRes => ({
   ok, status: ok ? 200 : 500, body,
+  headers: { get: (k: string) => (k.toLowerCase() === 'content-type' ? type : null) },
   clone() { return this; },
   json: async () => JSON.parse(body),
 });
@@ -253,6 +254,14 @@ describe('sw.js fetch', () => {
     expect(a.out?.body).toBe('body:/assets/app-1.js');
     expect(b.out?.body).toBe('body:/assets/app-1.js');
     expect(sw.calls.filter((u) => u === '/assets/app-1.js')).toHaveLength(1);
+  });
+
+  it('never caches the SPA fallback page under an asset URL (no later release would ever evict it)', async () => {
+    let n = 0;
+    const sw = boot((url) => (url === '/assets/gone-1.js' ? res(`<html>${++n}</html>`, true, 'text/html; charset=utf-8') : live(url)));
+    await sw.request(`${ORIGIN}/assets/gone-1.js`);
+    await sw.request(`${ORIGIN}/assets/gone-1.js`);
+    expect(sw.calls.filter((u) => u === '/assets/gone-1.js')).toHaveLength(2);
   });
 
   it('does not intercept same-origin non-asset requests such as version.json or sw.js', async () => {

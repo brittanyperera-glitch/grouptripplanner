@@ -69,7 +69,9 @@ async function cacheFirst(request) {
   const hit = await caches.match(request);
   if (hit) return hit;
   const res = await fetch(request);
-  if (res.status === 200) (await caches.open(VERSION)).put(request, res.clone());
+  // A missing asset is rewritten to index.html with 200; cached, it would outlive every future release.
+  const html = (res.headers?.get?.('content-type') ?? '').includes('text/html');
+  if (res.status === 200 && !html) (await caches.open(VERSION)).put(request, res.clone());
   return res;
 }
 
