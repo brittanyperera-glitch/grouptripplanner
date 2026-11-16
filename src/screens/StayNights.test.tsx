@@ -13,10 +13,10 @@ import Stays from './Stays';
 const grp = vi.hoisted(() => ({ current: null as unknown }));
 vi.mock('../workers/usePlan', async orig => ({ ...(await orig<typeof import('../workers/usePlan')>()), useGroupResult: () => ({ data: grp.current, loading: false }) }));
 
-const day = (n: number, area: Plan['days'][number]['area']) => ({ n, area, entries: [], spare: 0, rainSlack: false });
+const day = (n: number, area: Plan['days'][number]['area'], entries: Plan['days'][number]['entries'] = []) => ({ n, area, entries, spare: 0, rainSlack: false });
 const plan: Plan = {
   route: ['AIR', 'Sigiriya', 'Ella', 'AIR'], areas: ['Cultural Triangle', 'Ella'], chosen: [], dropped: [], travelHours: 0, fits: true, missingMusts: [], score: 0,
-  days: [day(1, 'Cultural Triangle'), day(2, 'Cultural Triangle'), day(3, null), day(4, 'Ella')],
+  days: [day(1, 'Cultural Triangle'), day(2, 'Cultural Triangle'), day(3, null, [{ kind: 'drive', label: 'Drive from Sigiriya to Ella', hours: 2, from: 'Sigiriya', to: 'Ella' }]), day(4, 'Ella')],
 };
 const seedCrew = (name: Player) => localStorage.setItem(`tp:stays:${name}`, JSON.stringify({ name, prefs: [], quizDone: true, locked: false, ranks: {}, bingo: [], updatedAt: '2026-10-14T00:00:00Z' } satisfies CrewStays));
 const stored = <T,>(key: string): T => JSON.parse(localStorage.getItem(key) ?? 'null') as T;
