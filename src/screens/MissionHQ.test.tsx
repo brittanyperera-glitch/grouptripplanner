@@ -90,6 +90,10 @@ describe('Mission HQ', () => {
     expect(within(board).getAllByText('Done')).toHaveLength(3);
     expect(screen.getByText('Mission complete')).toBeInTheDocument();
     expect(screen.getByText('Crew 5/5')).toBeInTheDocument();
+    expect(within(board).getByText(/^\d+ of \d+ decided$/)).toBeInTheDocument();
+    expect(within(board).getByText(/^\d+ of \d+ secured$/)).toBeInTheDocument();
+    expect(within(board).getByText('Everyone is down')).toBeInTheDocument();
+    expect(within(board).queryByText('Secured')).toBeNull();
     await userEvent.click(within(board).getAllByRole('button')[0]);
     expect(onGo).not.toHaveBeenCalled();
     expect(onOpen).not.toHaveBeenCalled();

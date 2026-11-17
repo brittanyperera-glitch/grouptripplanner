@@ -5,16 +5,21 @@ import CrewRing from '../components/spy/CrewRing';
 import MissionFile from '../components/spy/MissionFile';
 import NextMove from '../components/spy/NextMove';
 import SpyScreen from '../components/spy/SpyScreen';
-import Stamp from '../components/spy/Stamp';
 import { WEEKDAY_DAY_MONTH } from '../lib/dates';
 import { crewReadiness, missionFiles, nextMove, spyActive } from '../lib/missions';
 import type { MissionId, MissionInput, Move } from '../lib/missions';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
 import type { GroupResult, Person } from '../types';
+import { CODE, Finale } from './MissionComplete';
 import { useTripModel } from './useTripModel';
 
 const COPY = { notSet: 'Launch date not set', launch: 'Wheels down Colombo', files: 'Mission files', plain: 'Mission HQ', clear: 'Every mission is done.' };
+
+// The wording each file shows when it is done, so the replay reads like the real thing.
+const DONE_STATUS: Record<MissionId, (total: number) => string> = {
+  stays: n => `${n} of ${n} decided`, supply: n => `${n} of ${n} secured`, touchdown: () => 'Everyone is down',
+};
 
 interface BodyProps {
   me: Person; input: MissionInput; start: string | null; replay?: boolean;
@@ -34,13 +39,13 @@ export function MissionHQBody({ me, input, start, replay = false, onGo, onOpen, 
       </section>
     );
   }
-  const files = replay ? real.map(f => ({ ...f, done: f.total, complete: true, status: 'Secured' })) : real;
+  const files = replay ? real.map(f => ({ ...f, done: f.total, complete: true, status: DONE_STATUS[f.id](f.total) })) : real;
   const crew = crewReadiness(input);
   const people = replay ? crew.people.map(p => ({ ...p, done: p.total })) : crew.people;
   const mine = people.find(p => p.name === me) ?? { done: 0, total: 1 };
   const move = replay ? null : nextMove(me, input);
   return (
-    <SpyScreen code="Operation Homecoming" title={COPY.plain} replay={replay ? { onExit } : undefined}>
+    <SpyScreen code={CODE} title={COPY.plain} replay={replay ? { onExit } : undefined}>
       {!replay && <NextMove me={me} move={move} done={mine.done} total={mine.total} onStart={onGo} />}
       {start
         ? <Countdown at={`${start}T00:00`} label={COPY.launch} />
@@ -50,7 +55,7 @@ export function MissionHQBody({ me, input, start, replay = false, onGo, onOpen, 
         <span className="spy-code">{COPY.files}</span>
         {files.map(f => <MissionFile key={f.id} file={f} onOpen={replay ? undefined : onOpen} />)}
       </div>
-      {replay && <div className="spyhq-done"><Stamp text="Mission complete" big burst sound /><span className="spy-code">{`Crew ${PEOPLE.length}/${PEOPLE.length}`}</span></div>}
+      {replay && <Finale ready={PEOPLE.length} of={PEOPLE.length} />}
     </SpyScreen>
   );
 }

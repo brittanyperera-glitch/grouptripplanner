@@ -11,6 +11,7 @@ import { groupResult } from '../lib/group';
 import { RELEASE } from '../lib/release';
 import { ADMIN_IDS } from '../lib/tripadmin';
 import { AppProvider } from '../state';
+import { freshStartFromUrl } from '../store/fresh';
 import { LocalStore } from '../store/local';
 import { PEOPLE } from '../types';
 import type { GroupResult, Item, Leg } from '../types';
@@ -77,5 +78,29 @@ describe('Mission complete', () => {
     mount();
     expect(await screen.findByText('Crew 5/5')).toBeInTheDocument();
     vi.restoreAllMocks();
+  });
+
+  it('the flag is a tp: key, so ?fresh resets it and the finale shows again', async () => {
+    seed();
+    mount();
+    await waitFor(() => expect(localStorage.getItem(SEEN_KEY)).toBe('1'));
+    freshStartFromUrl('https://x.test/?fresh');
+    expect(localStorage.getItem(SEEN_KEY)).toBeNull();
+    cleanup();
+    seed();
+    mount();
+    expect(await screen.findByText('Crew 5/5')).toBeInTheDocument();
+  });
+
+  it('with nobody signed in, or someone outside the five, it does not show and does not use up the flag', async () => {
+    for (const me of [null, 'Mum']) {
+      seed();
+      if (me) localStorage.setItem('tp:me', me); else localStorage.removeItem('tp:me');
+      const { view } = mount();
+      await new Promise(r => setTimeout(r, 30));
+      expect(view.container.innerHTML).toBe('');
+      expect(localStorage.getItem(SEEN_KEY)).toBeNull();
+      cleanup();
+    }
   });
 });
