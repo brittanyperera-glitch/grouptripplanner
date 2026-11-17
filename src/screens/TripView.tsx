@@ -55,6 +55,11 @@ export function TripViewBody({ model, items, legs, onReplay }: { model: TripMode
   const [place, setPlace] = useState<Item | null>(null);
   const [stay, setStay] = useState<Area | null>(null);
   const strip = useRef<HTMLDivElement>(null);
+  const pick = (n: number) => {
+    setDay(n);
+    // Only the day-N part of the hash is ours; a raw or guest hash stays as it is.
+    if (window.location.hash === '' || DAY_HASH.test(window.location.hash)) window.history.replaceState(null, '', `#/day-${n}`);
+  };
 
   useEffect(() => {
     const onHash = () => { if (DAY_HASH.test(window.location.hash)) setDay(hashDay(count)); };
@@ -64,17 +69,16 @@ export function TripViewBody({ model, items, legs, onReplay }: { model: TripMode
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, [count]);
+  // The clamp is kept, not just drawn: a pick past the end becomes the last day and its hash, so a re-solve back to more days does not jump again.
+  useEffect(() => {
+    if (count > 0 && picked > count) pick(count);
+  }, [count, picked]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     strip.current?.querySelector('[aria-pressed="true"]')?.scrollIntoView?.({ inline: 'center', block: 'nearest', behavior: motion() === 'full' ? 'smooth' : 'auto' });
   }, [day]);
 
   if (!model.plan || count === 0) return <section className="body" aria-label="Trip view"><p className="tv-empty">{COPY.empty}</p></section>;
   const view = model.views[day - 1];
-  const pick = (n: number) => {
-    setDay(n);
-    // Only the day-N part of the hash is ours; a raw or guest hash stays as it is.
-    if (window.location.hash === '' || DAY_HASH.test(window.location.hash)) window.history.replaceState(null, '', `#/day-${n}`);
-  };
   return (
     <section className="body tv" aria-label="Trip view">
       <div className="tv-map"><RouteMap route={model.plan.route} drive legs={view.legs} parkAt={view.parkAt} dayN={day} /></div>

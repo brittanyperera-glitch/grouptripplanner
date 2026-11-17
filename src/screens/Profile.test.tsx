@@ -13,6 +13,7 @@ import { friendStats } from '../lib/friendship';
 import { AppProvider, useApp } from '../state';
 import Friends from './Friends';
 import ConnectedProfile, { ProfileView as Profile, VIEW_KEY } from './Profile';
+import { PosterWhen } from './Poster';
 import { artSrc, cardColours, cardData, cardLayout, cardNo, CARD_H, CARD_W, contrast, FRIEND_LABELS, rarityOf, renderCardBlob, selfieSrc, tierOf, tripStats } from './profileCard';
 
 function PickThen({ who, children }: { who: Player; children: ReactNode }) {
@@ -338,6 +339,18 @@ describe('flip to the poster back', () => {
     await user.click(screen.getByRole('button', { name: profile.flipBack }));
     expect(screen.getByRole('button', { name: profile.save })).toBeInTheDocument();
     expect(front).toHaveAttribute('aria-hidden', 'false');
+  });
+
+  it('Save poster shares it under the trip month the organiser set, as the reveal does', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('jpg', { status: 200, headers: { 'content-type': 'image/jpeg' } })));
+    const share = vi.fn(async () => {});
+    Object.assign(navigator, { share, canShare: () => true });
+    const user = userEvent.setup();
+    render(<PosterWhen.Provider value="Jan 2027"><Profile name="Saulie" players={players} onBack={() => {}} /></PosterWhen.Provider>);
+    await user.click(screen.getByRole('button', { name: profile.flip }));
+    await user.click(screen.getByRole('button', { name: profile.saveBack }));
+    await waitFor(() => expect(share).toHaveBeenCalledOnce());
+    expect((share.mock.calls[0] as unknown as [{ title: string }])[0].title).toBe('Sri Lanka, Jan 2027');
   });
 
   it('names the card on the back as the same one as the front', () => {

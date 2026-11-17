@@ -48,7 +48,6 @@ export const photoOf = (s: PlaceSuggestion): string | undefined => {
 };
 
 export const gbp = (n: number) => `£${n.toFixed(2).replace(/\.00$/, '')}`;
-export { andList };
 export const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** Only web links ever reach an href or an img src. A missing scheme is added; anything else is rejected. */

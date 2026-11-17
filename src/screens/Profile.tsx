@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent } from 'react';
 import Avatar from '../components/Avatar';
 import { motion } from '../components/motion';
@@ -11,7 +11,7 @@ import { allSubmitted } from '../lib/group';
 import type { Player } from '../types';
 import { artSrc, cardColours, cardData, cardLayout, cardNo, FRIEND_LABELS, metaText, PALETTE, renderCardBlob, textSize, tierOf, tripStats } from './profileCard';
 import type { Box, CardData, CardFriends, CardStat } from './profileCard';
-import { posterFile, shareOrDownload, TRAVEL_POSTER } from './Poster';
+import { posterFile, PosterWhen, shareOrDownload, TRAVEL_POSTER } from './Poster';
 import { releaseFor } from '../lib/release';
 import './Profile.css';
 
@@ -151,6 +151,7 @@ export default function Profile(props: ProfileProps) {
 
 export function ProfileView({ name, players = {}, onBack, friends, trip, onQuiz, onBingo, quizDone = false }: ProfileProps & { friends?: CardFriends | null; trip?: CardStat[] | null; quizDone?: boolean }) {
   const [mode] = useState(motion);
+  const when = useContext(PosterWhen);
   // Each tap remounts the figure, which restarts its one jump; nothing animates until the first tap.
   const [jumps, setJumps] = useState(0);
   const [view, setViewState] = useState<View>(readView);
@@ -201,7 +202,7 @@ export function ProfileView({ name, players = {}, onBack, friends, trip, onQuiz,
   });
 
   // The back is the poster file itself, so saving it shares or downloads that file as it is.
-  const saveBack = () => run('saved', async () => { await shareOrDownload(await posterFile()); });
+  const saveBack = () => run('saved', async () => { await shareOrDownload(await posterFile(), when); });
 
   const label = (key: 'saved' | 'copied' | 'sent', idle: string) => (done === key ? profile[key] : idle);
   return (

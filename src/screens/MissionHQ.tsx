@@ -14,7 +14,7 @@ import type { GroupResult, Person } from '../types';
 import { CODE, Finale } from './MissionComplete';
 import { useTripModel } from './useTripModel';
 
-const COPY = { notSet: 'Launch date not set', launch: 'Wheels down Colombo', files: 'Mission files', plain: 'Mission HQ', clear: 'Every mission is done.' };
+const COPY = { notSet: 'Launch date not set', launch: 'Wheels down Colombo', files: 'Mission files', plain: 'Mission HQ', clear: 'Every mission is done.', group: 'Group trip' };
 
 // The wording each file shows when it is done, so the replay reads like the real thing.
 const DONE_STATUS: Record<MissionId, (total: number) => string> = {
@@ -24,10 +24,12 @@ const DONE_STATUS: Record<MissionId, (total: number) => string> = {
 interface BodyProps {
   me: Person; input: MissionInput; start: string | null; replay?: boolean;
   onGo(m: Move): void; onOpen(id: MissionId): void; onExit(): void;
+  /** The way on to Group trip, drawn inside the HQ so no paper shows below it. */
+  onGroup?(): void;
 }
 
 /** Props-in HQ. The spy look is on only while a mission has work left, or while the finale is replayed. */
-export function MissionHQBody({ me, input, start, replay = false, onGo, onOpen, onExit }: BodyProps) {
+export function MissionHQBody({ me, input, start, replay = false, onGo, onOpen, onExit, onGroup }: BodyProps) {
   const real = missionFiles(input);
   if (!replay && !spyActive(input)) {
     return (
@@ -56,15 +58,16 @@ export function MissionHQBody({ me, input, start, replay = false, onGo, onOpen, 
         {files.map(f => <MissionFile key={f.id} file={f} onOpen={replay ? undefined : onOpen} />)}
       </div>
       {replay && <Finale ready={PEOPLE.length} of={PEOPLE.length} />}
+      {!replay && onGroup && <button type="button" className="spy-btn spyhq-group" onClick={onGroup}>{COPY.group}</button>}
     </SpyScreen>
   );
 }
 
 /** Container: reads the app and the trip model, nothing else. A guest or nobody signed in has no HQ. */
-export default function MissionHQ({ group, replay, onGo, onOpen, onExit, today }: { group: GroupResult; replay?: boolean; today?: string } & Pick<BodyProps, 'onGo' | 'onOpen' | 'onExit'>) {
+export default function MissionHQ({ group, replay, onGo, onOpen, onExit, onGroup, today }: { group: GroupResult; replay?: boolean; today?: string } & Pick<BodyProps, 'onGo' | 'onOpen' | 'onExit' | 'onGroup'>) {
   const { state, me } = useApp();
   const model = useTripModel(group, today);
   const input = useMemo<MissionInput>(() => ({ state, plan: model.plan, model }), [state, model]);
   if (!me || !PEOPLE.includes(me as Person)) return null;
-  return <MissionHQBody me={me as Person} input={input} start={model.start} replay={replay} onGo={onGo} onOpen={onOpen} onExit={onExit} />;
+  return <MissionHQBody me={me as Person} input={input} start={model.start} replay={replay} onGo={onGo} onOpen={onOpen} onExit={onExit} onGroup={onGroup} />;
 }

@@ -47,6 +47,8 @@ button.ta-owner { cursor: pointer; min-height: 44px; }
 .ta-spy .ta-sub { margin: 0; color: var(--s-dim); }
 .ta-spy .ta-count { color: var(--s-dim); font-family: var(--s-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
 .ta-spy .ta-row { background: var(--s-card); box-shadow: none; border: 1px solid var(--s-line); border-radius: 10px; }
+/* Dimming a waiting row would put its dim hint at 4.2:1. */
+.ta-spy .ta-wait { opacity: 1; }
 .ta-spy .ta-label { font-family: var(--s-head); font-size: 18px; text-transform: uppercase; }
 .ta-spy .ta-hint, .ta-spy .ta-none, .ta-spy .ta-by, .ta-spy .ta-priv, .ta-spy .ta-fl { color: var(--s-dim); }
 .ta-spy .ta-box::before { box-shadow: inset 0 0 0 2px var(--s-dim); }

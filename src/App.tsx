@@ -148,11 +148,12 @@ function ReleasedTrip({ group }: { group: GroupResult }) {
   }
   const start = model.start && model.today < model.start ? `Trip starts ${WEEKDAY_DAY_MONTH.format(new Date(`${model.start}T00:00:00Z`))}` : null;
   let body;
-  if (spy) body = <MissionHQ group={group} onGo={m => open(m.file)} onOpen={open} onExit={() => undefined} />;
+  if (spy) body = <MissionHQ group={group} onGo={m => open(m.file)} onOpen={open} onExit={() => undefined} onGroup={() => setView('group')} />;
   else if (finale && !done) return <MissionComplete group={group} onTrip={() => setDone(true)} />;
   else if (model.views.some(v => v.date === model.today)) body = <TodayScreen group={group} onWholeTrip={n => { window.location.hash = `#/day-${n}`; setView('group'); }} />;
   else body = start && <section className="body"><p className="sub">{start}</p></section>;
-  return <>{body}<div className="body"><button type="button" className="link" onClick={() => setView('group')}>Group trip</button></div></>;
+  // The HQ is the whole screen and carries its own Group trip button, so no paper strip shows under it.
+  return <>{body}{!spy && <div className="body"><button type="button" className="link" onClick={() => setView('group')}>Group trip</button></div>}</>;
 }
 const readFinaleSeen = () => { try { return localStorage.getItem(FINALE_SEEN_KEY); } catch { return null; } };
 
@@ -316,7 +317,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   // On the tabs the profile is its own tab (Brittany 2026-10-16); before that it opens over the current step.
   const openProfile = () => {
     if (step === 'tabs') {
-      navigate('tab', () => { if (tabRef.current !== 'Profile') setTab('Profile'); else if (overlay) dropOverlay(); });
+      navigate('tab', () => { if (tabRef.current !== 'Profile') setTab('Profile'); else if (overlay) dropOverlay(); else if (file) dropFile(); });
       return;
     }
     if (overlay === 'profile') return;
@@ -326,7 +327,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   // Jump to a Group view from anywhere (the Menu).
   const openGroup = (v: GroupView) => navigate('tab', () => {
     setGroupView(v);
-    if (tabRef.current !== 'Group') setTab('Group'); else if (overlay) dropOverlay();
+    if (tabRef.current !== 'Group') setTab('Group'); else if (overlay) dropOverlay(); else if (file) dropFile();
   });
   const openItemsPage = () => {
     if (overlay === 'items') return;
@@ -378,10 +379,11 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     history.pushState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined, tpFile: f }, '');
   }, []);
   const openFile = useCallback((f: FileId) => navigate('fwd', () => showFile(f)), [showFile]);
-  const closeFile = () => navigate('back', () => {
+  const dropFile = () => {
     setFile(null);
     if (history.state?.tpFile) { selfPop.current = true; history.back(); }
-  });
+  };
+  const closeFile = () => navigate('back', dropFile);
   useEffect(() => {
     if (step !== 'tabs') return;
     history.replaceState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined, tpFile: undefined }, '');

@@ -66,6 +66,23 @@ describe('Fell through asks first and can be undone (A5)', () => {
   });
 });
 
+describe('the Fell through confirm carries no money (Brittany 16 Nov: no money at all)', () => {
+  it('the stay card shows its price until Fell through is tapped, and not while it asks', async () => {
+    places([place('a1', 'Ella', { title: 'Hill hut', priceGbp: 28 }), place('a2', 'Ella', { title: 'River house', priceGbp: 28 })]);
+    admin({ pins: [pin('Ella', 'a2')] });
+    const { user } = await mount('Brittany');
+    await user.click(row('Ella, 1 night, 2 stays'));
+    const card = screen.getByRole('article', { name: 'River house' });
+    expect(card).toHaveTextContent(/£28 per person per night/);
+    await user.click(within(card).getByRole('button', { name: 'Fell through' }));
+    expect(within(card).getByRole('alertdialog')).toBeInTheDocument();
+    expect(card.textContent).not.toMatch(/£|per person per night/);
+    expect(screen.getByRole('article', { name: 'Hill hut' })).toHaveTextContent(/£28 per person per night/);
+    await user.click(within(card).getByRole('button', { name: 'Keep it' }));
+    expect(card).toHaveTextContent(/£28 per person per night/);
+  });
+});
+
 describe('one phrasing for a replacing area, for any area name (copy finding)', () => {
   it('names the area after the verb: no "a Ella", on the header, the row and the board, per role', async () => {
     places([place('a1', 'Ella'), place('a2', 'Ella')]);

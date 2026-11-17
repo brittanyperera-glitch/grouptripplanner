@@ -242,4 +242,14 @@ describe('Touchdown board', () => {
     fireEvent.click(screen.getByRole('button', { name: /back/i }));
     expect(props.onBack).toHaveBeenCalledTimes(1);
   });
+
+  it('is called Touchdown in the spy look, as the Menu and the HQ file call it, and Flights in the normal look', () => {
+    const props = { me: 'Alex' as const, travellers: {}, startDate: null, days: null, onSave: vi.fn(async () => true) };
+    const { rerender } = render(<Flights {...props} spy />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Touchdown$/);
+    expect(screen.getByRole('region', { name: 'Touchdown' })).toBeInTheDocument();
+    rerender(<Flights {...props} />);
+    expect(screen.getByRole('heading', { name: 'Flights' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Flights' })).toBeInTheDocument();
+  });
 });

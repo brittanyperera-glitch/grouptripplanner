@@ -35,8 +35,8 @@ export default function Today({ model, items, legs, leaveBy, lastArrival = null,
 
   return (
     <section className="td-today" aria-label="Today">
+      {view.area && <div className="tt-postmark" aria-hidden="true"><span>{view.area}</span><span>{dayMonth(view.date!)}</span><span>{view.date!.slice(0, 4)}</span></div>}
       <div className="tt-card">
-        {view.area && <div className="tt-postmark" aria-hidden="true" aria-label="Postmark"><span>{view.area}</span><span>{dayMonth(view.date!)}</span><span>{view.date!.slice(0, 4)}</span></div>}
         <TripDay view={{ ...view, tonight: null }} items={items} legs={legs} />
       </div>
       {britt && <p className="tt-britt"><b>Britt says:</b> {britt}</p>}

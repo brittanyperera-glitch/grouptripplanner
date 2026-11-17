@@ -49,7 +49,7 @@ describe('released app, My trip tab', () => {
     expect(document.querySelector('.mt-seg')).toBeNull();
     expect(screen.queryByRole('list', { name: 'Days' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: /Touchdown/ }));
-    expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Touchdown' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Mission HQ' })).toBeNull();
     expect(screen.queryByRole('tablist')).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: /Back/ }));
@@ -96,6 +96,18 @@ describe('released app, My trip tab', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Group trip' }));
     expect(await screen.findByLabelText('Trip view')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Replay mission' })).toBeNull();
+  });
+
+  it('Mission HQ is the whole screen: its Group trip link is inside the spy look, with nothing on the paper below', async () => {
+    seed('Lazza', true);
+    render(<App />);
+    const link = await screen.findByRole('button', { name: 'Group trip' });
+    const shown = screen.getByRole('tabpanel', { name: 'My trip' });
+    expect(shown.children).toHaveLength(1);
+    expect(shown.firstElementChild).toHaveClass('spy');
+    expect(shown.firstElementChild!.contains(link)).toBe(true);
+    await userEvent.click(link);
+    expect(await screen.findByLabelText('Trip view')).toBeInTheDocument();
   });
 
   it('plays Mission complete once, then the next screen', async () => {
@@ -157,7 +169,7 @@ describe('released app, Menu', () => {
   it('Touchdown in the Menu opens the flights screen', async () => {
     const m = await menu('Alex');
     await userEvent.click(m.getByRole('button', { name: 'Touchdown' }));
-    expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Touchdown' })).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole('tablist')).toBeNull());
   });
 });
@@ -175,22 +187,38 @@ describe('released app, deep link, Back and the loading plan', () => {
     expect(screen.queryByLabelText('Trip view')).toBeNull();
   });
 
+  it.each([['Profile', 'My profile'], ['Group', 'Group stats']])('a Menu action for the tab already open (%s: %s) still closes the Touchdown file over it', async (tab, action) => {
+    seed('Lazza', true);
+    render(<App />);
+    await userEvent.click(await screen.findByRole('tab', { name: new RegExp(`^${tab}`) }));
+    const menu = async (name: string) => {
+      await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name }));
+    };
+    await menu('Touchdown');
+    expect(await screen.findByRole('heading', { name: 'Touchdown' })).toBeInTheDocument();
+    await menu(action);
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Touchdown' })).toBeNull());
+    expect(screen.getByRole('tab', { name: new RegExp(`^${tab}`) })).toHaveAttribute('aria-selected', 'true');
+    await waitFor(() => expect(history.state?.tpFile).toBeUndefined());
+  });
+
   it('the phone Back button closes Touchdown onto the tab it was opened from, not another tab or out of the app', async () => {
     seed('Lazza', true);
     render(<App />);
     await userEvent.click(await screen.findByRole('tab', { name: /Stays/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
     await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name: 'Touchdown' }));
-    expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Touchdown' })).toBeInTheDocument();
     const depth = history.length;
     history.back();
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Flights' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Touchdown' })).toBeNull());
     expect(screen.getByRole('tab', { name: /Stays/ })).toHaveAttribute('aria-selected', 'true');
     // The Back link inside the screen leaves no extra entry behind.
     await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
     await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name: 'Touchdown' }));
     await userEvent.click(await screen.findByRole('button', { name: /Back/ }));
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Flights' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Touchdown' })).toBeNull());
     await waitFor(() => expect(history.state?.tpFile).toBeUndefined());
     expect(screen.getByRole('tab', { name: /Stays/ })).toHaveAttribute('aria-selected', 'true');
     expect(history.length).toBeLessThanOrEqual(depth + 1);

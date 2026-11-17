@@ -4,10 +4,11 @@ import { IconPin } from '../components/Icons';
 import { Cover } from '../components/PhotoCard';
 import TransportLine, { hm, transportOf, transportText } from '../components/TransportLine';
 import type { SideQuest } from '../lib/sideQuests';
+import { andList } from '../lib/text';
 import type { Area, DayBooking, DayView, Item, Leg } from '../types';
 import type { DayTip } from './BookCard';
 import { bookingParts, bookingText } from './bookingText';
-import { andList, entryText, hrs, hrsShort, ICON, LONG_DRIVE_HOURS, MIN_ROUND_TRIP } from './dayParts';
+import { entryText, hrs, hrsShort, ICON, LONG_DRIVE_HOURS, MIN_ROUND_TRIP } from './dayParts';
 
 const DATE = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 /** 'Wed 9 Dec' from 'YYYY-MM-DD'; read as UTC so no timezone can move the day. */

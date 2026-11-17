@@ -7,6 +7,7 @@ import { emptyRanking, PEOPLE } from '../types';
 import type { DayBooking, GroupResult, Person, Plan, Player, TripAdminRow } from '../types';
 import catalogue from '../data/catalogue.json';
 import { STAY_COPY } from '../lib/stayflow';
+import { PosterWhen } from './Poster';
 import TripAdmin, { SupplyBoard, TripAdminLink } from './TripAdmin';
 import type { SupplyRow } from './TripAdmin';
 
@@ -102,6 +103,21 @@ describe('TripAdmin', () => {
     render(<AppProvider store={new LocalStore()}><TripAdminLink group={decided} onOpen={onOpen} /></AppProvider>);
     await user.click(await screen.findByRole('button', { name: /Trip admin.*2 to do/ }));
     expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('with every booking secured and a stay still being replaced, the link says what the board says, not All done', async () => {
+    seed('Brittany', { 'book:sigiriya': { done: true, doneAt: 't' }, 'book:train': { done: true, doneAt: 't' } });
+    class Replacing extends LocalStore {
+      async load() { const s = await super.load(); return { ...s, stays: { ...s.stays!, admin: { ...s.stays!.admin, fallen: [{ id: 'gone', area: 'Ella' as const, at: '2026-11-02T10:00' }] } } }; }
+    }
+    const linkAs = async (store: LocalStore) => {
+      localStorage.setItem('tp:me', 'Alex');
+      render(<AppProvider store={store}><TripAdminLink group={decided} onOpen={vi.fn()} /></AppProvider>);
+      return (await screen.findByRole('button', { name: /Trip admin/ })).textContent;
+    };
+    expect(await linkAs(new Replacing())).toBe('Trip adminWaiting on replacement stays');
+    cleanup();
+    expect(await linkAs(new LocalStore())).toBe('Trip adminAll done');
   });
 
   describe('a stay that fell through after it was ticked', () => {
@@ -242,6 +258,25 @@ describe('TripAdmin', () => {
       const text = await new Promise<string>(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result)); fr.readAsText(made[0]); });
       expect(text).toMatch(/BEGIN:VCALENDAR[\s\S]*Book by: Ministry of Crab dinner/);
       click.mockRestore();
+    });
+
+    it('where the browser cannot download, the calendar is shared under the trip month the organiser set', async () => {
+      startOn('2026-12-08');
+      localStorage.setItem('tp:me', 'Alex');
+      grp.current = { final: dated, locked: true } as unknown as GroupResult;
+      const share = vi.fn(async () => {});
+      Object.assign(navigator, { share, canShare: () => true });
+      const download = Object.getOwnPropertyDescriptor(HTMLAnchorElement.prototype, 'download')!;
+      delete (HTMLAnchorElement.prototype as { download?: string }).download;
+      try {
+        render(<PosterWhen.Provider value="Jan 2027"><AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} today="2026-12-01" /></AppProvider></PosterWhen.Provider>);
+        await userEvent.click(await screen.findByRole('button', { name: 'Add to calendar' }));
+        await waitFor(() => expect(share).toHaveBeenCalledOnce());
+        expect((share.mock.calls[0] as unknown as [{ title: string }])[0].title).toBe('Sri Lanka, Jan 2027');
+      } finally {
+        Object.defineProperty(HTMLAnchorElement.prototype, 'download', download);
+        Object.assign(navigator, { share: undefined, canShare: undefined });
+      }
     });
 
     it('a tick of mine from before that stay fell shows unticked', async () => {

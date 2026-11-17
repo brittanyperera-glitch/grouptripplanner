@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import Avatar from '../components/Avatar';
 import { IconCheck, IconLeft } from '../components/Icons';
 import SpyScreen from '../components/spy/SpyScreen';
@@ -11,9 +11,10 @@ import { outcome, STAY_COPY, stayCtx } from '../lib/stayflow';
 import { adminChecklist, adminOutstanding, doneBy, FIELD_MAX, stayItemId, toggleDone, visibleEntry, withDetails } from '../lib/tripadmin';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
-import type { DayBooking, GroupResult, Person, Player } from '../types';
+import type { AppState, DayBooking, GroupResult, Person, Plan, Player } from '../types';
 import { useGroupResult } from '../workers/usePlan';
 import { deadlineTag } from './bookingText';
+import { PosterWhen } from './Poster';
 import { useSaveStatus } from './saveStatus';
 import { useTripModel } from './useTripModel';
 import './TripAdmin.css';
@@ -38,11 +39,19 @@ const COPY = {
 /** Earliest date the booking needs action; undated bookings sort last. */
 const when = (b: DayBooking | undefined) => b?.bookBy ?? b?.opensOn ?? '9999';
 
-async function saveIcs(text: string) {
+/** The areas whose stay fell through and has no replacement yet: both the board and the Group trip link read this one condition. */
+const replacingAreas = (state: AppState, me: Player, plan: Plan | null) => {
+  const ctx = plan ? stayCtx(state, me, plan) : null;
+  return ctx ? ctx.areas.filter(a => outcome(ctx, a).kind === 'replacing') : [];
+};
+/** What both say once nothing is left to tick. */
+const settled = (waiting: boolean) => (waiting ? COPY.stillWaiting : 'All done');
+
+async function saveIcs(text: string, month: string) {
   const file = new File([text], 'homecoming.ics', { type: 'text/calendar' });
   const a = document.createElement('a');
   if (!('download' in a) && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: 'Sri Lanka, Dec 2026' }); } catch { /* cancelled */ }
+    try { await navigator.share({ files: [file], title: `Sri Lanka, ${month}` }); } catch { /* cancelled */ }
     return;
   }
   a.href = URL.createObjectURL(file);
@@ -134,7 +143,7 @@ export function SupplyBoard(p: SupplyProps) {
     <>
       {p.hasCalendar && <button type="button" className="ta-cal" onClick={p.onCalendar}>{COPY.calendar}</button>}
       {p.pending && <p className="empty" role="status">{COPY.loading}</p>}
-      {!p.pending && p.rows.length > 0 && <p className="ta-count" role="status">{p.left > 0 ? `${p.left} still to do` : p.rows.some(r => r.waiting) ? COPY.stillWaiting : 'All done'}</p>}
+      {!p.pending && p.rows.length > 0 && <p className="ta-count" role="status">{p.left > 0 ? `${p.left} still to do` : settled(p.rows.some(r => r.waiting))}</p>}
       {p.pending ? null : p.rows.length === 0 ? <p className="empty">{COPY.groupEmpty}</p> : <ul className="ta-list">{p.rows.map(row)}</ul>}
     </>
   );
@@ -165,6 +174,7 @@ export default function TripAdmin({ onBack, today }: { onBack: () => void; today
   const plan = routePlan(group, state);
   const model = useTripModel({ ...group, final: plan } as GroupResult, today);
   const save = useSaveStatus(error);
+  const month = useContext(PosterWhen);
   const [lastId, setLastId] = useState('');
   const errRef = useRef(error);
   errRef.current = error;
@@ -178,8 +188,7 @@ export default function TripAdmin({ onBack, today }: { onBack: () => void; today
 
   const booking = new Map(model.bookings.map(b => [b.id, b]));
   const defs = adminChecklist(state, me, plan).sort((a, b) => when(booking.get(a.id)).localeCompare(when(booking.get(b.id))));
-  const ctx = plan ? stayCtx(state, me, plan) : null;
-  const replacing = ctx ? ctx.areas.filter(a => outcome(ctx, a).kind === 'replacing') : [];
+  const replacing = replacingAreas(state, me, plan);
   const rows: SupplyRow[] = [
     ...defs.map(d => ({
       id: d.id, label: d.label, hint: d.hint, booking: booking.get(d.id), done: doneBy(state, d.id),
@@ -193,7 +202,7 @@ export default function TripAdmin({ onBack, today }: { onBack: () => void; today
       spy={spyActive({ state, plan, model })} pending={loading && group === null} rows={rows}
       left={defs.filter(d => doneBy(state, d.id).length === 0).length}
       me={PEOPLE.includes(me as Person) ? (me as Person) : null} hasCalendar={!!model.start}
-      onBack={onBack} onCalendar={() => void saveIcs(model.icsText())}
+      onBack={onBack} onCalendar={() => void saveIcs(model.icsText(), month)}
       onTick={(id, done) => put(id, toggleDone(entry(id), done, new Date().toISOString()))}
       onNote={(id, note) => put(id, withDetails(entry(id), { price: '', note }))}
       onClaim={(id, owner) => track(id, claimBooking(id, owner))}
@@ -214,7 +223,7 @@ export function TripAdminLink({ group, onOpen }: { group: GroupResult | null; on
   return (
     <button type="button" className="ta-link" onClick={onOpen}>
       <span className="ta-link-name">{COPY.title}</span>
-      <span className="ta-link-n">{n === 0 ? 'All done' : `${n} to do`}</span>
+      <span className="ta-link-n">{n === 0 ? settled(replacingAreas(state, me, plan).length > 0) : `${n} to do`}</span>
     </button>
   );
 }
