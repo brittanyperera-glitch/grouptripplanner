@@ -1,45 +1,39 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Avatar from '../components/Avatar';
 import { IconCheck, IconLeft } from '../components/Icons';
+import SpyScreen from '../components/spy/SpyScreen';
+import Stamp from '../components/spy/Stamp';
+import { spyActive } from '../lib/missions';
 import { routePlan } from '../lib/openItems';
 import { releaseFor } from '../lib/release';
-import { adminChecklist, adminOutstanding, doneBy, FIELD_MAX, toggleDone, visibleEntry, withDetails } from '../lib/tripadmin';
-import type { AdminDef } from '../lib/tripadmin';
+import { outcome, stayCtx } from '../lib/stayflow';
+import { adminChecklist, adminOutstanding, doneBy, FIELD_MAX, stayItemId, toggleDone, visibleEntry, withDetails } from '../lib/tripadmin';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
 import type { DayBooking, GroupResult, Person, Player } from '../types';
 import { useGroupResult } from '../workers/usePlan';
+import { deadlineTag } from './bookingText';
+import { useSaveStatus } from './saveStatus';
 import { useTripModel } from './useTripModel';
 import './TripAdmin.css';
 
 const COPY = {
   title: 'Trip admin',
+  code: 'Operation Homecoming · Supply runs',
   back: 'Back',
-  sub: 'Tick what you have sorted. The group sees who is done. Prices and notes are shown only to you in the app.',
+  sub: 'Claim a booking, then mark it secured. The group sees who is on it.',
   groupEmpty: 'Group bookings appear once the route is set and each stay is decided.',
   nobody: 'Nobody yet',
   details: 'Details',
   save: 'Save',
-  price: 'Price',
   note: 'Note',
-  private: 'Not secret: anyone with the trip password can read this.',
+  private: 'Only you see this here; not secret: anyone with the trip password can read it.',
   loading: 'Loading',
   claim: "I'll book this",
   calendar: 'Add to calendar',
+  replacing: 'Brittany is finding a replacement.',
 };
 
-const DATE = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-const shortDate = (d: string) => DATE.format(new Date(`${d}T00:00:00Z`));
-/** Chip text for a booking; no status is shown for a bookable thing with nothing to count from yet. */
-function chipText(b: DayBooking): string {
-  switch (b.status) {
-    case 'done': return 'Done';
-    case 'overdue': return 'Overdue';
-    case 'not-open': return b.opensOn ? `Opens ${shortDate(b.opensOn)}` : 'Not open yet';
-    case 'open': return b.bookBy ? `Book by ${shortDate(b.bookBy)}` : 'Open';
-    default: return 'No date yet';
-  }
-}
 /** Earliest date the booking needs action; undated bookings sort last. */
 const when = (b: DayBooking | undefined) => b?.bookBy ?? b?.opensOn ?? '9999';
 
@@ -57,7 +51,6 @@ async function saveIcs(text: string) {
 }
 
 function Who({ people, id }: { people: Player[]; id: string }) {
-  if (people.length === 0) return <span className="ta-none">{COPY.nobody}</span>;
   return (
     <ul className="ta-who" aria-label={`Done by ${people.join(', ')}`}>
       {people.map(p => <li key={`${id}:${p}`} title={p}><Avatar name={p} size={22} /></li>)}
@@ -65,99 +58,145 @@ function Who({ people, id }: { people: Player[]; id: string }) {
   );
 }
 
-/**
- * The booking checklist: places and stays the group needs to book. Everyone sees who ticked what; price, reference and note
- * are shown only to the person who entered them. That is the UI only: the table is readable by anyone with the shared trip password.
- */
-export default function TripAdmin({ onBack, today }: { onBack: () => void; today?: string }) {
-  const { state, me, store, items, legs, claimBooking } = useApp();
-  const { data: group, loading } = useGroupResult(state, items, legs, releaseFor(me));
-  // A route reopened by a late vote still has its bookings, so the model reads the same plan as the checklist.
-  const model = useTripModel({ ...group, final: routePlan(group, state) } as GroupResult, today);
+export interface SupplyRow {
+  id: string; label: string; hint: string; booking?: DayBooking;
+  /** A stay with no decided option yet: shown so the area is not missing, with nothing to claim or tick. */
+  waiting?: string;
+  done: Player[]; mine: boolean; note: string; saved: string;
+}
+export interface SupplyProps {
+  spy: boolean; pending: boolean; rows: SupplyRow[]; left: number; me: Person | null; hasCalendar: boolean;
+  onBack(): void; onCalendar(): void;
+  onTick(id: string, done: boolean): void; onClaim(id: string, owner: Person | null): void; onNote(id: string, note: string): void;
+}
+
+/** The booking checklist as props in, markup out: Supply runs while the missions are live, the plain postcard list after. */
+export function SupplyBoard(p: SupplyProps) {
+  const { spy, me } = p;
   const [open, setOpen] = useState<string | null>(null);
-  const [form, setForm] = useState({ price: '', note: '' });
-  if (!me) return null;
-  // The route is unknown until the worker answers; rendering then would flash the empty text.
-  const pending = loading && group === null;
+  const [note, setNote] = useState('');
+  // A stamp is the quiet mark in the postcard look.
+  const mark = (text: string, quiet = false) => (spy ? <Stamp text={text} tone={quiet ? 'quiet' : 'accent'} /> : <span className="ta-mark">{text}</span>);
+  const claimable = (r: SupplyRow) => me !== null && !r.waiting && !!r.booking && !r.booking.owner && r.done.length === 0;
+  // One bright thing per screen: only the most urgent claim carries the accent.
+  const primary = p.rows.find(claimable)?.id;
+  const btn = (id: string) => (spy ? `ta-claim spy-btn${id === primary ? ' spy-btn-solid' : ''}` : 'ta-claim');
 
-  const booking = new Map(model.bookings.map(b => [b.id, b]));
-  const list = adminChecklist(state, me, routePlan(group, state)).sort((a, b) => when(booking.get(a.id)).localeCompare(when(booking.get(b.id))));
-  const entry = (id: string) => visibleEntry(me, me, state.tripAdmin?.[me]?.items[id]);
-  const left = list.filter(d => doneBy(state, d.id).length === 0).length;
-
-  const tick = (d: AdminDef, done: boolean) => {
-    void store.saveTripAdmin(me, { [d.id]: toggleDone(entry(d.id), done, new Date().toISOString()) });
-  };
-  const edit = (d: AdminDef) => {
-    if (open === d.id) { setOpen(null); return; }
-    const e = entry(d.id);
-    setForm({ price: e?.price ?? '', note: e?.note ?? '' });
-    setOpen(d.id);
-  };
-  const save = (d: AdminDef) => {
-    void store.saveTripAdmin(me, { [d.id]: withDetails(entry(d.id), form) });
-    setOpen(null);
+  const status = (r: SupplyRow) => {
+    const owner = r.booking?.owner ?? null;
+    if (r.done.length > 0) return <>{mark('Secured')}{' '}<span className="ta-by">by {r.done.join(', ')}</span><Who people={r.done} id={r.id} /></>;
+    if (owner === null) return <><span className="ta-none">{COPY.nobody}</span>{me && claimable(r) && <button type="button" className={btn(r.id)} onClick={() => p.onClaim(r.id, me)}>{COPY.claim}</button>}</>;
+    const who = <><Avatar name={owner} size={22} />{mark(owner, true)}{' '}<span className="ta-by">{owner === me ? 'you are booking, tap to undo' : 'is booking'}</span></>;
+    return owner === me
+      ? <button type="button" className="ta-owner" title={owner} aria-label={`Unclaim: ${r.label}`} onClick={() => p.onClaim(r.id, null)}>{who}</button>
+      : <span className="ta-owner" title={owner}>{who}</span>;
   };
 
-  const claimUi = (d: AdminDef, b: DayBooking) => {
-    const mine = me as Person;
-    if (!PEOPLE.includes(mine)) return null;
-    if (!b.owner) return <button type="button" className="ta-claim" onClick={() => void claimBooking(d.id, mine)}>{COPY.claim}</button>;
-    if (b.owner !== mine) return <span className="ta-owner" title={b.owner}><Avatar name={b.owner} size={22} /></span>;
-    return <button type="button" className="ta-owner" title={b.owner} aria-label={`Unclaim: ${d.label}`} onClick={() => void claimBooking(d.id, null)}><Avatar name={b.owner} size={22} /></button>;
-  };
-
-  const row = (d: AdminDef) => {
-    // The same fallen-freshness rule as doneBy: a tick from before the stay fell is not mine any more.
-    const mineDone = doneBy(state, d.id).includes(me);
-    const done = doneBy(state, d.id).length > 0;
-    const b = booking.get(d.id);
-    const mineEntry = entry(d.id);
-    const saved = [mineEntry?.price].filter(Boolean).join(', ');
+  const row = (r: SupplyRow) => {
+    if (r.waiting) {
+      return (
+        <li key={r.id} className="ta-row ta-wait" data-done="false">
+          <div className="ta-main"><p className="ta-label">{r.label}</p><p className="ta-hint">{r.waiting}</p></div>
+        </li>
+      );
+    }
     return (
-      <li key={d.id} className="ta-row" data-done={done}>
-        <button type="button" role="checkbox" aria-checked={mineDone} aria-label={d.label} className="ta-box" onClick={() => tick(d, !mineDone)}>
-          {mineDone && <IconCheck size={18} />}
+      <li key={r.id} className="ta-row" data-done={r.done.length > 0}>
+        <button type="button" role="checkbox" aria-checked={r.mine} aria-label={r.label} className="ta-box" onClick={() => p.onTick(r.id, !r.mine)}>
+          {r.mine && <IconCheck size={18} />}
         </button>
         <div className="ta-main">
-          <p className="ta-label">{d.label}</p>
-          <p className="ta-hint">{d.info ? `${d.hint} ${d.info}` : d.hint}</p>
+          <p className="ta-label">{r.label}</p>
+          <p className="ta-hint">{r.hint}</p>
           <div className="ta-status">
-            {b && <span className="ta-chip" data-status={b.status}>{chipText(b)}</span>}
-            {b && claimUi(d, b)}
-            <Who people={doneBy(state, d.id)} id={d.id} />
-            {saved && <span className="ta-saved">{saved}</span>}
+            {r.booking && r.done.length === 0 && <span className="ta-chip" data-status={r.booking.status}>{deadlineTag(r.booking)}</span>}
+            {status(r)}
+            {r.saved && <span className="ta-saved" aria-live="polite">{r.saved}</span>}
           </div>
-          {open === d.id && (
-            <form className="ta-form" onSubmit={e => { e.preventDefault(); save(d); }}>
-              {(['price', 'note'] as const).map(k => (
-                <label key={k} className="ta-field">
-                  <span className="ta-fl">{COPY[k]}</span>
-                  <input className="field" maxLength={FIELD_MAX[k]} value={form[k]} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} />
-                </label>
-              ))}
+          {open === r.id && (
+            <form className="ta-form" onSubmit={e => { e.preventDefault(); p.onNote(r.id, note); setOpen(null); }}>
+              <label className="ta-field">
+                <span className="ta-fl">{COPY.note}</span>
+                <input className="field" maxLength={FIELD_MAX.note} value={note} onChange={e => setNote(e.target.value)} />
+              </label>
               <p className="ta-priv">{COPY.private}</p>
-              <button type="submit" className="cta">{COPY.save}</button>
+              <button type="submit" className={spy ? 'spy-btn' : 'cta'}>{COPY.save}</button>
             </form>
           )}
         </div>
-        <button type="button" className="ta-more" aria-expanded={open === d.id} aria-label={`${COPY.details}: ${d.label}`} onClick={() => edit(d)}>{COPY.details}</button>
+        <button type="button" className="ta-more" aria-expanded={open === r.id} aria-label={`${COPY.details}: ${r.label}`} onClick={() => { setNote(r.note); setOpen(open === r.id ? null : r.id); }}>{COPY.details}</button>
       </li>
     );
   };
 
+  const body = (
+    <>
+      {p.hasCalendar && <button type="button" className="ta-cal" onClick={p.onCalendar}>{COPY.calendar}</button>}
+      {p.pending && <p className="empty" role="status">{COPY.loading}</p>}
+      {!p.pending && p.rows.length > 0 && <p className="ta-count" role="status">{p.left === 0 ? 'All done' : `${p.left} still to do`}</p>}
+      {p.pending ? null : p.rows.length === 0 ? <p className="empty">{COPY.groupEmpty}</p> : <ul className="ta-list">{p.rows.map(row)}</ul>}
+    </>
+  );
+  if (spy) {
+    return (
+      <SpyScreen code={COPY.code} title={COPY.title} back={{ label: COPY.back, onClick: p.onBack }}>
+        <div className="ta ta-spy"><p className="ta-sub">{COPY.sub}</p>{body}</div>
+      </SpyScreen>
+    );
+  }
   return (
     <section className="body ta" aria-label={COPY.title}>
       <div className="ta-bar">
-        <button type="button" className="ta-back" aria-label={COPY.back} onClick={onBack}><IconLeft size={20} /></button>
+        <button type="button" className="ta-back" aria-label={COPY.back} onClick={p.onBack}><IconLeft size={20} /></button>
       </div>
       <h2 className="big display small ta-h">{COPY.title}</h2>
       <p className="sub">{COPY.sub}</p>
-      {model.start && <button type="button" className="ta-cal" onClick={() => void saveIcs(model.icsText())}>{COPY.calendar}</button>}
-      {pending && <p className="empty" role="status">{COPY.loading}</p>}
-      {!pending && list.length > 0 && <p className="ta-count" role="status">{left === 0 ? 'All done' : `${left} still to do`}</p>}
-      {pending ? null : list.length === 0 ? <p className="empty">{COPY.groupEmpty}</p> : <ul className="ta-list">{list.map(row)}</ul>}
+      {body}
     </section>
+  );
+}
+
+/** The container: reads the app, works out the rows, and wires each control to its save. Everyone sees who ticked what; a note is shown only to whoever wrote it. */
+export default function TripAdmin({ onBack, today }: { onBack: () => void; today?: string }) {
+  const { state, me, store, items, legs, claimBooking, error } = useApp();
+  const { data: group, loading } = useGroupResult(state, items, legs, releaseFor(me));
+  // A route reopened by a late vote still has its bookings, so the model reads the same plan as the checklist.
+  const plan = routePlan(group, state);
+  const model = useTripModel({ ...group, final: plan } as GroupResult, today);
+  const save = useSaveStatus(error);
+  const [lastId, setLastId] = useState('');
+  const errRef = useRef(error);
+  errRef.current = error;
+  if (!me) return null;
+
+  const track = (id: string, p: Promise<boolean>) => { setLastId(id); save.run(p); };
+  // The queue resolves a failed write too and raises the app error a moment later, so the error is read after a tick.
+  const landed = (p: Promise<void>) => p.then(() => new Promise<boolean>(r => setTimeout(() => r(errRef.current === null), 0)));
+  const entry = (id: string) => visibleEntry(me, me, state.tripAdmin?.[me]?.items[id]);
+  const put = (id: string, e: NonNullable<ReturnType<typeof entry>>) => track(id, landed(store.saveTripAdmin(me, { [id]: e })));
+
+  const booking = new Map(model.bookings.map(b => [b.id, b]));
+  const defs = adminChecklist(state, me, plan).sort((a, b) => when(booking.get(a.id)).localeCompare(when(booking.get(b.id))));
+  const ctx = plan ? stayCtx(state, me, plan) : null;
+  const replacing = ctx ? ctx.areas.filter(a => outcome(ctx, a).kind === 'replacing') : [];
+  const rows: SupplyRow[] = [
+    ...defs.map(d => ({
+      id: d.id, label: d.label, hint: d.hint, booking: booking.get(d.id), done: doneBy(state, d.id),
+      // The same fallen-freshness rule as doneBy: a tick from before the stay fell is not mine any more.
+      mine: doneBy(state, d.id).includes(me), note: entry(d.id)?.note ?? '', saved: lastId === d.id ? save.message : '',
+    })),
+    ...replacing.map(a => ({ id: stayItemId(a), label: `Stay in ${a}`, hint: '', waiting: COPY.replacing, done: [], mine: false, note: '', saved: '' })),
+  ];
+  return (
+    <SupplyBoard
+      spy={spyActive({ state, plan, model })} pending={loading && group === null} rows={rows}
+      left={defs.filter(d => doneBy(state, d.id).length === 0).length}
+      me={PEOPLE.includes(me as Person) ? (me as Person) : null} hasCalendar={!!model.start}
+      onBack={onBack} onCalendar={() => void saveIcs(model.icsText())}
+      onTick={(id, done) => put(id, toggleDone(entry(id), done, new Date().toISOString()))}
+      onNote={(id, note) => put(id, withDetails(entry(id), { price: '', note }))}
+      onClaim={(id, owner) => track(id, claimBooking(id, owner))}
+    />
   );
 }
 
