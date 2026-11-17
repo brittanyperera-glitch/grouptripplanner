@@ -12,7 +12,7 @@ import { applyDayEdits, effectiveRelease, releaseState } from './tripPlan';
 const ALL = (catalogue as unknown as { items: Item[] }).items;
 const L = legs as Leg[];
 const plan9: ReleasePlan = { days: 9, pace: 1, items: ['a'], ruledOut: [], dayEdits: [] };
-const settings = (plan: ReleasePlan | null): TripSettings => ({ startDate: null, plan, bookingDates: {}, overrides: [], updatedAt: 'x' });
+const settings = (plan: ReleasePlan | null): TripSettings => ({ startDate: null, lastDayStart: null, plan, bookingDates: {}, overrides: [], updatedAt: 'x' });
 
 describe('releaseState and effectiveRelease', () => {
   it('maps undefined to loading, null and an empty plan to absent, a plan to value', () => {

@@ -37,7 +37,7 @@ type Travellers = Partial<Record<Person, Traveller>>;
 type Patch = Pick<Traveller, 'arriveLocal' | 'arriveFlight' | 'departLocal' | 'departFlight'>;
 /** `lastDay` makes the early-departure flag and each leave-by count the drive to the airport; `appError` is the app's save error, whose clearing marks a queued save as landed. */
 export interface FlightsProps {
-  me: Person; travellers: Travellers; startDate: string | null; days: number | null; onSave(patch: Patch): Promise<boolean>;
+  me: Person; travellers: Travellers; startDate: string | null; lastDayStart?: string | null; days: number | null; onSave(patch: Patch): Promise<boolean>;
   lastDay?: Day; appError?: string | null; onBack?(): void; spy?: boolean;
 }
 
@@ -103,8 +103,8 @@ function MyRow({ mine, onSave, appError }: { mine: Traveller | undefined; onSave
 }
 
 /** Everyone's flights, only my own row editable. Only this screen shows the arrival and departure flags; `days` is the trip length the plan uses (group.days). */
-export function Flights({ me, travellers, startDate, days, onSave, lastDay, appError = null, onBack, spy = false }: FlightsProps) {
-  const flags = arrivalFlags(travellers, startDate, days, lastDay).filter(x => x.kind !== 'missing');
+export function Flights({ me, travellers, startDate, lastDayStart, days, onSave, lastDay, appError = null, onBack, spy = false }: FlightsProps) {
+  const flags = arrivalFlags(travellers, startDate, days, lastDay, lastDayStart).filter(x => x.kind !== 'missing');
   const leave = lastDay ? leaveByEach(travellers, lastDay) : {};
   const list = (
     <ul className="fx-list" aria-label={COPY.title}>
@@ -151,5 +151,5 @@ export default function FlightsScreen({ onBack }: { onBack?: () => void }) {
   const days = group?.days ?? null;
   // Spy look only once the plan is known: before that the model is empty and would read as a mission still open.
   const spy = group !== null && spyActive({ state, plan, model });
-  return <Flights me={me} travellers={state.travellers ?? {}} startDate={state.tripSettings?.startDate ?? null} days={days} lastDay={plan?.days.at(-1)} appError={error} onBack={onBack} spy={spy} onSave={patch => saveTraveller(me, patch)} />;
+  return <Flights me={me} travellers={state.travellers ?? {}} startDate={state.tripSettings?.startDate ?? null} lastDayStart={state.tripSettings?.lastDayStart ?? null} days={days} lastDay={plan?.days.at(-1)} appError={error} onBack={onBack} spy={spy} onSave={patch => saveTraveller(me, patch)} />;
 }

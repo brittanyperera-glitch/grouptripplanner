@@ -95,6 +95,21 @@ function Gate({ onOk }: { onOk?: () => void }) {
   );
 }
 
+function LastDayStart({ value }: { value: string | null }) {
+  const { saveTripSettings } = useApp();
+  const { message, run } = useSave();
+  const [v, setV] = useState(value ?? '');
+  return (
+    <form className="og-form" onSubmit={e => { e.preventDefault(); run(saveTripSettings({ lastDayStart: v || null }, v ? `Last day starts at ${v}` : 'Last day start cleared')); }}>
+      <input className="field" type="time" aria-label="Last day starts at" value={v} onChange={e => setV(e.target.value)} />
+      <div className="og-act">
+        <button type="submit" className="cta" disabled={v === (value ?? '')}>Save hour</button>
+        <Result message={message} />
+      </div>
+    </form>
+  );
+}
+
 function StartDate({ value }: { value: string | null }) {
   const { saveTripSettings } = useApp();
   const { message, run } = useSave();
@@ -372,7 +387,7 @@ function Panel({ onBack }: { onBack?: () => void }) {
 
   const sections = (
     <>
-      <Section title="Start date" line={settings?.startDate ? WEEKDAY_DAY_MONTH.format(new Date(`${settings.startDate}T00:00:00Z`)) : 'Not set'}><StartDate value={settings?.startDate ?? null} /></Section>
+      <Section title="Start date" line={settings?.startDate ? WEEKDAY_DAY_MONTH.format(new Date(`${settings.startDate}T00:00:00Z`)) : 'Not set'}><StartDate value={settings?.startDate ?? null} /><LastDayStart value={settings?.lastDayStart ?? null} /></Section>
       <Section title="Route" line={base && plan ? `${base.days} days, ${PACES[base.pace]}, ${base.items.length} places` : noPlan}>
         {base ? <RouteEditor base={base} /> : <p className="og-msg">{loading ? COPY.loading : COPY.noRoute}</p>}
       </Section>

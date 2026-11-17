@@ -17,7 +17,7 @@ const people = (t: Travellers) => Object.values(t).filter((x): x is Traveller =>
 export const flightsDark = (t: Traveller | undefined) => !goodTime(t?.arriveLocal) || !goodTime(t?.departLocal);
 
 // With the last day, a traveller whose leave-by falls before that day starts is flagged too (03:15 flights). No planner day-start constant exists to test against sooner.
-export function arrivalFlags(travellers: Travellers, rawStart: string | null, days: number | null, lastDay?: Day): ArrivalFlag[] {
+export function arrivalFlags(travellers: Travellers, rawStart: string | null, days: number | null, lastDay?: Day, lastDayStart?: string | null): ArrivalFlag[] {
   const start = goodDate(rawStart) ? rawStart : null;
   const last = start && days !== null ? fmt(utc(start) + (days - 1) * 1440 * MIN).slice(0, 10) : null;
   return people(travellers).flatMap((t): ArrivalFlag[] => {
@@ -28,6 +28,7 @@ export function arrivalFlags(travellers: Travellers, rawStart: string | null, da
     if (start && dateOf(a) > start) flags.push({ name, kind: 'late', text: `${name} lands on ${dateOf(a)}, after day 1 (${start})` });
     if (last && dateOf(d) < last) flags.push({ name, kind: 'early', text: `${name} leaves on ${dateOf(d)}, before the last day (${last})` });
     else if (last && lastDay && leaveFor(d, lastDay) < last) flags.push({ name, kind: 'early', text: `${name} must leave by ${leaveFor(d, lastDay)}, before the last day (${last}) starts` });
+    else if (last && lastDay && lastDayStart && dateOf(d) === last && leaveFor(d, lastDay) < `${last}T${lastDayStart}`) flags.push({ name, kind: 'early', text: `${name} must leave by ${leaveFor(d, lastDay)}, before the last day starts at ${lastDayStart}` });
     return flags;
   });
 }

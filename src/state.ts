@@ -249,7 +249,7 @@ const CLAIMS: Pending<ClaimOverlay> = {
 function withFinal(s: AppState, settings: SettingsOverlay, travellers: TravellerOverlay, claims: ClaimOverlay): AppState {
   let out = s;
   if (settings && ahead(settings, s.tripSettings ?? undefined)) {
-    const base: TripSettings = s.tripSettings ?? { startDate: null, plan: null, bookingDates: {}, overrides: [], updatedAt: '' };
+    const base: TripSettings = s.tripSettings ?? { startDate: null, lastDayStart: null, plan: null, bookingDates: {}, overrides: [], updatedAt: '' };
     out = { ...out, tripSettings: { ...base, ...settings.patch, updatedAt: settings.updatedAt } };
   }
   const tv = (Object.entries(travellers) as [Person, NonNullable<TravellerOverlay[Person]>][]).filter(([n, t]) => ahead(t, s.travellers?.[n]));
@@ -534,7 +534,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
     saveTripSettings: (patch: SettingsPatch, what?: string) => {
       const at = new Date().toISOString();
       const prev = settings.ref.current;
-      const edited = patch.plan !== undefined || patch.startDate !== undefined || patch.bookingDates !== undefined;
+      const edited = patch.plan !== undefined || patch.startDate !== undefined || patch.lastDayStart !== undefined || patch.bookingDates !== undefined;
       // Capped so the jsonb never reaches its size check, which would refuse every later save.
       const log = [...(prev?.patch.overrides ?? stateRef.current?.tripSettings?.overrides ?? []), { at, what: what ?? Object.keys(patch).join(', ') }].slice(-MAX_OVERRIDES).map(o => ({ ...o, what: capWhat(o.what) }));
       const full = edited ? { ...patch, overrides: log } : patch;

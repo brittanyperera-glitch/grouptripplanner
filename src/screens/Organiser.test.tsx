@@ -31,7 +31,7 @@ const kit = vi.hoisted(() => ({ css: false }));
 vi.mock('../components/spy/spy.css', () => { kit.css = true; return {}; });
 
 const seed: ReleasePlan = { ...(releaseJson as Omit<ReleasePlan, 'dayEdits'>), dayEdits: [] };
-const settings = (over: Partial<TripSettings> = {}): TripSettings => ({ startDate: null, plan: seed, bookingDates: {}, overrides: [], updatedAt: '2026-11-01T00:00:00.000Z', ...over });
+const settings = (over: Partial<TripSettings> = {}): TripSettings => ({ startDate: null, lastDayStart: null, plan: seed, bookingDates: {}, overrides: [], updatedAt: '2026-11-01T00:00:00.000Z', ...over });
 
 const mount = async (me: Player = 'Brittany', over: Partial<TripSettings> = {}, unlocked = true) => {
   localStorage.setItem('tp:me', me);
@@ -145,6 +145,16 @@ describe('Organiser', () => {
     await waitFor(() => expect(store.saves).toHaveLength(1));
     expect(store.saves[0].startDate).toBe('2026-12-01');
     expect(store.saves[0].overrides?.at(-1)?.what).toMatch(/2026-12-01/);
+  });
+
+  it('saves the last day start', async () => {
+    const { store, user } = await mount();
+    await open(user, /^Start date/);
+    await user.type(await screen.findByLabelText('Last day starts at'), '07:00');
+    await user.click(screen.getByRole('button', { name: 'Save hour' }));
+    await waitFor(() => expect(store.saves).toHaveLength(1));
+    expect(store.saves[0].lastDayStart).toBe('07:00');
+    expect(store.saves[0].overrides?.at(-1)?.what).toBe('Last day starts at 07:00');
   });
 
   it('lists the overrides log newest first', async () => {

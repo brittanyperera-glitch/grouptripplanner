@@ -29,6 +29,11 @@ describe('supabase/schema.sql can be re-run', () => {
     expect(sql.match(/^alter publication .* add table/gm)).toBeNull();
   });
 
+  it('adds trip_settings.last_day_start on a re-run too, as an HH:mm check', () => {
+    expect(sql).toMatch(/alter table trip_settings add column if not exists last_day_start text check \(last_day_start ~ '\^\(\[01\]\[0-9\]\|2\[0-3\]\):\[0-5\]\[0-9\]\$'\);/);
+    expect(sql).toMatch(/create table if not exists trip_settings \([^;]*last_day_start text check/);
+  });
+
   const policiesOn = (table: string, ops: string[]) =>
     [...sql.matchAll(/create policy [^;]+;/g)].map(m => m[0])
       .filter(p => new RegExp(`on ${table} for (${ops.join('|')})\\b`).test(p));

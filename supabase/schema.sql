@@ -147,11 +147,13 @@ grant execute on function public.admin_ok() to anon;
 create table if not exists trip_settings (
   id int primary key default 1 check (id = 1),
   start_date date,
+  last_day_start text check (last_day_start ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'),
   plan jsonb check (octet_length(plan::text) <= 20000),
   booking_dates jsonb not null default '{}' check (octet_length(booking_dates::text) <= 20000),
   overrides jsonb not null default '[]' check (octet_length(overrides::text) <= 20000),
   updated_at timestamptz not null default now()
 );
+alter table trip_settings add column if not exists last_day_start text check (last_day_start ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
 
 /* Final stage: arrival and departure per traveller, as Sri Lanka local 'YYYY-MM-DDTHH:mm' text. */
 create table if not exists travellers (

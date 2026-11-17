@@ -31,6 +31,14 @@ describe('LocalStore final-stage fields', () => {
     expect((await st.load()).bookingClaims?.train?.owner).toBeNull();
   });
 
+  it('round-trips the last day start, and clearing it', async () => {
+    const st = new LocalStore();
+    await st.saveTripSettings({ lastDayStart: '07:00' });
+    expect((await st.load()).tripSettings?.lastDayStart).toBe('07:00');
+    await st.saveTripSettings({ lastDayStart: null });
+    expect((await st.load()).tripSettings?.lastDayStart).toBeNull();
+  });
+
   it('round-trips fallen stays', async () => {
     const st = new LocalStore();
     await st.saveStaysAdmin({ fallen: [{ id: 'p1', area: 'Ella', at: 't' }] });

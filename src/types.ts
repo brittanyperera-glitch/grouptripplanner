@@ -85,6 +85,8 @@ export interface BookingDates { opensOn?: string; bookBy?: string }
 export interface OverrideLogEntry { at: string; what: string }
 export interface TripSettings {
   startDate: string | null;
+  /** 'HH:mm' Sri Lanka local; null = not set. A leave-by before this on the last day is flagged. */
+  lastDayStart: string | null;
   /** null: the seed in src/content/release.json applies. */
   plan: ReleasePlan | null;
   /** Organiser overrides of a booking's dates, by Trip admin item id. */
