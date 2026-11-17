@@ -82,10 +82,11 @@ describe('missionFiles', () => {
 });
 
 describe('a stay nobody has voted on', () => {
-  it('a lone suggestion is not decided while people are still locking, and is once voting opens', () => {
+  // Her 17 Nov rule: an area needs at least 2 options and a vote, so a lone stay never decides itself.
+  it('a lone suggestion is not decided, before or after voting opens', () => {
     expect(missionFiles(input(lone(AREAS5)))[0]).toMatchObject({ done: 0, complete: false, status: '0 of 5 decided' });
     expect(spyActive(input(lone(AREAS5), model()))).toBe(true);
-    expect(missionFiles(input(lone(AREAS5, { locked: true })))[0]).toMatchObject({ done: 5, complete: true });
+    expect(missionFiles(input(lone(AREAS5, { locked: true })))[0]).toMatchObject({ done: 0, complete: false });
   });
 
   it('a pin is decided without waiting for the vote', () => {
