@@ -84,6 +84,12 @@ describe('applyDayEdits', () => {
     expect(out.plan.days[2].spare).toBe(-2.5);
     expect(out.warnings.join()).toMatch(/day 3 is over budget by 2.5/i);
   });
+  it('turns fits off when the edits push a day over budget, and keeps the planner value otherwise', () => {
+    const over = applyDayEdits(small(), [{ kind: 'custom', id: 'c:1', day: 2, title: 'Long lunch', hours: 9 }], 9);
+    expect(over.plan.fits).toBe(false);
+    expect(applyDayEdits(small(), [{ kind: 'hide', id: 'pettah' }], 9).plan.fits).toBe(true);
+    expect(applyDayEdits({ ...small(), fits: false }, [{ kind: 'hide', id: 'pettah' }], 9).plan.fits).toBe(false);
+  });
   it('recomputes rainSlack from the new spare', () => {
     const p = small();
     p.days[1].area = 'Ella';

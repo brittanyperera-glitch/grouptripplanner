@@ -1,6 +1,6 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import releaseJson from '../content/release.json';
 import { AppProvider } from '../state';
 import { LocalStore } from '../store/local';
@@ -221,5 +221,77 @@ describe('Organiser', () => {
     await user.click(screen.getByRole('button', { name: 'Discard changes' }));
     expect(screen.getByLabelText('Days')).toHaveValue('7');
     expect(screen.queryByText(/saved from another device/)).toBeNull();
+  });
+});
+
+describe('Organiser honest saves and kept drafts', () => {
+  afterEach(() => vi.restoreAllMocks());
+  const statusText = () => screen.getAllByRole('status').map(n => n.textContent).join(' ');
+  const addLongStop = async (user: ReturnType<typeof userEvent.setup>, day: string, hours: string) => {
+    await user.type(screen.getByLabelText('Stop title'), 'Long hike');
+    await user.clear(screen.getByLabelText('Stop hours'));
+    await user.type(screen.getByLabelText('Stop hours'), hours);
+    await user.selectOptions(screen.getByLabelText('Stop day'), day);
+    await user.click(screen.getByRole('button', { name: 'Add stop' }));
+  };
+
+  it('says Saved after a write that went through', async () => {
+    const { user } = await mount();
+    await open(user, /^Start date/);
+    await user.type(await screen.findByLabelText('Start date'), '2026-12-01');
+    await user.click(screen.getByRole('button', { name: 'Save date' }));
+    await waitFor(() => expect(statusText()).toMatch(/Saved/));
+  });
+
+  it('a write that failed says it is not saved yet, never Saved', async () => {
+    vi.spyOn(Spy.prototype, 'saveTripSettings').mockRejectedValue(new Error('offline'));
+    const { user } = await mount();
+    await open(user, /^Start date/);
+    await user.type(await screen.findByLabelText('Start date'), '2026-12-01');
+    await user.click(screen.getByRole('button', { name: 'Save date' }));
+    await waitFor(() => expect(statusText()).toMatch(/Not saved yet, will retry when you're online/));
+    expect(statusText()).not.toMatch(/Saved/);
+  });
+
+  it('a route save refused with 42501 keeps the edited route, and Save sends it after the password is entered', async () => {
+    localStorage.setItem('tp-local-admin-key', 'secret');
+    const { store, user } = await mount('Brittany', {}, false);
+    localStorage.setItem('tp-admin-key', 'stale');
+    await open(user, /^Route/);
+    await user.click(await screen.findByRole('button', { name: /^Remove Galle Face/ }));
+    await user.click(screen.getByRole('button', { name: 'Save route' }));
+    const box = await screen.findByLabelText('Organiser password');
+    await waitFor(() => expect(store.saves).toHaveLength(1));
+    // Still the edited route: Galle Face is gone from the preview and the change can be discarded.
+    expect(screen.queryByRole('button', { name: /^Remove Galle Face/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Discard changes' })).toBeInTheDocument();
+    expect(screen.queryByText(/saved from another device/)).toBeNull();
+    await user.type(box, 'secret');
+    await user.click(screen.getByRole('button', { name: 'Unlock' }));
+    await waitFor(() => expect(screen.queryByLabelText('Organiser password')).toBeNull());
+    await user.click(screen.getByRole('button', { name: 'Save route' }));
+    await waitFor(() => expect(store.saves).toHaveLength(2));
+    expect(store.saves[1].plan?.items).not.toContain('galleface');
+    expect(store.saves[1].plan?.ruledOut).toContain('galleface');
+  });
+
+  it('a custom stop that overfills a day shows the over-budget line, not Every place fits', async () => {
+    const { user } = await mount();
+    await open(user, /^Route/);
+    expect(await screen.findByText(/^Every place fits in 9 days/)).toBeInTheDocument();
+    await addLongStop(user, '2', '12');
+    expect(await screen.findByText(/^Not everything fits/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Every place fits/)).toBeNull();
+  });
+
+  it('lowering Days below a saved move target shows that move as gone, with a button that removes it', async () => {
+    const { user } = await mount('Brittany', { plan: { ...seed, days: 12, dayEdits: [{ kind: 'move', id: 'galleface', day: 12 }] } });
+    await open(user, /^Route/);
+    await user.selectOptions(await screen.findByLabelText('Days'), '11');
+    const select = await screen.findByLabelText(/^Move Galle Face/);
+    expect(within(select).getByRole('option', { name: 'Day 12 no longer exists' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Remove move of Galle Face/ }));
+    expect(screen.queryByRole('option', { name: /no longer exists/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Remove move of/ })).toBeNull();
   });
 });

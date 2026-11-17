@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { IconLeft } from '../components/Icons';
 import { addDays } from '../lib/calendar';
@@ -28,6 +28,7 @@ const COPY = {
   offline: "Couldn't reach the server. Try again",
   checking: 'Checking',
   saved: 'Saved',
+  unsaved: "Not saved yet, will retry when you're online",
   failed: "Couldn't save",
   noRoute: 'No route is set yet.',
   loading: 'Loading',
@@ -77,7 +78,7 @@ function Gate({ onOk }: { onOk: () => void }) {
   );
 }
 
-type Run = (p: Promise<void>) => void;
+type Run = (p: Promise<boolean>) => void;
 
 function StartDate({ value, run }: { value: string | null; run: Run }) {
   const { saveTripSettings } = useApp();
@@ -107,17 +108,19 @@ function describeChange(base: ReleasePlan, next: ReleasePlan, name: (id: string)
 }
 
 function RouteEditor({ base, run }: { base: ReleasePlan; run: Run }) {
-  const { state, items, legs, saveTripSettings } = useApp();
+  const { state, items, legs, saveTripSettings, needsAdminKey } = useApp();
   const [draft, setDraft] = useState(base);
   const baseKey = JSON.stringify(base);
   // The route this candidate started from. A saved route comes back as the new base and the candidate follows it,
   // unless it holds unsaved edits: those stay, with a warning, rather than vanish when another device saves.
   const [from, setFrom] = useState(baseKey);
+  // A save the server refuses reverts the shown base to what it was; the route just sent is an unsaved edit again, not a stale copy.
+  const sent = useRef('');
   useEffect(() => {
     const k = JSON.stringify(draft);
     if (k !== from && k !== baseKey) return;
     setFrom(baseKey);
-    if (k !== baseKey) setDraft(base);
+    if (k !== baseKey && !(needsAdminKey && k === sent.current)) setDraft(base);
   }, [baseKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // The same call the app makes for the released plan, with the candidate in place of it.
   const { data: group, loading } = useGroupResult(state, items, legs, draft);
@@ -150,6 +153,8 @@ function RouteEditor({ base, run }: { base: ReleasePlan; run: Run }) {
 
   const isOut = (id: string) => base.ruledOut.includes(id) || draft.ruledOut.includes(id);
   const candidates = items.filter(i => !draft.items.includes(i.id)).sort((a, b) => Number(isOut(a.id)) - Number(isOut(b.id)));
+  // A saved move whose target day was cut by lowering Days: the select would otherwise show a day it cannot hold.
+  const lostDay = (id: string) => { const m = edits.find(x => x.kind === 'move' && x.id === id); return m?.day && m.day > draft.days ? m.day : 0; };
   const dayOptions = Array.from({ length: draft.days }, (_, k) => k + 1);
   // A stored plan outside the usual range still shows its own count.
   const dayChoices = Array.from({ length: MAX_DAYS - MIN_DAYS + 1 }, (_, k) => MIN_DAYS + k);
@@ -195,7 +200,9 @@ function RouteEditor({ base, run }: { base: ReleasePlan; run: Run }) {
                           onChange={ev => setEdit(e.itemId!, ev.target.value ? { kind: 'move', id: e.itemId!, day: Number(ev.target.value) } : null)}>
                           <option value="">Day {d.n}</option>
                           {dayOptions.filter(n => n !== d.n).map(n => <option key={n} value={n}>Day {n}</option>)}
+                          {lostDay(e.itemId!) && <option value={lostDay(e.itemId!)}>Day {lostDay(e.itemId!)} no longer exists</option>}
                         </select>
+                        {lostDay(e.itemId!) && <button type="button" className="og-btn" aria-label={`Remove move of ${e.label}`} onClick={() => setEdit(e.itemId!, null)}>Remove move</button>}
                         <button type="button" className="og-btn" aria-label={`Hide ${e.label}`} onClick={() => setEdit(e.itemId!, { kind: 'hide', id: e.itemId! })}>Hide</button>
                         <button type="button" className="og-btn" aria-label={`Remove ${e.label}`} onClick={() => remove(e.itemId!)}>Remove</button>
                       </li>
@@ -258,7 +265,7 @@ function RouteEditor({ base, run }: { base: ReleasePlan; run: Run }) {
       {moved && <p className="og-msg" role="status">This route was saved from another device after you started. Saving replaces it.</p>}
       <div className="og-actions">
         <button type="button" className="cta" disabled={!dirty || loading || draft.items.length === 0}
-          onClick={() => run(saveTripSettings({ plan: draft }, describeChange(base, draft, name)))}>Save route</button>
+          onClick={() => { sent.current = JSON.stringify(draft); run(saveTripSettings({ plan: draft }, describeChange(base, draft, name))); }}>Save route</button>
         {dirty && <button type="button" className="cta alt" onClick={discard}>Discard changes</button>}
       </div>
     </div>
@@ -299,7 +306,7 @@ function BookingRow({ id, label, run }: { id: string; label: string; run: Run })
 function Panel({ onBack }: { onBack?: () => void }) {
   const { state, me, items, legs, needsAdminKey } = useApp();
   const [msg, setMsg] = useState('');
-  const run: Run = p => { setMsg(''); p.then(() => setMsg(COPY.saved), () => setMsg(COPY.failed)); };
+  const run: Run = p => { setMsg(''); p.then(stored => setMsg(stored ? COPY.saved : COPY.unsaved), () => setMsg(COPY.failed)); };
   const settings = state.tripSettings ?? null;
   const loading = state.tripSettings === undefined;
   const base = useMemo(() => effectiveRelease(releaseState(state.tripSettings), releaseFor(me), null), [state.tripSettings, me]);
