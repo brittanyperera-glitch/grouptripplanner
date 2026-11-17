@@ -3,20 +3,19 @@ import type { FormEvent, ReactNode } from 'react';
 import { IconLeft } from '../components/Icons';
 import { addDays } from '../lib/calendar';
 import { isAdmin } from '../lib/override';
+import { MAX_DAYS, MIN_DAYS } from '../lib/group';
 import { releaseFor } from '../lib/release';
 import { nightsNote, stayCtx } from '../lib/stayflow';
 import { adminChecklist } from '../lib/tripadmin';
 import { effectiveRelease, releaseState } from '../lib/tripPlan';
 import { useApp } from '../state';
+import { PACE_LABEL as PACES } from '../store/choices';
 import { readAdminKey } from '../store/tripKey';
 import { AREAS, PEOPLE } from '../types';
 import type { Area, BookingDates, DayEdit, Pace, Person, ReleasePlan } from '../types';
 import { useGroupResult } from '../workers/usePlan';
 import './Organiser.css';
 
-// Days.tsx holds the same bounds privately, outside this screen's files.
-const MIN_DAYS = 5, MAX_DAYS = 21;
-const PACES: Record<Pace, string> = { 0: 'Pack it in', 1: 'Balanced', 2: 'Slow' };
 const TITLE_MAX = 60, NOTE_MAX = 200, MAX_STOP_HOURS = 12;
 
 const COPY = {
@@ -31,6 +30,7 @@ const COPY = {
   saved: 'Saved',
   failed: "Couldn't save",
   noRoute: 'No route is set yet.',
+  loading: 'Loading',
 };
 
 const ok = (v: string) => v === '' || addDays(v, 0) !== null;
@@ -110,43 +110,59 @@ function RouteEditor({ base, run }: { base: ReleasePlan; run: Run }) {
   const { state, items, legs, saveTripSettings } = useApp();
   const [draft, setDraft] = useState(base);
   const baseKey = JSON.stringify(base);
-  // A saved route comes back as the new base: the candidate starts again from it.
-  useEffect(() => setDraft(base), [baseKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The route this candidate started from. A saved route comes back as the new base and the candidate follows it,
+  // unless it holds unsaved edits: those stay, with a warning, rather than vanish when another device saves.
+  const [from, setFrom] = useState(baseKey);
+  useEffect(() => {
+    const k = JSON.stringify(draft);
+    if (k !== from && k !== baseKey) return;
+    setFrom(baseKey);
+    if (k !== baseKey) setDraft(base);
+  }, [baseKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // The same call the app makes for the released plan, with the candidate in place of it.
   const { data: group, loading } = useGroupResult(state, items, legs, draft);
   const [pick, setPick] = useState('');
-  const [stop, setStop] = useState({ title: '', area: 'Colombo' as Area, hours: '1', day: '1', note: '', book: '' });
+  const [stop, setStop] = useState({ title: '', area: 'Colombo' as Area, hours: '1', day: '1', note: '' });
 
   const name = (id: string) => items.find(i => i.id === id)?.name ?? id;
   const set = (p: Partial<ReleasePlan>) => setDraft(d => ({ ...d, ...p }));
   const edits = draft.dayEdits;
   const setEdit = (id: string, e: DayEdit | null) => set({ dayEdits: [...edits.filter(x => x.id !== id), ...(e ? [e] : [])] });
   const dirty = JSON.stringify(draft) !== baseKey;
+  const moved = dirty && from !== baseKey;
+  const discard = () => { setDraft(base); setFrom(baseKey); };
   const final = group?.final ?? null;
 
   const remove = (id: string) => set({ items: draft.items.filter(i => i !== id), ruledOut: [...new Set([...draft.ruledOut, id])], dayEdits: edits.filter(e => e.id !== id) });
   const add = () => { if (pick) { set({ items: [...draft.items, pick], ruledOut: draft.ruledOut.filter(i => i !== pick) }); setPick(''); } };
   const hours = Number(stop.hours);
-  const stopOk = stop.title.trim() !== '' && hours > 0 && hours <= MAX_STOP_HOURS && Number(stop.day) >= 1 && Number(stop.day) <= draft.days;
+  // Lowering Days must not leave the select showing day 1 while the held day is gone.
+  const stopDay = Math.min(Number(stop.day), draft.days);
+  const stopOk = stop.title.trim() !== '' && hours > 0 && hours <= MAX_STOP_HOURS && stopDay >= 1;
   const addStop = (e: FormEvent) => {
     e.preventDefault();
     if (!stopOk) return;
     const n = Math.max(0, ...edits.filter(x => x.kind === 'custom').map(x => Number(x.id.slice(2)) || 0)) + 1;
-    const note = stop.note.trim(), book = stop.book.trim();
-    set({ dayEdits: [...edits, { kind: 'custom', id: `c:${n}`, day: Number(stop.day), title: stop.title.trim(), area: stop.area, hours, ...(note ? { note } : {}), ...(book ? { book } : {}) }] });
-    setStop(s => ({ ...s, title: '', note: '', book: '' }));
+    const note = stop.note.trim();
+    set({ dayEdits: [...edits, { kind: 'custom', id: `c:${n}`, day: stopDay, title: stop.title.trim(), area: stop.area, hours, ...(note ? { note } : {}) }] });
+    setStop(s => ({ ...s, title: '', note: '' }));
   };
 
   const isOut = (id: string) => base.ruledOut.includes(id) || draft.ruledOut.includes(id);
   const candidates = items.filter(i => !draft.items.includes(i.id)).sort((a, b) => Number(isOut(a.id)) - Number(isOut(b.id)));
   const dayOptions = Array.from({ length: draft.days }, (_, k) => k + 1);
+  // A stored plan outside the usual range still shows its own count.
+  const dayChoices = Array.from({ length: MAX_DAYS - MIN_DAYS + 1 }, (_, k) => MIN_DAYS + k);
+  if (!dayChoices.includes(draft.days)) dayChoices.push(draft.days);
 
   return (
     <div className="og-route">
       <div className="og-pair">
         <label className="og-field">
           <span className="og-fl">Days</span>
-          <input className="field" type="number" min={MIN_DAYS} max={MAX_DAYS} value={draft.days} onChange={e => set({ days: Math.min(MAX_DAYS, Math.max(MIN_DAYS, Math.round(Number(e.target.value)) || MIN_DAYS)) })} />
+          <select className="field" value={draft.days} onChange={e => set({ days: Number(e.target.value) })}>
+            {dayChoices.map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
         </label>
         <label className="og-field">
           <span className="og-fl">Pace</span>
@@ -229,21 +245,21 @@ function RouteEditor({ base, run }: { base: ReleasePlan; run: Run }) {
             <select className="field" value={stop.area} onChange={e => setStop(s => ({ ...s, area: e.target.value as Area }))}>{AREAS.map(a => <option key={a} value={a}>{a}</option>)}</select>
           </label>
           <label className="og-field"><span className="og-fl">Stop day</span>
-            <select className="field" value={stop.day} onChange={e => setStop(s => ({ ...s, day: e.target.value }))}>{dayOptions.map(n => <option key={n} value={n}>{n}</option>)}</select>
+            <select className="field" value={stopDay} onChange={e => setStop(s => ({ ...s, day: e.target.value }))}>{dayOptions.map(n => <option key={n} value={n}>{n}</option>)}</select>
           </label>
           <label className="og-field"><span className="og-fl">Stop hours</span>
             <input className="field" type="number" min={0.25} max={MAX_STOP_HOURS} step={0.25} value={stop.hours} onChange={e => setStop(s => ({ ...s, hours: e.target.value }))} />
           </label>
         </div>
         <label className="og-field"><span className="og-fl">Stop note</span><input className="field" maxLength={NOTE_MAX} value={stop.note} onChange={e => setStop(s => ({ ...s, note: e.target.value }))} /></label>
-        <label className="og-field"><span className="og-fl">Booking note (optional)</span><input className="field" maxLength={NOTE_MAX} value={stop.book} onChange={e => setStop(s => ({ ...s, book: e.target.value }))} /></label>
         <button type="submit" className="cta alt" disabled={!stopOk}>Add stop</button>
       </form>
 
+      {moved && <p className="og-msg" role="status">This route was saved from another device after you started. Saving replaces it.</p>}
       <div className="og-actions">
         <button type="button" className="cta" disabled={!dirty || loading || draft.items.length === 0}
           onClick={() => run(saveTripSettings({ plan: draft }, describeChange(base, draft, name)))}>Save route</button>
-        {dirty && <button type="button" className="cta alt" onClick={() => setDraft(base)}>Discard changes</button>}
+        {dirty && <button type="button" className="cta alt" onClick={discard}>Discard changes</button>}
       </div>
     </div>
   );
@@ -285,6 +301,7 @@ function Panel({ onBack }: { onBack?: () => void }) {
   const [msg, setMsg] = useState('');
   const run: Run = p => { setMsg(''); p.then(() => setMsg(COPY.saved), () => setMsg(COPY.failed)); };
   const settings = state.tripSettings ?? null;
+  const loading = state.tripSettings === undefined;
   const base = useMemo(() => effectiveRelease(releaseState(state.tripSettings), releaseFor(me), null), [state.tripSettings, me]);
   const { data: current } = useGroupResult(state, items, legs, base);
 
@@ -300,11 +317,11 @@ function Panel({ onBack }: { onBack?: () => void }) {
       <h2 className="big display small og-h">{COPY.title}</h2>
       <p className="sub">{COPY.sub}</p>
       {needsAdminKey && <Gate onOk={() => setMsg('')} />}
-      <p className="og-msg" role="status">{msg}</p>
+      <p className="og-msg" role="status">{needsAdminKey ? COPY.failed : msg}</p>
 
       <Section title="Start date" line={settings?.startDate ?? 'Not set'}><StartDate value={settings?.startDate ?? null} run={run} /></Section>
-      <Section title="Route" line={base ? `${base.days} days, ${PACES[base.pace]}, ${base.items.length} places` : COPY.noRoute}>
-        {base ? <RouteEditor base={base} run={run} /> : <p className="og-msg">{COPY.noRoute}</p>}
+      <Section title="Route" line={base ? `${base.days} days, ${PACES[base.pace]}, ${base.items.length} places` : loading ? COPY.loading : COPY.noRoute}>
+        {base ? <RouteEditor base={base} run={run} /> : <p className="og-msg">{loading ? COPY.loading : COPY.noRoute}</p>}
       </Section>
       <Section title="Overrides log" line={log.length ? `${log.length} ${log.length === 1 ? 'change' : 'changes'}` : 'No changes yet'}>
         {log.length === 0 ? <p className="og-msg">Nothing changed yet.</p> : (

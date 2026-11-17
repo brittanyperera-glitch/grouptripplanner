@@ -162,5 +162,64 @@ describe('Organiser', () => {
     await user.type(await screen.findByLabelText('Start date'), '2026-12-01');
     await user.click(screen.getByRole('button', { name: 'Save date' }));
     expect(await screen.findByLabelText('Organiser password')).toBeInTheDocument();
+    // The refused change did not reach anyone, so the status must not say it did.
+    expect(screen.getAllByRole('status').map(n => n.textContent).join(' ')).not.toMatch(/Saved/);
+    expect(screen.getAllByRole('status').map(n => n.textContent).join(' ')).toMatch(/Couldn't save/);
+  });
+
+  it('sets the number of days by choosing it, so any value from 5 to 21 is reachable', async () => {
+    const { store, user } = await mount();
+    await open(user, /^Route/);
+    await user.selectOptions(await screen.findByLabelText('Days'), '12');
+    await user.click(screen.getByRole('button', { name: 'Save route' }));
+    await waitFor(() => expect(store.saves).toHaveLength(1));
+    expect(store.saves[0].plan?.days).toBe(12);
+  });
+
+  it('keeps a stop day that Days no longer reaches usable, on the last day', async () => {
+    const { store, user } = await mount();
+    await open(user, /^Route/);
+    await user.selectOptions(await screen.findByLabelText('Stop day'), '9');
+    await user.selectOptions(screen.getByLabelText('Days'), '6');
+    expect(screen.getByLabelText('Stop day')).toHaveValue('6');
+    await user.type(screen.getByLabelText('Stop title'), 'Late walk');
+    await user.click(screen.getByRole('button', { name: 'Add stop' }));
+    await user.click(screen.getByRole('button', { name: 'Save route' }));
+    await waitFor(() => expect(store.saves).toHaveLength(1));
+    expect(store.saves[0].plan?.dayEdits).toEqual([expect.objectContaining({ kind: 'custom', day: 6, title: 'Late walk' })]);
+  });
+
+  it('offers no booking note on a custom stop, since nothing reads one', async () => {
+    const { user } = await mount();
+    await open(user, /^Route/);
+    expect(await screen.findByLabelText('Stop note')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Booking note/)).toBeNull();
+  });
+
+  it('says loading, not that no route is set, while the settings have not arrived', async () => {
+    // A store whose settings read has not answered: tripSettings is undefined, as in a snapshot taken before the table loaded.
+    class Slow extends Spy { async load() { const s = await super.load(); return { ...s, tripSettings: undefined }; } }
+    localStorage.setItem('tp:me', 'Brittany');
+    localStorage.setItem('tp-admin-key', 'k');
+    const user = userEvent.setup();
+    render(<AppProvider store={new Slow()}><Organiser /></AppProvider>);
+    const head = await screen.findByRole('button', { name: /^Route/ });
+    expect(head).toHaveTextContent('Loading');
+    expect(head).not.toHaveTextContent(/No route is set yet/);
+    await user.click(head);
+    expect(screen.queryByText(/No route is set yet/)).toBeNull();
+  });
+
+  it('keeps an unsaved candidate when another device saves a route, and says so', async () => {
+    const { user } = await mount();
+    await open(user, /^Route/);
+    await user.selectOptions(await screen.findByLabelText('Days'), '12');
+    localStorage.setItem('tp:settings', JSON.stringify(settings({ plan: { ...seed, days: 7 } })));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'tp:settings' }));
+    expect(await screen.findByText(/saved from another device/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Days')).toHaveValue('12');
+    await user.click(screen.getByRole('button', { name: 'Discard changes' }));
+    expect(screen.getByLabelText('Days')).toHaveValue('7');
+    expect(screen.queryByText(/saved from another device/)).toBeNull();
   });
 });
