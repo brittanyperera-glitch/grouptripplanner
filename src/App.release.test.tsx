@@ -78,6 +78,19 @@ describe('released app, My trip tab', () => {
     expect(screen.getByRole('button', { name: /Day 3/ })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('with storage blocked for the finale flag, My trip still shows the day instead of a blank finale', async () => {
+    clock('2026-12-10T08:00:00Z');
+    seed('Lazza', false);
+    const get = Storage.prototype.getItem;
+    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (this: Storage, k: string) {
+      if (k === 'tp:mission-complete-seen') throw new Error('blocked');
+      return get.call(this, k);
+    });
+    render(<App />);
+    expect(await screen.findByLabelText('Today')).toBeInTheDocument();
+    spy.mockRestore();
+  });
+
   it('Group trip shows Trip view with a Replay mission control, and Exit returns to it', async () => {
     clock('2026-12-10T08:00:00Z');
     seed('Lazza', false);
@@ -173,6 +186,17 @@ describe('released app, Menu', () => {
     await userEvent.click(m.getByRole('button', { name: 'Touchdown' }));
     expect(await screen.findByRole('heading', { name: 'Touchdown' })).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole('tablist')).toBeNull());
+  });
+  it('an organiser change refused for want of the key says so outside Command, and the notice opens Command', async () => {
+    seed('Brittany', true);
+    localStorage.setItem('tp-local-admin-key', 'secret');
+    localStorage.setItem(ADMIN_KEY, 'wrong');
+    render(<App />);
+    await userEvent.click(await screen.findByRole('tab', { name: /^Stays/ }));
+    await userEvent.click((await screen.findAllByRole('button', { name: /\d nights?/ }))[0]);
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Unpin' }))[0]);
+    await userEvent.click(await screen.findByRole('button', { name: /not saved.*organiser password/i }));
+    expect(await screen.findByLabelText('Organiser password')).toBeInTheDocument();
   });
   it('Command in the Menu opens the organiser panel headed Command, as the Menu names it', async () => {
     const m = await menu('Brittany');

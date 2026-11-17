@@ -156,7 +156,8 @@ function ReleasedTrip({ group }: { group: GroupResult }) {
   // The HQ carries its own Group trip button and Today its "See the whole trip", so neither gets a second one.
   return <>{body}{!spy && !today && <div className="body"><button type="button" className="link" onClick={() => setView('group')}>Group trip</button></div>}</>;
 }
-const readFinaleSeen = () => { try { return localStorage.getItem(FINALE_SEEN_KEY); } catch { return null; } };
+// Blocked storage counts as seen, as in MissionComplete: the finale could not remember itself and would render nothing.
+const readFinaleSeen = () => { try { return localStorage.getItem(FINALE_SEEN_KEY); } catch { return '1'; } };
 
 function MyTripTab() {
   const { me } = useApp();
@@ -288,7 +289,7 @@ function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLog
 }
 
 function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): void }) {
-  const { state, store, items, legs, copy, clearMe, finishSandbox } = useApp();
+  const { state, store, items, legs, copy, clearMe, finishSandbox, needsAdminKey } = useApp();
   const logout = useContext(LogoutCtx);
   const seed = releaseFor(me);
   // The organiser's saved plan replaces the seed. While settings load the seed still computes (so the vote flow never does),
@@ -581,6 +582,8 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
           todo={todo.length} onItems={shown === 'tabs' ? openItemsPage : undefined} onAwards={shown === 'tabs' && awardList.length > 0 ? () => showOverlay('awards') : undefined} onAdmin={shown === 'tabs' ? () => navigate('fwd', () => showOverlay('admin')) : undefined}
           onFlights={shown === 'tabs' && released ? () => openFile('flights') : undefined} onCommand={shown === 'tabs' && released && isAdmin(me) ? () => openFile('command') : undefined} />
       </header>
+      {/* A refused pin, nights or fell-through edit is dropped, so say so wherever it happened; Command holds the key prompt. */}
+      {needsAdminKey && isAdmin(me) && file !== 'command' && <button type="button" className="errbar" onClick={() => openFile('command')}>Organiser change not saved. Tap to enter the organiser password</button>}
       <div className={`screen${enter ? ` enter-${enter}` : ''}`} key={screenKey}>{content}</div>
       {shown === 'tabs' && !hidesTabs(screen) && !file && (
         <nav className="tabs" role="tablist" aria-label="Sections">
