@@ -42,7 +42,17 @@ describe('Today on the released plan from 2026-12-08', () => {
     const tonight = within(today).getByLabelText('Tonight');
     expect(tonight).toHaveTextContent(`House ${area}`);
     expect(within(tonight).getByRole('link')).toHaveAttribute('href', `https://x.test/${area}`);
-    expect(within(today).getByLabelText('Next leg')).toHaveTextContent(/Drive|Train/);
+    // Day 3's own drive is on the card; the box is the next one, on day 5.
+    expect(within(today).getByRole('group', { name: 'Next leg' })).toHaveTextContent('Day 5Drive · Kandy to Kitulgala · 2 h 20 · 60 km');
+    expect(within(today).getAllByText(/Sigiriya to Kandy/)).toHaveLength(1);
+  });
+
+  it('shows a train icon and mode for a train next leg', async () => {
+    trip();
+    screenOn('2026-12-12');
+    const leg = within(await screen.findByLabelText('Today')).getByRole('group', { name: 'Next leg' });
+    expect(leg).toHaveTextContent('Day 6Train · Nanu Oya to Ella');
+    expect(leg.querySelector('.tline')).toHaveAttribute('data-mode', 'train');
   });
 
   it('calls onWholeTrip with the day number', async () => {
@@ -70,7 +80,13 @@ describe('Today on the released plan from 2026-12-08', () => {
     trip({ 'tp:placesug': [stay(area)], 'tp:staysadmin': { pins: [{ area, suggestionId: `s-${area}`, at: AT }], scouts: {}, closed: [] } });
     screenOn(`2026-12-${String(8 + at).padStart(2, '0')}`);
     const today = await screen.findByLabelText('Today');
-    expect(within(today).getByText('Britt says:').closest('p')).toHaveTextContent(britt);
+    const line = within(today).getByText('Britt says:').closest('p')!;
+    expect(line).toHaveTextContent(britt);
+    // The postmark sits on the photo strip: the strip is its next sibling, and Britt's line is below the card.
+    const postmark = within(today).getByLabelText('Postmark');
+    expect(postmark.nextElementSibling).toBe(within(today).getByLabelText(`Day ${at + 1}`));
+    expect(postmark.parentElement!.contains(line)).toBe(false);
+    expect(postmark.parentElement!.compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(today).getAllByText(new RegExp(`House ${area}`))).toHaveLength(1);
   });
 
