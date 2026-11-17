@@ -78,6 +78,32 @@ describe('TripDay bookings and flights', () => {
   });
 });
 
+describe('TripDay booking wording', () => {
+  const train = ITEMS.find(i => i.id === 'train')!;
+  const trainPlan: Plan = { ...plan, days: [{ n: 1, area: 'Colombo', entries: [act(train)], spare: 0, rainSlack: false }] };
+  const mk = (bookings: DayBooking[]) => dayView({ plan: trainPlan, start: '2026-12-09', blocks: [], stays: {}, bookingsByDay: { 1: bookings }, travellers: {}, custom: [], paceHours: 9 }, 1);
+  const open: DayBooking = { id: 'book:train', label: 'Ella train', status: 'open', opensOn: null, bookBy: '2026-12-01', owner: 'Alex' };
+
+  it('prints the day booking line with the shared wording', () => {
+    render(<TripDay view={mk([open])} items={ITEMS} compact />);
+    expect(screen.getByText('Book: Ella train, Open · Alex booking')).toBeInTheDocument();
+  });
+
+  it('drops the per-activity Book text when the day lists that booking, and keeps it when the day does not', () => {
+    const { rerender } = render(<TripDay view={mk([open])} items={ITEMS} compact />);
+    expect(screen.queryByText(train.book!)).toBeNull();
+    rerender(<TripDay view={mk([])} items={ITEMS} compact />);
+    expect(screen.getByText(train.book!)).toBeInTheDocument();
+  });
+
+  it('shows the chip, the owner and the note as the same words on screen', () => {
+    render(<TripDay view={mk([open, { ...open, id: 'book:x', label: 'Later', status: 'not-open', opensOn: '2026-11-08', owner: null }])} />);
+    const list = screen.getByRole('list', { name: 'Day bookings' });
+    expect(within(list).getByText('Alex')).toHaveTextContent('Alex booking');
+    expect(within(list).getByText('Opens 8 Nov')).toBeInTheDocument();
+  });
+});
+
 describe('TripDay carries what DayRows carries', () => {
   const texts = (root: HTMLElement, sel: string) => [...root.querySelectorAll(sel)].map(e => e.textContent);
   const rows = (n: number) => within(screen.getByRole('list', { name: 'Days' })).getAllByRole('listitem')[n - 1];
