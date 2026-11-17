@@ -1,5 +1,7 @@
 /* Organiser panel. Only og- classes lead a rule here; shared classes are used in markup, never restyled. */
 .og { min-width: 0; }
+.og-wrap { display: contents; }
+.og-main { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
 .og-bar { display: flex; align-items: center; min-height: 44px; }
 .og-back { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--r-pill); color: var(--ink); }
 .og-back:focus-visible, .og-head:focus-visible, .og-btn:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }

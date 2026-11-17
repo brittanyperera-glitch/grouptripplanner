@@ -10,7 +10,7 @@ import { releaseFor } from '../lib/release';
 import { effectiveRelease, releaseState } from '../lib/tripPlan';
 import { AppProvider, useApp } from '../state';
 import { LocalStore } from '../store/local';
-import { PEOPLE } from '../types';
+import { emptyRanking, PEOPLE } from '../types';
 import type { GroupResult, Player, ReleasePlan, TripSettings } from '../types';
 import { useGroupResult } from '../workers/usePlan';
 import Organiser from './Organiser';
@@ -313,7 +313,7 @@ function Probe() {
   const { data } = useGroupResult(state, items, legs, base);
   const model = useTripModel({ ...data, final: data?.final ?? null } as GroupResult);
   const input = { state, plan: data?.final ?? null, model };
-  return <output data-testid="probe">{JSON.stringify({ files: missionFiles(input), bookings: model.bookings, active: spyActive(input) })}</output>;
+  return <><output data-testid="cand">{data?.final && !data.locked ? 'candidate' : 'none'}</output><output data-testid="probe">{JSON.stringify({ files: missionFiles(input), bookings: model.bookings, active: spyActive(input) })}</output></>;
 }
 type Probed = { files: ReturnType<typeof missionFiles>; bookings: { id: string; opensOn: string | null; bookBy: string | null; label: string }[]; active: boolean };
 const probe = async () => JSON.parse((await screen.findByTestId('probe')).textContent ?? '{}') as Probed;
@@ -431,5 +431,62 @@ describe('Organiser as Command', () => {
     await mountProbe({ startDate: '2026-12-08' });
     await waitFor(async () => expect((await probe()).active).toBe(false));
     expect(document.querySelector('.spy')).toBeNull();
+  });
+
+  it('Save dates keeps its row and shows Saved beside it, even though the dates in use change', async () => {
+    const { user } = await mountProbe({ startDate: '2026-12-08' });
+    const b = (await probe()).bookings.find(x => x.bookBy)!;
+    await user.click(await screen.findByRole('button', { name: /^Bookings/ }));
+    const row = (await screen.findByLabelText(`Owner of ${b.label}`)).closest('li')!;
+    const field = within(row).getByLabelText('Book by');
+    const next = b.bookBy === '2026-11-25' ? '2026-11-26' : '2026-11-25';
+    await user.clear(field);
+    await user.type(field, next);
+    await user.click(within(row).getByRole('button', { name: 'Save dates' }));
+    await waitFor(() => expect(within(row).getByRole('status')).toHaveTextContent(SAVE_COPY.saved));
+    expect(row.isConnected).toBe(true);
+    expect(within(row).getByLabelText('Book by')).toHaveValue(next);
+    expect(row).toHaveTextContent(`Book by ${DAY_MONTH.format(new Date(`${next}T00:00:00Z`))}`);
+  });
+
+  it('keeps an open section and an unsaved route when the last mission file completes and the spy look goes', async () => {
+    put('tp:placesug', AREAS5.map(area => ({ id: `s-${area}`, name: 'Alex', area, kind: 'stay', title: `House ${area}`, status: 'live', createdAt: AT })));
+    put('tp:staysadmin', { pins: AREAS5.map(area => ({ area, suggestionId: `s-${area}`, at: AT })), scouts: {}, closed: [] });
+    landed([]);
+    await mountProbe({ startDate: '2026-12-08' });
+    const ids = (await probe()).bookings.map(b => b.id);
+    cleanup();
+    const ticks = (all: string[]) => ({ name: 'Brittany', items: Object.fromEntries(all.map(id => [id, { done: true, doneAt: '2026-11-20T00:00:00Z' }])), updatedAt: AT });
+    put('tp:tripadmin:Brittany', ticks(ids.slice(1)));
+    const { user } = await mountProbe({ startDate: '2026-12-08' });
+    await waitFor(async () => expect((await probe()).active).toBe(true));
+    await user.click(await screen.findByRole('button', { name: /^Route/ }));
+    await user.selectOptions(await screen.findByLabelText('Days'), '12');
+    put('tp:tripadmin:Brittany', ticks(ids));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'tp:tripadmin:Brittany' }));
+    await waitFor(() => expect(document.querySelector('.spy')).toBeNull());
+    expect(screen.getByLabelText('Days')).toHaveValue('12');
+    expect(screen.getByRole('button', { name: /^Route/ })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('with no route set, Missing intel says so instead of listing zeros and five missing flights', async () => {
+    const { user } = await mountProbe({ plan: { ...seed, items: [] } });
+    const head = await screen.findByRole('button', { name: /^Missing intel/ });
+    await waitFor(() => expect(head).toHaveTextContent('No route is set yet'));
+    await user.click(head);
+    expect(screen.queryByRole('list', { name: 'Missing intel' })).toBeNull();
+    expect(document.querySelector('.og')!.textContent).not.toMatch(/to add/);
+  });
+
+  // The vote flow: five ranked lists that agree give a plan that is not yet locked, so no route is decided and nothing is counted for it.
+  it('an unlocked candidate from the votes is not counted as the decided route', async () => {
+    const must = (releaseJson as { items: string[] }).items.filter(id => !id.startsWith('galle')).slice(0, 6);
+    for (const name of PEOPLE) put(`tp:resp:${name}`, { name, days: 9, flex: false, pace: 1, ranking: { ...emptyRanking(), must: must.map(id => [id]) }, rated: must, submitted: true, updatedAt: AT });
+    const { user } = await mountProbe({ plan: { ...seed, items: [] } });
+    await waitFor(() => expect(screen.getByTestId('cand')).toHaveTextContent('candidate'));
+    const head = await screen.findByRole('button', { name: /^Missing intel/ });
+    expect(head).toHaveTextContent('No route is set yet');
+    await user.click(head);
+    expect(screen.queryByRole('list', { name: 'Missing intel' })).toBeNull();
   });
 });

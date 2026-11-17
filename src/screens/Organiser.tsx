@@ -1,10 +1,10 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { IconLeft } from '../components/Icons';
-import SpyScreen from '../components/spy/SpyScreen';
 import { addDays } from '../lib/calendar';
 import { DAY_MONTH, WEEKDAY_DAY_MONTH } from '../lib/dates';
 import { missionFiles, spyActive } from '../lib/missions';
+import { routePlan } from '../lib/openItems';
 import { isAdmin } from '../lib/override';
 import { MAX_DAYS, MIN_DAYS } from '../lib/group';
 import { releaseFor } from '../lib/release';
@@ -296,6 +296,11 @@ function BookingRow({ b }: { b: DayBooking }) {
   const stored = state.tripSettings?.bookingDates ?? {};
   const inUse = tidy({ opensOn: b.opensOn ?? '', bookBy: b.bookBy ?? '' });
   const [d, setD] = useState<BookingDates>(inUse);
+  // The dates in use change when this row saves or another device does. Remounting on that would drop the row's save result,
+  // so the draft follows them instead, unless it holds edits of its own.
+  const inKey = JSON.stringify(inUse);
+  const [seen, setSeen] = useState(inKey);
+  if (seen !== inKey) { setSeen(inKey); if (JSON.stringify(tidy(d)) === seen) setD(inUse); }
   const valid = ok(d.opensOn ?? '') && ok(d.bookBy ?? '');
   const clean = tidy(d);
   const save = () => {
@@ -335,7 +340,8 @@ function Panel({ onBack }: { onBack?: () => void }) {
   const base = useMemo(() => effectiveRelease(releaseState(state.tripSettings), releaseFor(me), null), [state.tripSettings, me]);
   const { data: current } = useGroupResult(state, items, legs, base);
 
-  const plan = current?.final ?? null;
+  // The decided route only, as Trip admin reads it: an unlocked candidate has no bookings or stays to count yet.
+  const plan = routePlan(current, state);
   const ctx = me && plan ? stayCtx(state, me, plan) : null;
   const nights = ctx ? ctx.areas.flatMap(a => { const n = nightsNote(ctx, a); return n ? [{ area: a, note: n }] : []; }) : [];
   // Same inputs HQ will read, so the counts here are its counts. The bookings come from the model, with the dates in use.
@@ -350,6 +356,8 @@ function Panel({ onBack }: { onBack?: () => void }) {
     { id: 'Stays', n: left('stays'), text: `${left('stays')} to decide` },
     { id: 'Flights', n: left('touchdown'), text: `${left('touchdown')} to add${dark && `, ${dark}`}` },
   ];
+  // Without a route the counts below would be zeros and "every traveller missing", so say why there are none instead.
+  const noPlan = loading || (base && current === null) ? COPY.loading : COPY.noRoute;
   const log = [...(settings?.overrides ?? [])].reverse();
   const top = (
     <>
@@ -370,8 +378,8 @@ function Panel({ onBack }: { onBack?: () => void }) {
           <ul className="og-rows">{log.map((o, k) => <li key={`${o.at}:${k}`} className="og-log"><time dateTime={o.at}>{when(o.at)}</time> <span>{noISO(o.what)}</span></li>)}</ul>
         )}
       </Section>
-      <Section title="Missing intel" line={plan ? `${intel.reduce((n, i) => n + i.n, 0)} open` : COPY.loading}>
-        <ul className="og-rows" aria-label="Missing intel">{intel.map(i => <li key={i.id} className="og-log"><strong>{i.id}:</strong> {i.text}</li>)}</ul>
+      <Section title="Missing intel" line={plan ? `${intel.reduce((n, i) => n + i.n, 0)} open` : noPlan}>
+        {!plan ? <p className="og-msg">{noPlan}</p> : <ul className="og-rows" aria-label="Missing intel">{intel.map(i => <li key={i.id} className="og-log"><strong>{i.id}:</strong> {i.text}</li>)}</ul>}
       </Section>
       <Section title="Nights note" line={nights.length ? `${nights.length} to check` : 'Nights match the plan'}>
         {nights.length === 0 ? <p className="og-msg">Stay nights match the itinerary.</p> : (
@@ -380,26 +388,26 @@ function Panel({ onBack }: { onBack?: () => void }) {
       </Section>
       <Section title="Bookings" line={model.bookings.length ? `${left('supply')} to secure` : 'None yet'}>
         {model.bookings.length === 0 ? <p className="og-msg">Bookings appear once the route is set.</p> : (
-          <ul className="og-rows">{model.bookings.map(b => <BookingRow key={`${b.id}:${b.opensOn}:${b.bookBy}`} b={b} />)}</ul>
+          <ul className="og-rows">{model.bookings.map(b => <BookingRow key={b.id} b={b} />)}</ul>
         )}
       </Section>
     </>
   );
 
-  // The spy look only while a mission file is open; otherwise the app's own look.
-  if (spyActive(input)) {
-    return (
-      <SpyScreen code="Command" title={COPY.title} back={onBack && { label: COPY.back, onClick: onBack }}>
-        <section className="og og-spy" aria-label={COPY.title}>{top}{sections}</section>
-      </SpyScreen>
-    );
-  }
+  // One tree for both looks: swapping the root would remount every section, drop an unsaved route and clear a typed password.
+  const spy = spyActive(input);
   return (
-    <section className="body og" aria-label={COPY.title}>
-      {onBack && <div className="og-bar"><button type="button" className="og-back" aria-label={COPY.back} onClick={onBack}><IconLeft size={20} /></button></div>}
-      <h2 className="big display small og-h">{COPY.title}</h2>
-      {top}{sections}
-    </section>
+    <div className={spy ? 'spy' : 'body og'}>
+      <div className={spy ? 'spy-body' : 'og-wrap'}>
+        {spy
+          ? onBack && <button type="button" className="spy-back" onClick={onBack}>{`‹ ${COPY.back}`}</button>
+          : onBack && <div className="og-bar"><button type="button" className="og-back" aria-label={COPY.back} onClick={onBack}><IconLeft size={20} /></button></div>}
+        {spy
+          ? <header className="spy-head"><div className="spy-code">Command</div><h1>{COPY.title}</h1></header>
+          : <h2 className="big display small og-h">{COPY.title}</h2>}
+        <section className={spy ? 'og og-spy' : 'og og-main'} aria-label={COPY.title}>{top}{sections}</section>
+      </div>
+    </div>
   );
 }
 
