@@ -165,4 +165,88 @@ describe('TripAdmin', () => {
       expect(screen.getByText(/shown only to you in the app/)).toBeInTheDocument();
     });
   });
+
+  describe('claims, chips and the calendar', () => {
+    const e = (kind: 'activity' | 'train', itemId: string) => ({ kind, label: itemId, hours: 1, itemId });
+    const dated: Plan = { ...plan, chosen: ['sigiriya', 'train', 'crab'], days: [{ ...day(1), entries: [e('activity', 'sigiriya')] }, { ...day(2), entries: [e('activity', 'crab')] }, { ...day(3), entries: [e('train', 'train')] }] };
+    const startOn = (startDate: string | null) => localStorage.setItem('tp:settings', JSON.stringify({ startDate, plan: null, bookingDates: {}, overrides: [], updatedAt: '2026-11-01T00:00:00Z' }));
+    const mountOn = async (today: string, me: Player = 'Alex') => {
+      localStorage.setItem('tp:me', me);
+      grp.current = { final: dated, locked: true } as unknown as GroupResult;
+      const user = userEvent.setup();
+      render(<AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} today={today} /></AppProvider>);
+      await screen.findByRole('checkbox', { name: 'Nanu Oya to Ella train' });
+      return user;
+    };
+    const rowOf = (name: string) => screen.getByRole('checkbox', { name }).closest('li')!;
+
+    it('I will book this on the train row calls the claim setter with the train id and my name', async () => {
+      startOn('2026-12-08');
+      const spy = vi.spyOn(LocalStore.prototype, 'saveBookingClaim');
+      const user = await mountOn('2026-12-01');
+      await user.click(within(rowOf('Nanu Oya to Ella train')).getByRole('button', { name: "I'll book this" }));
+      expect(spy).toHaveBeenCalledWith('book:train', 'Alex');
+      expect(await within(rowOf('Nanu Oya to Ella train')).findByRole('button', { name: 'Unclaim: Nanu Oya to Ella train' })).toBeInTheDocument();
+      spy.mockRestore();
+    });
+
+    it('the owner can unclaim, and someone else\'s claim shows their avatar with no claim button', async () => {
+      startOn('2026-12-08');
+      const spy = vi.spyOn(LocalStore.prototype, 'saveBookingClaim');
+      localStorage.setItem('tp:claims', JSON.stringify({ 'book:crab': { itemId: 'book:crab', owner: 'Brittany', updatedAt: '2026-11-02T00:00:00Z' } }));
+      const user = await mountOn('2026-12-01');
+      const crab = rowOf('Ministry of Crab dinner');
+      expect(within(crab).queryByRole('button', { name: "I'll book this" })).toBeNull();
+      expect(within(crab).getByTitle('Brittany')).toBeInTheDocument();
+      expect(within(crab).queryByRole('button', { name: /Unclaim/ })).toBeNull();
+      await user.click(within(rowOf('Nanu Oya to Ella train')).getByRole('button', { name: "I'll book this" }));
+      await user.click(await within(rowOf('Nanu Oya to Ella train')).findByRole('button', { name: /Unclaim/ }));
+      expect(spy).toHaveBeenLastCalledWith('book:train', null);
+      spy.mockRestore();
+    });
+
+    it('a booking whose book-by date is before today shows the overdue chip', async () => {
+      startOn('2026-12-08');
+      await mountOn('2026-12-01');
+      expect(within(rowOf('Ministry of Crab dinner')).getByText('Overdue')).toBeInTheDocument();
+      expect(within(rowOf('Nanu Oya to Ella train')).queryByText('Overdue')).toBeNull();
+    });
+
+    it('shows opens-on, book-by and done chips, sorted by date with undated last', async () => {
+      startOn('2026-12-08');
+      seed('Brittany', { 'book:sigiriya': { done: true, doneAt: 't' } });
+      await mountOn('2026-11-05');
+      expect(within(rowOf('Nanu Oya to Ella train')).getByText('Opens 10 Nov')).toBeInTheDocument();
+      expect(within(rowOf('Ministry of Crab dinner')).getByText('Book by 25 Nov')).toBeInTheDocument();
+      expect(within(rowOf('Sigiriya Rock')).getByText('Done')).toBeInTheDocument();
+      expect(screen.getAllByRole('checkbox').map(b => b.getAttribute('aria-label'))).toEqual(['Nanu Oya to Ella train', 'Ministry of Crab dinner', 'Sigiriya Rock']);
+    });
+
+    it('Add to calendar downloads homecoming.ics from the trip model', async () => {
+      startOn('2026-12-08');
+      const made: Blob[] = [];
+      URL.createObjectURL = vi.fn((b: Blob) => { made.push(b); return 'blob:x'; });
+      URL.revokeObjectURL = vi.fn();
+      let name = '';
+      const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { name = this.download; });
+      const user = await mountOn('2026-12-01');
+      await user.click(screen.getByRole('button', { name: 'Add to calendar' }));
+      expect(name).toBe('homecoming.ics');
+      const text = await new Promise<string>(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result)); fr.readAsText(made[0]); });
+      expect(text).toMatch(/BEGIN:VCALENDAR[\s\S]*Book by: Ministry of Crab dinner/);
+      click.mockRestore();
+    });
+
+    it('a tick of mine from before that stay fell shows unticked', async () => {
+      class FallenStore extends LocalStore {
+        async load() { const s = await super.load(); return { ...s, stays: { ...s.stays!, admin: { ...s.stays!.admin, fallen: [{ id: 'gone', area: 'Ella' as const, at: '2026-11-02T10:00' }] } } }; }
+      }
+      localStorage.setItem('tp:placesug', JSON.stringify([{ id: 's1', name: 'Alex', area: 'Ella', kind: 'stay', title: 'Stay s1', status: 'live', createdAt: '2026-10-10' }]));
+      localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-11-03T09:00' }], scouts: {}, closed: [] }));
+      seed('Alex', { 'stay:Ella': { done: true, doneAt: '2026-11-01T08:00' } });
+      localStorage.setItem('tp:me', 'Alex');
+      render(<AppProvider store={new FallenStore()}><TripAdmin onBack={vi.fn()} /></AppProvider>);
+      expect(await screen.findByRole('checkbox', { name: 'Stay in Ella' })).toHaveAttribute('aria-checked', 'false');
+    });
+  });
 });
