@@ -6,7 +6,7 @@ import { instant } from './stays';
 
 export interface AdminDef {
   id: string; label: string; hint: string;
-  /** What is being booked, so the page can show its price and booking note. */
+  /** Never filled now: the trip carries no money. The field stays so TripAdmin.tsx still compiles. */
   info?: string;
 }
 export interface AdminDue { id: string; label: string }
@@ -24,7 +24,7 @@ export function adminChecklist(state: AppState, me: Player, plan: Plan | null): 
   if (!plan) return out;
   for (const i of BOOKABLE) {
     if (plan.chosen.includes(i.id)) {
-      out.push({ id: `book:${i.id}`, label: i.name, hint: i.book ?? '', info: i.fee });
+      out.push({ id: `book:${i.id}`, label: i.name, hint: i.book ?? '' });
     }
   }
   const ctx = stayCtx(state, me, plan);
@@ -32,10 +32,7 @@ export function adminChecklist(state: AppState, me: Player, plan: Plan | null): 
     const o = outcome(ctx, area);
     if (o.kind !== 'decided') continue;
     const s = ctx.suggestions.find(x => x.id === o.id);
-    out.push({
-      id: stayItemId(area), label: `Stay in ${area}`, hint: s ? `Book ${s.title}.` : 'Book the chosen stay.',
-      info: s?.priceGbp !== undefined ? `about £${s.priceGbp} a night` : undefined,
-    });
+    out.push({ id: stayItemId(area), label: `Stay in ${area}`, hint: s ? `Book ${s.title}.` : 'Book the chosen stay.' });
   }
   return out;
 }

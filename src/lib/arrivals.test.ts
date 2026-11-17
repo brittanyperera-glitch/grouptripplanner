@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, DayEntry, Person, Traveller } from '../types';
-import { arrivalFlags, lastArrival, leaveBy } from './arrivals';
+import { arrivalFlags, lastArrival, leaveBy, leaveByEach } from './arrivals';
 
 const tr = (name: Person, arriveLocal: string | null, departLocal: string | null): Traveller =>
   ({ name, arriveLocal, arriveFlight: null, departLocal, departFlight: null, updatedAt: '' });
@@ -77,5 +77,22 @@ describe('all flags, airport drive only', () => {
   it('subtracts only the drive to the airport, not the other drives that day', () => {
     const leg = (hours: number, to: 'AIR' | 'Kandy'): DayEntry => ({ kind: 'drive', label: 'drive', hours, from: 'Ella', to });
     expect(leaveBy({ Alex: tr('Alex', null, '2026-12-09T14:30') }, day(leg(2, 'Kandy'), leg(1.5, 'AIR')))).toBe('2026-12-09T10:00');
+  });
+});
+
+describe('per-person leave-by', () => {
+  const air: DayEntry = { kind: 'drive', label: 'drive', hours: 1.5, from: 'Ella', to: 'AIR' };
+  const t = { Lazza: tr('Lazza', '2026-12-01T09:00', '2026-12-09T03:15'), Alex: tr('Alex', '2026-12-01T09:00', '2026-12-09T14:30') };
+  it('each traveller gets their own departure minus check-in minus the airport drive', () => {
+    expect(leaveByEach(t, day(air))).toEqual({ Lazza: '2026-12-08T22:45', Alex: '2026-12-09T10:00' });
+  });
+  it('flags the 03:15 flyer, not the 14:30 one, when the last day is known', () => {
+    const f = arrivalFlags(t, '2026-12-01', 9, day(air));
+    expect(f.map(x => [x.name, x.kind])).toEqual([['Lazza', 'early']]);
+    expect(f[0].text).toContain('2026-12-08T22:45');
+  });
+  it('a traveller already flagged for leaving before the last day gets one flag, not two', () => {
+    const f = arrivalFlags({ Alex: tr('Alex', '2026-12-01T09:00', '2026-12-07T20:00') }, '2026-12-01', 9, day(air));
+    expect(f).toHaveLength(1);
   });
 });
