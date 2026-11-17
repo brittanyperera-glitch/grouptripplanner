@@ -107,6 +107,18 @@ export class WriteQueue {
     return this.current;
   }
 
+  /** Retries whatever failed when the device comes back online or the page is shown again. Returns the teardown. */
+  watch(): () => void {
+    const retry = () => { if (this.queue.length > 0) void this.flush(); };
+    const shown = () => { if (document.visibilityState === 'visible') retry(); };
+    window.addEventListener('online', retry);
+    document.addEventListener('visibilitychange', shown);
+    return () => {
+      window.removeEventListener('online', retry);
+      document.removeEventListener('visibilitychange', shown);
+    };
+  }
+
   /**
    * Queues log writes into the one shared log job, so failed entries wait together and a retry costs one
    * request. Each entry is dropped once written, so a retry never repeats one.

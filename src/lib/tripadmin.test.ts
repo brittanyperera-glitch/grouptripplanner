@@ -49,10 +49,11 @@ describe('adminChecklist', () => {
     expect(ids).toEqual(['book:sigiriya', 'book:train']);
   });
 
-  it('a stay item appears only once that stop is decided, and names the stay and its price', () => {
+  it('a stay item appears only once that stop is decided, and names the stay', () => {
     expect(adminChecklist(base(), 'Alex', plan([])).some(d => d.id === stayItemId('Ella'))).toBe(false);
     const d = adminChecklist(withStay(), 'Alex', plan([])).find(x => x.id === 'stay:Ella');
-    expect(d).toMatchObject({ label: 'Stay in Ella', hint: 'Book Hill hut.', info: 'about £40 a night' });
+    expect(d).toMatchObject({ label: 'Stay in Ella', hint: 'Book Hill hut.' });
+    expect(d?.info).toBeUndefined();
   });
 });
 
@@ -141,5 +142,14 @@ describe('claimIsFresh', () => {
   it('no claim is never fresh, and no fallen data leaves a claim as it was', () => {
     expect(claimIsFresh(undefined, [], 'Ella')).toBe(false);
     expect(claimIsFresh(claim('2020-01-01T00:00'), [], 'Ella')).toBe(true);
+  });
+});
+
+describe('no money in what the checklist says', () => {
+  it('over the real catalogue, no label, hint or info mentions a price', () => {
+    const ids = (catalogue as unknown as { items: Item[] }).items.filter(i => i.book).map(i => i.id);
+    const all = adminChecklist(withStay(), 'Alex', plan(ids));
+    expect(all.length).toBe(ids.length + 1);
+    for (const d of all) for (const text of [d.label, d.hint, d.info ?? '']) expect(text).not.toMatch(/£|\bLKR\b|\bUSD\b|\$\d|\brs\.?\s?\d|cost|price/i);
   });
 });

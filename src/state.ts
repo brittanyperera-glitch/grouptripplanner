@@ -419,6 +419,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
     // Dropped, not retried: the refused change must not keep showing over the server's row either.
     onAdminDenied: kind => { setNeedsAdminKey(true); if (kind === 'settings') settings.set(null); else admin.set({}); },
   }), [base]);
+  useEffect(() => queue?.watch(), [queue]);
   const legs = legsData as unknown as Leg[];
 
   // A trip password changed under an open app makes every read come back empty with no error, so an empty

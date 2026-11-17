@@ -378,3 +378,64 @@ describe('WriteQueue saves resolve with whether the write was stored', () => {
     expect(await q.saves.saveBookingClaim('train', 'Alex')).toBe(true);
   });
 });
+
+describe('WriteQueue flush on reconnect', () => {
+  class Flaky extends LocalStore {
+    offline = true; writes = 0;
+    override async saveResponse(...a: Parameters<LocalStore['saveResponse']>) {
+      if (this.offline) throw new Error('offline');
+      this.writes++;
+      return super.saveResponse(...a);
+    }
+  }
+  const seen = (v: 'visible' | 'hidden') => {
+    Object.defineProperty(document, 'visibilityState', { value: v, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  };
+  const setup = async () => {
+    const base = new Flaky();
+    const h = hooks();
+    const q = new WriteQueue(base, h);
+    const stop = q.watch();
+    await q.store.saveResponse('Alex', full({ days: 9 }));
+    return { base, q, h, stop };
+  };
+
+  const tick = () => new Promise(r => setTimeout(r, 0));
+  const until = async (ok: () => boolean) => { for (let i = 0; i < 50 && !ok(); i++) await tick(); };
+
+  it('window online lands the failed save with no further write, and the pending signal clears', async () => {
+    const { base, h, stop } = await setup();
+    expect([h.fails, h.clears]).toEqual([1, 0]);
+    base.offline = false;
+    window.dispatchEvent(new Event('online'));
+    await until(() => h.clears > 0);
+    expect(h.clears).toBe(1);
+    expect(base.writes).toBe(1);
+    expect((await base.load()).responses.Alex?.days).toBe(9);
+    stop();
+  });
+
+  it('becoming visible with a pending job flushes; hidden does not', async () => {
+    const { base, h, stop } = await setup();
+    base.offline = false;
+    seen('hidden');
+    await tick();
+    expect(base.writes).toBe(0);
+    seen('visible');
+    await until(() => h.clears > 0);
+    expect(h.clears).toBe(1);
+    expect(base.writes).toBe(1);
+    stop();
+  });
+
+  it('stopping removes the listeners', async () => {
+    const { base, h, stop } = await setup();
+    stop();
+    base.offline = false;
+    window.dispatchEvent(new Event('online'));
+    await tick();
+    expect(base.writes).toBe(0);
+    expect(h.clears).toBe(0);
+  });
+});
