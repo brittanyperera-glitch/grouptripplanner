@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-/** The one copy of the save feedback that Touchdown and Command show next to the control that saved. */
+/** The one copy of the save feedback strings; Touchdown and the Organiser panel both show it next to the control that saved. */
 export const SAVE_COPY = {
   saved: 'Saved',
   unsaved: "Not saved yet, will retry when you're online",
@@ -27,5 +27,7 @@ export function useSaveStatus(appError: string | null) {
     failedSince.current = appError !== null;
     p.then(ok => setStatus(ok ? 'saved' : 'unsaved'), () => setStatus('failed'));
   };
-  return { status, message: status ? SAVE_COPY[status] : '', run };
+  // An edit after a save makes the old verdict untrue. A save already in flight is left alone: it still reports what it sent.
+  const clear = () => setStatus(null);
+  return { status, message: status ? SAVE_COPY[status] : '', run, clear };
 }

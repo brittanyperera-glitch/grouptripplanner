@@ -187,6 +187,45 @@ describe('Touchdown board', () => {
     });
   });
 
+  it('editing after a save clears Saved, so the old verdict never sits beside an unsaved form', async () => {
+    const { user } = await mount('Alex');
+    const mine = within(screen.getByRole('listitem', { name: 'Alex' }));
+    await user.type(mine.getByLabelText('Arrival flight'), 'UL 504');
+    await user.click(mine.getByRole('button', { name: 'Save' }));
+    expect(await mine.findByRole('status')).toHaveTextContent(SAVE_COPY.saved);
+    await user.type(mine.getByLabelText('Departure flight'), 'Q');
+    expect(mine.queryByRole('status')).toBeNull();
+  });
+
+  it('a person with only an arrival is dark like on the missions file, and still shows what they entered', async () => {
+    await mount('Brittany', s => s.saveTraveller('Antek', { arriveLocal: '2026-12-08T06:40', arriveFlight: 'QR 664', departLocal: null }));
+    const antek = screen.getByRole('listitem', { name: 'Antek' });
+    expect(antek).toHaveClass('fx-dark');
+    expect(within(antek).getByText('Dark')).toBeInTheDocument();
+    expect(within(antek).getByText(/QR 664/)).toBeInTheDocument();
+    expect(within(antek).getByText(/Tue 8 Dec 06:40/)).toBeInTheDocument();
+  });
+
+  it('flight numbers alone are shown, not hidden behind the no-flights-yet note', async () => {
+    await mount('Brittany', s => s.saveTraveller('Antek', { arriveFlight: 'QR 664' }));
+    const antek = within(screen.getByRole('listitem', { name: 'Antek' }));
+    expect(antek.getByText(/QR 664/)).toBeInTheDocument();
+    expect(antek.queryByText(/no flights yet/)).toBeNull();
+  });
+
+  it('my own editable row is never dimmed, even with no flights', async () => {
+    await mount('Brittany', crew);
+    expect(screen.getByRole('listitem', { name: 'Brittany' })).not.toHaveClass('fx-dark');
+    expect(screen.getByRole('listitem', { name: 'Saulie' })).toHaveClass('fx-dark');
+  });
+
+  it('an impossible date such as 31 Feb stays as stored rather than rolling to 3 Mar', async () => {
+    await mount('Alex', s => s.saveTraveller('Antek', { arriveLocal: '2026-02-31T06:40', departLocal: '2026-12-17T21:15' }));
+    const antek = within(screen.getByRole('listitem', { name: 'Antek' }));
+    expect(antek.getByText(/2026-02-31T06:40/)).toBeInTheDocument();
+    expect(antek.queryByText(/3 Mar/)).toBeNull();
+  });
+
   it('has a back control that calls onBack (B7)', () => {
     const onBack = vi.fn();
     render(<Flights me="Alex" travellers={{}} startDate={null} days={null} onSave={vi.fn(async () => true)} onBack={onBack} />);

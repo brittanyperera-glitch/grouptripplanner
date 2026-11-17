@@ -13,6 +13,9 @@ const goodDate = (s: string | null | undefined): s is string => !!s && /^\d{4}-\
 const goodTime = (s: string | null | undefined): s is string => !!s && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s);
 const people = (t: Travellers) => Object.values(t).filter((x): x is Traveller => !!x);
 
+/** Dark means a leg is missing: no arrival or no departure. Missions and the Touchdown board use this one test. */
+export const flightsDark = (t: Traveller | undefined) => !t?.arriveLocal || !t?.departLocal;
+
 // With the last day, a traveller whose leave-by falls before that day starts is flagged too (03:15 flights). No planner day-start constant exists to test against sooner.
 export function arrivalFlags(travellers: Travellers, rawStart: string | null, days: number | null, lastDay?: Day): ArrivalFlag[] {
   const start = goodDate(rawStart) ? rawStart : null;

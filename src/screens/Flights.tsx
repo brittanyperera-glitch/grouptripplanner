@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Avatar from '../components/Avatar';
 import SpyScreen from '../components/spy/SpyScreen';
-import { arrivalFlags, leaveByEach } from '../lib/arrivals';
+import { arrivalFlags, flightsDark, leaveByEach } from '../lib/arrivals';
 import { WEEKDAY_DAY_MONTH } from '../lib/dates';
 import { spyActive } from '../lib/missions';
 import { routePlan } from '../lib/openItems';
@@ -46,10 +46,11 @@ const split = (t: string | null | undefined) => ({ date: t?.slice(0, 10) ?? '', 
 const join = (date: string, time: string) => (date && time ? `${date}T${time}` : null);
 const half = (p: { date: string; time: string }) => !!p.date !== !!p.time;
 // 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:mm' as "Tue 8 Dec" or "Tue 8 Dec 06:40"; anything that is not a real date stays as it was.
+// Date rolls 31 Feb over to 3 Mar without complaint, so a real date is one that survives the round trip.
 const ISO = /(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}))?/g;
 const when = (s: string) => s.replace(ISO, (all, d: string, t?: string) => {
   const at = new Date(`${d}T00:00:00Z`);
-  return Number.isNaN(at.getTime()) ? all : `${WEEKDAY_DAY_MONTH.format(at)}${t ? ` ${t}` : ''}`;
+  return Number.isNaN(at.getTime()) || at.toISOString().slice(0, 10) !== d ? all : `${WEEKDAY_DAY_MONTH.format(at)}${t ? ` ${t}` : ''}`;
 });
 const show = (t: string | null | undefined, flight: string | null | undefined) => (t || flight ? [t && when(t), flight].filter(Boolean).join(' · ') : COPY.none);
 
@@ -72,7 +73,7 @@ function MyRow({ mine, onSave, appError }: { mine: Traveller | undefined; onSave
   const field = (shown: string, label: string, type: string, value: string, set: (v: string) => void) => (
     <label className="fx-field">
       <span className="fx-fl">{shown}</span>
-      <input className="field fx-in" type={type} aria-label={label} maxLength={type === 'text' ? FLIGHT_MAX : undefined} value={value} onChange={e => { setBad(false); set(e.target.value); }} />
+      <input className="field fx-in" type={type} aria-label={label} maxLength={type === 'text' ? FLIGHT_MAX : undefined} value={value} onChange={e => { save.clear(); setBad(false); set(e.target.value); }} />
     </label>
   );
   const submit = () => {
@@ -107,12 +108,15 @@ export function Flights({ me, travellers, startDate, days, onSave, lastDay, appE
     <ul className="fx-list" aria-label={COPY.title}>
       {PEOPLE.map(p => {
         const t = travellers[p];
-        const dark = !t?.arriveLocal && !t?.departLocal;
+        // Dark is Touchdown's word: a missing arrival or a missing departure. Someone who gave nothing at all has no lines to show.
+        const dark = flightsDark(t);
+        const empty = !t?.arriveLocal && !t?.departLocal && !t?.arriveFlight && !t?.departFlight;
+        const bare = p !== me && empty;
         return (
-          <li key={p} className={dark ? 'fx-row fx-dark' : 'fx-row'} aria-label={p}>
-            <div className="fx-who"><Avatar name={p} size={28} /><span className="fx-name">{p}</span>{dark && p === me && <span className="fx-tag">{COPY.dark}</span>}</div>
+          <li key={p} className={dark && p !== me ? 'fx-row fx-dark' : 'fx-row'} aria-label={p}>
+            <div className="fx-who"><Avatar name={p} size={28} /><span className="fx-name">{p}</span>{dark && !bare && <span className="fx-tag">{COPY.dark}</span>}</div>
             {flags.filter(x => x.name === p).map(x => <p key={x.kind} className="fx-flag">{when(x.text)}</p>)}
-            {p === me ? <MyRow mine={t} onSave={onSave} appError={appError} /> : dark ? <p className="fx-line fx-tag">{COPY.darkNote}</p> : (
+            {p === me ? <MyRow mine={t} onSave={onSave} appError={appError} /> : bare ? <p className="fx-line fx-tag">{COPY.darkNote}</p> : (
               <>
                 <p className="fx-line"><span className="fx-fl">{COPY.arrival}</span> {show(t?.arriveLocal, t?.arriveFlight)}</p>
                 <p className="fx-line"><span className="fx-fl">{COPY.departure}</span> {show(t?.departLocal, t?.departFlight)}</p>
