@@ -30,3 +30,11 @@
 .ta-link:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }
 .ta-link-name { font-weight: 800; }
 .ta-link-n { font-size: 13px; font-weight: 700; color: var(--teal); }
+.ta-chip { padding: 2px 8px; border-radius: var(--r-pill); background: var(--chip); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.ta-chip[data-status='overdue'] { background: var(--red-deep); color: var(--on-red); }
+.ta-chip[data-status='done'] { background: var(--teal-deep); color: var(--on-teal); }
+.ta-claim, .ta-cal { all: unset; box-sizing: border-box; cursor: pointer; min-height: 44px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: var(--r-pill); font: 700 13px/1 var(--font-body); color: var(--teal-deep); text-decoration: underline; }
+.ta-cal { align-self: flex-start; }
+.ta-owner { all: unset; display: inline-flex; border-radius: 50%; overflow: hidden; }
+button.ta-owner { cursor: pointer; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; overflow: visible; }
+.ta-claim:focus-visible, .ta-cal:focus-visible, button.ta-owner:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }
