@@ -1,19 +1,24 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { IconLeft } from '../components/Icons';
+import '../components/spy/spy.css';
 import { addDays } from '../lib/calendar';
+import { DAY_MONTH, WEEKDAY_DAY_MONTH } from '../lib/dates';
+import { missionFiles, spyActive } from '../lib/missions';
+import { routePlan } from '../lib/openItems';
 import { isAdmin } from '../lib/override';
 import { MAX_DAYS, MIN_DAYS } from '../lib/group';
 import { releaseFor } from '../lib/release';
 import { nightsNote, stayCtx } from '../lib/stayflow';
-import { adminChecklist } from '../lib/tripadmin';
 import { effectiveRelease, releaseState } from '../lib/tripPlan';
 import { useApp } from '../state';
 import { PACE_LABEL as PACES } from '../store/choices';
 import { readAdminKey } from '../store/tripKey';
 import { AREAS, PEOPLE } from '../types';
-import type { Area, BookingDates, DayEdit, Pace, Person, ReleasePlan } from '../types';
+import type { Area, BookingDates, DayBooking, DayEdit, GroupResult, Pace, Person, ReleasePlan } from '../types';
 import { useGroupResult } from '../workers/usePlan';
+import { SAVE_COPY, useSaveStatus } from './saveStatus';
+import { useTripModel } from './useTripModel';
 import './Organiser.css';
 
 const TITLE_MAX = 60, NOTE_MAX = 200, MAX_STOP_HOURS = 12;
@@ -27,14 +32,25 @@ const COPY = {
   wrong: "That's not it",
   offline: "Couldn't reach the server. Try again",
   checking: 'Checking',
-  saved: 'Saved',
-  unsaved: "Not saved yet, will retry when you're online",
-  failed: "Couldn't save",
   noRoute: 'No route is set yet.',
   loading: 'Loading',
 };
 
 const ok = (v: string) => v === '' || addDays(v, 0) !== null;
+const day = (iso: string) => DAY_MONTH.format(new Date(`${iso}T00:00:00Z`));
+// Log lines written before this screen showed dates the friendly way still hold the raw date.
+const noISO = (t: string) => t.replace(/\d{4}-\d{2}-\d{2}/g, m => (ok(m) ? day(m) : m));
+const tidy = (d: BookingDates): BookingDates => ({ ...(d.opensOn ? { opensOn: d.opensOn } : {}), ...(d.bookBy ? { bookBy: d.bookBy } : {}) });
+
+/** Each control keeps its own save result. A refused save never queued, so it stays silent until the next one: "will retry" would be false. */
+function useSave() {
+  const { error, needsAdminKey } = useApp();
+  const s = useSaveStatus(error);
+  const refused = useRef(false);
+  if (needsAdminKey) refused.current = true;
+  return { message: refused.current ? '' : s.message, run: (p: Promise<boolean>) => { refused.current = needsAdminKey; s.run(p); } };
+}
+const Result = ({ message }: { message: string }) => <p className="og-msg" role="status">{message}</p>;
 const when = (iso: string) => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('en-GB', { timeZone: 'Asia/Colombo', dateStyle: 'medium', timeStyle: 'short' });
@@ -53,7 +69,7 @@ function Section({ title, line, children }: { title: string; line: string; child
   );
 }
 
-function Gate({ onOk }: { onOk: () => void }) {
+function Gate({ onOk }: { onOk?: () => void }) {
   const { setAdminKey } = useApp();
   const [value, setValue] = useState('');
   const [phase, setPhase] = useState<'idle' | 'checking' | 'wrong' | 'offline'>('idle');
@@ -63,7 +79,7 @@ function Gate({ onOk }: { onOk: () => void }) {
     if (!key || phase === 'checking') return;
     setPhase('checking');
     try {
-      if (await setAdminKey(key)) onOk(); else setPhase('wrong');
+      if (await setAdminKey(key)) onOk?.(); else setPhase('wrong');
     } catch { setPhase('offline'); }
   };
   return (
@@ -78,18 +94,17 @@ function Gate({ onOk }: { onOk: () => void }) {
   );
 }
 
-type Run = (p: Promise<boolean>) => void;
-
-function StartDate({ value, run }: { value: string | null; run: Run }) {
+function StartDate({ value }: { value: string | null }) {
   const { saveTripSettings } = useApp();
+  const { message, run } = useSave();
   const [v, setV] = useState(value ?? '');
   return (
     <form className="og-form" onSubmit={e => { e.preventDefault(); run(saveTripSettings({ startDate: v || null }, v ? `Start date set to ${v}` : 'Start date cleared')); }}>
-      <label className="og-field">
-        <span className="og-fl">Start date</span>
-        <input className="field" type="date" value={v} onChange={e => setV(e.target.value)} />
-      </label>
-      <button type="submit" className="cta" disabled={v === (value ?? '') || !ok(v)}>Save date</button>
+      <input className="field" type="date" aria-label="Start date" value={v} onChange={e => setV(e.target.value)} />
+      <div className="og-act">
+        <button type="submit" className="cta" disabled={v === (value ?? '') || !ok(v)}>Save date</button>
+        <Result message={message} />
+      </div>
     </form>
   );
 }
@@ -107,8 +122,9 @@ function describeChange(base: ReleasePlan, next: ReleasePlan, name: (id: string)
   return `Route: ${out.join(', ') || 'edited'}`;
 }
 
-function RouteEditor({ base, run }: { base: ReleasePlan; run: Run }) {
+function RouteEditor({ base }: { base: ReleasePlan }) {
   const { state, items, legs, saveTripSettings, needsAdminKey } = useApp();
+  const { message, run } = useSave();
   const [draft, setDraft] = useState(base);
   const baseKey = JSON.stringify(base);
   // The route this candidate started from. A saved route comes back as the new base and the candidate follows it,
@@ -267,25 +283,38 @@ function RouteEditor({ base, run }: { base: ReleasePlan; run: Run }) {
         <button type="button" className="cta" disabled={!dirty || loading || draft.items.length === 0}
           onClick={() => { sent.current = JSON.stringify(draft); run(saveTripSettings({ plan: draft }, describeChange(base, draft, name))); }}>Save route</button>
         {dirty && <button type="button" className="cta alt" onClick={discard}>Discard changes</button>}
+        <Result message={message} />
       </div>
     </div>
   );
 }
 
-function BookingRow({ id, label, run }: { id: string; label: string; run: Run }) {
+/** `b` carries the dates in use (the catalogue's, or the organiser's own), the same ones Trip admin shows. */
+function BookingRow({ b }: { b: DayBooking }) {
+  const { id, label } = b;
   const { state, claimBooking, saveTripSettings } = useApp();
+  const { message, run } = useSave();
   const stored = state.tripSettings?.bookingDates ?? {};
-  const [d, setD] = useState<BookingDates>(stored[id] ?? {});
+  const inUse = tidy({ opensOn: b.opensOn ?? '', bookBy: b.bookBy ?? '' });
+  const [d, setD] = useState<BookingDates>(inUse);
+  // The dates in use change when this row saves or another device does. Remounting on that would drop the row's save result,
+  // so the draft follows them instead, unless it holds edits of its own.
+  const inKey = JSON.stringify(inUse);
+  const [seen, setSeen] = useState(inKey);
+  if (seen !== inKey) { setSeen(inKey); if (JSON.stringify(tidy(d)) === seen) setD(inUse); }
   const valid = ok(d.opensOn ?? '') && ok(d.bookBy ?? '');
-  const clean: BookingDates = { ...(d.opensOn ? { opensOn: d.opensOn } : {}), ...(d.bookBy ? { bookBy: d.bookBy } : {}) };
+  const clean = tidy(d);
   const save = () => {
-    const { [id]: _drop, ...rest } = stored;
-    void _drop;
-    run(saveTripSettings({ bookingDates: Object.keys(clean).length ? { ...rest, [id]: clean } : rest }, `Booking dates for ${label}`));
+    const { [id]: mine, ...rest } = stored;
+    // A date left as shown keeps whatever it was (catalogue or the organiser's own); a changed one becomes the override, an emptied one drops it.
+    const next = tidy(Object.fromEntries((['opensOn', 'bookBy'] as const).map(k => [k, clean[k] === inUse[k] ? mine?.[k] : clean[k]])));
+    run(saveTripSettings({ bookingDates: Object.keys(next).length ? { ...rest, [id]: next } : rest }, `Booking dates for ${label}`));
   };
+  const dates = [b.opensOn && `Opens ${day(b.opensOn)}`, b.bookBy && `Book by ${day(b.bookBy)}`].filter(Boolean).join(', ') || 'No date yet';
   return (
     <li className="og-book">
       <p className="og-rowname">{label}</p>
+      <p className="og-msg">{dates}</p>
       <label className="og-field">
         <span className="og-fl">Owner</span>
         <select className="field" aria-label={`Owner of ${label}`} value={state.bookingClaims?.[id]?.owner ?? ''}
@@ -298,54 +327,89 @@ function BookingRow({ id, label, run }: { id: string; label: string; run: Run })
         <label className="og-field"><span className="og-fl">Opens on</span><input className="field" type="date" value={d.opensOn ?? ''} onChange={e => setD(x => ({ ...x, opensOn: e.target.value }))} /></label>
         <label className="og-field"><span className="og-fl">Book by</span><input className="field" type="date" value={d.bookBy ?? ''} onChange={e => setD(x => ({ ...x, bookBy: e.target.value }))} /></label>
       </div>
-      <button type="button" className="cta alt" disabled={!valid || JSON.stringify(clean) === JSON.stringify(stored[id] ?? {})} onClick={save}>Save dates</button>
+      <div className="og-act">
+        <button type="button" className="cta alt" disabled={!valid || JSON.stringify(clean) === JSON.stringify(inUse)} onClick={save}>Save dates</button>
+        <Result message={message} />
+      </div>
     </li>
   );
 }
 
 function Panel({ onBack }: { onBack?: () => void }) {
   const { state, me, items, legs, needsAdminKey } = useApp();
-  const [msg, setMsg] = useState('');
-  const run: Run = p => { setMsg(''); p.then(stored => setMsg(stored ? COPY.saved : COPY.unsaved), () => setMsg(COPY.failed)); };
   const settings = state.tripSettings ?? null;
   const loading = state.tripSettings === undefined;
   const base = useMemo(() => effectiveRelease(releaseState(state.tripSettings), releaseFor(me), null), [state.tripSettings, me]);
   const { data: current } = useGroupResult(state, items, legs, base);
 
-  const plan = current?.final ?? null;
+  // The decided route only, as Trip admin reads it: an unlocked candidate has no bookings or stays to count yet.
+  const plan = routePlan(current, state);
   const ctx = me && plan ? stayCtx(state, me, plan) : null;
   const nights = ctx ? ctx.areas.flatMap(a => { const n = nightsNote(ctx, a); return n ? [{ area: a, note: n }] : []; }) : [];
-  const bookings = me && plan ? adminChecklist(state, me, plan) : [];
+  // Same inputs HQ will read, so the counts here are its counts. The bookings come from the model, with the dates in use.
+  const model = useTripModel({ ...current, final: plan } as GroupResult);
+  const input = { state, plan, model };
+  const files = missionFiles(input);
+  const file = (id: string) => files.find(x => x.id === id)!;
+  const left = (id: string) => file(id).total - file(id).done;
+  const dark = new Intl.ListFormat('en-GB').format(file('touchdown').missing ?? []);
+  const intel = [
+    { id: 'Bookings', n: left('supply'), text: `${left('supply')} to secure` },
+    { id: 'Stays', n: left('stays'), text: `${left('stays')} to decide` },
+    { id: 'Flights', n: left('touchdown'), text: `${left('touchdown')} to add${dark && `, ${dark}`}` },
+  ];
+  // Without a route the counts below would be zeros and "every traveller missing", so say why there are none instead.
+  const noPlan = loading || (base && current === null) ? COPY.loading : COPY.noRoute;
   const log = [...(settings?.overrides ?? [])].reverse();
-
-  return (
-    <section className="body og" aria-label={COPY.title}>
-      {onBack && <div className="og-bar"><button type="button" className="og-back" aria-label={COPY.back} onClick={onBack}><IconLeft size={20} /></button></div>}
-      <h2 className="big display small og-h">{COPY.title}</h2>
+  const top = (
+    <>
       <p className="sub">{COPY.sub}</p>
-      {needsAdminKey && <Gate onOk={() => setMsg('')} />}
-      <p className="og-msg" role="status">{needsAdminKey ? COPY.failed : msg}</p>
+      {needsAdminKey && <Gate />}
+      {needsAdminKey && <p className="og-msg" role="status">{SAVE_COPY.failed}</p>}
+    </>
+  );
 
-      <Section title="Start date" line={settings?.startDate ?? 'Not set'}><StartDate value={settings?.startDate ?? null} run={run} /></Section>
-      <Section title="Route" line={base ? `${base.days} days, ${PACES[base.pace]}, ${base.items.length} places` : loading ? COPY.loading : COPY.noRoute}>
-        {base ? <RouteEditor base={base} run={run} /> : <p className="og-msg">{loading ? COPY.loading : COPY.noRoute}</p>}
+  const sections = (
+    <>
+      <Section title="Start date" line={settings?.startDate ? WEEKDAY_DAY_MONTH.format(new Date(`${settings.startDate}T00:00:00Z`)) : 'Not set'}><StartDate value={settings?.startDate ?? null} /></Section>
+      <Section title="Route" line={base && plan ? `${base.days} days, ${PACES[base.pace]}, ${base.items.length} places` : noPlan}>
+        {base ? <RouteEditor base={base} /> : <p className="og-msg">{loading ? COPY.loading : COPY.noRoute}</p>}
       </Section>
       <Section title="Overrides log" line={log.length ? `${log.length} ${log.length === 1 ? 'change' : 'changes'}` : 'No changes yet'}>
         {log.length === 0 ? <p className="og-msg">Nothing changed yet.</p> : (
-          <ul className="og-rows">{log.map((o, k) => <li key={`${o.at}:${k}`} className="og-log"><time dateTime={o.at}>{when(o.at)}</time> <span>{o.what}</span></li>)}</ul>
+          <ul className="og-rows">{log.map((o, k) => <li key={`${o.at}:${k}`} className="og-log"><time dateTime={o.at}>{when(o.at)}</time> <span>{noISO(o.what)}</span></li>)}</ul>
         )}
+      </Section>
+      <Section title="Missing intel" line={plan ? `${intel.reduce((n, i) => n + i.n, 0)} open` : noPlan}>
+        {!plan ? <p className="og-msg">{noPlan}</p> : <ul className="og-rows" aria-label="Missing intel">{intel.map(i => <li key={i.id} className="og-log"><strong>{i.id}:</strong> {i.text}</li>)}</ul>}
       </Section>
       <Section title="Nights note" line={nights.length ? `${nights.length} to check` : 'Nights match the plan'}>
         {nights.length === 0 ? <p className="og-msg">Stay nights match the itinerary.</p> : (
           <ul className="og-rows">{nights.map(n => <li key={n.area} className="og-log"><strong>{n.area}</strong> <span>{n.note}</span></li>)}</ul>
         )}
       </Section>
-      <Section title="Bookings" line={bookings.length ? `${bookings.length} to look after` : 'None yet'}>
-        {bookings.length === 0 ? <p className="og-msg">Bookings appear once the route is set.</p> : (
-          <ul className="og-rows">{bookings.map(b => <BookingRow key={b.id} id={b.id} label={b.label} run={run} />)}</ul>
+      <Section title="Bookings" line={model.bookings.length ? `${left('supply')} to secure` : 'None yet'}>
+        {model.bookings.length === 0 ? <p className="og-msg">Bookings appear once the route is set.</p> : (
+          <ul className="og-rows">{model.bookings.map(b => <BookingRow key={b.id} b={b} />)}</ul>
         )}
       </Section>
-    </section>
+    </>
+  );
+
+  // One tree for both looks: swapping the root would remount every section, drop an unsaved route and clear a typed password.
+  const spy = spyActive(input);
+  return (
+    <div className={spy ? 'spy' : 'body og'}>
+      <div className={spy ? 'spy-body' : 'og-wrap'}>
+        {spy
+          ? onBack && <button type="button" className="spy-back" onClick={onBack}>{`‹ ${COPY.back}`}</button>
+          : onBack && <div className="og-bar"><button type="button" className="og-back" aria-label={COPY.back} onClick={onBack}><IconLeft size={20} /></button></div>}
+        {spy
+          ? <header className="spy-head"><div className="spy-code">Command</div><h1>{COPY.title}</h1></header>
+          : <h2 className="big display small og-h">{COPY.title}</h2>}
+        <section className={spy ? 'og og-main og-spy' : 'og og-main'} aria-label={COPY.title}>{top}{sections}</section>
+      </div>
+    </div>
   );
 }
 

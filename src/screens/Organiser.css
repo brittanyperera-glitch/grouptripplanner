@@ -1,5 +1,7 @@
 /* Organiser panel. Only og- classes lead a rule here; shared classes are used in markup, never restyled. */
 .og { min-width: 0; }
+.og-wrap { display: contents; }
+.og-main { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
 .og-bar { display: flex; align-items: center; min-height: 44px; }
 .og-back { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--r-pill); color: var(--ink); }
 .og-back:focus-visible, .og-head:focus-visible, .og-btn:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }
@@ -11,7 +13,8 @@
 .og-line { font-size: 13px; font-weight: 700; color: var(--teal); }
 .og-body { padding: 4px 14px 14px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .og-gate, .og-form, .og-route { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.og-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 120px; }
+.og-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.og-pair > .og-field { flex: 1 1 120px; }
 .og-fl { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .og-pair { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; min-width: 0; }
 .og-go { flex: none; }
@@ -25,9 +28,10 @@
 .og-dayh { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
 .og-day[data-over='true'] .og-dayh { color: var(--red-ink); }
 .og-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; }
-.og-rowname { flex: 1 1 160px; min-width: 0; margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.og-rowname { min-width: 0; margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.og-row > .og-rowname { flex: 1 1 160px; }
 .og-hrs { font-size: 12.5px; font-weight: 400; color: var(--muted); }
-.og-sel { flex: 0 1 110px; min-width: 0; width: auto; padding: 8px; }
+.og-row > .og-sel { flex: 0 1 110px; min-width: 0; width: auto; padding: 8px; }
 .og-btn { all: unset; box-sizing: border-box; cursor: pointer; flex: none; min-height: 44px; padding: 0 10px; display: inline-flex; align-items: center; font: 700 13px/1 var(--font-body); color: var(--teal-deep); text-decoration: underline; }
 .og-book { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding-top: 8px; border-top: 1px solid var(--line-strong); }
 .og-book:first-child { padding-top: 0; border-top: 0; }
@@ -35,3 +39,9 @@
 .og-log time { font-weight: 700; color: var(--muted); }
 .og-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .og-actions > button { flex: 1 1 140px; }
+.og-act { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
+
+/* Spy look: cards and dim text follow the kit's colours; nothing here takes the accent, the buttons keep it. */
+.og-spy .og-sec { background: var(--s-card); box-shadow: none; border: 1px solid var(--s-line); }
+.og-spy .og-fl, .og-spy .og-msg, .og-spy .og-hrs, .og-spy .og-line, .og-spy .og-log time { color: var(--s-dim); }
+.og-spy .og-btn { color: var(--s-ink); }
