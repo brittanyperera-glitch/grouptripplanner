@@ -9,3 +9,8 @@
 .stop-dot { fill: var(--ink); stroke: var(--white); stroke-width: 1.6; }
 .stop-tag { fill: var(--white); stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 2; opacity: .94; }
 .stop-label { fill: var(--ink); font: 800 11.5px var(--font-head); letter-spacing: .07em; text-transform: uppercase; }
+/* Trip view: the days not selected fade back, the selected day's legs and pins stand out. */
+.route-dim { opacity: .4; }
+.route-line.on { stroke-width: 3; }
+.stop-dot.on { fill: var(--red); }
+.stop-tag.on { stroke-dasharray: none; stroke-width: 1.6; }
