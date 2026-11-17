@@ -1,0 +1,37 @@
+/* Organiser panel. Only og- classes lead a rule here; shared classes are used in markup, never restyled. */
+.og { min-width: 0; }
+.og-bar { display: flex; align-items: center; min-height: 44px; }
+.og-back { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--r-pill); color: var(--ink); }
+.og-back:focus-visible, .og-head:focus-visible, .og-btn:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }
+.og-h { margin: 0; overflow-wrap: anywhere; }
+.og-msg { margin: 0; font-size: 13.5px; font-weight: 700; color: var(--muted); overflow-wrap: anywhere; }
+.og-sec { min-width: 0; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow-card); }
+.og-head { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; min-height: 56px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 10px; padding: 10px 14px; overflow-wrap: anywhere; }
+.og-title { font: 800 18px/1.1 var(--font-head); text-transform: uppercase; }
+.og-line { font-size: 13px; font-weight: 700; color: var(--teal); }
+.og-body { padding: 4px 14px 14px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.og-gate, .og-form, .og-route { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.og-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 120px; }
+.og-fl { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.og-pair { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; min-width: 0; }
+.og-go { flex: none; }
+.og-form > button, .og-gate > button { flex: none; }
+.og-preview { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.og-fit { margin: 0; font-weight: 800; color: var(--teal); }
+.og-fit[data-bad='true'] { color: var(--red-ink); }
+.og-warn { margin: 0; padding: 8px 12px 8px 28px; border: var(--stamp-border) var(--red-ink); border-radius: var(--r-card); color: var(--red-ink); font-size: 13.5px; font-weight: 700; overflow-wrap: anywhere; }
+.og-days, .og-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.og-day { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.og-dayh { margin: 0; font-weight: 800; overflow-wrap: anywhere; }
+.og-day[data-over='true'] .og-dayh { color: var(--red-ink); }
+.og-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; }
+.og-rowname { flex: 1 1 160px; min-width: 0; margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.og-hrs { font-size: 12.5px; font-weight: 400; color: var(--muted); }
+.og-sel { flex: 0 1 110px; min-width: 0; width: auto; padding: 8px; }
+.og-btn { all: unset; box-sizing: border-box; cursor: pointer; flex: none; min-height: 44px; padding: 0 10px; display: inline-flex; align-items: center; font: 700 13px/1 var(--font-body); color: var(--teal-deep); text-decoration: underline; }
+.og-book { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding-top: 8px; border-top: 1px solid var(--line-strong); }
+.og-book:first-child { padding-top: 0; border-top: 0; }
+.og-log { min-width: 0; font-size: 13.5px; overflow-wrap: anywhere; }
+.og-log time { font-weight: 700; color: var(--muted); }
+.og-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.og-actions > button { flex: 1 1 140px; }
