@@ -5,6 +5,7 @@ import { AppProvider } from '../state';
 import { LocalStore } from '../store/local';
 import releaseJson from '../content/release.json';
 import type { Pace, Person } from '../types';
+import { SAVE_COPY } from './saveStatus';
 import FlightsScreen, { Flights } from './Flights';
 
 beforeEach(() => { localStorage.clear(); });
@@ -37,7 +38,7 @@ describe('Flights', () => {
     await mount('Alex', s => s.saveTraveller('Antek', { arriveLocal: '2026-12-08T06:40', arriveFlight: 'QR 664', departLocal: '2026-12-17T21:15', departFlight: 'QR 665' }));
     const theirs = within(screen.getByRole('listitem', { name: 'Antek' }));
     expect(theirs.getByText(/QR 664/)).toBeInTheDocument();
-    expect(theirs.getByText(/2026-12-08 06:40/)).toBeInTheDocument();
+    expect(theirs.getByText(/Tue 8 Dec 06:40/)).toBeInTheDocument();
     expect(theirs.getByText(/QR 665/)).toBeInTheDocument();
     expect(theirs.queryAllByRole('textbox')).toHaveLength(0);
     expect(theirs.queryByRole('button')).toBeNull();
@@ -50,7 +51,7 @@ describe('Flights', () => {
       await s.saveTripSettings({ startDate: '2026-12-07' });
       await s.saveTraveller('Antek', { arriveLocal: '2026-12-08T06:40', departLocal: '2026-12-17T21:15' });
     });
-    expect(within(screen.getByRole('listitem', { name: 'Antek' })).getByText('Antek lands on 2026-12-08, after day 1 (2026-12-07)')).toBeInTheDocument();
+    expect(within(screen.getByRole('listitem', { name: 'Antek' })).getByText('Antek lands on Tue 8 Dec, after day 1 (Mon 7 Dec)')).toBeInTheDocument();
     expect(within(screen.getByRole('listitem', { name: 'Alex' })).queryByText(/lands on/)).toBeNull();
   });
 
@@ -95,7 +96,7 @@ describe('Flights', () => {
       await s.saveTripSettings({ startDate: '2026-12-07', plan: { ...releaseJson, pace: releaseJson.pace as Pace, days: 5, dayEdits: [] } });
       await s.saveTraveller('Antek', { arriveLocal: '2026-12-07T06:40', departLocal: '2026-12-10T21:15' });
     });
-    expect(within(screen.getByRole('listitem', { name: 'Antek' })).getByText('Antek leaves on 2026-12-10, before the last day (2026-12-11)')).toBeInTheDocument();
+    expect(within(screen.getByRole('listitem', { name: 'Antek' })).getByText('Antek leaves on Thu 10 Dec, before the last day (Fri 11 Dec)')).toBeInTheDocument();
   });
 
   it('with the trip length unknown, no leaves-early flag is guessed', () => {
@@ -145,5 +146,61 @@ describe('Flights honest saves, flight length and row sync', () => {
     fireEvent.change(mine().getByLabelText('Arrival flight'), { target: { value: 'QR 664' } });
     rerender(<Flights {...props} travellers={row({ Alex: { ...row().Alex, arriveFlight: 'EK 650' } })} />);
     expect(mine().getByLabelText('Arrival flight')).toHaveValue('QR 664');
+  });
+});
+
+describe('Touchdown board', () => {
+  const when = /Leave by \w{3} (\d+) Dec (\d{2}):(\d{2})/;
+  const crew = (s: LocalStore) => Promise.all([
+    s.saveTripSettings({ startDate: '2026-12-08', plan: { ...releaseJson, pace: releaseJson.pace as Pace, dayEdits: [] } }),
+    s.saveTraveller('Lazza', { arriveLocal: '2026-12-08T10:00', departLocal: '2026-12-16T03:15' }),
+    s.saveTraveller('Alex', { arriveLocal: '2026-12-08T09:00', departLocal: '2026-12-16T14:30' }),
+  ]).then(() => undefined);
+
+  it('flags the 03:15 flyer and gives each person their own leave-by (A7)', async () => {
+    await mount('Brittany', crew);
+    const lazza = within(screen.getByRole('listitem', { name: 'Lazza' })), alex = within(screen.getByRole('listitem', { name: 'Alex' }));
+    expect(lazza.getByText(/Lazza must leave by Tue 15 Dec \d{2}:\d{2}, before the last day \(Wed 16 Dec\) starts/)).toBeInTheDocument();
+    expect(alex.queryByText(/must leave by/)).toBeNull();
+    const [, lDay] = lazza.getByText('Leave by').parentElement!.textContent!.match(when)!, [, aDay, aHour] = alex.getByText('Leave by').parentElement!.textContent!.match(when)!;
+    expect(lDay).toBe('15');
+    expect(aDay).toBe('16');
+    expect(+aHour).toBeGreaterThanOrEqual(6);
+  });
+
+  it('a person with no flights reads as dark, and no raw ISO date is shown anywhere (B2)', async () => {
+    await mount('Brittany', crew);
+    for (const p of ['Antek', 'Saulie']) expect(within(screen.getByRole('listitem', { name: p })).getByText(/dark/i)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/\d{4}-\d{2}-\d{2}/);
+  });
+
+  it('shows Not saved yet, then Saved once the queue clears the app error (INT3)', () => {
+    const onSave = vi.fn(async () => false);
+    const p = { me: 'Alex' as const, travellers: {}, startDate: null, days: null, onSave };
+    const { rerender } = render(<Flights {...p} appError={null} />);
+    const mine = () => within(screen.getByRole('listitem', { name: 'Alex' }));
+    fireEvent.click(mine().getByRole('button', { name: 'Save' }));
+    return waitFor(() => expect(mine().getByRole('status')).toHaveTextContent(SAVE_COPY.unsaved)).then(async () => {
+      rerender(<Flights {...p} appError="Couldn't save" />);
+      rerender(<Flights {...p} appError={null} />);
+      await waitFor(() => expect(mine().getByRole('status')).toHaveTextContent(SAVE_COPY.saved));
+    });
+  });
+
+  it('has a back control that calls onBack (B7)', () => {
+    const onBack = vi.fn();
+    render(<Flights me="Alex" travellers={{}} startDate={null} days={null} onSave={vi.fn(async () => true)} onBack={onBack} />);
+    fireEvent.click(screen.getByRole('button', { name: /back/i }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('wears the spy shell only when told to, with the back control inside it', () => {
+    const props = { me: 'Alex' as const, travellers: {}, startDate: null, days: null, onSave: vi.fn(async () => true), onBack: vi.fn() };
+    const { rerender } = render(<Flights {...props} />);
+    expect(document.querySelector('.spy')).toBeNull();
+    rerender(<Flights {...props} spy />);
+    expect(document.querySelector('.spy')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /back/i }));
+    expect(props.onBack).toHaveBeenCalledTimes(1);
   });
 });
