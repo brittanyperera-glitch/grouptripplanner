@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PEOPLE } from '../types';
 import Name, { FLASH } from './Name';
+import { tripWhen } from './Poster';
 
 const original = window.matchMedia;
 const setMotion = (full: boolean) => {
@@ -171,5 +172,15 @@ describe('roster', () => {
   it('with no roster all five show', async () => {
     await openWith();
     for (const p of PEOPLE) expect(screen.getByRole('button', { name: p })).toBeInTheDocument();
+  });
+});
+
+describe('the opening stamp month', () => {
+  it('names the start date\'s month and year, and falls back to Dec 2026 with none', () => {
+    expect(tripWhen('2027-01-03')).toBe('Jan 2027');
+    expect(tripWhen(null)).toBe('Dec 2026');
+    setMotion(false);
+    render(<Name welcome="The Homecoming." when={tripWhen('2027-01-03')} players={players} onPick={() => {}} />);
+    expect(document.querySelector('.landing-stamp')?.textContent).toBe('Sri LankaJan 2027');
   });
 });

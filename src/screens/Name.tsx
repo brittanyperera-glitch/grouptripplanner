@@ -8,6 +8,7 @@ import './Landing.css';
 import type { Copy } from '../state';
 import './Lockin.css';
 import { PEOPLE } from '../types';
+import { tripWhen } from './Poster';
 import type { Player } from '../types';
 
 // Lock-in: ease in, stay readable, ease out, then continue.
@@ -54,8 +55,8 @@ function FlashName({ name }: { name: string }) {
   return <span ref={ref} className="flash-name">{name}</span>;
 }
 
-export default function Name({ welcome, welcomeSub, players = {}, roster = PEOPLE, onPick, onLogout }: {
-  welcome: string; welcomeSub?: string; players?: Players; roster?: readonly Player[]; onPick: (p: Player) => void; onLogout?: () => void;
+export default function Name({ welcome, welcomeSub, when = tripWhen(null), players = {}, roster = PEOPLE, onPick, onLogout }: {
+  welcome: string; when?: string; welcomeSub?: string; players?: Players; roster?: readonly Player[]; onPick: (p: Player) => void; onLogout?: () => void;
 }) {
   const [mode] = useState(motion);
   const still = mode === 'still';
@@ -136,7 +137,7 @@ export default function Name({ welcome, welcomeSub, players = {}, roster = PEOPL
         <div className="intro landing">
           <main className="landing-body">
             <div className="landing-top">
-              <p className="landing-stamp"><span>Sri Lanka</span><span>Dec 2026</span></p>
+              <p className="landing-stamp"><span>Sri Lanka</span><span>{when}</span></p>
               {welcome && <h1 className="landing-title long">{welcome}</h1>}
               {welcome && welcomeSub && <p className="landing-sub-copy">{welcomeSub}</p>}
             </div>
