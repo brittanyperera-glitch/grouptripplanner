@@ -14,6 +14,7 @@ import { emptyRanking, PEOPLE } from '../types';
 import type { GroupResult, Player, ReleasePlan, TripSettings } from '../types';
 import { useGroupResult } from '../workers/usePlan';
 import Organiser from './Organiser';
+
 import { SAVE_COPY } from './saveStatus';
 import { useTripModel } from './useTripModel';
 
@@ -24,6 +25,10 @@ class Spy extends LocalStore {
   saveTripSettings(patch: Parameters<LocalStore['saveTripSettings']>[0]) { this.saves.push(patch); return super.saveTripSettings(patch); }
   saveBookingClaim(id: string, owner: Parameters<LocalStore['saveBookingClaim']>[1]) { this.claims.push([id, owner]); return super.saveBookingClaim(id, owner); }
 }
+
+// The spy shell classes come from the kit's stylesheet, so this screen must load it itself.
+const kit = vi.hoisted(() => ({ css: false }));
+vi.mock('../components/spy/spy.css', () => { kit.css = true; return {}; });
 
 const seed: ReleasePlan = { ...(releaseJson as Omit<ReleasePlan, 'dayEdits'>), dayEdits: [] };
 const settings = (over: Partial<TripSettings> = {}): TripSettings => ({ startDate: null, plan: seed, bookingDates: {}, overrides: [], updatedAt: '2026-11-01T00:00:00.000Z', ...over });
@@ -488,5 +493,48 @@ describe('Organiser as Command', () => {
     expect(head).toHaveTextContent('No route is set yet');
     await user.click(head);
     expect(screen.queryByRole('list', { name: 'Missing intel' })).toBeNull();
+  });
+});
+
+describe('Organiser fix round', () => {
+  it('loads the spy kit stylesheet by importing it', () => {
+    expect(kit.css).toBe(true);
+  });
+
+  it('stacks the sections in the spy look with the same class and a rule for it', async () => {
+    await mountProbe({ startDate: '2026-12-08' });
+    expect((await probe()).active).toBe(true);
+    const sec = document.querySelector('.og-spy')!;
+    expect(sec).toHaveClass('og-main');
+    const css = fs.readFileSync(path.join(__dirname, 'Organiser.css'), 'utf8');
+    expect(css).toMatch(/^\.og-main \{[^}]*flex-direction: column; gap: 14px/m);
+  });
+
+  it('Route headline and Missing intel read the same condition, also while the plan is still being worked out', async () => {
+    await mountProbe({ startDate: '2026-12-08' });
+    const route = await screen.findByRole('button', { name: /^Route/ });
+    const intel = screen.getByRole('button', { name: /^Missing intel/ });
+    expect(/ places/.test(route.textContent ?? '')).toBe(/ open/.test(intel.textContent ?? ''));
+  });
+
+  it('editing one prefilled date overrides only that date, and clearing it returns to the catalogue', async () => {
+    // The train's opening date comes from the catalogue; the organiser has set only Book by.
+    const { store, user } = await mount('Brittany', { startDate: '2026-12-08', bookingDates: { 'book:train': { bookBy: '2026-11-20' } } });
+    await open(user, /^Bookings/);
+    const row = (await screen.findByLabelText('Owner of Nanu Oya to Ella train')).closest('li')!;
+    expect(within(row).getByLabelText('Opens on')).not.toHaveValue('');
+    const bookBy = within(row).getByLabelText('Book by') as HTMLInputElement;
+    const was = bookBy.value;
+    await user.clear(bookBy);
+    await user.type(bookBy, was === '2026-11-25' ? '2026-11-26' : '2026-11-25');
+    await user.click(within(row).getByRole('button', { name: 'Save dates' }));
+    await waitFor(() => expect(store.saves).toHaveLength(1));
+    const saved = Object.values(store.saves[0].bookingDates!);
+    expect(saved).toEqual([{ bookBy: bookBy.value }]);
+    await waitFor(() => expect(within(row).getByRole('status')).toHaveTextContent(SAVE_COPY.saved));
+    await user.clear(bookBy);
+    await user.click(within(row).getByRole('button', { name: 'Save dates' }));
+    await waitFor(() => expect(store.saves).toHaveLength(2));
+    expect(store.saves[1].bookingDates).toEqual({});
   });
 });

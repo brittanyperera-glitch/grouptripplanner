@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { IconLeft } from '../components/Icons';
+import '../components/spy/spy.css';
 import { addDays } from '../lib/calendar';
 import { DAY_MONTH, WEEKDAY_DAY_MONTH } from '../lib/dates';
 import { missionFiles, spyActive } from '../lib/missions';
@@ -304,9 +305,10 @@ function BookingRow({ b }: { b: DayBooking }) {
   const valid = ok(d.opensOn ?? '') && ok(d.bookBy ?? '');
   const clean = tidy(d);
   const save = () => {
-    const { [id]: _drop, ...rest } = stored;
-    void _drop;
-    run(saveTripSettings({ bookingDates: Object.keys(clean).length ? { ...rest, [id]: clean } : rest }, `Booking dates for ${label}`));
+    const { [id]: mine, ...rest } = stored;
+    // A date left as shown keeps whatever it was (catalogue or the organiser's own); a changed one becomes the override, an emptied one drops it.
+    const next = tidy(Object.fromEntries((['opensOn', 'bookBy'] as const).map(k => [k, clean[k] === inUse[k] ? mine?.[k] : clean[k]])));
+    run(saveTripSettings({ bookingDates: Object.keys(next).length ? { ...rest, [id]: next } : rest }, `Booking dates for ${label}`));
   };
   const dates = [b.opensOn && `Opens ${day(b.opensOn)}`, b.bookBy && `Book by ${day(b.bookBy)}`].filter(Boolean).join(', ') || 'No date yet';
   return (
@@ -370,7 +372,7 @@ function Panel({ onBack }: { onBack?: () => void }) {
   const sections = (
     <>
       <Section title="Start date" line={settings?.startDate ? WEEKDAY_DAY_MONTH.format(new Date(`${settings.startDate}T00:00:00Z`)) : 'Not set'}><StartDate value={settings?.startDate ?? null} /></Section>
-      <Section title="Route" line={base ? `${base.days} days, ${PACES[base.pace]}, ${base.items.length} places` : loading ? COPY.loading : COPY.noRoute}>
+      <Section title="Route" line={base && plan ? `${base.days} days, ${PACES[base.pace]}, ${base.items.length} places` : noPlan}>
         {base ? <RouteEditor base={base} /> : <p className="og-msg">{loading ? COPY.loading : COPY.noRoute}</p>}
       </Section>
       <Section title="Overrides log" line={log.length ? `${log.length} ${log.length === 1 ? 'change' : 'changes'}` : 'No changes yet'}>
@@ -405,7 +407,7 @@ function Panel({ onBack }: { onBack?: () => void }) {
         {spy
           ? <header className="spy-head"><div className="spy-code">Command</div><h1>{COPY.title}</h1></header>
           : <h2 className="big display small og-h">{COPY.title}</h2>}
-        <section className={spy ? 'og og-spy' : 'og og-main'} aria-label={COPY.title}>{top}{sections}</section>
+        <section className={spy ? 'og og-main og-spy' : 'og og-main'} aria-label={COPY.title}>{top}{sections}</section>
       </div>
     </div>
   );
