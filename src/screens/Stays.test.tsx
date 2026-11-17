@@ -2,6 +2,7 @@ import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AdminNav } from '../components/AdminNav';
 import { MemoryStore } from '../guest/MemoryStore';
 import { seedState } from '../guest/seed';
 import { AppProvider, useApp } from '../state';
@@ -13,10 +14,10 @@ import Stays from './Stays';
 const grp = vi.hoisted(() => ({ current: null as unknown }));
 vi.mock('../workers/usePlan', async orig => ({ ...(await orig<typeof import('../workers/usePlan')>()), useGroupResult: () => ({ data: grp.current, loading: false }) }));
 
-const day = (n: number, area: Plan['days'][number]['area']) => ({ n, area, entries: [], spare: 0, rainSlack: false });
+const day = (n: number, area: Plan['days'][number]['area'], entries: Plan['days'][number]['entries'] = []) => ({ n, area, entries, spare: 0, rainSlack: false });
 const plan: Plan = {
   route: ['AIR', 'Sigiriya', 'Ella', 'AIR'], areas: ['Cultural Triangle', 'Ella'], chosen: [], dropped: [], travelHours: 0, fits: true, missingMusts: [], score: 0,
-  days: [day(1, 'Cultural Triangle'), day(2, 'Cultural Triangle'), day(3, null), day(4, 'Ella'), day(5, 'Kandy and Knuckles')],
+  days: [day(1, 'Cultural Triangle'), day(2, 'Cultural Triangle'), day(3, null, [{ kind: 'drive', label: 'Drive from Sigiriya to Ella', hours: 2, from: 'Sigiriya', to: 'Ella' }]), day(4, 'Ella', [{ kind: 'drive', label: 'Drive from Ella to Kandy', hours: 4, from: 'Ella', to: 'Kandy' }]), day(5, 'Kandy and Knuckles')],
 };
 // Changed deliberately (route decided only once locked or reopened): the fixture carries `locked`, as a real decided route does.
 const routeLocked = (): GroupResult => ({ final: plan, locked: true } as unknown as GroupResult);
@@ -346,7 +347,7 @@ describe('guests', () => {
     return new MemoryStore({ ...base, stays: { crew, suggestions: [place('a1', { title: 'Hill hut' })], admin: { pins: [], scouts: {}, closed: [] } } });
   };
 
-  it('the guest is the sixth to lock; until then nothing is decided, after it the lone stay is picked', async () => {
+  it('the guest is the sixth to lock; until then nothing is decided, after it the lone stay is short a 2nd option', async () => {
     const store = sandbox();
     const user = userEvent.setup();
     render(<AppProvider store={store} sandbox={{ onFinish: () => undefined }}><AsGuest /></AppProvider>);
@@ -355,7 +356,9 @@ describe('guests', () => {
     await screen.findByText('Where do we sleep?');
     expect(screen.queryByText('Hill hut')).toBeNull();
     await user.click(btn('I have none to add'));
-    expect(await screen.findByText('Hill hut')).toBeInTheDocument();
+    // Changed deliberately (her 17 Nov decision: 2+ options then a vote): the lone stay is no longer picked, the area waits for a 2nd.
+    expect(await screen.findByText('Waiting on a 2nd stay for Ella')).toBeInTheDocument();
+    expect(screen.queryByText('Hill hut')).toBeNull();
     expect(localStorage.getItem('tp:stays:Aunty')).toBeNull();
   });
 });
@@ -458,5 +461,100 @@ describe('add an eat, do or gem idea', () => {
     await user.type(within(dialog).getByLabelText('Name'), 'Sunrise hike');
     await user.click(within(dialog).getByRole('button', { name: 'Add this idea' }));
     expect(stored<PlaceSuggestion[]>('tp:placesug')[0]).toMatchObject({ kind: 'do', title: 'Sunrise hike' });
+  });
+});
+
+describe('a stay that fell through, and what comes after', () => {
+  const FALL = '2026-11-01T10:00:00.000Z';
+  const two = () => seedPlaces([place('a1', { title: 'Hill hut' }), place('a2', { title: 'River house' })]);
+  const pinned = () => localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [{ area: 'Ella', suggestionId: 'a2', at: 't' }], scouts: {} }));
+  const fallen = () => localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [], scouts: {}, fallen: [{ id: 'a2', area: 'Ella', at: FALL }] }));
+
+  it('Fell through on a decided stay saves fallen with its id, area and a time, and clears that area\'s booking claim', async () => {
+    seedAll({ locked: true }); two(); pinned();
+    localStorage.setItem('tp:claims', JSON.stringify({ 'stay:Ella': { itemId: 'stay:Ella', owner: 'Alex', updatedAt: FALL } }));
+    const user = await mount('Brittany');
+    await user.click(row('Ella, 1 night, 2 stays'));
+    await user.click(within(screen.getByRole('article', { name: 'River house' })).getByRole('button', { name: 'Fell through' }));
+    await user.click(btn('Yes, it fell through'));
+    expect(stored<{ fallen: { id: string; area: string; at: string }[] }>('tp:staysadmin').fallen).toEqual([{ id: 'a2', area: 'Ella', at: expect.stringMatching(/^\d{4}-\d\d-\d\dT/) }]);
+    expect(stored<Record<string, { owner: string | null }>>('tp:claims')['stay:Ella'].owner).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fell through' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Pin as final' })).toHaveLength(2);
+  });
+
+  it('a second fall keeps the first one in the list', async () => {
+    seedAll({ locked: true }); two();
+    localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [{ area: 'Ella', suggestionId: 'a1', at: '2026-11-02T10:00:00.000Z' }], scouts: {}, fallen: [{ id: 'a2', area: 'Ella', at: FALL }] }));
+    const user = await mount('Brittany');
+    await user.click(row('Ella, 1 night, 2 stays'));
+    await user.click(screen.getByRole('button', { name: 'Fell through' }));
+    await user.click(btn('Yes, it fell through'));
+    expect(stored<{ fallen: { id: string }[] }>('tp:staysadmin').fallen.map(f => f.id)).toEqual(['a2', 'a1']);
+  });
+
+  it('a friend sees the replacing line on the home page and the board, with no vote, no Fell through and no pin', async () => {
+    seedAll({ locked: true }); two(); fallen();
+    const user = await mount('Alex');
+    expect(within(row('Ella, 1 night, 2 stays')).getByText('Brittany is finding a replacement for Ella')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Head to head' })).toBeNull();
+    await user.click(row('Ella, 1 night, 2 stays'));
+    expect(screen.getByText('Brittany is finding a replacement for Ella')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Fell through' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pin as final' })).toBeNull();
+  });
+
+  it('Brittany sees the pin controls while a replacement is found', async () => {
+    seedAll({ locked: true }); two(); fallen();
+    const user = await mount('Brittany');
+    await user.click(row('Ella, 1 night, 2 stays'));
+    expect(screen.getAllByRole('button', { name: 'Pin as final' })).toHaveLength(2);
+    expect(screen.getByText('Pin a replacement for Ella')).toBeInTheDocument();
+    expect(screen.queryByText('Brittany is finding a replacement for Ella')).toBeNull();
+  });
+
+  it('the finished state offers Next: book your stays, which opens Trip admin', async () => {
+    seedAll({ locked: true }); two(); pinned();
+    const openAdmin = vi.fn();
+    localStorage.setItem('tp:me', 'Alex');
+    const user = userEvent.setup();
+    render(<AdminNav.Provider value={openAdmin}><AppProvider store={new LocalStore()}><Stays /></AppProvider></AdminNav.Provider>);
+    expect(await screen.findByText('Your stays are set')).toBeInTheDocument();
+    await user.click(btn('Next: book your stays'));
+    expect(openAdmin).toHaveBeenCalledTimes(1);
+  });
+
+  it('no Next button before everything is decided, and none where Trip admin cannot be opened', async () => {
+    seedAll({ locked: true }); two();
+    localStorage.setItem('tp:me', 'Alex');
+    render(<AdminNav.Provider value={vi.fn()}><AppProvider store={new LocalStore()}><Stays /></AppProvider></AdminNav.Provider>);
+    await screen.findByRole('list', { name: 'Stays steps' });
+    expect(screen.queryByRole('button', { name: 'Next: book your stays' })).toBeNull();
+    cleanup();
+    pinned();
+    await mount('Alex');
+    expect(screen.getByText('Your stays are set')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next: book your stays' })).toBeNull();
+  });
+
+  it('a destination nobody suggested a stay for prompts Suggest a stay, which opens the add sheet for it', async () => {
+    seedAll({ locked: true }); two(); pinned();
+    const user = await mount('Alex');
+    const kandy = row('Kandy and Knuckles, 1 night, 0 stays').closest('li') as HTMLElement;
+    expect(within(row('Ella, 1 night, 2 stays').closest('li') as HTMLElement).queryByRole('button', { name: 'Suggest a stay' })).toBeNull();
+    await user.click(within(kandy).getByRole('button', { name: 'Suggest a stay' }));
+    expect(within(screen.getByRole('dialog')).getByLabelText('Destination')).toHaveValue('Kandy and Knuckles');
+  });
+
+  it('when the only stay falls through, Brittany can add a replacement from the row; friends cannot', async () => {
+    seedAll({ locked: true }); seedPlaces([place('a1', { title: 'Hill hut' })]);
+    localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [], scouts: {}, fallen: [{ id: 'a1', area: 'Ella', at: FALL }] }));
+    const user = await mount('Brittany');
+    const ella = row('Ella, 1 night, 1 stay').closest('li') as HTMLElement;
+    await user.click(within(ella).getByRole('button', { name: 'Suggest a stay' }));
+    expect(within(screen.getByRole('dialog')).getByLabelText('Destination')).toHaveValue('Ella');
+    cleanup();
+    await mount('Alex');
+    expect(within(row('Ella, 1 night, 1 stay').closest('li') as HTMLElement).queryByRole('button', { name: 'Suggest a stay' })).toBeNull();
   });
 });

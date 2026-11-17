@@ -4,13 +4,13 @@ import { shortest } from './paths';
 
 // "any" fills daytime; ordering it last put e.g. a temple visit after late-night kottu.
 const SLOT_ORDER: Record<Slot, number> = { sunrise: 0, morning: 1, any: 2, afternoon: 3, sunset: 4, evening: 5, late: 6 };
-const RAIN_AREAS: Area[] = ['Hill country', 'Ella'];
+export const RAIN_AREAS: Area[] = ['Hill country', 'Ella'];
 // Activities after which nobody drives that day. Afternoon ones (park safaris, a sunset beach) run until
 // the parks close at 18:00 (research/google_listings.md: Kaudulla and Hurulu "Closes 6 PM").
 const DUSK_SLOTS: Slot[] = ['afternoon', 'sunset', 'evening', 'late'];
-const CHECKIN = 3;
+export const CHECKIN = 3;
 const TRAIN = 'train';
-const EPS = 1e-9;
+export const EPS = 1e-9;
 const place = (h: Hub) => (h === 'AIR' ? 'the airport' : h);
 
 type Dist = (a: Hub, b: Hub) => number;
@@ -42,7 +42,7 @@ interface WorkDay {
 // their own budget each night instead of using the daytime hours. Sunset stays a daytime slot.
 const EVE_SLOTS: Slot[] = ['evening', 'late'];
 const EVE_HOURS = 3;
-const isEve = (i: Item) => EVE_SLOTS.includes(i.slot);
+export const isEve = (i: Item) => EVE_SLOTS.includes(i.slot);
 /** Knapsack weight in quarter hours: evening items cost no daytime hours. */
 const dayW = (i: Item, wsHub: Hub, d: Dist) => (isEve(i) ? 0 : q(weightOf(i, wsHub, d)));
 

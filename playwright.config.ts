@@ -15,13 +15,14 @@ export default defineConfig({
   webServer: [
     {
       // Build first: preview alone serves whatever dist/ was last built, so the specs would test a stale app.
-      command: 'npx vite build && npx vite preview --port 5199 --strictPort',
+      // build-data copies the place photos into public/img (git-ignored), so a fresh checkout has them too.
+      command: 'node scripts/build-data.mjs && npx vite build && npx vite preview --port 5199 --strictPort',
       port: 5199,
       reuseExistingServer: false,
       timeout: 180_000,
     },
     {
-      command: 'VITE_RELEASE=off npx vite build --outDir dist-vote --emptyOutDir && npx vite preview --outDir dist-vote --port 5198 --strictPort',
+      command: 'node scripts/build-data.mjs && VITE_RELEASE=off npx vite build --outDir dist-vote --emptyOutDir && npx vite preview --outDir dist-vote --port 5198 --strictPort',
       port: 5198,
       reuseExistingServer: false,
       timeout: 180_000,

@@ -1,8 +1,10 @@
 import hostelData from '../content/hostels.json';
 import { AREAS, AREA_HUB, EMPTY_STAYS, stayForkId } from '../types';
-import type { AppState, Area, CrewStays, PlaceKind, PlaceSuggestion, Plan, Player, RoomType, StayType, StaysAdmin, Vote } from '../types';
-import { finalists, livePin, maxNightsOf, nightsByArea, nightsWarnings, rankPoints, scoutAssignments, stayAreas, stayParticipants, stayResult, voteOpen, warnings } from './stays';
+import type { AppState, Area, CrewStays, Hub, PlaceKind, PlaceSuggestion, Plan, Player, RoomType, StayType, StaysAdmin, Vote } from '../types';
+import { hubArea, nightBlocks, nightsFromBlocks } from './calendar';
+import { finalists, livePin, maxNightsOf, nightsWarnings, rankPoints, scoutAssignments, stayParticipants, stayResult, voteOpen, warnings } from './stays';
 import type { RanksByPerson } from './stays';
+import { andList } from './text';
 
 export const STEPS = ['quiz', 'suggest', 'lock', 'rank', 'final'] as const;
 export type Step = (typeof STEPS)[number];
@@ -25,11 +27,12 @@ export interface Hostel {
 }
 export const HOSTELS = (hostelData as unknown as { hostels: Hostel[] }).hostels;
 
-// The guide's hubs are not all areas. Tissa and Yala sit in the same area as Udawalawe (AREA_HUB names only Udawalawe), the
+// The guide's hubs are not all areas: hubArea (calendar.ts) is the one map, and the guide differs in two places only. The
 // airport night at Negombo hangs off the Colombo end of the route, and Arugam Bay is off the route entirely.
+const HUBS: Hub[] = [...AREAS.map(a => AREA_HUB[a]), 'Tissa'];
 export const HUB_AREA: Record<string, Area | null> = {
-  ...Object.fromEntries(AREAS.map(a => [AREA_HUB[a], a])),
-  Tissa: 'Wild south', AIR: 'Colombo', 'Off route': null,
+  ...Object.fromEntries(HUBS.map(h => [h, hubArea(h)])),
+  AIR: 'Colombo', 'Off route': null,
 };
 export const hostelsFor = (area: Area): Hostel[] => HOSTELS.filter(h => HUB_AREA[h.hub] === area);
 export const hostelOf = (id?: string): Hostel | undefined => (id ? HOSTELS.find(h => h.id === id) : undefined);
@@ -83,9 +86,19 @@ export function stayCtx(state: AppState, me: Player, plan: Plan | null): StayCtx
   const stays = state.stays ?? EMPTY_STAYS;
   const participants = stayParticipants(me);
   const crew = participants.flatMap(p => stays.crew[p] ?? []);
+  let derived: Partial<Record<Area, number>> = {};
+  if (plan) {
+    // An organiser-edited plan can leave a night with no area hub, which nightBlocks rejects; the screens must still render.
+    // The fallback counts each day's area except the last day's (no night); it can differ from the blocks on travel days.
+    try { derived = nightsFromBlocks(nightBlocks(plan, null)); } catch (e) {
+      if (!(e instanceof RangeError)) throw e;
+      derived = {};
+      for (const d of plan.days.slice(0, -1)) if (d.area) derived[d.area] = (derived[d.area] ?? 0) + 1;
+    }
+  }
   return {
     me, participants, crew, crewOf: stays.crew, suggestions: stays.suggestions, admin: stays.admin, votes: state.votes,
-    areas: plan ? stayAreas(plan) : [], nights: plan ? effectiveNights(nightsByArea(plan), stays.admin.nightsOff ? undefined : stays.admin.nights) : {}, derivedNights: plan ? nightsByArea(plan) : {},
+    areas: Object.keys(derived) as Area[], nights: effectiveNights(derived, stays.admin.nightsOff ? undefined : stays.admin.nights), derivedNights: derived,
     maxNights: Object.fromEntries(crew.map(c => [c.name, maxNightsOf(c.prefs)])),
   };
 }
@@ -109,19 +122,23 @@ export const rankedBy = (ctx: StayCtx, p: Player, area: Area): boolean => {
   const r = ctx.crewOf[p]?.ranks[area];
   return !!r?.first && !!r?.second;
 };
-/** Areas with three or more distinct stays are ranked; fewer skip straight on, and so do a pinned and a closed area. */
-export const rankAreas = (ctx: StayCtx): Area[] => ctx.areas.filter(a => !livePin(a, ctx.admin.pins, ctx.suggestions, null).pinned && !ctx.admin.closed.includes(a) && rankPoints(ctx.suggestions, {}, a).length >= 3);
+/** Areas with three or more distinct stays are ranked; fewer skip straight on, and so do a pinned, a closed and a fallen-through area (that one waits for a replacement, not ranks). */
+export const rankAreas = (ctx: StayCtx): Area[] => ctx.areas.filter(a => !livePin(a, ctx.admin.pins, ctx.suggestions, null, ctx.admin.fallen).pinned && !(ctx.admin.fallen ?? []).some(f => f.area === a) && !ctx.admin.closed.includes(a) && rankPoints(ctx.suggestions, {}, a).length >= 3);
 
 export type Outcome =
   | { kind: 'empty' }
   | { kind: 'wait'; ranked: number }
   | { kind: 'vote'; pair: [string, string]; tieBreak: string | null; a: Player[]; b: Player[]; warns: Record<string, string[]> }
-  | { kind: 'decided'; id: string; via: 'vote' | 'only' | 'pin' };
+  | { kind: 'decided'; id: string; via: 'vote' | 'pin' }
+  | { kind: 'short'; have: 1 }
+  | { kind: 'replacing' };
 
-/** Where a destination stands once voting is open. A pin beats everything; 3+ stays wait for everyone's top 2 unless Brittany closed ranking, then the ranks in are used. */
+/** Where a destination stands once voting is open. A pin beats everything; 3+ stays wait for everyone's top 2 unless Brittany closed ranking, then the ranks in are used. A fallen stay with no live pin waits for her replacement, never a new vote. One live stay is short: an area needs 2+ options before the group votes (Brittany 2026-11-17), though her pin still decides it. */
 export function outcome(ctx: StayCtx, area: Area): Outcome {
-  const pin = livePin(area, ctx.admin.pins, ctx.suggestions, null);
+  const fallen = ctx.admin.fallen ?? [];
+  const pin = livePin(area, ctx.admin.pins, ctx.suggestions, null, fallen);
   if (pin.pinned && pin.id) return { kind: 'decided', id: pin.id, via: 'pin' };
+  if (fallen.some(f => f.area === area)) return { kind: 'replacing' };
   const scored = rankPoints(ctx.suggestions, {}, area).length;
   if (scored >= 3) {
     const ranked = ctx.participants.filter(p => rankedBy(ctx, p, area)).length;
@@ -129,12 +146,24 @@ export function outcome(ctx: StayCtx, area: Area): Outcome {
   }
   const f = finalists(ctx.suggestions, ranksOf(ctx), area, ctx.crew);
   if ('empty' in f) return { kind: 'empty' };
-  if ('auto' in f) return { kind: 'decided', id: f.auto, via: 'only' };
+  if ('auto' in f) return { kind: 'short', have: 1 };
   const res = stayResult(area, f.finalists, ctx.votes, ctx.participants);
   if (res.winner) return { kind: 'decided', id: res.winner, via: 'vote' };
   const warns: Record<string, string[]> = {};
   for (const id of f.finalists) { const s = ctx.suggestions.find(x => x.id === id); warns[id] = s ? warnLines(ctx, s) : []; }
   return { kind: 'vote', pair: f.finalists, tieBreak: f.tieBreak, a: res.a, b: res.b, warns };
+}
+
+/** The Final step's one line when nothing can be voted on yet: who is being waited on, and for what. */
+export function finalSub(outs: Outcome[], areas: Area[], admin: boolean): string {
+  const C = STAY_COPY.final;
+  const named = (k: Outcome['kind']) => areas.filter((_, i) => outs[i]?.kind === k);
+  const names = (k: Outcome['kind']) => andList(named(k));
+  if (outs.some(o => o.kind === 'vote')) return C.sub;
+  if (outs.some(o => o.kind === 'wait')) return C.waiting;
+  if (outs.some(o => o.kind === 'replacing')) return STAY_COPY.replacing(admin, ...named('replacing'));
+  if (outs.some(o => o.kind === 'short')) return C.short(names('short'));
+  return C.waiting;
 }
 
 export const forkOf = (area: Area, pair: [string, string]) => stayForkId(area, pair[0], pair[1]);
@@ -169,10 +198,18 @@ export const STAY_COPY = {
   lock: { title: 'Ready to lock in?', sub: (n: number) => `${plural(n, 'stay')} from you. Edits stop after this.`, go: (n: number) => `Lock in my stays (${n})`, more: 'Add another stay' },
   waiting: { headline: 'Locked in', sub: 'Waiting on the others.', label: 'Who has locked in', done: 'locked in', wait: 'still to lock', caption: (n: number, of: number) => `${n} of ${of} locked` },
   rank: { title: 'Pick your top 2', sub: 'First place gets 2 points, second gets 1.', go: 'Pick my top 2', waitHead: 'Top 2 is in', waitSub: 'Waiting on the others to pick.', caption: (n: number, of: number) => `${n} of ${of} picked`, label: 'Who has picked', done: 'picked', wait: 'still to pick' },
-  final: { title: 'Head to head', sub: 'Two finalists per place. Three votes settle it.', go: 'Head to head', waiting: 'Waiting on the others to pick their top 2.', set: 'Your stays are set', setSub: 'One stay per place.' },
+  final: { title: 'Head to head', sub: 'Two finalists per place. Three votes settle it.', go: 'Head to head', waiting: 'Waiting on the others to pick their top 2.', short: (area: string) => `Waiting on a 2nd stay for ${area}`, set: 'Your stays are set', setSub: 'One stay per place.' },
   closeRank: { go: (area: string) => `Close ranking for ${area}`, hint: 'Goes ahead with the top 2s already in.' },
+  nudge: (areas: string) => `Find a 2nd stay for ${areas}`,
   scout: (names: string) => `You scout ${names}`,
   scoutTag: 'You scout',
+  /** The one phrasing for a fallen-through area, on every Stays screen: the verb first, so no area name needs an article. */
+  replacing: (admin: boolean, ...areas: string[]) => `${admin ? 'Pin' : 'Brittany is finding'} ${areas.length > 1 ? 'replacements' : 'a replacement'} for ${andList(areas)}`,
+  fall: {
+    go: 'Fell through', ask: (owner: string | null, area: string) => `Mark it as fallen through? ${owner ? `This clears ${owner}'s claim on the ${area} booking.` : 'Pin a replacement next.'}`,
+    yes: 'Yes, it fell through', keep: 'Keep it', done: (title: string) => `${title} marked as fallen through.`, undo: 'Undo',
+  },
+  spy: { settle: 'Tap one to stamp your vote. 3 settle it.', set: (n: number, of: number) => `${plural(of, 'area')}, ${n} set`, fold: 'Organiser tools', duty: (scout: string, mine: boolean, what: string) => (mine ? `Your duty: find ${what}` : `${scout} is finding ${what}`) },
   destinations: 'Where we stay',
   nightsNote: (itinerary: number) => `Brittany set these stay nights. The itinerary still has ${itinerary} ${itinerary === 1 ? 'night' : 'nights'}.`,
   nightsStep: { label: (area: string) => `Stay nights in ${area}`, less: 'Fewer nights', more: 'More nights', unit: (n: number) => (n === 1 ? 'night' : 'nights') },
@@ -187,10 +224,10 @@ export const STAY_COPY = {
   },
   admin: { unlockTitle: 'Reopen a stays list', unlock: (name: string) => `Unlock ${name}` },
   lockPage: { title: 'Lock in my stays', note: 'Edits stop after this.', go: 'Lock in my stays', empty: 'No stays from you yet.' },
-  rankPage: { title: (area: string) => `Your top 2 in ${area}`, sub: 'Tap your first pick, then your second. Tap again to clear.', go: 'Submit my top 2', card: (t: string) => `Rank ${t}`, auto: 'Only one stay here, so it is picked.', two: 'Two stays here, so on to the head to head.', zero: 'Nobody suggested a stay here.' },
+  rankPage: { title: (area: string) => `Your top 2 in ${area}`, sub: 'Tap your first pick, then your second. Tap again to clear.', go: 'Submit my top 2', card: (t: string) => `Rank ${t}`, auto: 'Only one stay here, so it needs a second.', two: 'Two stays here, so on to the head to head.', zero: 'Nobody suggested a stay here.' },
   vote: {
     title: 'Head to head', price: (p: string) => `${p} pp/night`, heads: (n: number) => (n === 1 ? '1 heads-up' : `${n} heads-ups`), vs: 'VS', vote: 'Vote', voteFor: 'Vote for this', voted: 'Voted', tally: (n: number, of: number) => `${n} of ${of} voted`, details: (t: string) => `Details of ${t}`,
-    nothing: 'Nothing to vote on yet.', waitRank: 'Waiting on the others to pick their top 2.', empty: 'Nobody suggested a stay here.', decided: (n: number) => `Decided ${n}`,
-    pinned: "Brittany's pick", only: 'the only stay suggested', byVote: 'won the vote', close: 'Close', yours: 'Your vote',
+    nothing: 'Nothing to vote on yet.', short: (area: string) => `${area}: needs a 2nd stay`, waitRank: 'Waiting on the others to pick their top 2.', empty: 'Nobody suggested a stay here.', decided: (n: number) => `Decided ${n}`,
+    pinned: "Brittany's pick", byVote: 'won the vote', close: 'Close', yours: 'Your vote',
   },
 };

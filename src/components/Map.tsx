@@ -83,12 +83,21 @@ export function routeLayout(route: Hub[]) {
 
 // Schematic island with the route drawn over it. `route` starts and ends at AIR.
 // `drive` (My trip): once it is true and motion is on, the route draws leg by leg while a tuk-tuk drives it, then parks.
-export default function RouteMap({ route, drive = false }: { route: Hub[]; drive?: boolean }) {
+// `legs` (Trip view): indices into the route's legs (leg k joins route[k] and route[k+1]). The rest of the route is dimmed,
+// `dayN` names that day in the label. `drive` runs the same sequence over just these legs, and the tuk-tuk stays parked at the day's end (at `parkAt` when there is no leg).
+export default function RouteMap({ route, drive = false, legs: dayLegs, parkAt, dayN }: { route: Hub[]; drive?: boolean; legs?: number[]; parkAt?: Hub; dayN?: number }) {
   const uid = useId().replace(/[^A-Za-z0-9]/g, '');
   const line = pts(route.map(h => [HUB[h].lat, HUB[h].lon]));
-  const animate = drive && motion() === 'full' && route.length > 1;
   const legs = useMemo(() => buildLegs(route.map(hubXY)), [route]);
+  const day = dayLegs !== undefined;
+  const seqKey = day ? dayLegs.join() : '';
+  // The legs the tuk-tuk drives, in order: the day's, or the whole route.
+  const seq = useMemo(() => (day ? (seqKey ? seqKey.split(',').map(Number) : []).filter(k => k >= 0 && k < legs.length) : legs.map((_, k) => k)), [day, seqKey, legs]);
+  const animate = drive && motion() === 'full' && seq.length > 0;
   const [at, setAt] = useState<Drive>('idle');
+  const [seenKey, setSeenKey] = useState(seqKey);
+  // A new day restarts the drive; adjusting state in render keeps a stale step from indexing the new sequence.
+  if (seenKey !== seqKey) { setSeenKey(seqKey); setAt('idle'); }
   const tukRef = useRef<SVGGElement>(null);
   const lineRef = useRef<SVGGElement>(null);
 
@@ -97,14 +106,16 @@ export default function RouteMap({ route, drive = false }: { route: Hub[]; drive
     if (at === 'idle') { setAt({ k: 0, moving: true }); return; }
     const t = setTimeout(() => {
       if (at.moving) setAt({ k: at.k, moving: false });
-      else setAt(at.k + 1 < legs.length ? { k: at.k + 1, moving: true } : 'done');
-    }, at.moving ? legs[at.k].ms : PAUSE_MS);
+      else setAt(at.k + 1 < seq.length ? { k: at.k + 1, moving: true } : 'done');
+    }, at.moving ? legs[seq[at.k]].ms : PAUSE_MS);
     return () => clearTimeout(t);
-  }, [animate, at, legs]);
+  }, [animate, at, legs, seq]);
 
   const stops = [...new Set(route)];
   const layout = useMemo(() => routeLayout(route).placed, [route]);
-  const run = animate && typeof at === 'object' ? at : null;
+  // On the pass that resets a new day's drive `at` is still the old day's step, which may be past the end of the new `seq`.
+  const run = animate && typeof at === 'object' && at.k < seq.length ? at : null;
+  const ix = run ? seq[run.k] : 0; // the route leg being driven
   // Before the first leg starts (at === 'idle') nothing is drawn yet: deciding that in render, not in the effect, keeps the finished route off the first painted frame.
   const pre = animate && at === 'idle';
   // Putter while a leg draws, horn at each halt; silent unless a tap has already unlocked sound (components/sound.ts).
@@ -114,39 +125,43 @@ export default function RouteMap({ route, drive = false }: { route: Hub[]; drive
     return () => engineStop();
   }, [moving, run?.k]);
   useEffect(() => { if (halted) horn(); }, [halted, run?.k]);
-  useLegDrive(!!run?.moving, run ? legs[run.k] : undefined, parkOff(run ? route[run.k] : 'AIR'), parkOff(run ? route[run.k + 1] : 'AIR'), TUK_W, tukRef, lineRef);
-  const drawn = pre ? 0 : run ? (run.moving ? run.k : run.k + 1) : legs.length;
-  const shown = pre ? new Set(route.slice(0, 1)) : run ? new Set(route.slice(0, drawn + 1)) : null;
+  useLegDrive(!!run?.moving, run ? legs[ix] : undefined, parkOff(run ? route[ix] : 'AIR'), parkOff(run ? route[ix + 1] : 'AIR'), TUK_W, tukRef, lineRef);
+  const drawn = pre ? 0 : run ? (run.moving ? run.k : run.k + 1) : seq.length;
+  // A day's map shows every stop all the time; only the whole-route drive reveals them as it arrives.
+  const shown = day ? null : pre ? new Set(route.slice(0, 1)) : run ? new Set(route.slice(0, drawn + 1)) : null;
   const shownStops = stops.filter(h => !shown || shown.has(h));
-  const tukHub = run ? route[run.moving ? run.k : run.k + 1] : 'AIR';
-  const tukLeg = run ? legs[run.k] : legs[legs.length - 1];
+  const lastLeg = seq.length ? seq[seq.length - 1] : -1;
+  const tukHub = run ? route[run.moving ? ix : ix + 1] : day ? (lastLeg >= 0 ? route[lastLeg + 1] : parkAt ?? route[0]) : 'AIR';
+  const tukLeg = run ? legs[ix] : lastLeg >= 0 ? legs[lastLeg] : legs[legs.length - 1];
   const [hx, hy] = hubXY(tukHub);
-  const legLine = (l: Leg, i: number) => (
+  const lit = day ? new Set<Hub>(seq.length ? seq.flatMap(k => [route[k], route[k + 1]]) : [parkAt ?? route[0]]) : null;
+  const legLine = (l: Leg, i: number, on = false) => (
     <g key={i}>
       <path className="route-halo" d={legD(l)} />
-      <path className="route-line" d={legD(l)} />
+      <path className={on ? 'route-line on' : 'route-line'} d={legD(l)} />
     </g>
   );
   return (
-    <div className="map" data-drive={animate ? (run ? 'on' : at) : undefined}>
-      <svg viewBox="-60 10 350 470" role="img" aria-label={`Route: ${route.map(h => HUB[h].name).join(', ')}`}>
+    <div className="map" data-day={day ? '' : undefined} data-drive={animate ? (run ? 'on' : at) : undefined}>
+      <svg viewBox="-60 10 350 470" role="img" aria-label={`Route: ${route.map(h => HUB[h].name).join(', ')}${day && dayN ? `. Day ${dayN} highlighted` : ''}`}>
         <defs><clipPath id={`card${uid}`}><rect x="-60" y="10" width="350" height="470" rx="16" /></clipPath></defs>
         <g clipPath={`url(#card${uid})`}>
         <rect className="map-sea" x="-60" y="10" width="350" height="470" />
         <polygon className="map-shore" points={pts(COAST)} />
         <polygon className="map-land" points={pts(COAST)} />
-        {run || pre ? (
+        {run || pre || day ? (
           <>
-            {legs.slice(0, drawn).map(legLine)}
+            {day && <g className="route-dim">{legs.map((l, i) => legLine(l, i))}</g>}
+            {seq.slice(0, drawn).map(k => legLine(legs[k], k, day))}
             {run?.moving && (
               // The leg draws itself: a mask reveals the dashed line as --o runs 1 to 0 (a plain dashoffset would erase the dashes).
               <g key={`live${run.k}`} ref={lineRef} style={{ '--o': 1 } as CSSProperties}>
                 <mask id={`reveal${uid}${run.k}`} maskUnits="userSpaceOnUse" x="-60" y="10" width="350" height="470">
-                  <path d={legD(legs[run.k])} fill="none" stroke="#fff" strokeWidth="8" pathLength={1} strokeDasharray="1 1" style={{ strokeDashoffset: 'var(--o)' }} />
+                  <path d={legD(legs[ix])} fill="none" stroke="#fff" strokeWidth="8" pathLength={1} strokeDasharray="1 1" style={{ strokeDashoffset: 'var(--o)' }} />
                 </mask>
                 <g mask={`url(#reveal${uid}${run.k})`}>
-                  <path className="route-halo" d={legD(legs[run.k])} />
-                  <path className="route-line" d={legD(legs[run.k])} />
+                  <path className="route-halo" d={legD(legs[ix])} />
+                  <path className={day ? 'route-line on' : 'route-line'} d={legD(legs[ix])} />
                 </g>
               </g>
             )}
@@ -162,20 +177,20 @@ export default function RouteMap({ route, drive = false }: { route: Hub[]; drive
           const t = tagBox(h);
           return (
             <g key={h}>
-              <rect className="stop-tag" x={t.x} y={t.y} width={t.w} height={t.h} rx="2" />
+              <rect className={lit?.has(h) ? 'stop-tag on' : 'stop-tag'} x={t.x} y={t.y} width={t.w} height={t.h} rx="2" />
               <text className="stop-label" x={x} y={y} textAnchor={anchor}>{HUB[h].name}</text>
             </g>
           );
         })}
         {shownStops.map(h => {
           const [x, y] = hubXY(h);
-          return <circle key={h} className="stop-dot" cx={x} cy={y} r="4" />;
+          return <circle key={h} className={lit?.has(h) ? 'stop-dot on' : 'stop-dot'} cx={x} cy={y} r={lit?.has(h) ? 5.5 : 4} />;
         })}
         </g>
         {/* Landmarks sit outside the card's clip so they can bleed past its edge. Each pops when its stop appears: on mount, staggered, or as the tuk-tuk arrives. */}
         {shownStops.map((h, i) => layout[h] && <Landmark key={h} hub={h} placed={layout[h]} pop={motion() === 'full'} delay={animate ? 0 : i * 90} />)}
-        {animate && at !== 'idle' && (
-          <g ref={tukRef} transform={tukTransform(hx + parkOff(tukHub)[0], hy + parkOff(tukHub)[1], tukLeg.b[0] < tukLeg.a[0], TUK_W)}>
+        {(day ? !animate || at !== 'idle' : animate && at !== 'idle') && (
+          <g ref={tukRef} transform={tukTransform(hx + parkOff(tukHub)[0], hy + parkOff(tukHub)[1], !!tukLeg && tukLeg.b[0] < tukLeg.a[0], TUK_W)}>
             <TukTuk width={TUK_W} driving={!!run?.moving} idle={!!run && !run.moving} />
           </g>
         )}

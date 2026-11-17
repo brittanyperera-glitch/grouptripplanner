@@ -202,16 +202,16 @@ describe('guest exit', () => {
   });
 });
 
+// The teaser advertised stays before the Stays tab shipped; it is gone in every state (plan of 16 Nov 2026).
 describe('Accommodation battles teaser', () => {
-  it('shows on the Group hub only once the plan is locked', async () => {
+  it('is absent once the plan is locked', async () => {
     seedCrew('Brittany');
     grp.current = group({ knockouts: [], locked: true, final: plan, finalized: [...PEOPLE] });
     const user = userEvent.setup();
     render(<App />);
     await user.click(await screen.findByRole('tab', { name: 'Group' }));
-    expect(await screen.findByText('Accommodation battles')).toBeInTheDocument();
-    // Changed deliberately (Brittany 2026-10-16): the teaser now says it is in dev.
-    expect(screen.getByText('In dev. Opens once everyone has finished the knockouts.')).toBeInTheDocument();
+    await screen.findByText("Everyone's picks");
+    expect(screen.queryByText('Accommodation battles')).toBeNull();
   });
   it('is absent while the group stage is still open', async () => {
     seedCrew('Brittany');

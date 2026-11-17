@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AppState, PlaceSuggestion, Plan } from '../types';
 import { applyAdmin, cleanNights, EMPTY_STAYS } from '../types';
-import { chosenStays } from '../screens/Itinerary';
+import { chosenStays } from './chosenStays';
 import { withNights } from './override';
 import { effectiveNights, nightsNote, stayCtx, STAY_COPY } from './stayflow';
 
@@ -16,19 +16,22 @@ const state = (nights?: Record<string, number>): AppState => ({
 describe('stay nights override', () => {
   it('the stay context uses the override where set and the itinerary count elsewhere', () => {
     const ctx = stayCtx(state({ Ella: 4 }), 'Brittany', plan);
-    expect(ctx.nights).toEqual({ Ella: 4, Colombo: 1 });
-    expect(ctx.derivedNights).toEqual({ Ella: 2, Colombo: 1 });
+    // Calendar nights: the departure day is not a night (plan 16 Nov, finding 8).
+    expect(ctx.nights).toEqual({ Ella: 4 });
+    expect(ctx.derivedNights).toEqual({ Ella: 2 });
   });
 
   it('ignores a stored override when the live table has no nights column', () => {
     const s = state({ Ella: 4 });
     const off = { ...s, stays: { ...s.stays!, admin: { ...s.stays!.admin, nightsOff: true as const } } };
-    expect(stayCtx(off, 'Brittany', plan).nights).toEqual({ Ella: 2, Colombo: 1 });
+    // Calendar nights: the departure day is not a night (plan 16 Nov, finding 8).
+    expect(stayCtx(off, 'Brittany', plan).nights).toEqual({ Ella: 2 });
     expect(applyAdmin(off.stays!.admin, {}).nightsOff).toBe(true);
   });
 
   it('falls back to the derived count when no override is stored', () => {
-    expect(stayCtx(state(), 'Brittany', plan).nights).toEqual({ Ella: 2, Colombo: 1 });
+    // Calendar nights: the departure day is not a night (plan 16 Nov, finding 8).
+    expect(stayCtx(state(), 'Brittany', plan).nights).toEqual({ Ella: 2 });
     expect(effectiveNights({ Ella: 2 }, undefined)).toEqual({ Ella: 2 });
   });
 

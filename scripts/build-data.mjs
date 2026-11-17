@@ -3,9 +3,11 @@
 // "Estimate", which keep "(estimate)" in their src; a missing leg throws.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { withGbp } from './gbp.mjs';
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+// fileURLToPath, not URL.pathname: pathname keeps %20, so a checkout path with a space fails to read.
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 
 function hoursOf(s) {
@@ -109,6 +111,8 @@ const items = cat.items.map((it) => {
   // A name that promises sunset or night must be scheduled then, or the planner drives straight after it.
   if (/sunset|evening|night|dinner/i.test(it.name) && !['sunset', 'evening', 'late'].includes(SLOT[it.slot]))
     throw new Error(`${it.id} "${it.name}" is named for the evening but slotted "${it.slot}"`);
+  // Lead times ride through the ...it spread; undefined means "no rule", so only a positive whole number is allowed.
+  for (const k of ['opensDaysBefore', 'bookByDaysBefore']) if (k in it && !(Number.isInteger(it[k]) && it[k] > 0)) throw new Error(`${it.id}.${k} must be a positive whole number of days`);
   const out = { ...it, fee: withGbp(it.fee ?? ''), when: it.when ?? it.slot, slot: SLOT[it.slot], sideTrip: Math.round((SIDE_TRIP[it.id] ?? 0) * 100) / 100 };
   if (it.id === 'yala') out.hub = 'Tissa';
   if (it.photo && credits[it.photo]) out.credit = `${credits[it.photo].artist}, ${credits[it.photo].license}`;

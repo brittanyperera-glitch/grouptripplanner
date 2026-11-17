@@ -1,13 +1,13 @@
 import { MAX_NIGHTS, MIN_NIGHTS } from '../types';
-import type { Area, CrewStays, PlaceSuggestion, Player, StayPin } from '../types';
+import type { Area, CrewStays, Fallen, PlaceSuggestion, Player, StayPin } from '../types';
 import { livePin } from './stays';
 
 /** Admin is a UI gate only (one shared password), so these helpers decide what is shown, not who may write. */
 export const isAdmin = (me: Player | null | undefined): boolean => me === 'Brittany';
 
-/** The pinned stay for an area, or null when unpinned or the pinned suggestion is no longer live. */
-export const pinnedId = (pins: StayPin[], area: Area, suggestions: PlaceSuggestion[]): string | null => {
-  const f = livePin(area, pins, suggestions, null);
+/** The pinned stay for an area, or null when unpinned, the pinned suggestion is no longer live, or it fell through. */
+export const pinnedId = (pins: StayPin[], area: Area, suggestions: PlaceSuggestion[], fallen: Fallen[] = []): string | null => {
+  const f = livePin(area, pins, suggestions, null, fallen);
   return f.pinned ? f.id : null;
 };
 

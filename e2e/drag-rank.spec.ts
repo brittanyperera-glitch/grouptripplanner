@@ -26,8 +26,21 @@ async function openPicks(page: Page) {
   await expect(page.getByRole('region', { name: 'Your picks' })).toBeVisible();
 }
 
+// A drag auto-scrolls the page when the pointer is in the top or bottom fifth of the viewport. Whether a release lands before or after
+// that scroll depends on machine load, so centre the two rows first and require both pointer ends to sit clear of those zones.
+async function centre(page: Page, id: string, toId: string) {
+  const a = (await row(page, id).boundingBox())!, b = (await row(page, toId).boundingBox())!;
+  const vh = page.viewportSize()!.height;
+  await page.evaluate(([mid, h]) => window.scrollBy({ top: mid - h / 2, behavior: 'instant' }), [(Math.min(a.y, b.y) + Math.max(a.y + a.height, b.y + b.height)) / 2, vh]);
+}
+
 async function drag(page: Page, id: string, toId: string, where: 'above' | 'below', hold?: () => Promise<void>) {
+  const vh = page.viewportSize()!.height;
+  await centre(page, id, toId);
   const from = (await row(page, id).boundingBox())!, to = (await row(page, toId).boundingBox())!;
+  const endY = where === 'above' ? to.y + 4 : to.y + to.height - 4;
+  for (const y of [from.y + from.height / 2, endY]) expect(y, 'pointer outside the autoscroll zones').toBeGreaterThan(vh * 0.2);
+  for (const y of [from.y + from.height / 2, endY]) expect(y, 'pointer outside the autoscroll zones').toBeLessThan(vh * 0.8);
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 + (to.y > from.y ? 8 : -8), { steps: 4 });

@@ -10,7 +10,7 @@ export interface CardFriends { twin: CardFriend; clash: CardFriend }
 export const FRIEND_LABELS = { twin: 'Travel twin', clash: 'Biggest clash' };
 export type Tier = 'lo' | 'mid' | 'hi';
 export interface CardData {
-  name: Player; no: number; total: number; title: string; stats: CardStat[]; heightCm: number; kit: string[];
+  name: Player; no: number; total: number; title: string; stats: CardStat[]; /** Real counts from the trip (Musts and how many are in the plan): chips under the bars, since the bars are a 0 to 10 joke scale. */ trip: CardStat[]; heightCm: number; kit: string[];
   /** Rarity: always 5 stars, the top label. */
   stars: number; rarity: string;
   /** Brittany's one-line fun fact for the player, from profile.json. */
@@ -71,9 +71,10 @@ export function rarityOf(_stats: CardStat[]) {
 }
 
 /** Everything the card shows, from the character select data. Stats with no label or a non-number are dropped, as on the select screen. */
-export function cardData(name: Player, no: number, total: number, card?: { title?: string; stats?: CardStat[] }, friends?: CardFriends | null): CardData {
+export function cardData(name: Player, no: number, total: number, card?: { title?: string; stats?: CardStat[]; trip?: CardStat[] }, friends?: CardFriends | null): CardData {
   const stats = (card?.stats ?? []).filter(s => s.label && Number.isFinite(s.value)).map(s => ({ label: s.label, value: Math.max(0, s.value) }));
-  return { name, no, total, title: card?.title ?? '', stats, heightCm: IMAGE_CM[name], kit: kitFor(name), ...rarityOf(stats), fact: (profile.facts as Record<string, string>)[name] ?? null,
+  const trip = (card?.trip ?? []).filter(s => s.label && Number.isFinite(s.value)).map(s => ({ label: s.label, value: Math.max(0, Math.round(s.value)) }));
+  return { name, no, total, title: card?.title ?? '', stats, trip, heightCm: IMAGE_CM[name], kit: kitFor(name), ...rarityOf(stats), fact: (profile.facts as Record<string, string>)[name] ?? null,
     friends: friends && (friends.twin || friends.clash) ? friends : null };
 }
 
@@ -104,20 +105,21 @@ export const FRIEND = { half: 336, gap: 16, dot: 48 };
 // Avatar.tsx's bust crop, repeated so the PNG frames the friend's head the same way: figure height 211 of a 214 baseline, 72 unit square.
 const BUST = { figure: 211, base: 214, box: 72, left: 16, centre: 52, above: 6 };
 export interface Box { y: number; h: number }
-export interface CardLayout { figTop: number; figBottom: number; plateTop: number; rayY: number; name: Box; title: Box | null; stats: Box | null; friends: Box | null; fact: Box | null; meta: Box }
+export interface CardLayout { figTop: number; figBottom: number; plateTop: number; rayY: number; name: Box; title: Box | null; stats: Box | null; trip: Box | null; friends: Box | null; fact: Box | null; meta: Box }
 
 /** Stacks the plate from the bottom up, so a card with no fun fact or no stats gives the figure the room instead of leaving a gap. */
-export function cardLayout(d: Pick<CardData, 'title' | 'stats' | 'fact'> & { friends?: CardFriends | null }): CardLayout {
+export function cardLayout(d: Pick<CardData, 'title' | 'stats' | 'fact'> & { friends?: CardFriends | null; trip?: CardStat[] }): CardLayout {
   let y = CARD_H - FACE - 10;
   const take = (h: number, gap = 0): Box => { y -= h; const b = { y, h }; y -= gap; return b; };
   const meta = take(30, 6);
   const fact = d.fact ? take(62, 6) : null;
   const friends = d.friends ? take(64, 8) : null;
+  const trip = d.trip?.length ? take(ROW_H, 8) : null;
   const stats = d.stats.length ? take(d.stats.length * ROW_H, 8) : null;
   const title = d.title ? take(44) : null;
   const name = take(100);
   const figBottom = name.y;
-  return { figTop: FIG_TOP, figBottom, plateTop: figBottom - FEET_ON_PLATE, rayY: FIG_TOP + 0.78 * (figBottom - FIG_TOP), name, title, stats, friends, fact, meta };
+  return { figTop: FIG_TOP, figBottom, plateTop: figBottom - FEET_ON_PLATE, rayY: FIG_TOP + 0.78 * (figBottom - FIG_TOP), name, title, stats, trip, friends, fact, meta };
 }
 
 /** Font size that keeps a line of condensed capitals inside the card width: `max` px, smaller for long text (about 0.47em a letter). */
@@ -262,6 +264,18 @@ export function drawCard(ctx: Ctx, d: CardData, art: HTMLImageElement | null, fr
       ctx.restore();
       ctx.fillStyle = over ? C.gold : C.white; ctx.textAlign = 'right';
       fitText(ctx, String(s.value), STAT_X.val, mid(row, 34), 64, 800, 34, 20, HEAD);
+    });
+  }
+
+  // Trip numbers: two count chips under the bars, aligned with the friendship strip's columns.
+  if (L.trip) {
+    d.trip.slice(0, 2).forEach((t, i) => {
+      const x0 = STAT_X.label + i * (FRIEND.half + FRIEND.gap), row = L.trip!, w = FRIEND.half;
+      ctx.fillStyle = 'rgba(255,255,255,.14)'; rrect(ctx, x0, row.y + 2, w, row.h - 4, (row.h - 4) / 2); ctx.fill();
+      ctx.fillStyle = col.tint; ctx.textAlign = 'left';
+      fitText(ctx, t.label.toUpperCase(), x0 + 20, mid(row, 28), w - 100, 800, 28, MIN_TEXT, HEAD);
+      ctx.fillStyle = C.white; ctx.textAlign = 'right';
+      fitText(ctx, String(t.value), x0 + w - 20, mid(row, 34), 64, 800, 34, 20, HEAD);
     });
   }
 

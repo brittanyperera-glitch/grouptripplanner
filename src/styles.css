@@ -295,7 +295,8 @@ h1.big { margin: 0; }
 .days { display: flex; flex-direction: column; gap: 14px; }
 .day { border-radius: var(--r-card); overflow: hidden; background: var(--card); box-shadow: var(--shadow-card); }
 .strip { position: relative; height: 96px; --coconut-text: #FF9B85; }
-.strip.plain { background: var(--paper-deep); --coconut-text: var(--red-ink); }
+/* The card red on this paper is 4.47:1; this one is 5.24:1. */
+.strip.plain { background: var(--paper-deep); --coconut-text: #a63219; }
 .strip .scrim { background: linear-gradient(90deg, rgba(5, 6, 8, .82), rgba(5, 6, 8, .2) 75%); }
 .strip .nopic { display: none; }
 .strip.nophoto { padding: 0; }

@@ -1,36 +1,22 @@
 import './MyTrip.css';
-import { IconCar, IconDown, IconPin, IconSun, IconTrain, IconWarn } from '../components/Icons';
+import { IconDown, IconWarn } from '../components/Icons';
 import { useEffect, useId, useState } from 'react';
 import ItemSheet from '../components/ItemSheet';
 import RouteMap from '../components/Map';
 import { motion } from '../components/motion';
 import { Cover } from '../components/PhotoCard';
 import type { SideQuest } from '../lib/sideQuests';
+import { andList } from '../lib/text';
 import { useApp } from '../state';
-import type { DayEntry, Item, Leg, Plan } from '../types';
+import type { Item, Leg, Plan } from '../types';
 import { unlock } from '../components/sound';
 import TransportLine, { transportOf } from '../components/TransportLine';
 import type { DayTip } from './BookCard';
+import { entryText, hrs, ICON, LONG_DRIVE_HOURS, MIN_ROUND_TRIP } from './dayParts';
 import { useJourneyNotes } from './GroupAnswers';
 import { factPills } from './Rate';
 import { Reveal } from './Reveal';
 import { SaveItinerary } from './Itinerary';
-
-// A day with this many driving hours or more gets a "Long driving day" note.
-const LONG_DRIVE_HOURS = 5;
-const MIN_ROUND_TRIP = 0.25;
-
-const hrs = (h: number) => h.toFixed(1);
-const hrsShort = (h: number) => (Number.isInteger(h) ? String(h) : hrs(h));
-
-function entryText(e: DayEntry): string {
-  if (e.kind === 'activity') return `${e.label}, ${hrsShort(e.onSite ?? e.hours)} h`;
-  return e.hours > 0 ? `${e.label}, ${hrsShort(e.hours)} h` : e.label;
-}
-
-const ICON = { drive: IconCar, train: IconTrain, free: IconSun, activity: IconPin } as const;
-
-const andList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
 
 // What a tapped activity shows in place: the same facts as the full-screen sheet, which one button away has the rest.
 function EntryFacts({ id, item, onFull }: { id: string; item: Item; onFull(): void }) {

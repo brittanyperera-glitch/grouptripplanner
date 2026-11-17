@@ -60,6 +60,7 @@
    "slot": "evening",
    "fee": "about LKR 7,500+ (~£17) pp",
    "book": "2-3 weeks ahead in December",
+   "bookByDaysBefore": 14,
    "photo": "crab",
    "about": "Crab restaurant in the old Dutch Hospital, famous for pepper and chilli crab.",
    "google": {
@@ -305,6 +306,7 @@
    "slot": "morning",
    "fee": "about LKR 4,000 (~£9) reserved",
    "book": "seats open 30 days ahead",
+   "opensDaysBefore": 30,
    "warn": "The Kandy section is shut until at least early 2027, so we drive to Nanu Oya",
    "photo": "train",
    "about": "The best-scenery stretch of the hill country railway, tea fields all the way.",

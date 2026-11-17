@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { tripClient } from './tripKey';
+import { adminClient, readAdminKey, tripClient } from './tripKey';
 import { applyAdmin, cleanNights, EMPTY_STAYS, emptyRanking, mergeAdminItems } from '../types';
-import type { AdminItems, AppState, TripAdminState, ChoiceEntry, ChoiceInput, Complaint, CrewStays, Person, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
+import type { AdminItems, AppState, BookingClaim, TripAdminState, ChoiceEntry, ChoiceInput, Complaint, CrewStays, FinalStore, Person, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, StaysState, Store, Suggestion, TripSettings, Traveller, Vote } from '../types';
 
 type RankingCol = Response['ranking'] & { final?: Response['final'] };
 export interface RespRow {
@@ -41,7 +41,14 @@ const missingColumn = (e: unknown, col: string): boolean => {
   const x = e as { code?: string; message?: string } | null;
   return x?.code === 'PGRST204' || x?.code === '42703' || (typeof x?.message === 'string' && x.message.includes(col) && /column|schema cache/i.test(x.message));
 };
-interface AdminRow { pins: StaysAdmin['pins'] | null; scouts: StaysAdmin['scouts'] | null; closed?: StaysAdmin['closed'] | null; nights?: unknown }
+// A code decides alone; the message is read only when there is none, and only for the two wordings a missing table uses.
+const missingTable = (e: { code?: string; message?: string }): boolean =>
+  e.code ? ['42P01', 'PGRST205', 'PGRST204'].includes(e.code) : /in the schema cache|relation "[^"]+" does not exist/i.test(e.message ?? '');
+interface AdminRow { pins: StaysAdmin['pins'] | null; scouts: StaysAdmin['scouts'] | null; closed?: StaysAdmin['closed'] | null; nights?: unknown; fallen?: unknown }
+interface SettingsRow { start_date: string | null; last_day_start?: string | null; plan: TripSettings['plan']; booking_dates: TripSettings['bookingDates'] | null; overrides: TripSettings['overrides'] | null; updated_at: string | null }
+interface TravellerRow { name: Person; arrive_local: string | null; arrive_flight: string | null; depart_local: string | null; depart_flight: string | null; updated_at: string | null }
+interface ClaimRow { item_id: string; owner: Person | null; updated_at: string | null }
+const EPOCH = new Date(0).toISOString();
 
 // The Finalize list is kept inside the ranking jsonb column under "final", so the live table needs
 // no new column.
@@ -73,15 +80,24 @@ const RELOAD_DEBOUNCE_MS = 200;
 const POLL_MS = 20_000;
 const TRIP_WRITE_TRIES = 5;
 
-export class SupabaseStore implements Store {
+export class SupabaseStore implements Store, FinalStore {
   private db: SupabaseClient;
+  private adminDbFor: { key: string; db: SupabaseClient } | null = null;
   // Realtime row events are filtered by RLS, which cannot see the x-trip-key header, so once the lock is
   // on they deliver nothing. A broadcast ping on 'tp' carries no data: peers just reload.
   private chan: ReturnType<SupabaseClient['channel']> | null = null;
   private onPing: () => void = () => undefined;
 
-  constructor(url: string, key: string, tripKey?: string) {
-    this.db = tripClient(url, key, tripKey);
+  constructor(private url: string, private anon: string, private tripKey?: string) {
+    this.db = tripClient(url, anon, tripKey);
+  }
+
+  /** The client for organiser writes, rebuilt when the key in storage changes. With no key the write goes out plain and the server refuses it with 42501. */
+  private adminDb(): SupabaseClient {
+    const k = readAdminKey();
+    if (!k) return this.db;
+    if (this.adminDbFor?.key !== k) this.adminDbFor = { key: k, db: adminClient(this.url, this.anon, this.tripKey, k) };
+    return this.adminDbFor.db;
   }
 
   private channel() {
@@ -97,12 +113,15 @@ export class SupabaseStore implements Store {
   }
 
   async load(): Promise<AppState> {
-    const [r, s, v, stays, tripAdmin] = await Promise.all([
+    const [r, s, v, stays, tripAdmin, tripSettings, travellers, bookingClaims] = await Promise.all([
       this.db.from('responses').select('*'),
       this.db.from('suggestions').select('*').order('created_at'),
       this.db.from('knockout_votes').select('*'),
       this.loadStays(),
       this.loadTripAdmin(),
+      this.loadTripSettings(),
+      this.loadTravellers(),
+      this.loadClaims(),
     ]);
     const err = r.error ?? s.error ?? v.error;
     if (err) throw err;
@@ -117,19 +136,78 @@ export class SupabaseStore implements Store {
       votes: ((v.data ?? []) as VoteRow[]).map(x => ({ forkId: x.fork_id, name: x.name, choice: x.choice })),
       stays,
       tripAdmin,
+      tripSettings,
+      travellers,
+      bookingClaims,
     };
   }
 
-  /** Never throws: the trip_admin table is missing until the schema is re-run, and that must not blank the app. */
+  /** A missing table reads as absent (the migration may not be run yet); any other error fails the whole load, so a blip never overwrites the snapshot. */
+  private async soft<T>(table: string, empty: T, use: (rows: unknown[]) => T): Promise<T> {
+    let res;
+    // A thrown (not returned) failure keeps the old absent reading: supabase.final.test.ts pins it.
+    try { res = await this.db.from(table).select('*'); } catch { return empty; }
+    if (!res.error) return use(res.data ?? []);
+    if (missingTable(res.error)) return empty;
+    throw res.error;
+  }
+
+  private loadTripSettings(): Promise<TripSettings | null> {
+    return this.soft<TripSettings | null>('trip_settings', null, rows => {
+      const r = (rows as SettingsRow[])[0];
+      return r ? { startDate: r.start_date, lastDayStart: r.last_day_start ?? null, plan: r.plan ?? null, bookingDates: r.booking_dates ?? {}, overrides: Array.isArray(r.overrides) ? r.overrides : [], updatedAt: r.updated_at ?? EPOCH } : null;
+    });
+  }
+
+  private loadTravellers(): Promise<Partial<Record<Person, Traveller>>> {
+    return this.soft<Partial<Record<Person, Traveller>>>('travellers', {}, rows => Object.fromEntries((rows as TravellerRow[]).map(r => [r.name, {
+      name: r.name, arriveLocal: r.arrive_local, arriveFlight: r.arrive_flight, departLocal: r.depart_local, departFlight: r.depart_flight, updatedAt: r.updated_at ?? EPOCH,
+    }])));
+  }
+
+  private loadClaims(): Promise<Record<string, BookingClaim>> {
+    return this.soft<Record<string, BookingClaim>>('booking_claims', {}, rows => Object.fromEntries((rows as ClaimRow[]).map(r => [r.item_id, { itemId: r.item_id, owner: r.owner, updatedAt: r.updated_at ?? EPOCH }])));
+  }
+
+  /** Organiser only: the server answers 42501 without the organiser key. Only the columns in the patch are written. */
+  async saveTripSettings(patch: Partial<Omit<TripSettings, 'updatedAt'>>): Promise<void> {
+    const cols: Record<string, unknown> = { id: 1, updated_at: new Date().toISOString() };
+    if (patch.startDate !== undefined) cols.start_date = patch.startDate;
+    if (patch.lastDayStart !== undefined) cols.last_day_start = patch.lastDayStart;
+    if (patch.plan !== undefined) cols.plan = patch.plan;
+    if (patch.bookingDates !== undefined) cols.booking_dates = patch.bookingDates;
+    if (patch.overrides !== undefined) cols.overrides = patch.overrides;
+    const { error } = await this.adminDb().from('trip_settings').upsert(cols, { onConflict: 'id' });
+    if (error) throw error;
+    this.ping();
+  }
+
+  async saveTraveller(name: Person, patch: Partial<Omit<Traveller, 'name' | 'updatedAt'>>): Promise<void> {
+    const cols: Record<string, unknown> = { name, updated_at: new Date().toISOString() };
+    if (patch.arriveLocal !== undefined) cols.arrive_local = patch.arriveLocal;
+    if (patch.arriveFlight !== undefined) cols.arrive_flight = patch.arriveFlight;
+    if (patch.departLocal !== undefined) cols.depart_local = patch.departLocal;
+    if (patch.departFlight !== undefined) cols.depart_flight = patch.departFlight;
+    const { error } = await this.db.from('travellers').upsert(cols, { onConflict: 'name' });
+    if (error) throw error;
+    this.ping();
+  }
+
+  async saveBookingClaim(itemId: string, owner: Person | null): Promise<void> {
+    const { error } = await this.db.from('booking_claims').upsert({ item_id: itemId, owner, updated_at: new Date().toISOString() }, { onConflict: 'item_id' });
+    if (error) throw error;
+    this.ping();
+  }
+
+  /** A missing trip_admin table reads as empty; any other read error fails the load, so a blip never empties the snapshot. */
   private async loadTripAdmin(): Promise<TripAdminState> {
     const out: TripAdminState = {};
-    try {
-      const { data, error } = await this.db.from('trip_admin').select('*');
-      if (error) return out;
-      for (const row of (data ?? []) as TripRow[]) {
-        out[row.name] = { name: row.name, items: row.items ?? {}, updatedAt: row.updated_at ?? new Date(0).toISOString() };
-      }
-    } catch { /* same as an error result: the checklist starts empty */ }
+    let res;
+    try { res = await this.db.from('trip_admin').select('*'); } catch { return out; }
+    if (res.error) { if (missingTable(res.error)) return out; throw res.error; }
+    for (const row of (res.data ?? []) as TripRow[]) {
+      out[row.name] = { name: row.name, items: row.items ?? {}, updatedAt: row.updated_at ?? new Date(0).toISOString() };
+    }
     return out;
   }
 
@@ -159,23 +237,23 @@ export class SupabaseStore implements Store {
   }
 
   /**
-   * Never throws: a stays table missing on a database whose schema was not re-run must not blank the whole app.
-   * Each table fails on its own, so a missing place_suggestions does not hide crew rows that exist.
+   * A stays table missing on a database whose schema was not re-run reads as empty, each table on its own, so a missing
+   * place_suggestions does not hide crew rows that exist. Any other read error fails the load, keeping the snapshot.
    */
   private async loadStays(): Promise<StaysState> {
     const stays: StaysState = structuredClone(EMPTY_STAYS);
     const soft = async (read: () => PromiseLike<{ data: unknown[] | null; error: unknown }>, use: (rows: unknown[]) => void) => {
-      try {
-        const { data, error } = await read();
-        if (!error) use(data ?? []);
-      } catch { /* same as an error result: that piece starts empty */ }
+      let res;
+      try { res = await read(); } catch { return; }
+      if (!res.error) { use(res.data ?? []); return; }
+      if (!missingTable(res.error as { code?: string; message?: string })) throw res.error;
     };
     await Promise.all([
       soft(() => this.db.from('crew_stays').select('*'), rows => { for (const row of rows as CrewRow[]) stays.crew[row.name] = toCrew(row); }),
       soft(() => this.db.from('place_suggestions').select('*').order('created_at'), rows => { stays.suggestions = (rows as PlaceRow[]).map(toPlace); }),
       soft(() => this.db.from('stays_admin').select('*'), rows => {
         const a = (rows as AdminRow[])[0];
-        if (a) stays.admin = { pins: a.pins ?? [], scouts: a.scouts ?? {}, closed: Array.isArray(a.closed) ? a.closed : [], ...nightsOf(a.nights), ...('nights' in a ? {} : { nightsOff: true as const }) };
+        if (a) stays.admin = { pins: a.pins ?? [], scouts: a.scouts ?? {}, closed: Array.isArray(a.closed) ? a.closed : [], ...nightsOf(a.nights), ...(Array.isArray(a.fallen) && a.fallen.length ? { fallen: a.fallen as StaysAdmin['fallen'] } : {}), ...('nights' in a ? {} : { nightsOff: true as const }) };
       }),
     ]);
     return stays;
@@ -233,11 +311,17 @@ export class SupabaseStore implements Store {
       const stored = ((data ?? []) as AdminRow[])[0]?.scouts ?? {};
       cols.scouts = applyAdmin({ pins: [], scouts: stored, closed: [] }, { scouts: patch.scouts }).scouts;
     }
-    let { error } = await this.db.from('stays_admin').upsert(cols, { onConflict: 'id' });
+    const db = this.adminDb();
+    let { error } = patch.fallen !== undefined && Object.keys(cols).length === 1 ? { error: null } : await db.from('stays_admin').upsert(cols, { onConflict: 'id' });
     // A live table without the nights column rejects the whole row: write the rest, so one missing column cannot wedge the queue.
     if (error && 'nights' in cols && missingColumn(error, 'nights')) {
       const rest = Object.fromEntries(Object.entries(cols).filter(([k]) => k !== 'nights'));
-      ({ error } = Object.keys(rest).length > 1 ? await this.db.from('stays_admin').upsert(rest, { onConflict: 'id' }) : { error: null });
+      ({ error } = Object.keys(rest).length > 1 ? await db.from('stays_admin').upsert(rest, { onConflict: 'id' }) : { error: null });
+    }
+    // fallen is its own write, so a table without that column (or without nights) never costs the pins and closes above.
+    if (!error && patch.fallen !== undefined) {
+      ({ error } = await db.from('stays_admin').upsert({ id: 1, fallen: patch.fallen }, { onConflict: 'id' }));
+      if (error && missingColumn(error, 'fallen')) error = null;
     }
     if (error) throw error;
     this.ping();

@@ -4,7 +4,8 @@ import catalogue from '../data/catalogue.json';
 import legsData from '../data/legs.json';
 import type { AppState, CrewStays, Item, Leg, Plan, PlaceSuggestion, StaysState } from '../types';
 import { EMPTY_STAYS, PEOPLE } from '../types';
-import { chosenStays, Itinerary } from './Itinerary';
+import { chosenStays } from '../lib/chosenStays';
+import { Itinerary } from './Itinerary';
 
 const ITEMS = (catalogue as unknown as { items: Item[] }).items;
 const legs = legsData as unknown as Leg[];
@@ -42,11 +43,11 @@ describe('Itinerary document', () => {
     expect(within(screen.getByRole('region', { name: 'Day 2' })).getByText(train.britt!, { exact: false })).toBeInTheDocument();
   });
 
-  it('omits the stays section when none is chosen and prints it when one is', () => {
+  it('omits the Where you sleep section when none is chosen and prints it when one is', () => {
     const { rerender } = render(<Itinerary plan={plan} items={ITEMS} legs={legs} heading="My itinerary" stays={[]} />);
-    expect(screen.queryByText('Where you are staying')).toBeNull();
+    expect(screen.queryByText('Where you sleep')).toBeNull();
     rerender(<Itinerary plan={plan} items={ITEMS} legs={legs} heading="My itinerary" stays={[{ area: 'Ella', title: 'Hill hut', nights: 2, priceGbp: 40, stayType: 'guesthouse', link: stay.link }]} />);
-    const sec = screen.getByRole('region', { name: 'Where you are staying' });
+    const sec = screen.getByRole('region', { name: 'Where you sleep' });
     expect(within(sec).getByText('Ella: Hill hut')).toBeInTheDocument();
     expect(within(sec).getByText('2 nights')).toBeInTheDocument();
     expect(within(sec).getByText('https://example.com/hut')).toBeInTheDocument();
@@ -61,11 +62,15 @@ describe('chosenStays', () => {
   });
   it('takes a pin over everything, with the nights the plan spends there', () => {
     const s = base({ suggestions: [stay], admin: { pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-10-16T01:00:00Z' }], scouts: {}, closed: [] } });
-    expect(chosenStays(s, 'Brittany', plan)).toEqual([{ area: 'Ella', title: 'Hill hut', stayType: 'guesthouse', priceGbp: 40, nights: 2, link: 'https://example.com/hut' }]);
+    // Calendar nights: the departure day is not a night (plan 16 Nov, finding 8).
+    expect(chosenStays(s, 'Brittany', plan)).toEqual([{ area: 'Ella', title: 'Hill hut', stayType: 'guesthouse', priceGbp: 40, nights: 1, link: 'https://example.com/hut' }]);
   });
-  it('takes a lone stay only once all five have locked in', () => {
+  it('a lone stay is short of an option, so it is not chosen even once all five have locked in, unless she pins it', () => {
     const lockedCrew = Object.fromEntries(PEOPLE.map(n => [n, { ...crew('Brittany', true), name: n }]));
-    expect(chosenStays(base({ suggestions: [stay], crew: lockedCrew }), 'Brittany', plan).map(c => c.title)).toEqual(['Hill hut']);
+    // Changed deliberately (her 17 Nov decision: 2+ options then a vote): a lone stay used to be taken once all five locked in.
+    expect(chosenStays(base({ suggestions: [stay], crew: lockedCrew }), 'Brittany', plan)).toEqual([]);
+    const pin = { pins: [{ area: 'Ella' as const, suggestionId: 's1', at: '2026-10-16T01:00:00Z' }], scouts: {}, closed: [] };
+    expect(chosenStays(base({ suggestions: [stay], crew: lockedCrew, admin: pin }), 'Brittany', plan).map(c => c.title)).toEqual(['Hill hut']);
     expect(chosenStays(base({ suggestions: [stay], crew: { ...lockedCrew, Saulie: { ...lockedCrew.Saulie, locked: false } } }), 'Brittany', plan)).toEqual([]);
   });
   it('ignores a pin on a withdrawn stay', () => {

@@ -4,7 +4,7 @@ import { groupResult, VOTES_TO_RESOLVE } from '../lib/group';
 import { finalListFrom } from '../lib/ranking';
 import { liveItems } from '../state';
 import { applyAdmin, blankCrew, mergeAdminItems, EMPTY_STAYS, emptyRanking, isGuest, PEOPLE } from '../types';
-import type { AdminItems, AppState, ChoiceEntry, ChoiceInput, Complaint, CrewStays, Genre, Leg, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, StaysState, Store, Suggestion, Vote } from '../types';
+import type { AdminItems, AppState, ChoiceEntry, ChoiceInput, Complaint, CrewStays, FinalStore, Genre, Leg, Person, PlaceDraft, PlaceSuggestion, Player, Response, StaysAdmin, StaysState, Store, Suggestion, TripSettings, Traveller, Vote } from '../types';
 import { seedState } from './seed';
 
 const defaultRow = (name: Player): Response => ({
@@ -12,7 +12,7 @@ const defaultRow = (name: Player): Response => ({
   rated: [], submitted: false, updatedAt: new Date().toISOString(),
 });
 
-export class MemoryStore implements Store {
+export class MemoryStore implements Store, FinalStore {
   private state: AppState;
   private log: ChoiceEntry[] = [];
   private complaints: Complaint[] = [];
@@ -20,7 +20,7 @@ export class MemoryStore implements Store {
 
   // Crew rows start empty unless the caller passes some: the guest takes the quiz themselves.
   constructor(initial: AppState = seedState()) {
-    this.state = structuredClone({ ...initial, stays: initial.stays ?? EMPTY_STAYS });
+    this.state = structuredClone({ ...initial, stays: initial.stays ?? EMPTY_STAYS, tripSettings: initial.tripSettings ?? null, travellers: initial.travellers ?? {}, bookingClaims: initial.bookingClaims ?? {} });
   }
 
   async load(): Promise<AppState> {
@@ -68,7 +68,27 @@ export class MemoryStore implements Store {
 
   async saveStaysAdmin(patch: Partial<StaysAdmin>): Promise<void> {
     const stays = this.stays();
-    stays.admin = structuredClone(applyAdmin(stays.admin, patch));
+    const fallen = patch.fallen ?? stays.admin.fallen;
+    stays.admin = structuredClone({ ...applyAdmin(stays.admin, patch), ...(fallen ? { fallen } : {}) });
+    this.emit();
+  }
+
+  // The sandbox has no organiser key to check: the guest plays the organiser too.
+  async saveTripSettings(patch: Partial<Omit<TripSettings, 'updatedAt'>>): Promise<void> {
+    const stored = this.state.tripSettings ?? { startDate: null, lastDayStart: null, plan: null, bookingDates: {}, overrides: [], updatedAt: '' };
+    this.state.tripSettings = structuredClone({ ...stored, ...patch, updatedAt: new Date().toISOString() });
+    this.emit();
+  }
+
+  async saveTraveller(name: Person, patch: Partial<Omit<Traveller, 'name' | 'updatedAt'>>): Promise<void> {
+    const rows = (this.state.travellers ??= {});
+    const blank: Traveller = { name, arriveLocal: null, arriveFlight: null, departLocal: null, departFlight: null, updatedAt: '' };
+    rows[name] = structuredClone({ ...blank, ...rows[name], ...patch, name, updatedAt: new Date().toISOString() });
+    this.emit();
+  }
+
+  async saveBookingClaim(itemId: string, owner: Person | null): Promise<void> {
+    (this.state.bookingClaims ??= {})[itemId] = { itemId, owner, updatedAt: new Date().toISOString() };
     this.emit();
   }
 

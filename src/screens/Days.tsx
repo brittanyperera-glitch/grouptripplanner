@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { IconInfinity, IconMinus, IconPlus } from '../components/Icons';
+import { MAX_DAYS as MAX, MIN_DAYS as MIN } from '../lib/group';
 import './Rate.css';
-
-const MIN = 5;
-const MAX = 21;
 
 export default function Days({ days, flex, onPick }: {
   days: number | null; flex: boolean; onPick: (days: number, flex: boolean) => void;

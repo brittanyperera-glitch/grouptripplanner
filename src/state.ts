@@ -5,10 +5,12 @@ import legsData from './data/legs.json';
 import copyData from './content/copy.json';
 import PasswordGate from './components/PasswordGate';
 import { getStore, supabaseConfigured } from './store';
-import { useTripAccess } from './store/useTripAccess';
+import { localAdminKeyOk } from './store/local';
+import { verifyAdminKey, writeAdminKey } from './store/tripKey';
+import { LOAD_TIMEOUT_MS, useTripAccess } from './store/useTripAccess';
 import { WriteQueue } from './store/queue';
 import { applyAdmin, blankCrew, EMPTY_STAYS, emptyRanking, mergeAdmin, mergeAdminItems, PEOPLE } from './types';
-import type { AdminItems, AppState, TripAdminState, CrewStays, Item, Leg, Person, PlaceSuggestion, Player, Response, StayPin, StaysAdmin, Store, Vote } from './types';
+import type { AdminItems, AppState, BookingClaim, TripAdminState, CrewStays, Fallen, FinalStore, Item, Leg, Person, PlaceSuggestion, Player, Response, StayPin, StaysAdmin, Store, Traveller, TripSettings, Vote } from './types';
 
 // A quip is one line, or a list the app picks from at random so it doesn't repeat.
 export type Quip = string | string[];
@@ -29,6 +31,33 @@ interface AppValue {
   state: AppState; me: Player | null; setMe(p: Player): void; clearMe(): void; store: Store;
   items: Item[]; legs: Leg[]; copy: Copy; error: string | null; retry(): void;
   sandbox: boolean; finishSandbox?: () => void;
+  /** `what` is the log line for the organiser overrides; it is only logged when the plan, start date or booking dates change. */
+  saveTripSettings(patch: SettingsPatch, what?: string): Promise<boolean>;
+  saveTraveller(name: Person, patch: TravellerPatch): Promise<boolean>;
+  /** owner null unclaims. The three setters resolve true only once the write was stored, false when it failed or was refused. */
+  claimBooking(itemId: string, owner: Person | null): Promise<boolean>;
+  /** An organiser write was refused: ask for the key, then call setAdminKey. */
+  needsAdminKey: boolean;
+  /** Checks the key with the server (rejects when it cannot be reached); a good one is kept and clears needsAdminKey. */
+  setAdminKey(key: string): Promise<boolean>;
+  /** ISO time of the snapshot being shown because the server did not answer, else null. */
+  offlineSince: string | null;
+}
+type SettingsPatch = Parameters<FinalStore['saveTripSettings']>[0];
+type TravellerPatch = Parameters<FinalStore['saveTraveller']>[1];
+export const MAX_OVERRIDES = 100;
+/** Bytes of a log entry's text as jsonb prints it: 100 entries of this size plus their timestamps stay under the column's 20000-byte check. */
+const MAX_WHAT_BYTES = 120;
+const enc = new TextEncoder();
+/** Cuts on whole characters (never a surrogate pair), counting each as the JSON text the column measures, so multi-byte and escaped text cannot slip past. */
+export function capWhat(text: string): string {
+  let out = '', bytes = 0;
+  for (const ch of text) {
+    bytes += enc.encode(JSON.stringify(ch)).length - 2;
+    if (bytes > MAX_WHAT_BYTES) break;
+    out += ch;
+  }
+  return out;
 }
 
 export const ME_KEY = 'tp:me';
@@ -68,8 +97,9 @@ function settlePlaces(o: PlaceOverlay, rows: PlaceSuggestion[]): { next: PlaceOv
 
 const samePins = (a: StayPin[], b: StayPin[]) => a.length === b.length && a.every((p, i) => p.area === b[i].area && p.suggestionId === b[i].suggestionId && p.at === b[i].at);
 const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+const sameFallen = (a: Fallen[], b: Fallen[]) => a.length === b.length && a.every((f, i) => f.id === b[i].id && f.area === b[i].area && f.at === b[i].at);
 const sameNights = (a: Record<string, number | undefined>, b: Record<string, number | undefined>) => { const k = Object.keys(a); return k.length === Object.keys(b).length && k.every(x => a[x] === b[x]); };
-/** Drops each admin field (pins, closed and nights whole, scouts per area) the server already holds. */
+/** Drops each admin field (pins, closed, nights and fallen whole, scouts per area) the server already holds. */
 function settleAdmin(o: Partial<StaysAdmin>, server: StaysAdmin): Partial<StaysAdmin> {
   if (Object.keys(o).length === 0) return o;
   const next: Partial<StaysAdmin> = {};
@@ -78,7 +108,8 @@ function settleAdmin(o: Partial<StaysAdmin>, server: StaysAdmin): Partial<StaysA
   if (Object.keys(scouts).length) next.scouts = scouts;
   if (o.closed && !sameList(o.closed, server.closed)) next.closed = o.closed;
   if (o.nights && !sameNights(o.nights, server.nights ?? {})) next.nights = o.nights;
-  const unchanged = !!next.pins === !!o.pins && !!next.closed === !!o.closed && !!next.nights === !!o.nights && Object.keys(scouts).length === Object.keys(o.scouts ?? {}).length;
+  if (o.fallen && !sameFallen(o.fallen, server.fallen ?? [])) next.fallen = o.fallen;
+  const unchanged = !!next.pins === !!o.pins && !!next.closed === !!o.closed && !!next.nights === !!o.nights && !!next.fallen === !!o.fallen && Object.keys(scouts).length === Object.keys(o.scouts ?? {}).length;
   return unchanged ? o : next;
 }
 
@@ -119,7 +150,7 @@ function writeUnsaved(rows: Rows): void {
   }
 }
 
-type Send = (store: Store) => Promise<void>;
+type Send = (store: Store & FinalStore) => Promise<void>;
 /**
  * One kind of my own writes, shown over the server's state until it holds them. Kept on disk so a failed
  * write survives a reload, and re-sent once after the first server read.
@@ -190,6 +221,67 @@ function withTrip(s: AppState, trip: TripOverlay): AppState {
   return { ...s, tripAdmin: rows };
 }
 
+// My organiser settings patch, my traveller edits and my booking claims, each shown over the server's row until it holds them.
+type SettingsOverlay = { patch: SettingsPatch; updatedAt: string } | null;
+const SETTINGS: Pending<SettingsOverlay> = {
+  empty: null,
+  settle: (o, s) => [o && !ahead(o, s.tripSettings ?? undefined) ? null : o, []],
+  resend: o => (o ? [st => st.saveTripSettings(o.patch)] : []),
+  ...onDisk<SettingsOverlay>('settings', null, o => o === null,
+    raw => (isObj(raw) && isObj(raw.patch) && typeof raw.updatedAt === 'string' ? (raw as NonNullable<SettingsOverlay>) : null)),
+};
+type TravellerOverlay = Partial<Record<Person, { patch: TravellerPatch; updatedAt: string }>>;
+const TRAVELLERS: Pending<TravellerOverlay> = {
+  empty: {},
+  settle: (o, s) => [keepWhere(o, (n, t) => ahead(t, s.travellers?.[n as Person])), []],
+  resend: o => Object.entries(o).map(([n, t]) => st => st.saveTraveller(n as Person, t!.patch)),
+  ...onDisk<TravellerOverlay>('travellers', {}, o => Object.keys(o).length === 0,
+    raw => (isObj(raw) ? keepWhere(raw as TravellerOverlay, (_, t) => isObj(t?.patch) && typeof t?.updatedAt === 'string') : null)),
+};
+type ClaimOverlay = Record<string, { owner: Person | null; updatedAt: string }>;
+const CLAIMS: Pending<ClaimOverlay> = {
+  empty: {},
+  settle: (o, s) => [keepWhere(o, (id, c) => ahead(c, s.bookingClaims?.[id])) as ClaimOverlay, []],
+  resend: o => Object.entries(o).map(([id, c]) => st => st.saveBookingClaim(id, c.owner)),
+  ...onDisk<ClaimOverlay>('claims', {}, o => Object.keys(o).length === 0,
+    raw => (isObj(raw) ? keepWhere(raw as ClaimOverlay, (_, c) => isObj(c) && typeof c.updatedAt === 'string' && (c.owner === null || typeof c.owner === 'string')) as ClaimOverlay : null)),
+};
+function withFinal(s: AppState, settings: SettingsOverlay, travellers: TravellerOverlay, claims: ClaimOverlay): AppState {
+  let out = s;
+  if (settings && ahead(settings, s.tripSettings ?? undefined)) {
+    const base: TripSettings = s.tripSettings ?? { startDate: null, lastDayStart: null, plan: null, bookingDates: {}, overrides: [], updatedAt: '' };
+    out = { ...out, tripSettings: { ...base, ...settings.patch, updatedAt: settings.updatedAt } };
+  }
+  const tv = (Object.entries(travellers) as [Person, NonNullable<TravellerOverlay[Person]>][]).filter(([n, t]) => ahead(t, s.travellers?.[n]));
+  if (tv.length) {
+    const rows = { ...s.travellers };
+    for (const [n, t] of tv) rows[n] = { ...({ name: n, arriveLocal: null, arriveFlight: null, departLocal: null, departFlight: null } as Traveller), ...rows[n], ...t.patch, name: n, updatedAt: t.updatedAt };
+    out = { ...out, travellers: rows };
+  }
+  const cl = Object.entries(claims).filter(([id, c]) => ahead(c, s.bookingClaims?.[id]));
+  if (cl.length) {
+    const rows: Record<string, BookingClaim> = { ...s.bookingClaims };
+    for (const [id, c] of cl) rows[id] = { itemId: id, owner: c.owner, updatedAt: c.updatedAt };
+    out = { ...out, bookingClaims: rows };
+  }
+  return out;
+}
+
+const SNAPSHOT_KEY = 'tp:snapshot';
+interface Snapshot { at: string; state: AppState }
+/** The last good server read, kept so the app opens on something when the server does not answer. */
+function readSnapshot(): Snapshot | null {
+  try {
+    const o = JSON.parse(localStorage.getItem(SNAPSHOT_KEY) ?? 'null');
+    if (!isObj(o) || typeof o.at !== 'string' || !isObj(o.state) || !isObj(o.state.responses) || !Array.isArray(o.state.suggestions) || !Array.isArray(o.state.votes)) return null;
+    return { at: o.at, state: { ...(o.state as unknown as AppState), tripSettings: o.tripSettings as AppState['tripSettings'] } };
+  } catch { return null; }
+}
+function writeSnapshot(s: AppState): void {
+  const { tripSettings, ...state } = s;
+  try { localStorage.setItem(SNAPSHOT_KEY, JSON.stringify({ at: new Date().toISOString(), state, tripSettings })); } catch { /* storage full or unavailable: the old snapshot stays */ }
+}
+
 const sameVote = (a: Vote, b: Vote) => a.forkId === b.forkId && a.name === b.name && a.choice === b.choice;
 const VOTES: Pending<Vote[]> = {
   empty: [],
@@ -239,7 +331,7 @@ function usePending<T>(kind: Pending<T>, sandbox: boolean): PendingState<T> {
 }
 
 /** Prunes one kind against a server read, and sends what can go now (or, on `replay`, everything left). */
-function sweep<T>(p: PendingState<T>, server: AppState, store: Store | undefined, replay: boolean): void {
+function sweep<T>(p: PendingState<T>, server: AppState, store: (Store & FinalStore) | undefined, replay: boolean): void {
   const before = p.ref.current;
   const [next, send] = p.kind.settle(before, server);
   if (next !== before) p.set(o => (o === before ? next : p.kind.settle(o, server)[0]));
@@ -295,7 +387,10 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   const [attempt, setAttempt] = useState(0);
   // The password gate stands in front of the shared database only; an injected or local store skips it.
   const access = useTripAccess(!injected && supabaseConfigured());
-  const open = access.status === 'open';
+  // The snapshot stands in for the server until the first load answers; a sandbox never reads or writes one.
+  const [snap] = useState(() => (sandbox ? null : readSnapshot()));
+  // With a snapshot to show, the app opens on it while the stored key is still being checked; the load runs behind it.
+  const open = access.status === 'open' || (access.status === 'checking' && !!snap);
   const base = useMemo<Store | null>(() => {
     if (injected) return injected;
     if (!open) return null;
@@ -309,22 +404,39 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   const places = usePending(PLACES, !!sandbox);
   const admin = usePending(ADMIN, !!sandbox);
   const trip = usePending(TRIP, !!sandbox);
-  const serverRef = useRef(server);
-  serverRef.current = server;
+  const settings = usePending(SETTINGS, !!sandbox);
+  const travellers = usePending(TRAVELLERS, !!sandbox);
+  const claims = usePending(CLAIMS, !!sandbox);
+  const [needsAdminKey, setNeedsAdminKey] = useState(false);
+  const [late, setLate] = useState(false);
+  const shown = server ?? snap?.state ?? null;
+  const serverRef = useRef(shown);
+  serverRef.current = shown;
   const [me, setMeState] = useState<Player | null>(() => (sandbox ? null : readMe()));
   const queue = useMemo(() => base && new WriteQueue(base, {
     onFail: () => setError("Couldn't save"),
     onClear: () => setError(e => (e === "Couldn't save" ? null : e)),
+    // Dropped, not retried: the refused change must not keep showing over the server's row either.
+    onAdminDenied: kind => { setNeedsAdminKey(true); if (kind === 'settings') settings.set(null); else admin.set({}); },
   }), [base]);
+  useEffect(() => queue?.watch(), [queue]);
   const legs = legsData as unknown as Leg[];
 
   // A trip password changed under an open app makes every read come back empty with no error, so an empty
   // or failed read asks the access hook to re-verify the key (it rate-limits, and only a rejected key leaves).
   const recheck = access.recheck;
+  const checkingKey = access.status === 'checking';
+  const checkingRef = useRef(checkingKey);
+  checkingRef.current = checkingKey;
   const accepted = useCallback((s: AppState) => {
+    const empty = !Object.keys(s.responses).length;
+    // Until the key is verified an empty read may only be a stale key hidden by row-level security; it must not replace the snapshot (the load reruns once the key is accepted).
+    if (empty && checkingRef.current) return;
     setServer(s);
-    if (!injected && !s.suggestions.length && !s.votes.length && !Object.keys(s.responses).length) recheck();
-  }, [injected, recheck]);
+    // An empty read never replaces a good snapshot.
+    if (!sandbox && !empty) writeSnapshot(s);
+    if (!injected && empty && !s.suggestions.length && !s.votes.length) recheck();
+  }, [injected, recheck, sandbox]);
 
   const load = useCallback(async () => {
     try {
@@ -333,6 +445,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
       setError(null);
     } catch {
       setError("Couldn't load");
+      setLate(true);
       if (base && !injected) recheck();
     }
   }, [base, accepted, injected, recheck]);
@@ -341,6 +454,19 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
     void load();
     return base?.subscribe(accepted);
   }, [base, load, accepted]);
+
+  const wasChecking = useRef(false);
+  useEffect(() => {
+    if (wasChecking.current && access.status === 'open') void load();
+    wasChecking.current = access.status === 'checking';
+  }, [access.status, load]);
+
+  // Starts at boot, not once the store exists, so a key check that hangs does not delay the offline flag.
+  useEffect(() => {
+    if (!snap) return;
+    const t = setTimeout(() => setLate(true), LOAD_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [snap]);
 
   // Each server read drops what it now holds; writes left over from an earlier visit go back into the queue once, after the first.
   const replayed = useRef(false);
@@ -355,6 +481,9 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
     sweep(places, server, store, replay);
     sweep(admin, server, store, replay);
     sweep(trip, server, store, replay);
+    sweep(settings, server, store, replay);
+    sweep(travellers, server, store, replay);
+    sweep(claims, server, store, replay);
   }, [server, queue, sandbox]);
 
   const store = useMemo<Store | null>(() => queue && {
@@ -395,9 +524,41 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
     },
   }, [queue]);
   const state = useMemo(
-    () => server && withTrip(withStays(withLocal(server, local.value, votes.value, crew.value), places.value, admin.value), trip.value),
-    [server, local.value, votes.value, crew.value, places.value, admin.value, trip.value],
+    () => shown && withFinal(withTrip(withStays(withLocal(shown, local.value, votes.value, crew.value), places.value, admin.value), trip.value), settings.value, travellers.value, claims.value),
+    [shown, local.value, votes.value, crew.value, places.value, admin.value, trip.value, settings.value, travellers.value, claims.value],
   );
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  const final = useMemo(() => queue && {
+    saveTripSettings: (patch: SettingsPatch, what?: string) => {
+      const at = new Date().toISOString();
+      const prev = settings.ref.current;
+      const edited = patch.plan !== undefined || patch.startDate !== undefined || patch.lastDayStart !== undefined || patch.bookingDates !== undefined;
+      // Capped so the jsonb never reaches its size check, which would refuse every later save.
+      const log = [...(prev?.patch.overrides ?? stateRef.current?.tripSettings?.overrides ?? []), { at, what: what ?? Object.keys(patch).join(', ') }].slice(-MAX_OVERRIDES).map(o => ({ ...o, what: capWhat(o.what) }));
+      const full = edited ? { ...patch, overrides: log } : patch;
+      // Set the ref now as well, so two saves in one tick chain their log entries.
+      const next = { patch: { ...prev?.patch, ...full }, updatedAt: at };
+      settings.ref.current = next;
+      settings.set(next);
+      return queue.saves.saveTripSettings(full);
+    },
+    saveTraveller: (name: Person, patch: TravellerPatch) => {
+      travellers.set(l => ({ ...l, [name]: { patch: { ...l[name]?.patch, ...patch }, updatedAt: new Date().toISOString() } }));
+      return queue.saves.saveTraveller(name, patch);
+    },
+    claimBooking: (itemId: string, owner: Person | null) => {
+      claims.set(l => ({ ...l, [itemId]: { owner, updatedAt: new Date().toISOString() } }));
+      return queue.saves.saveBookingClaim(itemId, owner);
+    },
+  }, [queue]);
+
+  const setAdminKey = useCallback(async (key: string) => {
+    const ok = !injected && supabaseConfigured() ? await verifyAdminKey(key) : localAdminKeyOk(key);
+    if (ok) { if (!sandbox) writeAdminKey(key); setNeedsAdminKey(false); }
+    return ok;
+  }, [injected, sandbox]);
 
   const retry = useCallback(() => {
     if (!queue) { setAttempt(a => a + 1); return; }
@@ -415,7 +576,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
   }, [sandbox]);
 
   if (access.status === 'gate') return createElement(PasswordGate, { onAccept: access.accept });
-  if (access.status === 'checking') return createElement('div', { className: 'app' }, createElement('div', { className: 'body' }, createElement('div', { className: 'sub' }, 'Loading')));
+  if (access.status === 'checking' && !snap) return createElement('div', { className: 'app' }, createElement('div', { className: 'body' }, createElement('div', { className: 'sub' }, 'Loading')));
 
   if (!state) {
     return createElement('div', { className: 'app' },
@@ -424,6 +585,9 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
         : createElement('div', { className: 'body' }, createElement('div', { className: 'sub' }, 'Loading')));
   }
 
-  const value: AppValue = { state, me, setMe, clearMe, store: store as Store, items: liveItems(state), legs, copy, error, retry, sandbox: !!sandbox, finishSandbox: sandbox?.onFinish };
+  const value: AppValue = {
+    state, me, setMe, clearMe, store: store as Store, items: liveItems(state), legs, copy, error, retry, sandbox: !!sandbox, finishSandbox: sandbox?.onFinish,
+    ...(final as NonNullable<typeof final>), needsAdminKey, setAdminKey, offlineSince: !server && snap && late ? snap.at : null,
+  };
   return createElement(Ctx.Provider, { value }, children);
 }

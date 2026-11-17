@@ -1,7 +1,8 @@
-import { PEOPLE, type AppState, type Genre, type GroupResult, type Item, type Knockout, type Leg, type Pace, type Player, type Plan, type Response } from '../types';
+import { PACE_HOURS, PEOPLE, type AppState, type Genre, type GroupResult, type Item, type Knockout, type Leg, type Pace, type Player, type Plan, type ReleasePlan, type Response } from '../types';
 import { mustFitDays, plan } from './planner';
 import { KNOCKED_MUST, score, scoresFor, tierOf } from './ranking';
 import type { Release } from './release';
+import { applyDayEdits } from './tripPlan';
 import { genreForkId, genreRoundForkId, NORTH_AREAS, REGION_FORK, tallySides } from './votes';
 
 export const VOTES_TO_RESOLVE = 3; // majority of 5
@@ -24,8 +25,9 @@ const MAX_CONTESTED = 5;
 const EXTRAS_DAYS = 14;
 const EPS = 1e-9;
 
-// The Days screen offers 5 to 21 (src/screens/Days.tsx); anything stored outside that is clamped.
-const daysOf = (r: Response) => (r.flex ? 14 : Math.min(21, Math.max(5, r.days ?? 9)));
+/** The days a trip can run: the Days screen and the organiser offer these; anything stored outside is clamped. */
+export const MIN_DAYS = 5, MAX_DAYS = 21;
+const daysOf = (r: Response) => (r.flex ? 14 : Math.min(MAX_DAYS, Math.max(MIN_DAYS, r.days ?? 9)));
 
 export function personPlan(resp: Response, items: Item[], legs: Leg[]): Plan & { mustFit: number | null } {
   const ids = items.map(i => i.id);
@@ -44,7 +46,9 @@ function medianPace(paces: Pace[]): Pace {
 }
 
 // genres: src/data/genres.json in the app; none means no same-type keep vote.
-export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genres: Genre[] = [], release: Release | null = null): GroupResult {
+export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genres: Genre[] = [], releaseIn: Release | ReleasePlan | null = null): GroupResult {
+  // Empty items turns the released plan off (release.ts), so it must not plan with nothing forced in.
+  const release = releaseIn?.items.length ? releaseIn : null;
   const rs = PEOPLE.map(p => state.responses[p]).filter((r): r is Response => !!r);
   const open = allSubmitted(state.responses);
   const days = release?.days ?? (rs.length ? Math.min(...rs.map(daysOf)) : 9);
@@ -55,7 +59,9 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
   const sealed = rs.length === PEOPLE.length && rs.every(r => r.final);
   // Late items never enter the rated stages, sealed or not, so the fifth Finalize list cannot change them (B1).
   const lateAll = allItems.filter(i => i.late === true);
-  const items = lateAll.length ? allItems.filter(i => i.late !== true) : allItems;
+  // The one exception: a live suggestion the organiser listed in the release is part of the decided plan.
+  const released = new Set(release?.items);
+  const items = lateAll.length ? allItems.filter(i => i.late !== true || released.has(i.id)) : allItems;
   let pool = items;
   const ids = items.map(i => i.id);
   const scores: Record<string, number> = Object.fromEntries(ids.map(id => [id, rs.reduce((n, r) => n + score(r.ranking, id), 0)]));
@@ -74,7 +80,10 @@ export function groupResult(state: AppState, allItems: Item[], legs: Leg[], genr
     const keep = new Set(release.items);
     const P = run(keep, new Set(ids.filter(id => !keep.has(id))));
     // Places the group ruled out are not offered back as "you'd also get" on a longer trip.
-    return { open: true, days, pace, base: P, knockouts: [], results: [], final: P, extras: extrasFor(keep, new Set(release.ruledOut)), knocked: [], finalized: [...PEOPLE], locked: true, released: true };
+    const edits = (release as Partial<ReleasePlan>).dayEdits ?? []; // a Release is a ReleasePlan without edits
+    const edited = edits.length ? applyDayEdits(P, edits, PACE_HOURS[pace], items) : null;
+    const final = edited?.plan ?? P;
+    return { open: true, days, pace, base: P, knockouts: [], results: [], final, extras: extrasFor(keep, new Set(release.ruledOut)), knocked: [], finalized: [...PEOPLE], locked: true, released: true, ...(edited ? { warnings: edited.warnings } : {}) };
   }
 
   const F = new Set<string>(), O = new Set<string>();

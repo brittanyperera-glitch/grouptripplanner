@@ -4,8 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProvider } from '../state';
 import { LocalStore } from '../store/local';
 import { emptyRanking, PEOPLE } from '../types';
-import type { GroupResult, Plan, Player, TripAdminRow } from '../types';
-import TripAdmin, { TripAdminLink } from './TripAdmin';
+import type { DayBooking, GroupResult, Person, Plan, Player, TripAdminRow } from '../types';
+import catalogue from '../data/catalogue.json';
+import { STAY_COPY } from '../lib/stayflow';
+import { PosterWhen } from './Poster';
+import TripAdmin, { SupplyBoard, TripAdminLink } from './TripAdmin';
+import type { SupplyRow } from './TripAdmin';
 
 const grp = vi.hoisted(() => ({ current: null as unknown, loading: false }));
 vi.mock('../workers/usePlan', async orig => ({ ...(await orig<typeof import('../workers/usePlan')>()), useGroupResult: () => ({ data: grp.current, loading: grp.loading }) }));
@@ -35,7 +39,7 @@ describe('TripAdmin', () => {
     localStorage.setItem('tp:me', 'Alex');
     grp.current = null; grp.loading = true;
     render(<AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} /></AppProvider>);
-    await screen.findByRole('heading', { name: 'Trip admin' });
+    await screen.findByRole('heading', { name: 'Supply runs' });
     expect(screen.getByText('Loading')).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/All done|Group bookings appear/);
   });
@@ -65,20 +69,23 @@ describe('TripAdmin', () => {
     expect(screen.getByRole('checkbox', { name: 'Sigiriya Rock' })).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('my own details save, show back to me and stay off other people\'s view', async () => {
+  // Changed deliberately (A6, no money): the details form has a note only; the price field is gone.
+  it('my own note saves, shows back to me when I reopen it and stays off other people\'s view', async () => {
     const user = await mount('Alex');
     await user.click(screen.getByRole('button', { name: 'Details: Sigiriya Rock' }));
-    await user.type(screen.getByLabelText('Price'), 'USD 41');
+    expect(screen.queryByLabelText('Price')).toBeNull();
+    await user.type(screen.getByLabelText('Note'), 'window seat');
     // Changed deliberately (Brittany 2026-10-17): no booking reference field; the form says plainly it is not secret.
     expect(screen.queryByLabelText('Booking reference')).toBeNull();
-    expect(screen.getByText(/anyone with the trip password can read this/)).toBeInTheDocument();
+    expect(screen.getByText(/not secret: anyone with the trip password can read it/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(stored('Alex')?.items['book:sigiriya']).toMatchObject({ price: 'USD 41' }));
-    expect(stored('Alex')?.items['book:sigiriya']?.ref).toBeUndefined();
-    expect(await screen.findByText('USD 41')).toBeInTheDocument();
+    await waitFor(() => expect(stored('Alex')?.items['book:sigiriya']).toMatchObject({ note: 'window seat' }));
+    expect(stored('Alex')?.items['book:sigiriya']?.price).toBeUndefined();
+    await user.click(screen.getByRole('button', { name: 'Details: Sigiriya Rock' }));
+    expect(screen.getByLabelText('Note')).toHaveValue('window seat');
     cleanup();
     await mount('Lazza');
-    expect(document.body.textContent).not.toMatch(/USD 41/);
+    expect(document.body.textContent).not.toMatch(/window seat/);
   });
 
   it('a group item ticked by anyone shows as done for everyone', async () => {
@@ -96,6 +103,51 @@ describe('TripAdmin', () => {
     render(<AppProvider store={new LocalStore()}><TripAdminLink group={decided} onOpen={onOpen} /></AppProvider>);
     await user.click(await screen.findByRole('button', { name: /Trip admin.*2 to do/ }));
     expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('with every booking secured and a stay still being replaced, the link says what the board says, not All done', async () => {
+    seed('Brittany', { 'book:sigiriya': { done: true, doneAt: 't' }, 'book:train': { done: true, doneAt: 't' } });
+    class Replacing extends LocalStore {
+      async load() { const s = await super.load(); return { ...s, stays: { ...s.stays!, admin: { ...s.stays!.admin, fallen: [{ id: 'gone', area: 'Ella' as const, at: '2026-11-02T10:00' }] } } }; }
+    }
+    const linkAs = async (store: LocalStore) => {
+      localStorage.setItem('tp:me', 'Alex');
+      render(<AppProvider store={store}><TripAdminLink group={decided} onOpen={vi.fn()} /></AppProvider>);
+      return (await screen.findByRole('button', { name: /Trip admin/ })).textContent;
+    };
+    expect(await linkAs(new Replacing())).toBe('Trip adminWaiting on replacement stays');
+    cleanup();
+    expect(await linkAs(new LocalStore())).toBe('Trip adminAll done');
+  });
+
+  describe('a stay that fell through after it was ticked', () => {
+    const stayRow = { id: 's1', name: 'Alex', area: 'Ella', kind: 'stay', title: 'Stay s1', status: 'live', createdAt: '2026-10-10' };
+    // LocalStore does not persist a fallen list yet, so the test hands the screen the state a store that does would give it.
+    class FallenStore extends LocalStore {
+      async load() { const s = await super.load(); return { ...s, stays: { ...s.stays!, admin: { ...s.stays!.admin, fallen: [{ id: 'gone', area: 'Ella' as const, at: '2026-11-02T10:00' }] } } }; }
+    }
+    const mountStay = async (doneAt: string) => {
+      localStorage.setItem('tp:placesug', JSON.stringify([stayRow]));
+      localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-11-03T09:00' }], scouts: {}, closed: [] }));
+      seed('Brittany', { 'stay:Ella': { done: true, doneAt } });
+      localStorage.setItem('tp:me', 'Alex');
+      render(<AppProvider store={new FallenStore()}><TripAdmin onBack={vi.fn()} /></AppProvider>);
+      return (await screen.findByRole('checkbox', { name: 'Stay in Ella' })).closest('li')!;
+    };
+
+    it('a tick from before the fall is not shown as done, not counted, and has no avatar', async () => {
+      const row = await mountStay('2026-11-01T08:00');
+      expect(row).toHaveAttribute('data-done', 'false');
+      expect(within(row).queryByRole('list', { name: /Done by/ })).toBeNull();
+      expect(screen.getByRole('status')).toHaveTextContent('3 still to do');
+    });
+
+    it('a tick from after the fall still counts', async () => {
+      const row = await mountStay('2026-11-04T08:00');
+      expect(row).toHaveAttribute('data-done', 'true');
+      expect(within(row).getByRole('list', { name: 'Done by Brittany' })).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent('2 still to do');
+    });
   });
 
   describe('the route behind the group bookings', () => {
@@ -131,8 +183,268 @@ describe('TripAdmin', () => {
 
     it('does not promise privacy it cannot keep', async () => {
       await mount();
-      expect(document.body.textContent).not.toMatch(/never your prices/);
-      expect(screen.getByText(/shown only to you in the app/)).toBeInTheDocument();
+      // Changed deliberately (A6/B6): the header no longer talks about prices; the note form says what is and is not private.
+      expect(document.body.textContent).not.toMatch(/never your prices|shown only to you in the app|prices/i);
     });
+  });
+
+  describe('claims, chips and the calendar', () => {
+    const e = (kind: 'activity' | 'train', itemId: string) => ({ kind, label: itemId, hours: 1, itemId });
+    const dated: Plan = { ...plan, chosen: ['sigiriya', 'train', 'crab'], days: [{ ...day(1), entries: [e('activity', 'sigiriya')] }, { ...day(2), entries: [e('activity', 'crab')] }, { ...day(3), entries: [e('train', 'train')] }] };
+    const startOn = (startDate: string | null) => localStorage.setItem('tp:settings', JSON.stringify({ startDate, plan: null, bookingDates: {}, overrides: [], updatedAt: '2026-11-01T00:00:00Z' }));
+    const mountOn = async (today: string, me: Player = 'Alex') => {
+      localStorage.setItem('tp:me', me);
+      grp.current = { final: dated, locked: true } as unknown as GroupResult;
+      const user = userEvent.setup();
+      render(<AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} today={today} /></AppProvider>);
+      await screen.findByRole('checkbox', { name: 'Nanu Oya to Ella train' });
+      return user;
+    };
+    const rowOf = (name: string) => screen.getByRole('checkbox', { name }).closest('li')!;
+
+    it('I will book this on the train row calls the claim setter with the train id and my name', async () => {
+      startOn('2026-12-08');
+      const spy = vi.spyOn(LocalStore.prototype, 'saveBookingClaim');
+      const user = await mountOn('2026-12-01');
+      await user.click(within(rowOf('Nanu Oya to Ella train')).getByRole('button', { name: "I'll book this" }));
+      expect(spy).toHaveBeenCalledWith('book:train', 'Alex');
+      expect(await within(rowOf('Nanu Oya to Ella train')).findByRole('button', { name: 'Unclaim: Nanu Oya to Ella train' })).toBeInTheDocument();
+      spy.mockRestore();
+    });
+
+    it('the owner can unclaim, and someone else\'s claim shows their avatar with no claim button', async () => {
+      startOn('2026-12-08');
+      const spy = vi.spyOn(LocalStore.prototype, 'saveBookingClaim');
+      localStorage.setItem('tp:claims', JSON.stringify({ 'book:crab': { itemId: 'book:crab', owner: 'Brittany', updatedAt: '2026-11-02T00:00:00Z' } }));
+      const user = await mountOn('2026-12-01');
+      const crab = rowOf('Ministry of Crab dinner');
+      expect(within(crab).queryByRole('button', { name: "I'll book this" })).toBeNull();
+      expect(within(crab).getByTitle('Brittany')).toBeInTheDocument();
+      expect(within(crab).queryByRole('button', { name: /Unclaim/ })).toBeNull();
+      await user.click(within(rowOf('Nanu Oya to Ella train')).getByRole('button', { name: "I'll book this" }));
+      await user.click(await within(rowOf('Nanu Oya to Ella train')).findByRole('button', { name: /Unclaim/ }));
+      expect(spy).toHaveBeenLastCalledWith('book:train', null);
+      spy.mockRestore();
+    });
+
+    it('a booking whose book-by date is before today shows the overdue chip', async () => {
+      startOn('2026-12-08');
+      await mountOn('2026-12-01');
+      expect(within(rowOf('Ministry of Crab dinner')).getByText('Overdue')).toBeInTheDocument();
+      expect(within(rowOf('Nanu Oya to Ella train')).queryByText('Overdue')).toBeNull();
+    });
+
+    it('shows opens-on, book-by and secured chips, sorted by date with undated last', async () => {
+      startOn('2026-12-08');
+      seed('Brittany', { 'book:sigiriya': { done: true, doneAt: 't' } });
+      await mountOn('2026-11-05');
+      expect(within(rowOf('Nanu Oya to Ella train')).getByText('Opens 10 Nov')).toBeInTheDocument();
+      expect(within(rowOf('Ministry of Crab dinner')).getByText('Book by 25 Nov')).toBeInTheDocument();
+      // Changed deliberately (B4): a ticked booking says Secured, the same word as its stamp.
+      expect(within(rowOf('Sigiriya Rock')).getByText('Secured')).toBeInTheDocument();
+      expect(screen.getAllByRole('checkbox').map(b => b.getAttribute('aria-label'))).toEqual(['Nanu Oya to Ella train', 'Ministry of Crab dinner', 'Sigiriya Rock']);
+    });
+
+    it('Add to calendar downloads homecoming.ics from the trip model', async () => {
+      startOn('2026-12-08');
+      const made: Blob[] = [];
+      URL.createObjectURL = vi.fn((b: Blob) => { made.push(b); return 'blob:x'; });
+      URL.revokeObjectURL = vi.fn();
+      let name = '';
+      const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { name = this.download; });
+      const user = await mountOn('2026-12-01');
+      await user.click(screen.getByRole('button', { name: 'Add to calendar' }));
+      expect(name).toBe('homecoming.ics');
+      const text = await new Promise<string>(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result)); fr.readAsText(made[0]); });
+      expect(text).toMatch(/BEGIN:VCALENDAR[\s\S]*Book by: Ministry of Crab dinner/);
+      click.mockRestore();
+    });
+
+    it('where the browser cannot download, the calendar is shared under the trip month the organiser set', async () => {
+      startOn('2026-12-08');
+      localStorage.setItem('tp:me', 'Alex');
+      grp.current = { final: dated, locked: true } as unknown as GroupResult;
+      const share = vi.fn(async () => {});
+      Object.assign(navigator, { share, canShare: () => true });
+      const download = Object.getOwnPropertyDescriptor(HTMLAnchorElement.prototype, 'download')!;
+      delete (HTMLAnchorElement.prototype as { download?: string }).download;
+      try {
+        render(<PosterWhen.Provider value="Jan 2027"><AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} today="2026-12-01" /></AppProvider></PosterWhen.Provider>);
+        await userEvent.click(await screen.findByRole('button', { name: 'Add to calendar' }));
+        await waitFor(() => expect(share).toHaveBeenCalledOnce());
+        expect((share.mock.calls[0] as unknown as [{ title: string }])[0].title).toBe('Sri Lanka, Jan 2027');
+      } finally {
+        Object.defineProperty(HTMLAnchorElement.prototype, 'download', download);
+        Object.assign(navigator, { share: undefined, canShare: undefined });
+      }
+    });
+
+    it('a tick of mine from before that stay fell shows unticked', async () => {
+      class FallenStore extends LocalStore {
+        async load() { const s = await super.load(); return { ...s, stays: { ...s.stays!, admin: { ...s.stays!.admin, fallen: [{ id: 'gone', area: 'Ella' as const, at: '2026-11-02T10:00' }] } } }; }
+      }
+      localStorage.setItem('tp:placesug', JSON.stringify([{ id: 's1', name: 'Alex', area: 'Ella', kind: 'stay', title: 'Stay s1', status: 'live', createdAt: '2026-10-10' }]));
+      localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-11-03T09:00' }], scouts: {}, closed: [] }));
+      seed('Alex', { 'stay:Ella': { done: true, doneAt: '2026-11-01T08:00' } });
+      localStorage.setItem('tp:me', 'Alex');
+      render(<AppProvider store={new FallenStore()}><TripAdmin onBack={vi.fn()} /></AppProvider>);
+      expect(await screen.findByRole('checkbox', { name: 'Stay in Ella' })).toHaveAttribute('aria-checked', 'false');
+    });
+  });
+});
+
+describe('Supply runs', () => {
+  const e = (kind: 'activity' | 'train', itemId: string) => ({ kind, label: itemId, hours: 1, itemId });
+  const dated: Plan = { ...plan, chosen: ['sigiriya', 'train', 'crab'], days: [{ ...day(1), entries: [e('activity', 'sigiriya')] }, { ...day(2), entries: [e('activity', 'crab')] }, { ...day(3), entries: [e('train', 'train')] }] };
+  const settings = { startDate: '2026-12-08', plan: null, bookingDates: {}, overrides: [], updatedAt: '2026-11-01T00:00:00Z' };
+  const mountAs = async (me: Player, store = new LocalStore(), g: unknown = { final: dated, locked: true }) => {
+    localStorage.setItem('tp:me', me);
+    localStorage.setItem('tp:settings', JSON.stringify(settings));
+    grp.current = g;
+    const user = userEvent.setup();
+    const view = render(<AppProvider store={store}><TripAdmin onBack={vi.fn()} today="2026-12-01" /></AppProvider>);
+    await screen.findByRole('checkbox', { name: 'Nanu Oya to Ella train' });
+    return { user, view };
+  };
+  const train = () => screen.getByRole('checkbox', { name: 'Nanu Oya to Ella train' }).closest('li')!;
+
+  it('A6: no money word and no price input anywhere, over the real catalogue', async () => {
+    const ids = (catalogue as unknown as { items: { id: string; book?: string }[] }).items.filter(i => i.book).map(i => i.id);
+    const { user, view } = await mountAs('Alex', new LocalStore(), { final: { ...dated, chosen: ids }, locked: true });
+    for (const b of screen.getAllByRole('button', { name: /^Details:/ })) await user.click(b);
+    expect(screen.getAllByRole('checkbox')).toHaveLength(ids.length);
+    expect(view.container.textContent).not.toMatch(/£|LKR|USD|price|cost/i);
+    expect(screen.queryByLabelText(/price/i)).toBeNull();
+  });
+
+  it('A2: claiming as Lazza stamps Lazza\'s name, and a claimed row never says Nobody yet', async () => {
+    const { user } = await mountAs('Lazza');
+    expect(within(train()).getByText('Nobody yet')).toBeInTheDocument();
+    await user.click(within(train()).getByRole('button', { name: "I'll book this" }));
+    const row = within(train());
+    expect(await row.findByRole('button', { name: /Unclaim/ })).toHaveTextContent('Lazza');
+    expect(row.queryByText('Nobody yet')).toBeNull();
+  });
+
+  it('A2: a booking someone else claimed names them beside their avatar, not Nobody yet', async () => {
+    localStorage.setItem('tp:claims', JSON.stringify({ 'book:train': { itemId: 'book:train', owner: 'Alex', updatedAt: '2026-11-02T00:00:00Z' } }));
+    await mountAs('Lazza');
+    expect(within(train()).getByTitle('Alex')).toHaveTextContent('Alex is booking');
+    expect(within(train()).queryByText('Nobody yet')).toBeNull();
+  });
+
+  it('A3: marking it secured stamps Secured and leaves no claim control on the row', async () => {
+    const { user } = await mountAs('Lazza');
+    await user.click(within(train()).getByRole('button', { name: "I'll book this" }));
+    await user.click(screen.getByRole('checkbox', { name: 'Nanu Oya to Ella train' }));
+    const row = within(train());
+    expect(await row.findByText('Secured')).toBeInTheDocument();
+    expect(row.queryByRole('button', { name: /book this|Unclaim/ })).toBeNull();
+    expect(row.queryByText('Nobody yet')).toBeNull();
+  });
+
+  it('A3: a booking someone already secured, with no claim, offers no claim', async () => {
+    seed('Brittany', { 'book:train': { done: true, doneAt: 't' } });
+    await mountAs('Lazza');
+    expect(within(train()).getByText('Secured')).toBeInTheDocument();
+    expect(within(train()).queryByRole('button', { name: "I'll book this" })).toBeNull();
+    expect(within(train()).queryByText('Nobody yet')).toBeNull();
+  });
+
+  it('A12: a stay that fell through with no pin keeps a stay row, and nothing to tick', async () => {
+    class FallenStore extends LocalStore {
+      async load() { const s = await super.load(); return { ...s, stays: { ...s.stays!, admin: { ...s.stays!.admin, fallen: [{ id: 'gone', area: 'Ella' as const, at: '2026-11-02T10:00' }] } } }; }
+    }
+    await mountAs('Alex', new FallenStore());
+    const row = screen.getByText('Stay in Ella').closest('li')!;
+    expect(row).toHaveTextContent('finding a replacement');
+    expect(within(row).queryByRole('checkbox')).toBeNull();
+    expect(screen.getByRole('status')).toHaveTextContent('3 still to do');
+  });
+
+  it('A12: the replacing row says it as the Stays screen does, and Brittany is told to pin', async () => {
+    class FallenStore extends LocalStore {
+      async load() { const s = await super.load(); return { ...s, stays: { ...s.stays!, admin: { ...s.stays!.admin, fallen: [{ id: 'gone', area: 'Ella' as const, at: '2026-11-02T10:00' }] } } }; }
+    }
+    await mountAs('Alex', new FallenStore());
+    expect(screen.getByText('Stay in Ella').closest('li')).toHaveTextContent('Brittany is finding a replacement for Ella');
+    cleanup();
+    await mountAs('Brittany', new FallenStore());
+    expect(screen.getByText('Stay in Ella').closest('li')).toHaveTextContent('Pin a replacement for Ella');
+  });
+
+  it('B5: a tick and a claim say Saved beside their own control; a refused write says Not saved yet', async () => {
+    const { user } = await mountAs('Alex');
+    await user.click(screen.getByRole('checkbox', { name: 'Sigiriya Rock' }));
+    expect(await within(screen.getByRole('checkbox', { name: 'Sigiriya Rock' }).closest('li')!).findByText('Saved')).toBeInTheDocument();
+    expect(within(train()).queryByText('Saved')).toBeNull();
+    await user.click(within(train()).getByRole('button', { name: "I'll book this" }));
+    expect(await within(train()).findByText('Saved')).toBeInTheDocument();
+    cleanup();
+    class Refuses extends LocalStore { async saveTripAdmin(): Promise<void> { throw new Error('offline'); } }
+    const again = await mountAs('Alex', new Refuses());
+    await again.user.click(screen.getByRole('checkbox', { name: 'Sigiriya Rock' }));
+    expect(await screen.findByText(/Not saved yet/)).toBeInTheDocument();
+  });
+
+  it('wears the spy look only while a mission has work in it', async () => {
+    const on = await mountAs('Alex');
+    expect(on.view.container.querySelector('.spy')).not.toBeNull();
+    cleanup();
+    for (const n of PEOPLE) localStorage.setItem('tp:travellers', JSON.stringify({ ...JSON.parse(localStorage.getItem('tp:travellers') ?? '{}'), [n]: { name: n, arriveLocal: '2026-12-08T09:00', arriveFlight: 'A', departLocal: '2026-12-16T09:00', departFlight: 'B', updatedAt: 'x' } }));
+    localStorage.setItem('tp:placesug', JSON.stringify([{ id: 's1', name: 'Alex', area: 'Ella', kind: 'stay', title: 'Stay s1', status: 'live', createdAt: '2026-10-10' }]));
+    localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-11-03T09:00' }], scouts: {}, closed: [] }));
+    seed('Brittany', { 'book:sigiriya': { done: true, doneAt: 't' }, 'book:train': { done: true, doneAt: 't' }, 'book:crab': { done: true, doneAt: 't' }, 'stay:Ella': { done: true, doneAt: '2026-11-04T00:00' } });
+    const off = await mountAs('Alex');
+    expect(off.view.container.querySelector('.spy')).toBeNull();
+    expect(screen.getByRole('status')).toHaveTextContent('All done');
+  });
+});
+
+describe('Supply runs wording', () => {
+  const book: DayBooking = { id: 'book:train', label: 'Ella train', status: 'open', opensOn: null, bookBy: null, owner: null };
+  const row = (o: Partial<SupplyRow>): SupplyRow => ({ id: 'book:train', label: 'Ella train', hint: '', done: [], mine: false, note: '', saved: '', ...o });
+  const board = (rows: SupplyRow[], left: number, me: Person | null = 'Alex', spy = false) =>
+    render(<SupplyBoard spy={spy} pending={false} rows={rows} left={left} me={me} hasCalendar={false} onBack={vi.fn()} onCalendar={vi.fn()} onTick={vi.fn()} onClaim={vi.fn()} onNote={vi.fn()} />);
+
+  it('never says All done above a stay that is still being replaced', () => {
+    board([row({ done: ['Brittany'] }), row({ id: 'stay:Ella', label: 'Stay in Ella', waiting: STAY_COPY.replacing(false, 'Ella') })], 0);
+    expect(screen.queryByText('All done')).toBeNull();
+    expect(screen.getByRole('status')).toHaveTextContent('Waiting on replacement stays');
+    cleanup();
+    board([row({ done: ['Brittany'] })], 0);
+    expect(screen.getByRole('status')).toHaveTextContent('All done');
+  });
+
+  it('a stay being replaced reads as the Stays screen says it', () => {
+    board([row({ id: 'stay:Ella', label: 'Stay in Ella', waiting: STAY_COPY.replacing(false, 'Ella') })], 0);
+    expect(screen.getByText('Brittany is finding a replacement for Ella')).toBeInTheDocument();
+  });
+
+  it("the owner's own claim names them once, as someone is named: never a name and \"you\"", () => {
+    for (const spy of [true, false]) {
+      board([row({ booking: { ...book, owner: 'Alex' } })], 1, 'Alex', spy);
+      const mine = screen.getByRole('button', { name: 'Unclaim: Ella train' });
+      expect(mine).toHaveTextContent(/Alex is booking, tap to undo/);
+      expect(mine.textContent).not.toMatch(/\byou\b/i);
+      cleanup();
+    }
+    board([row({ booking: { ...book, owner: 'Lazza' } })], 1, 'Alex');
+    expect(screen.getByTitle('Lazza')).toHaveTextContent(/Lazza.*is booking/i);
+  });
+
+  it('an open booking is "Open" on the card, as in the print lists', () => {
+    board([row({ booking: { ...book, status: 'open' } })], 1);
+    expect(screen.getByText('Open')).toBeInTheDocument();
+    expect(screen.queryByText('Open now')).toBeNull();
+  });
+});
+
+describe('the one wording of a stay that fell through', () => {
+  it('asks and confirms in "fallen through", and the verb is the button', () => {
+    expect(STAY_COPY.fall.ask('Alex', 'Ella')).toMatch(/^Mark it as fallen through\? This clears Alex's claim/);
+    expect(STAY_COPY.fall.ask(null, 'Ella')).toMatch(/^Mark it as fallen through\?/);
+    expect(STAY_COPY.fall.done('House')).toBe('House marked as fallen through.');
+    expect(STAY_COPY.fall.yes).toBe('Yes, it fell through');
   });
 });

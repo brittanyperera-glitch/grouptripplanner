@@ -1,13 +1,10 @@
 import catalogue from '../data/catalogue.json';
 import { AREAS } from '../types';
-import type { AdminEntry, AppState, Area, Item, Plan, Player } from '../types';
+import type { AdminEntry, AppState, Area, BookingClaim, Fallen, Item, Plan, Player } from '../types';
 import { outcome, stayCtx } from './stayflow';
+import { instant } from './stays';
 
-export interface AdminDef {
-  id: string; label: string; hint: string;
-  /** What is being booked, so the page can show its price and booking note. */
-  info?: string;
-}
+export interface AdminDef { id: string; label: string; hint: string }
 export interface AdminDue { id: string; label: string }
 
 const BOOKABLE = (catalogue as unknown as { items: Item[] }).items.filter(i => i.book);
@@ -23,7 +20,7 @@ export function adminChecklist(state: AppState, me: Player, plan: Plan | null): 
   if (!plan) return out;
   for (const i of BOOKABLE) {
     if (plan.chosen.includes(i.id)) {
-      out.push({ id: `book:${i.id}`, label: i.name, hint: i.book ?? '', info: i.fee });
+      out.push({ id: `book:${i.id}`, label: i.name, hint: i.book ?? '' });
     }
   }
   const ctx = stayCtx(state, me, plan);
@@ -31,23 +28,34 @@ export function adminChecklist(state: AppState, me: Player, plan: Plan | null): 
     const o = outcome(ctx, area);
     if (o.kind !== 'decided') continue;
     const s = ctx.suggestions.find(x => x.id === o.id);
-    out.push({
-      id: stayItemId(area), label: `Stay in ${area}`, hint: s ? `Book ${s.title}.` : 'Book the chosen stay.',
-      info: s?.priceGbp !== undefined ? `about £${s.priceGbp} a night` : undefined,
-    });
+    out.push({ id: stayItemId(area), label: `Stay in ${area}`, hint: s ? `Book ${s.title}.` : 'Book the chosen stay.' });
   }
   return out;
 }
 
 const entryOf = (state: AppState, who: Player, id: string): AdminEntry | undefined => state.tripAdmin?.[who]?.items[id];
-/** Everyone who has marked this item done. */
-export const doneBy = (state: AppState, id: string): Player[] =>
-  (Object.keys(state.tripAdmin ?? {}) as Player[]).filter(p => entryOf(state, p, id)?.done);
+
+/** A time counts only if it is later than the latest fall in that area; with no fall, anything counts. A stamp that cannot be read does not. */
+const afterFall = (at: string | undefined, fallen: Fallen[], area: Area): boolean => {
+  const falls = fallen.filter(f => f.area === area).map(f => instant(f.at));
+  return falls.length === 0 || (at !== undefined && instant(at) > Math.max(...falls));
+};
+/** A booking owner set before the stay fell through no longer applies to its replacement. */
+export const claimIsFresh = (claim: BookingClaim | undefined, fallen: Fallen[], area: Area): boolean =>
+  claim !== undefined && afterFall(claim.updatedAt, fallen, area);
+
+/** Everyone who has marked this item done. A stay tick only counts if it is newer than that area's latest fall (the stored list unless one is given). */
+export const doneBy = (state: AppState, id: string, fallen: Fallen[] = state.stays?.admin.fallen ?? []): Player[] =>
+  (Object.keys(state.tripAdmin ?? {}) as Player[]).filter(p => {
+    const e = entryOf(state, p, id);
+    const area = AREAS.find(a => stayItemId(a) === id);
+    return !!e?.done && (area === undefined || afterFall(e.doneAt, fallen, area));
+  });
 
 /** The bookings nobody has ticked yet. Needs the locked plan: without one there is nothing to book. */
-export function adminOutstanding(me: Player, state: AppState, plan: Plan | null = null): AdminDue[] {
+export function adminOutstanding(me: Player, state: AppState, plan: Plan | null = null, fallen?: Fallen[]): AdminDue[] {
   return adminChecklist(state, me, plan)
-    .filter(d => doneBy(state, d.id).length === 0)
+    .filter(d => doneBy(state, d.id, fallen).length === 0)
     .map(({ id, label }) => ({ id, label }));
 }
 

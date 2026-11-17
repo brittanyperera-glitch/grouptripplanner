@@ -337,3 +337,105 @@ describe('WriteQueue trip admin', () => {
     expect(await base.loadComplaints()).toMatchObject([{ name: 'Alex', text: 'Too hot' }]);
   });
 });
+
+describe('WriteQueue saves resolve with whether the write was stored', () => {
+  const denied = Object.assign(new Error('denied'), { code: '42501' });
+
+  it('true after a successful write, false after a failed one, false after a refused one', async () => {
+    let mode: 'ok' | 'offline' | 'denied' = 'ok';
+    class Mode extends LocalStore {
+      override async saveTraveller(...a: Parameters<LocalStore['saveTraveller']>) {
+        if (mode === 'offline') throw new Error('offline');
+        return super.saveTraveller(...a);
+      }
+      override async saveTripSettings(...a: Parameters<LocalStore['saveTripSettings']>) {
+        if (mode === 'denied') throw denied;
+        return super.saveTripSettings(...a);
+      }
+    }
+    const q = new WriteQueue(new Mode(), { ...hooks(), onAdminDenied() {} });
+    expect(await q.saves.saveTraveller('Alex', { arriveFlight: 'UL 504' })).toBe(true);
+    mode = 'offline';
+    expect(await q.saves.saveTraveller('Alex', { arriveFlight: 'UL 505' })).toBe(false);
+    mode = 'denied';
+    expect(await q.saves.saveTripSettings({ startDate: '2026-12-01' })).toBe(false);
+  });
+
+  it('two coalesced callers both learn the failure, and a later save after the retry reports true', async () => {
+    let offline = true;
+    class Flaky extends LocalStore {
+      override async saveBookingClaim(...a: Parameters<LocalStore['saveBookingClaim']>) {
+        if (offline) throw new Error('offline');
+        return super.saveBookingClaim(...a);
+      }
+    }
+    const q = new WriteQueue(new Flaky(), hooks());
+    const first = q.saves.saveBookingClaim('train', 'Alex');
+    const second = q.saves.saveBookingClaim('train', null);
+    expect(await Promise.all([first, second])).toEqual([false, false]);
+    offline = false;
+    expect(await q.flush()).toBe(true);
+    expect(await q.saves.saveBookingClaim('train', 'Alex')).toBe(true);
+  });
+});
+
+describe('WriteQueue flush on reconnect', () => {
+  class Flaky extends LocalStore {
+    offline = true; writes = 0;
+    override async saveResponse(...a: Parameters<LocalStore['saveResponse']>) {
+      if (this.offline) throw new Error('offline');
+      this.writes++;
+      return super.saveResponse(...a);
+    }
+  }
+  const seen = (v: 'visible' | 'hidden') => {
+    Object.defineProperty(document, 'visibilityState', { value: v, configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  };
+  const setup = async () => {
+    const base = new Flaky();
+    const h = hooks();
+    const q = new WriteQueue(base, h);
+    const stop = q.watch();
+    await q.store.saveResponse('Alex', full({ days: 9 }));
+    return { base, q, h, stop };
+  };
+
+  const tick = () => new Promise(r => setTimeout(r, 0));
+  const until = async (ok: () => boolean) => { for (let i = 0; i < 50 && !ok(); i++) await tick(); };
+
+  it('window online lands the failed save with no further write, and the pending signal clears', async () => {
+    const { base, h, stop } = await setup();
+    expect([h.fails, h.clears]).toEqual([1, 0]);
+    base.offline = false;
+    window.dispatchEvent(new Event('online'));
+    await until(() => h.clears > 0);
+    expect(h.clears).toBe(1);
+    expect(base.writes).toBe(1);
+    expect((await base.load()).responses.Alex?.days).toBe(9);
+    stop();
+  });
+
+  it('becoming visible with a pending job flushes; hidden does not', async () => {
+    const { base, h, stop } = await setup();
+    base.offline = false;
+    seen('hidden');
+    await tick();
+    expect(base.writes).toBe(0);
+    seen('visible');
+    await until(() => h.clears > 0);
+    expect(h.clears).toBe(1);
+    expect(base.writes).toBe(1);
+    stop();
+  });
+
+  it('stopping removes the listeners', async () => {
+    const { base, h, stop } = await setup();
+    stop();
+    base.offline = false;
+    window.dispatchEvent(new Event('online'));
+    await tick();
+    expect(base.writes).toBe(0);
+    expect(h.clears).toBe(0);
+  });
+});

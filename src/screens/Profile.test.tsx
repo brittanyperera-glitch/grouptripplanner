@@ -13,6 +13,7 @@ import { friendStats } from '../lib/friendship';
 import { AppProvider, useApp } from '../state';
 import Friends from './Friends';
 import ConnectedProfile, { ProfileView as Profile, VIEW_KEY } from './Profile';
+import { PosterWhen } from './Poster';
 import { artSrc, cardColours, cardData, cardLayout, cardNo, CARD_H, CARD_W, contrast, FRIEND_LABELS, rarityOf, renderCardBlob, selfieSrc, tierOf, tripStats } from './profileCard';
 
 function PickThen({ who, children }: { who: Player; children: ReactNode }) {
@@ -230,6 +231,22 @@ describe('card hero layout (all 8 players)', () => {
     const img = calls.find(k => k[0] === 'drawImage')!;
     expect((img[3] as number) + (img[5] as number)).toBeCloseTo(L.figBottom, 0);
   });
+
+  it('the PNG draws the trip chips as text in the trip row, not as bars', async () => {
+    stubCanvas();
+    vi.stubGlobal('Image', class { onload: (() => void) | null = null; width = 400; height = 900; set src(_: string) { queueMicrotask(() => this.onload?.()); } });
+    const d = cardData('Alex', 2, 5, { ...players.Alex, trip: [{ label: profile.tripMusts, value: 14 }, { label: profile.tripInPlan, value: 9 }] });
+    await renderCardBlob(d);
+    const L = cardLayout(d);
+    for (const [label, value] of [[profile.tripMusts, '14'], [profile.tripInPlan, '9']]) {
+      for (const t of [label.toUpperCase(), value]) {
+        const c = calls.find(k => k[0] === 'fillText' && k[1] === t);
+        expect(c, t).toBeDefined();
+        expect(c![3] as number).toBeGreaterThanOrEqual(L.trip!.y);
+        expect(c![3] as number).toBeLessThanOrEqual(L.trip!.y + L.trip!.h);
+      }
+    }
+  });
 });
 
 // Brittany 2026-10-16: "Once we start getting friendship stats we should put the top one the top 2 on the Pokemon cards".
@@ -312,8 +329,9 @@ describe('flip to the poster back', () => {
     const front = back.previousElementSibling as HTMLElement;
     expect(front).toHaveAttribute('aria-hidden', 'false');
     expect(back).toHaveAttribute('aria-hidden', 'true');
-    expect(back.querySelector('img')).toHaveAttribute('src', '/img/poster/homecoming.jpg');
+    expect(back.querySelector('img'), 'the poster is not requested before the flip').toBeNull();
     await user.click(screen.getByRole('button', { name: profile.flip }));
+    expect(back.querySelector('img')).toHaveAttribute('src', '/img/poster/homecoming.jpg');
     expect(front).toHaveAttribute('aria-hidden', 'true');
     expect(back).toHaveAttribute('aria-hidden', 'false');
     expect(screen.getByRole('button', { name: profile.saveBack })).toBeInTheDocument();
@@ -321,6 +339,18 @@ describe('flip to the poster back', () => {
     await user.click(screen.getByRole('button', { name: profile.flipBack }));
     expect(screen.getByRole('button', { name: profile.save })).toBeInTheDocument();
     expect(front).toHaveAttribute('aria-hidden', 'false');
+  });
+
+  it('Save poster shares it under the trip month the organiser set, as the reveal does', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('jpg', { status: 200, headers: { 'content-type': 'image/jpeg' } })));
+    const share = vi.fn(async () => {});
+    Object.assign(navigator, { share, canShare: () => true });
+    const user = userEvent.setup();
+    render(<PosterWhen.Provider value="Jan 2027"><Profile name="Saulie" players={players} onBack={() => {}} /></PosterWhen.Provider>);
+    await user.click(screen.getByRole('button', { name: profile.flip }));
+    await user.click(screen.getByRole('button', { name: profile.saveBack }));
+    await waitFor(() => expect(share).toHaveBeenCalledOnce());
+    expect((share.mock.calls[0] as unknown as [{ title: string }])[0].title).toBe('Sri Lanka, Jan 2027');
   });
 
   it('names the card on the back as the same one as the front', () => {
@@ -350,20 +380,35 @@ describe('trip numbers on the card', () => {
     expect(tripStats(ranked(), ['a', 'c', 'z'])).toEqual([{ label: profile.tripMusts, value: 3 }, { label: profile.tripInPlan, value: 2 }]);
   });
 
-  it('are a row on the connected card once all five have submitted', async () => {
+  it('are count chips on the connected card once all five have submitted, not bars on the 0 to 10 scale', async () => {
     inApp('Alex');
     const card = await screen.findByRole('article', { name: 'Alex trip card' });
-    expect(within(card).getByRole('meter', { name: profile.tripMusts })).toHaveAttribute('aria-valuenow', '2');
+    const chips = within(card).getByRole('group', { name: profile.tripGroup });
+    expect(chips).toHaveTextContent(`${profile.tripMusts}2`);
+    expect(within(card).queryByRole('meter', { name: profile.tripMusts })).toBeNull();
+  });
+
+  it('take one row under the bars, and a count over 10 is never styled as an over-the-scale joke stat', () => {
+    const base = cardData('Alex', 2, 5, players.Alex);
+    const withTrip = cardData('Alex', 2, 5, { ...players.Alex, trip: [{ label: profile.tripMusts, value: 14 }, { label: profile.tripInPlan, value: 9 }] });
+    const a = cardLayout(base), b = cardLayout(withTrip);
+    expect(b.trip).not.toBeNull();
+    expect(b.trip!.h).toBe(a.stats!.h / base.stats.length);
+    expect(b.trip!.y).toBeGreaterThan(b.stats!.y + b.stats!.h - 1);
+    expect(withTrip.stats).toEqual(base.stats);
+    render(<Profile name="Alex" players={players} onBack={() => {}} trip={withTrip.trip} />);
+    expect(document.querySelector('.pf-c-trip .over')).toBeNull();
+    expect(document.querySelector('.pf-c-trip')).toHaveTextContent('14');
   });
 
   it('are absent for a guest and until all five have submitted', async () => {
     inApp('Aunty');
-    expect(within(await screen.findByRole('article', { name: 'Aunty trip card' })).queryByRole('meter', { name: profile.tripMusts })).toBeNull();
+    expect(within(await screen.findByRole('article', { name: 'Aunty trip card' })).queryByRole('group', { name: profile.tripGroup })).toBeNull();
     cleanup();
     const s = submittedState(['x']);
     s.responses.Lazza = { ...s.responses.Lazza!, submitted: false };
     inApp('Alex', s);
-    expect(within(await screen.findByRole('article', { name: 'Alex trip card' })).queryByRole('meter', { name: profile.tripMusts })).toBeNull();
+    expect(within(await screen.findByRole('article', { name: 'Alex trip card' })).queryByRole('group', { name: profile.tripGroup })).toBeNull();
   });
 });
 

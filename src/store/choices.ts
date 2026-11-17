@@ -31,7 +31,7 @@ export function diffResponse(name: Player, prev: Response | undefined, patch: Pa
 }
 
 const TIER_LABEL = { must: 'Must', keen: 'Keen', meh: 'Meh', skip: 'Skip' } as const;
-const PACE_LABEL = ['Pack it in', 'Balanced', 'Slow'];
+export const PACE_LABEL = ['Pack it in', 'Balanced', 'Slow'];
 
 function rankingText(r: Ranking, nameOf: (id: string) => string): string {
   return (Object.keys(TIER_LABEL) as (keyof Ranking)[])
