@@ -33,7 +33,7 @@ describe('item ids', () => {
     const all = adminChecklist(withStay(), 'Alex', plan(['crab', 'sigiriya', 'rafting', 'train']));
     expect(all.length).toBeGreaterThan(0);
     for (const d of all) {
-      for (const text of [d.label, d.hint, d.info ?? '']) {
+      for (const text of [d.label, d.hint]) {
         expect(text.split(/\s+/).filter(Boolean).length, text).toBeLessThanOrEqual(25);
         expect(text).not.toMatch(/\u2014|\p{Extended_Pictographic}/u);
       }
@@ -55,7 +55,6 @@ describe('adminChecklist', () => {
     expect(adminChecklist(base(), 'Alex', plan([])).some(d => d.id === stayItemId('Ella'))).toBe(false);
     const d = adminChecklist(withStay(), 'Alex', plan([])).find(x => x.id === 'stay:Ella');
     expect(d).toMatchObject({ label: 'Stay in Ella', hint: 'Book Hill hut.' });
-    expect(d?.info).toBeUndefined();
   });
 
   it('a lone unpinned stay is short of an option, so there is nothing to book yet', () => {
@@ -152,10 +151,10 @@ describe('claimIsFresh', () => {
 });
 
 describe('no money in what the checklist says', () => {
-  it('over the real catalogue, no label, hint or info mentions a price', () => {
+  it('over the real catalogue, no label or hint mentions a price', () => {
     const ids = (catalogue as unknown as { items: Item[] }).items.filter(i => i.book).map(i => i.id);
     const all = adminChecklist(withStay(), 'Alex', plan(ids));
     expect(all.length).toBe(ids.length + 1);
-    for (const d of all) for (const text of [d.label, d.hint, d.info ?? '']) expect(text).not.toMatch(/£|\bLKR\b|\bUSD\b|\$\d|\brs\.?\s?\d|cost|price/i);
+    for (const d of all) for (const text of [d.label, d.hint]) expect(text).not.toMatch(/£|\bLKR\b|\bUSD\b|\$\d|\brs\.?\s?\d|cost|price/i);
   });
 });

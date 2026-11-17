@@ -4,11 +4,7 @@ import type { AdminEntry, AppState, Area, BookingClaim, Fallen, Item, Plan, Play
 import { outcome, stayCtx } from './stayflow';
 import { instant } from './stays';
 
-export interface AdminDef {
-  id: string; label: string; hint: string;
-  /** Never filled now: the trip carries no money. The field stays so TripAdmin.tsx still compiles. */
-  info?: string;
-}
+export interface AdminDef { id: string; label: string; hint: string }
 export interface AdminDue { id: string; label: string }
 
 const BOOKABLE = (catalogue as unknown as { items: Item[] }).items.filter(i => i.book);

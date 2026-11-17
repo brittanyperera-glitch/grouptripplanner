@@ -20,6 +20,10 @@
 .ta-who li { display: inline-flex; border-radius: 50%; overflow: hidden; }
 .ta-none { font-size: 12.5px; color: var(--muted); }
 .ta-saved { font-size: 12.5px; font-weight: 700; color: var(--teal); }
+.ta-by { font-size: 12.5px; color: var(--muted); }
+.ta-mark { font-size: 12.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--teal-deep); }
+.ta-wait { opacity: .8; }
+.ta-wait .ta-main { padding-bottom: 10px; }
 .ta-more { all: unset; box-sizing: border-box; cursor: pointer; flex: none; min-height: 44px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: var(--r-pill); font: 700 13px/1 var(--font-body); color: var(--teal-deep); text-decoration: underline; }
 .ta-form { display: flex; flex-direction: column; gap: 10px; padding: 6px 0 4px; }
 .ta-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -35,6 +39,22 @@
 .ta-chip[data-status='done'] { background: var(--teal-deep); color: var(--on-teal); }
 .ta-claim, .ta-cal { all: unset; box-sizing: border-box; cursor: pointer; min-height: 44px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: var(--r-pill); font: 700 13px/1 var(--font-body); color: var(--teal-deep); text-decoration: underline; }
 .ta-cal { align-self: flex-start; }
-.ta-owner { all: unset; display: inline-flex; border-radius: 50%; overflow: hidden; }
-button.ta-owner { cursor: pointer; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; overflow: visible; }
+.ta-owner { all: unset; display: inline-flex; align-items: center; gap: 6px; }
+button.ta-owner { cursor: pointer; min-height: 44px; }
 .ta-claim:focus-visible, .ta-cal:focus-visible, button.ta-owner:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }
+/* Spy look: the kit's --s- colours come from the .spy shell this sits inside. */
+.ta-spy { display: flex; flex-direction: column; gap: 10px; }
+.ta-spy .ta-sub { margin: 0; color: var(--s-dim); }
+.ta-spy .ta-count { color: var(--s-dim); font-family: var(--s-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.ta-spy .ta-row { background: var(--s-card); box-shadow: none; border: 1px solid var(--s-line); border-radius: 10px; }
+.ta-spy .ta-label { font-family: var(--s-head); font-size: 18px; text-transform: uppercase; }
+.ta-spy .ta-hint, .ta-spy .ta-none, .ta-spy .ta-by, .ta-spy .ta-priv, .ta-spy .ta-fl { color: var(--s-dim); }
+.ta-spy .ta-box::before { box-shadow: inset 0 0 0 2px var(--s-dim); }
+.ta-spy .ta-box[aria-checked='true']::before { background: var(--s-ok); }
+.ta-spy .ta-box { color: var(--s-bg); }
+.ta-spy .ta-chip { background: var(--s-chip); color: var(--s-dim); }
+.ta-spy .ta-chip[data-status='overdue'] { background: transparent; color: var(--s-warn); }
+.ta-spy .ta-claim { text-decoration: none; }
+.ta-spy .ta-more, .ta-spy .ta-cal, .ta-spy .ta-saved { color: var(--s-dim); }
+.ta-spy .ta-saved { font-family: var(--s-mono); font-size: 11px; }
+.ta-spy .ta-owner { color: var(--s-ink); }
