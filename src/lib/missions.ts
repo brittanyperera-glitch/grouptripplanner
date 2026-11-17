@@ -53,7 +53,7 @@ export function missionFiles(i: MissionInput): MissionFileInfo[] {
   const due = toBook.flatMap(b => (b.bookBy ? [b.bookBy] : [])).sort()[0];
   const landed = PEOPLE.length - missing.flights.length;
   const file = (id: MissionId, title: string, d: number, total: number, status: string, extra: Partial<MissionFileInfo> = {}): MissionFileInfo =>
-    ({ id, title, done: d, total, complete: d >= total, status, ...extra });
+    ({ id, title, done: d, total, complete: total > 0 && d >= total, status, ...extra });
   return [
     file('stays', 'Stays', decided, areas.length, `${decided} of ${areas.length} decided`),
     file('supply', 'Supply runs', done, bookings.length, `${done} of ${bookings.length} secured${unclaimed ? ` · ${unclaimed} unclaimed` : ''}`,
@@ -76,18 +76,25 @@ export function crewReadiness(i: MissionInput): { people: { name: Person; done: 
   return { people, percent: Math.round((100 * sum('done')) / sum('total')) };
 }
 
-// A game-feel choice, not data: missions done to reach Level 2, 3 and 4.
-export const LEVEL_AT = [1, 3, 5] as const;
-export const levelOf = (done: number): number => 1 + LEVEL_AT.filter(t => done >= t).length;
-/** Missions still to do for the next level, or null at the top. */
-export const toNextLevel = (done: number): number | null => { const t = LEVEL_AT.find(x => x > done); return t === undefined ? null : t - done; };
+// A game-feel choice, not data: the share of a person's own tasks done (in percent) that reaches Level 2, 3 and 4.
+export const LEVEL_AT = [34, 67, 100] as const;
+export const levelOf = (done: number, total: number): number => (total > 0 ? 1 + LEVEL_AT.filter(p => done * 100 >= p * total).length : 1);
+/** Tasks still to do for the next level, or null at the top (or with no tasks). Always within the person's own total. */
+export const toNextLevel = (done: number, total: number): number | null => {
+  const p = total > 0 ? LEVEL_AT.find(x => done * 100 < x * total) : undefined;
+  return p === undefined ? null : Math.ceil((p * total) / 100) - done;
+};
 
-/** One most urgent open mission for this person: a booking deadline, then their scout duty, then their flights. */
+/** Dated bookings by deadline, then undated ones (the train first), then the rest; mine before unclaimed at equal rank. */
+const rank = (b: { bookBy: string | null; id: string; owner: Person | null }, me: Person) =>
+  `${b.bookBy ? `0${b.bookBy}` : `1${b.id === 'book:train' ? 0 : 1}`}${b.owner === me ? 0 : 1}`;
+
+/** One most urgent open task for this person: a booking, then their scout duty, then their flights. */
 export function nextMove(me: Person, i: MissionInput): Move | null {
   const due = i.model.bookings
-    .filter(b => bookable(b) && b.bookBy && (b.owner === null || b.owner === me))
-    .sort((a, b) => ((a.bookBy ?? '') < (b.bookBy ?? '') ? -1 : 1))[0];
-  if (due) return { file: 'supply', id: due.id, deadline: due.bookBy ?? undefined, label: `${due.owner ? 'Book' : 'Claim'} ${due.label}` };
+    .filter(b => bookable(b) && (b.owner === null || b.owner === me))
+    .sort((a, b) => (rank(a, me) < rank(b, me) ? -1 : 1))[0];
+  if (due) return { file: 'supply', id: due.id, ...(due.bookBy ? { deadline: due.bookBy } : {}), label: `${due.owner ? 'Book' : 'Claim'} ${due.label}` };
   const dry = stayAreas(i).find(a => a.scout === me && a.duty);
   if (dry) return { file: 'stays', id: dry.area, label: `Find ${dry.what} for ${dry.area}` };
   return i.model.missing.flights.includes(me) ? { file: 'touchdown', label: 'Add your flights' } : null;

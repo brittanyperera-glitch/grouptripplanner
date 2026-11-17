@@ -15,7 +15,7 @@ import type { AppState, Area, DayBooking, Item, Leg, Person, PlaceSuggestion, Pl
 import { groupResult } from './group';
 import { RELEASE } from './release';
 import * as stayflow from './stayflow';
-import { crewReadiness, levelOf, LEVEL_AT, missionFiles, nextMove, spyActive } from './missions';
+import { crewReadiness, levelOf, LEVEL_AT, missionFiles, nextMove, spyActive, toNextLevel } from './missions';
 import type { MissionInput } from './missions';
 
 const group = groupResult(seedState(), (catalogue as unknown as { items: Item[] }).items, legsData as Leg[], [], RELEASE);
@@ -114,14 +114,24 @@ describe('the Book by tag', () => {
 });
 
 describe('levelOf', () => {
-  it('is Level 1 to 4 from named thresholds', () => {
+  it('is Level 1 with nothing done and Level 4 with everything done, whatever the total', () => {
+    for (const total of [1, 2, 3, 7]) { expect(levelOf(0, total)).toBe(1); expect(levelOf(total, total)).toBe(4); }
     expect(LEVEL_AT).toHaveLength(3);
-    expect(levelOf(0)).toBe(1);
-    expect(levelOf(LEVEL_AT[0] - 1)).toBe(1);
-    expect(levelOf(LEVEL_AT[0])).toBe(2);
-    expect(levelOf(LEVEL_AT[1])).toBe(3);
-    expect(levelOf(LEVEL_AT[2])).toBe(4);
-    expect(levelOf(99)).toBe(4);
+  });
+
+  it('never promises a level that cannot be reached', () => {
+    for (let total = 1; total <= 12; total++) for (let done = 0; done <= total; done++) {
+      const more = toNextLevel(done, total);
+      if (more === null) { expect(levelOf(done, total)).toBe(4); continue; }
+      expect(more).toBeGreaterThan(0);
+      expect(done + more).toBeLessThanOrEqual(total);
+      expect(levelOf(done + more, total)).toBeGreaterThan(levelOf(done, total));
+    }
+  });
+
+  it('a person with one task goes straight from Level 1 to Level 4', () => {
+    expect(toNextLevel(0, 1)).toBe(1);
+    expect(levelOf(1, 1)).toBe(4);
   });
 });
 
@@ -156,6 +166,15 @@ describe('nextMove', () => {
     expect(nextMove('Alex', input(pins(AREAS5), model(bookings)))?.id).toBe('theirs');
   });
 
+  it('an open booking with no deadline is a move: dated first, then the train, then the rest, mine before unclaimed', () => {
+    const undated = [booking('rafting'), booking('book:train'), booking('mine', { owner: 'Lazza' })];
+    const at = (b: DayBooking[]) => nextMove('Lazza', input(pins(AREAS5), model(b)))?.id;
+    expect(at(undated)).toBe('book:train');
+    expect(at(undated.filter(b => b.id !== 'book:train'))).toBe('mine');
+    expect(at([...undated, booking('dated', { bookBy: '2026-12-09' })])).toBe('dated');
+    expect(at([booking('wait', { status: 'not-open' }), booking('theirs', { owner: 'Alex' })])).toBeUndefined();
+  });
+
   it('is null for someone with nothing open', () => {
     expect(nextMove('Alex', input(pins(AREAS5), model([booking('x', { owner: 'Lazza', bookBy: '2026-11-25' })])))).toBeNull();
   });
@@ -164,6 +183,15 @@ describe('nextMove', () => {
     expect(nextMove('Lazza', input(pins(AREAS5, { Colombo: 'Lazza' })))).toBeNull();
     vi.spyOn(stayflow, 'outcome').mockImplementation((_c, a) => ({ kind: a === 'Colombo' ? 'short' : 'decided', id: 'x', via: 'pin' }) as unknown as stayflow.Outcome);
     expect(nextMove('Lazza', input(pins(AREAS5, { Colombo: 'Lazza' })))).toMatchObject({ file: 'stays', label: 'Find a 2nd stay for Colombo' });
+  });
+});
+
+describe('an empty file', () => {
+  it('is not complete, so it has no Done stamp and spy mode stays on', () => {
+    const [stays, supply] = missionFiles({ state: pins([]), plan: null, model: model([]) });
+    expect(stays).toMatchObject({ total: 0, complete: false });
+    expect(supply).toMatchObject({ total: 0, complete: false });
+    expect(spyActive(input(pins(AREAS5), model([])))).toBe(true);
   });
 });
 
@@ -199,6 +227,17 @@ const tickAll = async (owner: string) => {
 describe('on the real release', () => {
   beforeEach(() => { localStorage.clear(); });
   afterEach(cleanup);
+
+  it('a booking the catalogue gives no book-by date is still Lazza\'s move, and spy mode is on', async () => {
+    allIn();
+    const ids = (await live()).m.bookings.map(b => b.id);
+    put('tp:tripadmin:Brittany', { name: 'Brittany', items: Object.fromEntries(ids.filter(id => id !== 'book:train').map(id => [id, { done: true, doneAt: '2026-11-20T00:00:00Z' }])), updatedAt: AT });
+    const { m, state } = await live();
+    const i = { state, plan, model: m };
+    expect(m.bookings.find(b => b.id === 'book:train')).toMatchObject({ bookBy: null, status: 'open' });
+    expect(spyActive(i)).toBe(true);
+    expect(nextMove('Lazza', i)).toMatchObject({ file: 'supply', id: 'book:train' });
+  });
 
   it('everyone landed, every stay decided, every booking done: spy mode is over and the crew is 100', async () => {
     allIn(); await tickAll('Alex');

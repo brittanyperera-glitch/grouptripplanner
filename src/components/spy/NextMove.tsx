@@ -6,9 +6,9 @@ import { initials } from './CrewRing';
 import './spy.css';
 
 /** The one place the accent colour goes on HQ: what this person should do next, and how close the next level is. */
-export default function NextMove({ me, move, done, onStart }: { me: Person; move: Move | null; done: number; onStart(m: Move): void }) {
-  const level = levelOf(done), more = toNextLevel(done);
-  const who = `Agent ${me} · Level ${level}${more === null ? '' : ` · ${plural(more, 'mission')} to Level ${level + 1}`}`;
+export default function NextMove({ me, move, done, total, onStart }: { me: Person; move: Move | null; done: number; total: number; onStart(m: Move): void }) {
+  const level = levelOf(done, total), more = toNextLevel(done, total);
+  const who = `Agent ${me} · Level ${level}${more === null ? '' : ` · ${plural(more, 'task')} to Level ${level + 1}`}`;
   return (
     <div className={move ? 'spy-me' : 'spy-me spy-me-idle'}>
       <span className="spy-av">{initials(me)}</span>

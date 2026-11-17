@@ -123,7 +123,7 @@ describe('the kit on real mission data', () => {
   });
 
   it('a complete file wears a stamp', () => {
-    const [, supply] = missionFiles({ ...input, model: { ...input.model, bookings: [] } });
+    const [, supply] = missionFiles({ ...input, model: { ...input.model, bookings: [{ ...input.model.bookings[0], status: 'done' as const }] } });
     render(<MissionFile file={supply} />);
     expect(screen.getByText('Done')).toBeTruthy();
   });
@@ -133,21 +133,21 @@ describe('the kit on real mission data', () => {
     render(<CrewRing percent={r.percent} people={r.people} />);
     expect(screen.getByLabelText(`Crew readiness ${r.percent} percent`)).toBeTruthy();
     expect(screen.getAllByText(/^L[1-4]$/)).toHaveLength(5);
-    expect(screen.getAllByText(`L${levelOf(r.people[0].done)}`).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(`L${levelOf(r.people[0].done, r.people[0].total)}`).length).toBeGreaterThan(0);
   });
 
   it('the next move names the task, the agent and the way to the next level, and starts on tap', () => {
     const start = vi.fn();
     const move = nextMove('Antek', input)!;
-    render(<NextMove me="Antek" move={move} done={1} onStart={start} />);
+    render(<NextMove me="Antek" move={move} done={1} total={5} onStart={start} />);
     expect(screen.getByText('Add your flights')).toBeTruthy();
-    expect(screen.getByText('Agent Antek · Level 2 · 2 missions to Level 3')).toBeTruthy();
+    expect(screen.getByText('Agent Antek · Level 1 · 1 task to Level 2')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Start mission' }));
     expect(start).toHaveBeenCalledWith(move);
   });
 
   it('with nothing open there is a calm line and no button', () => {
-    render(<NextMove me="Alex" move={null} done={9} onStart={() => {}} />);
+    render(<NextMove me="Alex" move={null} done={9} total={9} onStart={() => {}} />);
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.getByText('Agent Alex · Level 4')).toBeTruthy();
   });

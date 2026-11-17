@@ -19,7 +19,7 @@ export default function CrewRing({ percent, people }: { percent: number; people:
           <div className="spy-agent" key={p.name}>
             <span className="spy-av" title={p.name}>{initials(p.name)}</span>
             <div className="spy-bar"><span style={{ width: `${(100 * p.done) / p.total}%` }} /></div>
-            <span className="spy-lvl">{`L${levelOf(p.done)}`}</span>
+            <span className="spy-lvl">{`L${levelOf(p.done, p.total)}`}</span>
           </div>
         ))}
       </div>
