@@ -9,7 +9,7 @@ export const MIN_ROUND_TRIP = 0.25;
 
 export const hrs = (h: number) => h.toFixed(1);
 export const hrsShort = (h: number) => (Number.isInteger(h) ? String(h) : hrs(h));
-export { andList } from '../lib/stayflow';
+export { andList } from '../lib/text';
 export const ICON = { drive: IconCar, train: IconTrain, free: IconSun, activity: IconPin } as const;
 
 export function entryText(e: DayEntry): string {

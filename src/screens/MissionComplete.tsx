@@ -15,7 +15,8 @@ export const SEEN_KEY = 'tp:mission-complete-seen';
 export const CODE = 'Operation Homecoming';
 const COPY = { title: 'Mission complete', go: 'Go to the trip' };
 
-const seen = () => { try { return localStorage.getItem(SEEN_KEY) === '1'; } catch { return false; } };
+// Blocked storage counts as seen, as in HowTo.tsx and MyTrip.tsx: nothing could remember it, so the finale would replay on every mount.
+const seen = () => { try { return localStorage.getItem(SEEN_KEY) === '1'; } catch { return true; } };
 const markSeen = () => { try { localStorage.setItem(SEEN_KEY, '1'); } catch { /* storage unavailable: it may show again */ } };
 
 /** The finale block: the stamp and the crew count. The finale screen adds its button; the HQ replay adds nothing. */

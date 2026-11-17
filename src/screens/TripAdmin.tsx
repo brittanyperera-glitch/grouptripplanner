@@ -6,7 +6,8 @@ import Stamp from '../components/spy/Stamp';
 import { spyActive } from '../lib/missions';
 import { routePlan } from '../lib/openItems';
 import { releaseFor } from '../lib/release';
-import { outcome, stayCtx } from '../lib/stayflow';
+import { isAdmin } from '../lib/override';
+import { outcome, STAY_COPY, stayCtx } from '../lib/stayflow';
 import { adminChecklist, adminOutstanding, doneBy, FIELD_MAX, stayItemId, toggleDone, visibleEntry, withDetails } from '../lib/tripadmin';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
@@ -31,7 +32,7 @@ const COPY = {
   loading: 'Loading',
   claim: "I'll book this",
   calendar: 'Add to calendar',
-  replacing: 'Brittany is finding a replacement.',
+  stillWaiting: 'Waiting on replacement stays',
 };
 
 /** Earliest date the booking needs action; undated bookings sort last. */
@@ -86,7 +87,7 @@ export function SupplyBoard(p: SupplyProps) {
     const owner = r.booking?.owner ?? null;
     if (r.done.length > 0) return <>{mark('Secured')}{' '}<span className="ta-by">by {r.done.join(', ')}</span><Who people={r.done} id={r.id} /></>;
     if (owner === null) return <><span className="ta-none">{COPY.nobody}</span>{me && claimable(r) && <button type="button" className={btn(r.id)} onClick={() => p.onClaim(r.id, me)}>{COPY.claim}</button>}</>;
-    const who = <><Avatar name={owner} size={22} />{mark(owner, true)}{' '}<span className="ta-by">{owner === me ? 'you are booking, tap to undo' : 'is booking'}</span></>;
+    const who = <><Avatar name={owner} size={22} />{mark(owner, true)}{' '}<span className="ta-by">{owner === me ? 'is booking, tap to undo' : 'is booking'}</span></>;
     return owner === me
       ? <button type="button" className="ta-owner" title={owner} aria-label={`Unclaim: ${r.label}`} onClick={() => p.onClaim(r.id, null)}>{who}</button>
       : <span className="ta-owner" title={owner}>{who}</span>;
@@ -133,7 +134,7 @@ export function SupplyBoard(p: SupplyProps) {
     <>
       {p.hasCalendar && <button type="button" className="ta-cal" onClick={p.onCalendar}>{COPY.calendar}</button>}
       {p.pending && <p className="empty" role="status">{COPY.loading}</p>}
-      {!p.pending && p.rows.length > 0 && <p className="ta-count" role="status">{p.left === 0 ? 'All done' : `${p.left} still to do`}</p>}
+      {!p.pending && p.rows.length > 0 && <p className="ta-count" role="status">{p.left > 0 ? `${p.left} still to do` : p.rows.some(r => r.waiting) ? COPY.stillWaiting : 'All done'}</p>}
       {p.pending ? null : p.rows.length === 0 ? <p className="empty">{COPY.groupEmpty}</p> : <ul className="ta-list">{p.rows.map(row)}</ul>}
     </>
   );
@@ -185,7 +186,7 @@ export default function TripAdmin({ onBack, today }: { onBack: () => void; today
       // The same fallen-freshness rule as doneBy: a tick from before the stay fell is not mine any more.
       mine: doneBy(state, d.id).includes(me), note: entry(d.id)?.note ?? '', saved: lastId === d.id ? save.message : '',
     })),
-    ...replacing.map(a => ({ id: stayItemId(a), label: `Stay in ${a}`, hint: '', waiting: COPY.replacing, done: [], mine: false, note: '', saved: '' })),
+    ...replacing.map(a => ({ id: stayItemId(a), label: `Stay in ${a}`, hint: '', waiting: STAY_COPY.replacing(isAdmin(me), a), done: [], mine: false, note: '', saved: '' })),
   ];
   return (
     <SupplyBoard

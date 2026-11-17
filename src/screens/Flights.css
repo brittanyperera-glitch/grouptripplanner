@@ -25,3 +25,6 @@
 .fx-spy .fx-flag { color: var(--s-warn); }
 .fx-spy .fx-saved { color: var(--s-ok); }
 .fx-spy .fx-bad { color: var(--s-warn); }
+.fx-spy > p { color: var(--s-dim); }
+.fx-spy .fx-in { background: var(--s-bg); color: var(--s-ink); box-shadow: inset 0 0 0 1.5px var(--s-dim); color-scheme: dark; }
+.fx-spy .fx-in:focus-visible { outline-color: var(--s-accent); }

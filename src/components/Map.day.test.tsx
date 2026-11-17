@@ -81,3 +81,12 @@ describe('RouteMap with a day\'s legs', () => {
     expect(container.querySelector('.on')).toBeNull();
   });
 });
+
+describe('RouteMap label', () => {
+  it('names the highlighted day only in day mode', () => {
+    const { container, rerender } = render(<RouteMap route={ROUTE} legs={[1]} dayN={4} />);
+    expect(container.querySelector('svg')).toHaveAttribute('aria-label', expect.stringMatching(/^Route: .*\. Day 4 highlighted$/));
+    rerender(<RouteMap route={ROUTE} dayN={4} />);
+    expect(container.querySelector('svg')?.getAttribute('aria-label')).not.toMatch(/highlighted/);
+  });
+});

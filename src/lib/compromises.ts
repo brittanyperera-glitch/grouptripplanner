@@ -1,6 +1,7 @@
 import { AREA_HUB, PEOPLE } from '../types';
 import type { AppState, GroupResult, Hub, Item } from '../types';
 import { tierOf } from './ranking';
+import { andList } from './text';
 import { latestVotes, NORTH_AREAS, REGION_FORK } from './votes';
 
 export const MAX_CARDS = 5;
@@ -75,7 +76,7 @@ export function compromises(group: GroupResult, state: Pick<AppState, 'responses
     .filter(x => x.who.length > 0)
     .sort((x, y) => y.who.length - x.who.length || (x.id < y.id ? -1 : 1));
   for (const { id, who } of skipped) {
-    const names = who.length === 1 ? who[0] : `${who.slice(0, -1).join(', ')} and ${who[who.length - 1]}`;
+    const names = andList(who);
     cards.push({
       kind: 'skipped',
       text: fit(`${name(id)} stays though ${names} skipped it`, `${name(id)} stays, ${names} skipped it`, `${name(id)} stays, ${who.length} skipped it`),

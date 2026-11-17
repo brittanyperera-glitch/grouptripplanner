@@ -14,7 +14,7 @@ const goodTime = (s: string | null | undefined): s is string => !!s && /^\d{4}-\
 const people = (t: Travellers) => Object.values(t).filter((x): x is Traveller => !!x);
 
 /** Dark means a leg is missing: no arrival or no departure. Missions and the Touchdown board use this one test. */
-export const flightsDark = (t: Traveller | undefined) => !t?.arriveLocal || !t?.departLocal;
+export const flightsDark = (t: Traveller | undefined) => !goodTime(t?.arriveLocal) || !goodTime(t?.departLocal);
 
 // With the last day, a traveller whose leave-by falls before that day starts is flagged too (03:15 flights). No planner day-start constant exists to test against sooner.
 export function arrivalFlags(travellers: Travellers, rawStart: string | null, days: number | null, lastDay?: Day): ArrivalFlag[] {
@@ -32,8 +32,9 @@ export function arrivalFlags(travellers: Travellers, rawStart: string | null, da
   });
 }
 
-export function lastArrival(travellers: Travellers): string | null {
-  const all = people(travellers).flatMap(t => (goodTime(t.arriveLocal) ? [t.arriveLocal] : []));
+/** The latest landing, or with `onDate` the latest among those landing that day. */
+export function lastArrival(travellers: Travellers, onDate?: string): string | null {
+  const all = people(travellers).flatMap(t => (goodTime(t.arriveLocal) && (!onDate || dateOf(t.arriveLocal) === onDate) ? [t.arriveLocal] : []));
   return all.length ? all.reduce((x, y) => (y > x ? y : x)) : null;
 }
 

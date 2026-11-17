@@ -104,6 +104,18 @@ describe('TripDay booking wording', () => {
   });
 });
 
+describe('TripDay print facts carry no money', () => {
+  it('keeps the best time and drops the cost of a place', () => {
+    const pettah = ITEMS.find(i => i.id === 'pettah')!;
+    expect(pettah.fee).toBeTruthy();
+    const p: Plan = { ...plan, days: [{ n: 1, area: 'Colombo', entries: [act(pettah)], spare: 0, rainSlack: false }] };
+    const v = dayView({ plan: p, start: '2026-12-09', blocks: [], stays: {}, bookingsByDay: {}, travellers: {}, custom: [], paceHours: 9 }, 1);
+    render(<TripDay view={v} items={ITEMS} compact />);
+    expect(screen.getByText(`Best time: ${pettah.when}`)).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/Cost:|spend what you like/);
+  });
+});
+
 describe('TripDay carries what DayRows carries', () => {
   const texts = (root: HTMLElement, sel: string) => [...root.querySelectorAll(sel)].map(e => e.textContent);
   const rows = (n: number) => within(screen.getByRole('list', { name: 'Days' })).getAllByRole('listitem')[n - 1];

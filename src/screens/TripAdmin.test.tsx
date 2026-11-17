@@ -4,9 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProvider } from '../state';
 import { LocalStore } from '../store/local';
 import { emptyRanking, PEOPLE } from '../types';
-import type { GroupResult, Plan, Player, TripAdminRow } from '../types';
+import type { DayBooking, GroupResult, Person, Plan, Player, TripAdminRow } from '../types';
 import catalogue from '../data/catalogue.json';
-import TripAdmin, { TripAdminLink } from './TripAdmin';
+import { STAY_COPY } from '../lib/stayflow';
+import TripAdmin, { SupplyBoard, TripAdminLink } from './TripAdmin';
+import type { SupplyRow } from './TripAdmin';
 
 const grp = vi.hoisted(() => ({ current: null as unknown, loading: false }));
 vi.mock('../workers/usePlan', async orig => ({ ...(await orig<typeof import('../workers/usePlan')>()), useGroupResult: () => ({ data: grp.current, loading: grp.loading }) }));
@@ -325,6 +327,17 @@ describe('Supply runs', () => {
     expect(screen.getByRole('status')).toHaveTextContent('3 still to do');
   });
 
+  it('A12: the replacing row says it as the Stays screen does, and Brittany is told to pin', async () => {
+    class FallenStore extends LocalStore {
+      async load() { const s = await super.load(); return { ...s, stays: { ...s.stays!, admin: { ...s.stays!.admin, fallen: [{ id: 'gone', area: 'Ella' as const, at: '2026-11-02T10:00' }] } } }; }
+    }
+    await mountAs('Alex', new FallenStore());
+    expect(screen.getByText('Stay in Ella').closest('li')).toHaveTextContent('Brittany is finding a replacement for Ella');
+    cleanup();
+    await mountAs('Brittany', new FallenStore());
+    expect(screen.getByText('Stay in Ella').closest('li')).toHaveTextContent('Pin a replacement for Ella');
+  });
+
   it('B5: a tick and a claim say Saved beside their own control; a refused write says Not saved yet', async () => {
     const { user } = await mountAs('Alex');
     await user.click(screen.getByRole('checkbox', { name: 'Sigiriya Rock' }));
@@ -350,5 +363,53 @@ describe('Supply runs', () => {
     const off = await mountAs('Alex');
     expect(off.view.container.querySelector('.spy')).toBeNull();
     expect(screen.getByRole('status')).toHaveTextContent('All done');
+  });
+});
+
+describe('Supply runs wording', () => {
+  const book: DayBooking = { id: 'book:train', label: 'Ella train', status: 'open', opensOn: null, bookBy: null, owner: null };
+  const row = (o: Partial<SupplyRow>): SupplyRow => ({ id: 'book:train', label: 'Ella train', hint: '', done: [], mine: false, note: '', saved: '', ...o });
+  const board = (rows: SupplyRow[], left: number, me: Person | null = 'Alex', spy = false) =>
+    render(<SupplyBoard spy={spy} pending={false} rows={rows} left={left} me={me} hasCalendar={false} onBack={vi.fn()} onCalendar={vi.fn()} onTick={vi.fn()} onClaim={vi.fn()} onNote={vi.fn()} />);
+
+  it('never says All done above a stay that is still being replaced', () => {
+    board([row({ done: ['Brittany'] }), row({ id: 'stay:Ella', label: 'Stay in Ella', waiting: STAY_COPY.replacing(false, 'Ella') })], 0);
+    expect(screen.queryByText('All done')).toBeNull();
+    expect(screen.getByRole('status')).toHaveTextContent('Waiting on replacement stays');
+    cleanup();
+    board([row({ done: ['Brittany'] })], 0);
+    expect(screen.getByRole('status')).toHaveTextContent('All done');
+  });
+
+  it('a stay being replaced reads as the Stays screen says it', () => {
+    board([row({ id: 'stay:Ella', label: 'Stay in Ella', waiting: STAY_COPY.replacing(false, 'Ella') })], 0);
+    expect(screen.getByText('Brittany is finding a replacement for Ella')).toBeInTheDocument();
+  });
+
+  it("the owner's own claim names them once, as someone is named: never a name and \"you\"", () => {
+    for (const spy of [true, false]) {
+      board([row({ booking: { ...book, owner: 'Alex' } })], 1, 'Alex', spy);
+      const mine = screen.getByRole('button', { name: 'Unclaim: Ella train' });
+      expect(mine).toHaveTextContent(/Alex is booking, tap to undo/);
+      expect(mine.textContent).not.toMatch(/\byou\b/i);
+      cleanup();
+    }
+    board([row({ booking: { ...book, owner: 'Lazza' } })], 1, 'Alex');
+    expect(screen.getByTitle('Lazza')).toHaveTextContent(/Lazza.*is booking/i);
+  });
+
+  it('an open booking is "Open" on the card, as in the print lists', () => {
+    board([row({ booking: { ...book, status: 'open' } })], 1);
+    expect(screen.getByText('Open')).toBeInTheDocument();
+    expect(screen.queryByText('Open now')).toBeNull();
+  });
+});
+
+describe('the one wording of a stay that fell through', () => {
+  it('asks and confirms in "fallen through", and the verb is the button', () => {
+    expect(STAY_COPY.fall.ask('Alex', 'Ella')).toMatch(/^Mark it as fallen through\? This clears Alex's claim/);
+    expect(STAY_COPY.fall.ask(null, 'Ella')).toMatch(/^Mark it as fallen through\?/);
+    expect(STAY_COPY.fall.done('House')).toBe('House marked as fallen through.');
+    expect(STAY_COPY.fall.yes).toBe('Yes, it fell through');
   });
 });

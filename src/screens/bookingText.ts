@@ -14,7 +14,7 @@ export function bookingParts(b: DayBooking): { status: string; owner: string | n
 
 /** The tag on a Supply runs card: the same words as the print lists, except an open booking says what to do by when. */
 export function deadlineTag(b: DayBooking): string {
-  return b.status === 'open' ? (b.bookBy ? `Book by ${dayMonth(b.bookBy)}` : 'Open now') : bookingParts(b).status;
+  return b.status === 'open' ? (b.bookBy ? `Book by ${dayMonth(b.bookBy)}` : bookingParts(b).status) : bookingParts(b).status;
 }
 
 /** 'Open · Alex booking', 'Done · Alex', 'Opens 8 Nov', 'Overdue'. */

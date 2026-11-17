@@ -42,8 +42,7 @@ function useColomboToday(on: boolean): string {
 type Live = Pick<ReturnType<typeof useApp>, 'state' | 'me' | 'items'>;
 
 /**
- * The one place app state becomes dated, stay-aware day views. Only the print document reads it so far; Trip view,
- * Today, Organiser and Trip admin still build their own days. `today` is for tests.
+ * The one place app state becomes dated, stay-aware day views; every screen that shows trip days reads it. `today` is for tests.
  */
 export function useTripModel(group: GroupResult, today?: string): TripModel {
   const { state, me, items } = useApp();

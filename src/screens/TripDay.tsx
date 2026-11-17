@@ -67,9 +67,7 @@ function Print({ view, items = [], legs = [], quests = [], tips = [], skippedBy,
             <li key={i} className="it-act">
               <span className="it-name">{e.label}</span>{' '}
               <span className="it-dur">{hm(e.onSite ?? e.hours)}</span>
-              {item && (item.when || item.fee) && (
-                <span className="it-sub">{[item.when && `Best time: ${item.when}`, item.fee && `Cost: ${item.fee}`].filter(Boolean).join('. ')}</span>
-              )}
+              {item?.when && <span className="it-sub">Best time: {item.when}</span>}
               {item?.book && !listed.has(`book:${item.id}`) && <span className="it-sub"><b>Book:</b> {item.book}</span>}
               {item?.warn && <span className="it-sub"><b>Heads up:</b> {item.warn}</span>}
               {item?.britt && <span className="it-sub"><b>Britt says:</b> {item.britt}</span>}
@@ -90,7 +88,7 @@ function Print({ view, items = [], legs = [], quests = [], tips = [], skippedBy,
   );
 }
 
-/** One day from the trip model. The print layout is live; the photo-strip card is not rendered by any screen yet (DayRows still draws Trip view). */
+/** One day from the trip model. The print layout is the Itinerary's; the photo-strip card is Trip view's and Today's. */
 export default function TripDay(props: TripDayProps) {
   if (props.compact) return <Print {...props} />;
   const { view, items = [], legs = [], quests = [], tips = [], skippedBy, onPlace, onStay, note, rainSlack } = props;
