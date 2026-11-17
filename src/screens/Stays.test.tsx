@@ -541,4 +541,16 @@ describe('a stay that fell through, and what comes after', () => {
     await user.click(within(kandy).getByRole('button', { name: 'Suggest a stay' }));
     expect(within(screen.getByRole('dialog')).getByLabelText('Destination')).toHaveValue('Kandy and Knuckles');
   });
+
+  it('when the only stay falls through, Brittany can add a replacement from the row; friends cannot', async () => {
+    seedAll({ locked: true }); seedPlaces([place('a1', { title: 'Hill hut' })]);
+    localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [], scouts: {}, fallen: [{ id: 'a1', area: 'Ella', at: FALL }] }));
+    const user = await mount('Brittany');
+    const ella = row('Ella, 1 night, 1 stay').closest('li') as HTMLElement;
+    await user.click(within(ella).getByRole('button', { name: 'Suggest a stay' }));
+    expect(within(screen.getByRole('dialog')).getByLabelText('Destination')).toHaveValue('Ella');
+    cleanup();
+    await mount('Alex');
+    expect(within(row('Ella, 1 night, 1 stay').closest('li') as HTMLElement).queryByRole('button', { name: 'Suggest a stay' })).toBeNull();
+  });
 });

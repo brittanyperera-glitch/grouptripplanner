@@ -4,7 +4,7 @@ import Avatar from '../components/Avatar';
 import { useOpenAdmin } from '../components/AdminNav';
 import BigState from '../components/BigState';
 import { IconCheck, IconLeft } from '../components/Icons';
-import { canCloseRanking } from '../lib/override';
+import { canCloseRanking, isAdmin } from '../lib/override';
 import { routePlan } from '../lib/openItems';
 import { releaseFor } from '../lib/release';
 import { nightsNote, outcome, rankedBy, scoutOf, STAY_COPY, STEPS, stayCtx, stayStatus } from '../lib/stayflow';
@@ -189,7 +189,8 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
                   <span className="st-row-res">{titleOf(o.id) ?? ''}{o.via === 'pin' && <span className="stamp-label red">{C.vote.pinned}</span>}</span>
                 )}
               </button>
-              {o?.kind === 'empty' && <button type="button" className="st-ghost" onClick={() => setSheet({ area })}>{SUGGEST}</button>}
+              {/* After a fall the board is locked, so this row is Brittany's only way to add the replacement she pins. */}
+              {(o?.kind === 'empty' || (o?.kind === 'replacing' && isAdmin(me))) && <button type="button" className="st-ghost" onClick={() => setSheet({ area })}>{SUGGEST}</button>}
             </li>
           );
         })}
