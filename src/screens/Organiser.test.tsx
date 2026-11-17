@@ -1,11 +1,21 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import fs from 'node:fs';
+import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import releaseJson from '../content/release.json';
-import { AppProvider } from '../state';
+import { DAY_MONTH } from '../lib/dates';
+import { missionFiles, spyActive } from '../lib/missions';
+import { releaseFor } from '../lib/release';
+import { effectiveRelease, releaseState } from '../lib/tripPlan';
+import { AppProvider, useApp } from '../state';
 import { LocalStore } from '../store/local';
-import type { Player, ReleasePlan, TripSettings } from '../types';
+import { PEOPLE } from '../types';
+import type { GroupResult, Player, ReleasePlan, TripSettings } from '../types';
+import { useGroupResult } from '../workers/usePlan';
 import Organiser from './Organiser';
+import { SAVE_COPY } from './saveStatus';
+import { useTripModel } from './useTripModel';
 
 // The real planner, catalogue and store run here: only the store's write is watched, so the test sees exactly what the app would send the server.
 class Spy extends LocalStore {
@@ -293,5 +303,133 @@ describe('Organiser honest saves and kept drafts', () => {
     await user.click(screen.getByRole('button', { name: /^Remove move of Galle Face/ }));
     expect(screen.queryByRole('option', { name: /no longer exists/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Remove move of/ })).toBeNull();
+  });
+});
+
+// The same inputs the panel builds, read back from the real app state so the screen is compared with missionFiles itself.
+function Probe() {
+  const { state, me, items, legs } = useApp();
+  const base = effectiveRelease(releaseState(state.tripSettings), releaseFor(me), null);
+  const { data } = useGroupResult(state, items, legs, base);
+  const model = useTripModel({ ...data, final: data?.final ?? null } as GroupResult);
+  const input = { state, plan: data?.final ?? null, model };
+  return <output data-testid="probe">{JSON.stringify({ files: missionFiles(input), bookings: model.bookings, active: spyActive(input) })}</output>;
+}
+type Probed = { files: ReturnType<typeof missionFiles>; bookings: { id: string; opensOn: string | null; bookBy: string | null; label: string }[]; active: boolean };
+const probe = async () => JSON.parse((await screen.findByTestId('probe')).textContent ?? '{}') as Probed;
+const AT = '2026-11-02T00:00:00Z';
+const AREAS5 = ['Cultural Triangle', 'Kandy and Knuckles', 'Hill country', 'South coast', 'Colombo'];
+const put = (k: string, v: unknown) => localStorage.setItem(k, JSON.stringify(v));
+const landed = (except: string[]) => put('tp:travellers', Object.fromEntries(PEOPLE.filter(n => !except.includes(n)).map(name => [name, { name, arriveLocal: '2026-12-08T09:00', arriveFlight: 'UL 1', departLocal: '2026-12-16T20:00', departFlight: 'UL 2', updatedAt: AT }])));
+const mountProbe = async (over: Partial<TripSettings> = {}) => {
+  localStorage.setItem('tp:me', 'Brittany');
+  put('tp:settings', settings(over));
+  localStorage.setItem('tp-admin-key', 'k');
+  const user = userEvent.setup();
+  render(<AppProvider store={new Spy()}><Organiser /><Probe /></AppProvider>);
+  return { user };
+};
+
+describe('Organiser as Command', () => {
+  // B1: a flex-basis on a child of a column container becomes a height there.
+  it('no rule sets a flex-basis on a child of a column flex container', () => {
+    const css = fs.readFileSync(path.resolve(process.cwd(), 'src/screens/Organiser.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const rules = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].map(m => ({ sel: m[1].trim(), body: m[2] }));
+    const rows = new Set(rules.filter(r => /^\.[\w-]+$/.test(r.sel) && /display:\s*flex/.test(r.body) && !/flex-direction:\s*column/.test(r.body)).map(r => r.sel));
+    const withBasis = rules.filter(r => /(?:^|[;\s])flex:\s*[^\s;]+\s+[^\s;]+\s+(?!auto\b)[^\s;]+|flex-basis:/.test(r.body));
+    expect(withBasis.length).toBeGreaterThan(0);
+    for (const r of withBasis) for (const sel of r.sel.split(',').map(x => x.trim())) expect(sel.includes('>') && rows.has(sel.split('>')[0].trim()), sel).toBe(true);
+  });
+
+  // B2
+  it('shows no raw YYYY-MM-DD in the headline, the log or the booking dates', async () => {
+    const { user } = await mountProbe({ startDate: '2026-12-08', overrides: [{ at: '2026-11-01T10:00:00.000Z', what: 'Start date set to 2026-12-08' }] });
+    await screen.findByRole('button', { name: /^Route/ });
+    for (const h of screen.getAllByRole('button', { expanded: false })) await user.click(h);
+    expect(screen.getByRole('button', { name: /^Start date/ })).toHaveTextContent('Tue 8 Dec');
+    expect(screen.getByText(/Start date set to 8 Dec/)).toBeInTheDocument();
+    expect(document.querySelector('.og')!.textContent).not.toMatch(/\d{4}-\d{2}-\d{2}/);
+  });
+
+  // Hard case 1
+  it('Missing intel counts bookings, stays and flights the way missionFiles does', async () => {
+    landed(['Antek', 'Saulie']);
+    const { user } = await mountProbe({ startDate: '2026-12-08' });
+    const { files } = await probe();
+    const open = (id: string) => { const f = files.find(x => x.id === id)!; return f.total - f.done; };
+    expect(open('touchdown')).toBe(2);
+    expect(open('supply')).toBeGreaterThan(0);
+    await user.click(await screen.findByRole('button', { name: /^Missing intel/ }));
+    const intel = within(screen.getByRole('list', { name: 'Missing intel' }));
+    expect(intel.getByText(/^Bookings/).closest('li')).toHaveTextContent(`Bookings: ${open('supply')} to secure`);
+    expect(intel.getByText(/^Stays/).closest('li')).toHaveTextContent(`Stays: ${open('stays')} to decide`);
+    expect(intel.getByText(/^Flights/).closest('li')).toHaveTextContent('Flights: 2 to add, Antek and Saulie');
+    // A8: the Bookings headline is that same count, not a second one.
+    expect(screen.getByRole('button', { name: /^Bookings/ })).toHaveTextContent(`${open('supply')} to secure`);
+  });
+
+  // A8
+  it('a booking row shows the dates in use and prefills them, and Save dates waits for a change', async () => {
+    const { user } = await mountProbe({ startDate: '2026-12-08' });
+    const b = (await probe()).bookings.find(x => x.bookBy)!;
+    expect(b).toBeDefined();
+    await user.click(await screen.findByRole('button', { name: /^Bookings/ }));
+    const row = (await screen.findByLabelText(`Owner of ${b.label}`)).closest('li')!;
+    expect(row).toHaveTextContent(`Book by ${DAY_MONTH.format(new Date(`${b.bookBy}T00:00:00Z`))}`);
+    expect(within(row).getByLabelText('Book by')).toHaveValue(b.bookBy);
+    expect(within(row).getByRole('button', { name: 'Save dates' })).toBeDisabled();
+  });
+
+  // Hard case 3
+  it('a route save that resolves false says Not saved yet beside Save route, then Saved once the queue lands it', async () => {
+    let fail = true;
+    class Flaky extends Spy { saveTripSettings(p: Parameters<LocalStore['saveTripSettings']>[0]) { return fail ? Promise.reject(new Error('offline')) : super.saveTripSettings(p); } }
+    localStorage.setItem('tp:me', 'Brittany');
+    put('tp:settings', settings());
+    localStorage.setItem('tp-admin-key', 'k');
+    const user = userEvent.setup();
+    render(<AppProvider store={new Flaky()}><Organiser /></AppProvider>);
+    await open(user, /^Route/);
+    await user.selectOptions(await screen.findByLabelText('Days'), '12');
+    const save = screen.getByRole('button', { name: 'Save route' });
+    await user.click(save);
+    const beside = within(save.parentElement!);
+    await waitFor(() => expect(beside.getByRole('status')).toHaveTextContent(SAVE_COPY.unsaved));
+    fail = false;
+    window.dispatchEvent(new Event('online'));
+    await waitFor(() => expect(beside.getByRole('status')).toHaveTextContent(SAVE_COPY.saved));
+  });
+
+  it('a refused save never says it will retry, not even after the password is entered', async () => {
+    localStorage.setItem('tp-local-admin-key', 'secret');
+    const { user } = await mount('Brittany', {}, false);
+    localStorage.setItem('tp-admin-key', 'stale');
+    await open(user, /^Start date/);
+    await user.type(await screen.findByLabelText('Start date'), '2026-12-01');
+    await user.click(screen.getByRole('button', { name: 'Save date' }));
+    const box = await screen.findByLabelText('Organiser password');
+    expect(document.querySelector('.og')!.textContent).not.toMatch(/will retry/);
+    await user.type(box, 'secret');
+    await user.click(screen.getByRole('button', { name: 'Unlock' }));
+    await waitFor(() => expect(screen.queryByLabelText('Organiser password')).toBeNull());
+    expect(document.querySelector('.og')!.textContent).not.toMatch(/will retry/);
+  });
+
+  it('wears the spy look while a mission file is open and the normal look once all are done', async () => {
+    await mountProbe({ startDate: '2026-12-08' });
+    expect((await probe()).active).toBe(true);
+    expect(document.querySelector('.spy')).not.toBeNull();
+    cleanup();
+    // Everything done: every stay pinned (which adds their bookings), everyone landed, every booking ticked.
+    put('tp:placesug', AREAS5.map(area => ({ id: `s-${area}`, name: 'Alex', area, kind: 'stay', title: `House ${area}`, status: 'live', createdAt: AT })));
+    put('tp:staysadmin', { pins: AREAS5.map(area => ({ area, suggestionId: `s-${area}`, at: AT })), scouts: {}, closed: [] });
+    landed([]);
+    await mountProbe({ startDate: '2026-12-08' });
+    const ids = (await probe()).bookings.map(b => b.id);
+    cleanup();
+    put('tp:tripadmin:Brittany', { name: 'Brittany', items: Object.fromEntries(ids.map(id => [id, { done: true, doneAt: '2026-11-20T00:00:00Z' }])), updatedAt: AT });
+    await mountProbe({ startDate: '2026-12-08' });
+    await waitFor(async () => expect((await probe()).active).toBe(false));
+    expect(document.querySelector('.spy')).toBeNull();
   });
 });
