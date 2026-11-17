@@ -1,0 +1,60 @@
+/* Spy mode: Night ops, calmer (the approved V2 look). Every rule hangs off .spy and every class starts spy-, so nothing leaks to the app and src/css-collisions.test.ts stays clean. */
+.spy {
+  --s-bg: #0d1417; --s-card: #151f23; --s-ink: #e4ebe8; --s-dim: #8b9b98; --s-accent: #57d6bf; --s-ok: #57d6bf; --s-warn: #f0b35a;
+  --s-line: rgba(228, 235, 232, .10); --s-chip: rgba(228, 235, 232, .07);
+  --s-head: var(--font-head, "Barlow Condensed", "Arial Narrow", system-ui, sans-serif);
+  --s-mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  min-height: 100dvh; background: var(--s-bg); color: var(--s-ink); font-size: 13px; line-height: 1.5;
+}
+.spy .spy-body { display: flex; flex-direction: column; gap: 12px; padding: 12px 14px 18px; }
+.spy .spy-code { font-family: var(--s-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--s-dim); }
+.spy .spy-head h1 { margin: 0; font-family: var(--s-head); font-size: 28px; font-weight: 800; line-height: 1; text-transform: uppercase; }
+.spy .spy-back { all: unset; cursor: pointer; align-self: flex-start; font-family: var(--s-mono); font-size: 11px; color: var(--s-dim); }
+.spy .spy-replay { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 14px; background: var(--s-accent); color: var(--s-bg); font-family: var(--s-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; }
+.spy .spy-replay button { border: 1px solid currentColor; border-radius: 6px; background: transparent; padding: 1px 8px; font-family: var(--s-mono); font-size: 10.5px; color: inherit; }
+.spy button:focus-visible { outline: 2px solid var(--s-accent); outline-offset: 2px; }
+
+.spy .spy-cd { display: grid; gap: 2px; padding: 12px; border: 1px solid var(--s-line); border-radius: 10px; background: var(--s-card); }
+.spy .spy-cd-row { display: flex; justify-content: space-between; gap: 8px; }
+.spy .spy-cd-num { font-family: var(--s-mono); font-size: 22px; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+
+.spy .spy-ring-wrap { display: grid; grid-template-columns: 112px 1fr; gap: 12px; align-items: center; }
+.spy .spy-ring { width: 112px; height: 112px; }
+.spy .spy-ring text { font-family: var(--s-mono); fill: var(--s-ink); }
+.spy .spy-agents { display: grid; gap: 4px; font-size: 12px; }
+.spy .spy-agent { display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; align-items: center; }
+.spy .spy-av { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--s-line); border-radius: 50%; background: var(--s-chip); font-family: var(--s-mono); font-size: 10px; font-weight: 700; }
+.spy .spy-bar { height: 5px; border-radius: 3px; background: var(--s-chip); overflow: hidden; }
+.spy .spy-bar > span { display: block; height: 100%; background: var(--s-ok); }
+.spy .spy-lvl { font-family: var(--s-mono); font-size: 10px; color: var(--s-dim); }
+
+.spy .spy-mission { all: unset; box-sizing: border-box; display: grid; gap: 6px; width: 100%; padding: 12px; border-radius: 10px; background: var(--s-card); position: relative; cursor: pointer; }
+.spy .spy-m-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.spy .spy-m-title { font-family: var(--s-head); font-size: 20px; font-weight: 700; text-transform: uppercase; }
+.spy .spy-m-sub { color: var(--s-dim); }
+.spy .spy-tag { font-family: var(--s-mono); font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+.spy .spy-tag-warn { color: var(--s-warn); }
+.spy .spy-tag-dim { color: var(--s-dim); }
+.spy .spy-pips { display: flex; gap: 4px; }
+.spy .spy-pips i { width: 100%; height: 6px; border: 1px solid var(--s-line); border-radius: 2px; background: var(--s-chip); }
+.spy .spy-pips i.spy-on { border-color: var(--s-dim); background: var(--s-dim); }
+
+.spy .spy-me { display: grid; grid-template-columns: 22px 1fr; gap: 8px 10px; padding: 14px; border: 1px solid var(--s-accent); background: var(--s-card); }
+.spy .spy-me-idle { border-color: var(--s-line); }
+.spy .spy-me b { font-size: 16px; }
+.spy .spy-xp { font-family: var(--s-mono); font-size: 11px; color: var(--s-dim); }
+.spy .spy-me-cta { grid-column: 1 / -1; justify-self: start; }
+.spy .spy-btn { border: 1.5px solid var(--s-line); border-radius: 8px; background: transparent; padding: 7px 12px; font-family: var(--s-head); font-size: 15px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--s-ink); }
+.spy .spy-btn-solid { border-color: var(--s-accent); background: var(--s-accent); color: var(--s-bg); }
+
+/* Stamps: a short thunk and a small burst. The animation classes are only added when motion() is 'full'. */
+.spy .spy-stamp { --tilt: -9deg; position: relative; display: inline-block; padding: 0 8px; border: 3px double var(--s-accent); border-radius: 6px; font-family: var(--s-head); font-size: 20px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--s-accent); transform: rotate(var(--tilt)); opacity: .9; pointer-events: none; }
+.spy .spy-stamp-quiet { border-color: var(--s-dim); color: var(--s-dim); }
+.spy .spy-stamp-big { --tilt: -7deg; padding: 8px 14px; border-width: 5px; border-radius: 10px; font-size: 46px; line-height: .9; }
+.spy .spy-mission > .spy-stamp { position: absolute; top: 10px; right: 10px; }
+/* A stamp never covers the title it marks. */
+.spy .spy-mission:has(> .spy-stamp) .spy-m-top { padding-right: 84px; }
+.spy .spy-thunk { animation: spy-thunk var(--dur-fast, 160ms) cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes spy-thunk { from { transform: rotate(calc(var(--tilt) - 7deg)) scale(2.2); opacity: 0; } to { transform: rotate(var(--tilt)) scale(1); opacity: .9; } }
+.spy .spy-burst { position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; border-radius: 50%; background: var(--s-accent); animation: spy-fly var(--dur, 280ms) ease-out forwards; }
+@keyframes spy-fly { to { transform: translate(var(--dx), var(--dy)) scale(.2); opacity: 0; } }
