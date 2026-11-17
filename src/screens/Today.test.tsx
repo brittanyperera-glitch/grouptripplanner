@@ -97,11 +97,13 @@ describe('Today on the released plan from 2026-12-08', () => {
     const today = await screen.findByLabelText('Today');
     const line = within(today).getByText('Britt says:').closest('p')!;
     expect(line).toHaveTextContent(britt);
-    // The postmark sits on the photo strip: the strip is its next sibling, and Britt's line is below the card.
-    const postmark = within(today).getByLabelText('Postmark');
-    expect(postmark.nextElementSibling).toBe(within(today).getByLabelText(`Day ${at + 1}`));
-    expect(postmark.parentElement!.contains(line)).toBe(false);
-    expect(postmark.parentElement!.compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The postmark is above the card, outside the photo strip whose title it must not cover; Britt's line is below the card (item 1).
+    const postmark = today.querySelector('.tt-postmark')!;
+    const card = today.querySelector('.tt-card')!;
+    expect(card.contains(postmark)).toBe(false);
+    expect(postmark.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(card.contains(line)).toBe(false);
+    expect(card.compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(today).getAllByText(new RegExp(`House ${area}`))).toHaveLength(1);
   });
 
@@ -132,14 +134,15 @@ describe('Today on the released plan from 2026-12-08', () => {
     expect(leg).toHaveTextContent(/airport/i);
   });
 
-  it('the postmark is hidden from screen readers (the card head says the same) and keeps off the photo credit corner', async () => {
+  it('the postmark is hidden from screen readers with no label of its own (the card head says the same) and never floats over the photo', async () => {
     trip();
     screenOn('2026-12-10');
-    expect(await screen.findByLabelText('Postmark')).toHaveAttribute('aria-hidden', 'true');
-    const css = readFileSync('src/screens/Today.css', 'utf8');
-    const rule = /\.tt-postmark \{([^}]*)\}/.exec(css)![1];
-    // The credit button is 28px at top 12px (styles.css .credit-wrap), so it ends at 40px.
-    expect(rule).toMatch(/top:\s*(4[4-9]|[5-9]\d)px/);
+    const postmark = (await screen.findByLabelText('Today')).querySelector('.tt-postmark')!;
+    expect(postmark).toHaveAttribute('aria-hidden', 'true');
+    expect(postmark).not.toHaveAttribute('aria-label');
+    // jsdom has no layout, so the geometry is pinned in the one rule: in the flow, it cannot sit over the title or the credit button.
+    const rule = /\.tt-postmark \{([^}]*)\}/.exec(readFileSync('src/screens/Today.css', 'utf8'))![1];
+    expect(rule).not.toMatch(/position:\s*(absolute|fixed)/);
   });
 
   // A sibling in the window tells us the state has loaded, so the empty box is not just "not loaded yet".
@@ -194,7 +197,7 @@ describe('Today props-in', () => {
   it('stamps the postmark with the area and date, and tapping See the whole trip on day 3 calls onWholeTrip(3)', async () => {
     const { onWholeTrip } = props('2026-12-10', null);
     const at = within(await screen.findByTestId('at'));
-    expect(await at.findByLabelText('Postmark')).toHaveTextContent(new RegExp(`${group.final!.days[2].area!}.*10 Dec.*2026`, 'i'));
+    expect((await at.findByLabelText('Today')).querySelector('.tt-postmark')).toHaveTextContent(new RegExp(`${group.final!.days[2].area!}.*10 Dec.*2026`, 'i'));
     fireEvent.click(at.getByRole('button', { name: /See the whole trip/ }));
     expect(onWholeTrip).toHaveBeenCalledWith(3);
   });

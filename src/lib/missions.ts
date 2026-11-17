@@ -4,6 +4,7 @@ import type { AppState, Person, Plan } from '../types';
 import { DAY_MONTH } from './dates';
 import { outcome, scoutOf, stayCtx } from './stayflow';
 import { voteOpen } from './stays';
+import { andList } from './text';
 
 export type MissionId = 'stays' | 'supply' | 'touchdown';
 /** What the HQ needs: the app state and locked plan for the stays, and the trip model for bookings and flights. */
@@ -23,7 +24,6 @@ export interface Move {
   deadline?: string;
 }
 
-const names = (l: string[]) => (l.length < 2 ? l.join('') : `${l.slice(0, -1).join(', ')} and ${l[l.length - 1]}`);
 // A booking that has not opened (or has no date) cannot be booked yet, so it is nobody's move and carries no deadline.
 const bookable = (b: { status: string }) => b.status === 'open' || b.status === 'overdue';
 
@@ -58,7 +58,7 @@ export function missionFiles(i: MissionInput): MissionFileInfo[] {
     file('stays', 'Stays', decided, areas.length, `${decided} of ${areas.length} decided`),
     file('supply', 'Supply runs', done, bookings.length, `${done} of ${bookings.length} secured${unclaimed ? ` · ${unclaimed} unclaimed` : ''}`,
       { unclaimed, ...(due ? { tag: { text: `Book by ${DAY_MONTH.format(new Date(`${due}T00:00:00Z`))}`, tone: 'warn' as const } } : {}) }),
-    file('touchdown', 'Touchdown', landed, PEOPLE.length, missing.flights.length ? `${names(missing.flights)} still dark` : 'Everyone is down',
+    file('touchdown', 'Touchdown', landed, PEOPLE.length, missing.flights.length ? `${andList(missing.flights)} still dark` : 'Everyone is down',
       { missing: missing.flights, tag: { text: `${landed} of ${PEOPLE.length} in`, tone: 'dim' } }),
   ];
 }

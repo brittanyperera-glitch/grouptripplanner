@@ -203,6 +203,19 @@ describe('Trip view when the model changes under it', () => {
     expect(screen.queryByRole('button', { name: /^Day 8\b/ })).toBeNull();
   });
 
+  it('the clamp is kept, not just drawn: the hash follows to day 7 and a re-solve back to 9 days stays on day 7', async () => {
+    const m = await views();
+    const user = userEvent.setup();
+    const { rerender } = render(<TripViewBody model={m} items={items} legs={legsData as Leg[]} />);
+    await user.click(chip(9));
+    expect(window.location.hash).toBe('#/day-9');
+    rerender(<TripViewBody model={fewer(m, 7)} items={items} legs={legsData as Leg[]} />);
+    await waitFor(() => expect(window.location.hash).toBe('#/day-7'));
+    rerender(<TripViewBody model={m} items={items} legs={legsData as Leg[]} />);
+    expect(chip(7)).toHaveAttribute('aria-pressed', 'true');
+    expect(chip(9)).toHaveAttribute('aria-pressed', 'false');
+  });
+
   it('a hash day that arrives after the model fills is honoured', async () => {
     window.location.hash = '#/day-5';
     const m = await views();

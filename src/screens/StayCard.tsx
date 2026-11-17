@@ -26,8 +26,9 @@ export function Suggester({ name, size = 26 }: { name: Player; size?: number }) 
 
 export const priceText = (s: PlaceSuggestion) => (s.priceGbp === undefined ? null : `${gbp(s.priceGbp)} ${STAY_COPY.board.night}`);
 
-export function Facts({ s }: { s: PlaceSuggestion }) {
-  const price = priceText(s);
+/** `money` is off on the Fell through confirm: no price there (Brittany 16 Nov, no money at all). */
+export function Facts({ s, money = true }: { s: PlaceSuggestion; money?: boolean }) {
+  const price = money ? priceText(s) : null;
   return (
     <>
       {price && <p className="st-price">{price}</p>}
@@ -46,7 +47,7 @@ export function Warns({ lines }: { lines: string[] }) {
 }
 
 /** Photo above, facts below: the card on the board and the ranking grid. No controls inside, so a button can wrap it. */
-export function StayFace({ s, lines, corner, children }: { s: PlaceSuggestion; lines: string[]; corner?: ReactNode; children?: ReactNode }) {
+export function StayFace({ s, lines, corner, money, children }: { s: PlaceSuggestion; lines: string[]; corner?: ReactNode; money?: boolean; children?: ReactNode }) {
   return (
     <div className="st-face">
       <div className="st-photo-wrap">
@@ -58,7 +59,7 @@ export function StayFace({ s, lines, corner, children }: { s: PlaceSuggestion; l
           <h3 className="st-name">{s.title}</h3>
           <Suggester name={s.name} />
         </div>
-        <Facts s={s} />
+        <Facts s={s} money={money} />
         {s.why && <p className="st-why">{s.why}</p>}
         <Warns lines={lines} />
         {children}

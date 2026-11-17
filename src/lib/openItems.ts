@@ -2,8 +2,9 @@ import { PEOPLE } from '../types';
 import type { AppState, GroupResult, Plan, Player } from '../types';
 import type { Award } from './awards';
 import { outstanding } from './outstanding';
-import { andList, outcome, scoutOf, STAY_COPY, stayCtx } from './stayflow';
+import { outcome, scoutOf, STAY_COPY, stayCtx } from './stayflow';
 import { stayParticipants, voteOpen } from './stays';
+import { andList } from './text';
 
 export type OpenTab = 'Picks' | 'Group' | 'Suggest' | 'Stays' | 'Awards' | 'Quiz' | 'Bingo';
 export interface OpenItem {

@@ -64,7 +64,7 @@ export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, on
     const isPin = pinned === s.id;
     return (
       <article key={s.id} className="st-card" aria-label={s.title}>
-        <StayFace s={s} lines={warnLines(ctx, s)} corner={isPin ? <span className="stamp-label red st-pinned">{STAY_COPY.vote.pinned}</span> : undefined} />
+        <StayFace s={s} lines={warnLines(ctx, s)} money={asking !== s.id} corner={isPin ? <span className="stamp-label red st-pinned">{STAY_COPY.vote.pinned}</span> : undefined} />
         <div className="st-actions">
           {s.link && <a className="st-link" href={s.link} target="_blank" rel="noopener noreferrer">{B.book}</a>}
           {admin && (isPin

@@ -21,6 +21,8 @@
 .fx-dark { opacity: .75; }
 /* Spy look: the dark palette comes from the .spy shell; only the surfaces this screen draws are retuned. */
 .fx-spy .fx-row { background: var(--s-card); box-shadow: none; border: 1px solid var(--s-line); }
+/* Dimming the row would put its dim text at 3.85:1; the Dark tag already says it. */
+.fx-spy .fx-dark { opacity: 1; }
 .fx-spy .fx-fl, .fx-spy .fx-tag { color: var(--s-dim); }
 .fx-spy .fx-flag { color: var(--s-warn); }
 .fx-spy .fx-saved { color: var(--s-ok); }
