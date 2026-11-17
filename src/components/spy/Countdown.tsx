@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
+import { WEEKDAY_DAY_MONTH } from '../../lib/dates';
 import './spy.css';
 
 // Sri Lanka has no daylight saving, so a local time is always 330 minutes ahead of UTC.
 const COLOMBO_MS = 330 * 60_000;
-const DATE = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 const pad = (n: number) => String(n).padStart(2, '0');
 
 /** 'T-20d 01:02:05' to a Sri Lanka time ('YYYY-MM-DDTHH:mm'), 'Wheels down' once it has passed, null if the time cannot be read. */
@@ -27,7 +27,7 @@ export default function Countdown({ at, label, now }: { at: string; label: strin
   if (text === null) return null;
   return (
     <div className="spy-cd">
-      <div className="spy-cd-row"><span className="spy-code">{label}</span><span className="spy-code">{DATE.format(new Date(`${at.slice(0, 10)}T00:00:00Z`))}</span></div>
+      <div className="spy-cd-row"><span className="spy-code">{label}</span><span className="spy-code">{WEEKDAY_DAY_MONTH.format(new Date(`${at.slice(0, 10)}T00:00:00Z`))}</span></div>
       <div className="spy-cd-num" role="timer">{text}</div>
     </div>
   );

@@ -11,7 +11,7 @@ import type { TripModel } from '../screens/useTripModel';
 import { AppProvider, useApp } from '../state';
 import { LocalStore } from '../store/local';
 import { PEOPLE } from '../types';
-import type { AppState, Area, DayBooking, Item, Leg, PlaceSuggestion, Plan } from '../types';
+import type { AppState, Area, DayBooking, Item, Leg, Person, PlaceSuggestion, Plan } from '../types';
 import { groupResult } from './group';
 import { RELEASE } from './release';
 import * as stayflow from './stayflow';
@@ -23,10 +23,17 @@ const plan = group.final as Plan;
 const AREAS5: Area[] = ['Cultural Triangle', 'Kandy and Knuckles', 'Hill country', 'South coast', 'Colombo'];
 const AT = '2026-11-02T00:00:00Z';
 const stayOf = (area: Area): PlaceSuggestion => ({ id: `s-${area}`, name: 'Alex', area, kind: 'stay', title: `House ${area}`, status: 'live', createdAt: AT });
-const pins = (areas: Area[], scouts: Partial<Record<Area, 'Lazza'>> = {}): AppState => ({
+const pins = (areas: Area[], scouts: Partial<Record<Area, Person>> = {}): AppState => ({
   responses: {}, suggestions: [], votes: [],
   stays: { crew: {}, suggestions: areas.map(stayOf), admin: { pins: areas.map(a => ({ area: a, suggestionId: `s-${a}`, at: AT })), scouts, closed: [] } },
 });
+// Lazza scouts one area and Alex the rest, so nothing is left to the automatic split.
+const lazzaOnly = (area: Area): Partial<Record<Area, Person>> => Object.fromEntries(AREAS5.map(a => [a, a === area ? 'Lazza' : 'Alex']));
+const lone = (areas: Area[], over: { locked?: boolean; scouts?: Partial<Record<Area, Person>>; fallen?: { id: string; area: Area; at: string }[]; pins?: Area[] } = {}): AppState => {
+  const base = pins(over.pins ?? [], over.scouts);
+  const crew = over.locked ? Object.fromEntries(PEOPLE.map(name => [name, { name, prefs: [], quizDone: true, locked: true, ranks: {}, bingo: [], updatedAt: AT }])) : {};
+  return { ...base, stays: { ...base.stays!, crew, suggestions: areas.map(stayOf), admin: { ...base.stays!.admin, ...(over.fallen ? { fallen: over.fallen } : {}) } } };
+};
 const booking = (id: string, over: Partial<DayBooking> = {}): DayBooking => ({ id, label: id, status: 'open', opensOn: null, bookBy: null, owner: null, ...over });
 const model = (bookings: DayBooking[] = [], flights: typeof PEOPLE = []): Pick<TripModel, 'bookings' | 'missing'> =>
   ({ bookings, missing: { flights, stays: [], bookings: 0, startDate: false } });
@@ -71,6 +78,38 @@ describe('missionFiles', () => {
   it('Touchdown counts travellers with both flights and names who is missing', () => {
     const [, , td] = missionFiles(input(pins([]), model([], ['Antek', 'Saulie'])));
     expect(td).toMatchObject({ done: 3, total: 5, missing: ['Antek', 'Saulie'], status: 'Antek and Saulie still dark', tag: { text: '3 of 5 in', tone: 'dim' } });
+  });
+});
+
+describe('a stay nobody has voted on', () => {
+  it('a lone suggestion is not decided while people are still locking, and is once voting opens', () => {
+    expect(missionFiles(input(lone(AREAS5)))[0]).toMatchObject({ done: 0, complete: false, status: '0 of 5 decided' });
+    expect(spyActive(input(lone(AREAS5), model()))).toBe(true);
+    expect(missionFiles(input(lone(AREAS5, { locked: true })))[0]).toMatchObject({ done: 5, complete: true });
+  });
+
+  it('a pin is decided without waiting for the vote', () => {
+    expect(missionFiles(input(lone(AREAS5, { pins: AREAS5.slice(0, 2) })))[0].done).toBe(2);
+  });
+
+  it('a scout with one stay so far is asked for a 2nd and gets no credit yet', () => {
+    const state = lone(AREAS5, { scouts: lazzaOnly('Colombo') });
+    expect(nextMove('Lazza', input(state))).toMatchObject({ file: 'stays', id: 'Colombo', label: 'Find a 2nd stay for Colombo' });
+    expect(crewReadiness(input(state)).people.find(p => p.name === 'Lazza')).toMatchObject({ done: 1, total: 2 });
+  });
+
+  it('a scout whose stay fell through is asked for a replacement and gets no credit', () => {
+    const state = lone(AREAS5, { locked: true, scouts: lazzaOnly('Colombo'), pins: ['Colombo'], fallen: [{ id: 's-Colombo', area: 'Colombo', at: '2026-11-03T00:00:00Z' }] });
+    expect(nextMove('Lazza', input(state))).toMatchObject({ file: 'stays', label: 'Find a replacement stay for Colombo' });
+    expect(crewReadiness(input(state)).people.find(p => p.name === 'Lazza')).toMatchObject({ done: 1, total: 2 });
+  });
+});
+
+describe('the Book by tag', () => {
+  it('ignores a booking that is not open yet or has no date, like the next move does', () => {
+    const bookings = [booking('later', { bookBy: '2026-12-01' }), booking('closed', { bookBy: '2026-11-10', status: 'not-open' })];
+    expect(missionFiles(input(pins([]), model(bookings)))[1].tag).toMatchObject({ text: 'Book by 1 Dec' });
+    expect(missionFiles(input(pins([]), model([bookings[1]])))[1].tag).toBeUndefined();
   });
 });
 
@@ -196,5 +235,9 @@ describe('on the real release', () => {
     const j = { state: claimed.state, plan, model: claimed.m };
     expect(nextMove('Lazza', j)).toMatchObject({ id: 'book:train' });
     expect(nextMove('Alex', j)).toBeNull();
+
+    tick([]);
+    const quiet = await live();
+    expect(nextMove('Lazza', { state: quiet.state, plan, model: quiet.m })).toMatchObject({ file: 'stays', id: 'Cultural Triangle', label: 'Find a 2nd stay for Cultural Triangle' });
   });
 });

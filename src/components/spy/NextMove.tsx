@@ -1,5 +1,6 @@
 import { levelOf, toNextLevel } from '../../lib/missions';
 import type { Move } from '../../lib/missions';
+import { plural } from '../../lib/stayflow';
 import type { Person } from '../../types';
 import { initials } from './CrewRing';
 import './spy.css';
@@ -7,7 +8,7 @@ import './spy.css';
 /** The one place the accent colour goes on HQ: what this person should do next, and how close the next level is. */
 export default function NextMove({ me, move, done, onStart }: { me: Person; move: Move | null; done: number; onStart(m: Move): void }) {
   const level = levelOf(done), more = toNextLevel(done);
-  const who = `Agent ${me} · Level ${level}${more === null ? '' : ` · ${more} ${more === 1 ? 'mission' : 'missions'} to Level ${level + 1}`}`;
+  const who = `Agent ${me} · Level ${level}${more === null ? '' : ` · ${plural(more, 'mission')} to Level ${level + 1}`}`;
   return (
     <div className={move ? 'spy-me' : 'spy-me spy-me-idle'}>
       <span className="spy-av">{initials(me)}</span>
