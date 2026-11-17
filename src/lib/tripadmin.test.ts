@@ -10,7 +10,9 @@ const plan = (chosen: string[]): Plan => ({
 });
 const stay: PlaceSuggestion = { id: 's1', name: 'Alex', area: 'Ella', kind: 'stay', title: 'Hill hut', priceGbp: 40, status: 'live', createdAt: '2026-10-16' };
 const base = (over: Partial<AppState> = {}): AppState => ({ responses: {}, suggestions: [], votes: [], ...over });
-const withStay = (): AppState => base({ stays: { crew: {}, suggestions: [stay], admin: { pins: [], scouts: {}, closed: [] } } });
+// Changed deliberately (her 17 Nov decision: 2+ options then a vote): a lone stay is short, so this decided stop is decided by her pin.
+const withStay = (): AppState => base({ stays: { crew: {}, suggestions: [stay], admin: { pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-11-01T09:00' }], scouts: {}, closed: [] } } });
+const lone = (): AppState => base({ stays: { crew: {}, suggestions: [stay], admin: { pins: [], scouts: {}, closed: [] } } });
 const tick = (who: 'Alex' | 'Brittany', ids: string[]): AppState['tripAdmin'] =>
   ({ [who]: { name: who, updatedAt: 't', items: Object.fromEntries(ids.map(i => [i, { done: true }])) } });
 
@@ -53,6 +55,10 @@ describe('adminChecklist', () => {
     expect(adminChecklist(base(), 'Alex', plan([])).some(d => d.id === stayItemId('Ella'))).toBe(false);
     const d = adminChecklist(withStay(), 'Alex', plan([])).find(x => x.id === 'stay:Ella');
     expect(d).toMatchObject({ label: 'Stay in Ella', hint: 'Book Hill hut.', info: 'about £40 a night' });
+  });
+
+  it('a lone unpinned stay is short of an option, so there is nothing to book yet', () => {
+    expect(adminChecklist(lone(), 'Alex', plan([])).some(d => d.id === stayItemId('Ella'))).toBe(false);
   });
 });
 

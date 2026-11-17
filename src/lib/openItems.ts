@@ -2,6 +2,8 @@ import { PEOPLE } from '../types';
 import type { AppState, GroupResult, Plan, Player } from '../types';
 import type { Award } from './awards';
 import { outstanding } from './outstanding';
+import { outcome, scoutOf, STAY_COPY, stayCtx } from './stayflow';
+import { stayParticipants, voteOpen } from './stays';
 
 export type OpenTab = 'Picks' | 'Group' | 'Suggest' | 'Stays' | 'Awards' | 'Quiz' | 'Bingo';
 export interface OpenItem {
@@ -65,8 +67,18 @@ export function openItems({ me, group, state, unrated, ratingsLocked, awardsUnse
     if (ideas > 0) out.push({ id: 'approve', label: `${plural(ideas, 'idea', 'ideas')} waiting for approval`, count: ideas, target: { tab: 'Suggest' } });
   }
   if (!state.stays?.crew[me]?.quizDone) out.push({ id: 'stayQuiz', label: 'Do your travel profile (3 minutes)', target: { tab: 'Quiz' } });
+  const route = routePlan(group, state);
   // Once the route is final, finding somewhere to stay is everyone's job until they lock in their stays (zero is allowed).
-  if (routePlan(group, state) && !state.stays?.crew[me]?.locked) out.push({ id: 'stayAdd', label: 'Find somewhere to stay', count: 1, target: { tab: 'Stays' } });
+  if (route && !state.stays?.crew[me]?.locked) out.push({ id: 'stayAdd', label: 'Find somewhere to stay', count: 1, target: { tab: 'Stays' } });
+  // Once everyone has locked in, each area short of a 2nd stay (or with none) is its scout's to fill. Before that the item above covers it.
+  // Checked before stayCtx: the plan is only walked once voting can be open.
+  if (route && voteOpen(state.stays?.crew ?? {}, stayParticipants(me))) {
+    const sc = stayCtx(state, me, route);
+    for (const area of sc.areas) {
+      const o = outcome(sc, area);
+      if ((o.kind === 'short' || o.kind === 'empty') && scoutOf(sc, area) === me) out.push({ id: 'stayAdd', label: STAY_COPY.nudge[o.kind](area), count: 1, target: { tab: 'Stays' } });
+    }
+  }
   // Ratings are not checked here: the caller only builds this list once the member has submitted, as for stayQuiz.
   // A card with no written square is not a card yet: the to-do clears once something is written.
   if (!state.stays?.crew[me]?.bingo?.some(c => c.squares.some(s => s.text.trim() !== ''))) out.push({ id: 'bingo', label: 'Make your travel bingo card', target: { tab: 'Bingo' } });

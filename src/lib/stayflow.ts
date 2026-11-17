@@ -128,10 +128,11 @@ export type Outcome =
   | { kind: 'empty' }
   | { kind: 'wait'; ranked: number }
   | { kind: 'vote'; pair: [string, string]; tieBreak: string | null; a: Player[]; b: Player[]; warns: Record<string, string[]> }
-  | { kind: 'decided'; id: string; via: 'vote' | 'only' | 'pin' }
+  | { kind: 'decided'; id: string; via: 'vote' | 'pin' }
+  | { kind: 'short'; have: 1 }
   | { kind: 'replacing' };
 
-/** Where a destination stands once voting is open. A pin beats everything; 3+ stays wait for everyone's top 2 unless Brittany closed ranking, then the ranks in are used. A fallen stay with no live pin waits for her replacement, never a new vote. */
+/** Where a destination stands once voting is open. A pin beats everything; 3+ stays wait for everyone's top 2 unless Brittany closed ranking, then the ranks in are used. A fallen stay with no live pin waits for her replacement, never a new vote. One live stay is short: an area needs 2+ options before the group votes (Brittany 2026-11-17), though her pin still decides it. */
 export function outcome(ctx: StayCtx, area: Area): Outcome {
   const fallen = ctx.admin.fallen ?? [];
   const pin = livePin(area, ctx.admin.pins, ctx.suggestions, null, fallen);
@@ -144,12 +145,23 @@ export function outcome(ctx: StayCtx, area: Area): Outcome {
   }
   const f = finalists(ctx.suggestions, ranksOf(ctx), area, ctx.crew);
   if ('empty' in f) return { kind: 'empty' };
-  if ('auto' in f) return { kind: 'decided', id: f.auto, via: 'only' };
+  if ('auto' in f) return { kind: 'short', have: 1 };
   const res = stayResult(area, f.finalists, ctx.votes, ctx.participants);
   if (res.winner) return { kind: 'decided', id: res.winner, via: 'vote' };
   const warns: Record<string, string[]> = {};
   for (const id of f.finalists) { const s = ctx.suggestions.find(x => x.id === id); warns[id] = s ? warnLines(ctx, s) : []; }
   return { kind: 'vote', pair: f.finalists, tieBreak: f.tieBreak, a: res.a, b: res.b, warns };
+}
+
+/** The Final step's one line when nothing can be voted on yet: who is being waited on, and for what. */
+export function finalSub(outs: Outcome[], areas: Area[], admin: boolean): string {
+  const C = STAY_COPY.final;
+  const names = (k: Outcome['kind']) => areas.filter((_, i) => outs[i]?.kind === k).join(' and ');
+  if (outs.some(o => o.kind === 'vote')) return C.sub;
+  if (outs.some(o => o.kind === 'wait')) return C.waiting;
+  if (outs.some(o => o.kind === 'replacing')) return admin ? C.pinReplacement(names('replacing')) : C.sorting(names('replacing'));
+  if (outs.some(o => o.kind === 'short')) return C.short(names('short'));
+  return C.waiting;
 }
 
 export const forkOf = (area: Area, pair: [string, string]) => stayForkId(area, pair[0], pair[1]);
@@ -184,8 +196,9 @@ export const STAY_COPY = {
   lock: { title: 'Ready to lock in?', sub: (n: number) => `${plural(n, 'stay')} from you. Edits stop after this.`, go: (n: number) => `Lock in my stays (${n})`, more: 'Add another stay' },
   waiting: { headline: 'Locked in', sub: 'Waiting on the others.', label: 'Who has locked in', done: 'locked in', wait: 'still to lock', caption: (n: number, of: number) => `${n} of ${of} locked` },
   rank: { title: 'Pick your top 2', sub: 'First place gets 2 points, second gets 1.', go: 'Pick my top 2', waitHead: 'Top 2 is in', waitSub: 'Waiting on the others to pick.', caption: (n: number, of: number) => `${n} of ${of} picked`, label: 'Who has picked', done: 'picked', wait: 'still to pick' },
-  final: { title: 'Head to head', sub: 'Two finalists per place. Three votes settle it.', go: 'Head to head', waiting: 'Waiting on the others to pick their top 2.', set: 'Your stays are set', setSub: 'One stay per place.' },
+  final: { title: 'Head to head', sub: 'Two finalists per place. Three votes settle it.', go: 'Head to head', waiting: 'Waiting on the others to pick their top 2.', pinReplacement: (area: string) => `Pin a ${area} replacement`, sorting: (area: string) => `Brittany is sorting ${area}`, short: (area: string) => `Waiting on a 2nd stay for ${area}`, set: 'Your stays are set', setSub: 'One stay per place.' },
   closeRank: { go: (area: string) => `Close ranking for ${area}`, hint: 'Goes ahead with the top 2s already in.' },
+  nudge: { short: (area: string) => `Find a 2nd stay for ${area}`, empty: (area: string) => `Find a stay for ${area}` },
   scout: (names: string) => `You scout ${names}`,
   scoutTag: 'You scout',
   destinations: 'Where we stay',
@@ -202,10 +215,10 @@ export const STAY_COPY = {
   },
   admin: { unlockTitle: 'Reopen a stays list', unlock: (name: string) => `Unlock ${name}` },
   lockPage: { title: 'Lock in my stays', note: 'Edits stop after this.', go: 'Lock in my stays', empty: 'No stays from you yet.' },
-  rankPage: { title: (area: string) => `Your top 2 in ${area}`, sub: 'Tap your first pick, then your second. Tap again to clear.', go: 'Submit my top 2', card: (t: string) => `Rank ${t}`, auto: 'Only one stay here, so it is picked.', two: 'Two stays here, so on to the head to head.', zero: 'Nobody suggested a stay here.' },
+  rankPage: { title: (area: string) => `Your top 2 in ${area}`, sub: 'Tap your first pick, then your second. Tap again to clear.', go: 'Submit my top 2', card: (t: string) => `Rank ${t}`, auto: 'Only one stay here, so it needs a second.', two: 'Two stays here, so on to the head to head.', zero: 'Nobody suggested a stay here.' },
   vote: {
     title: 'Head to head', price: (p: string) => `${p} pp/night`, heads: (n: number) => (n === 1 ? '1 heads-up' : `${n} heads-ups`), vs: 'VS', vote: 'Vote', voteFor: 'Vote for this', voted: 'Voted', tally: (n: number, of: number) => `${n} of ${of} voted`, details: (t: string) => `Details of ${t}`,
-    nothing: 'Nothing to vote on yet.', replacing: (area: string) => `${area}: Brittany is finding a replacement`, waitRank: 'Waiting on the others to pick their top 2.', empty: 'Nobody suggested a stay here.', decided: (n: number) => `Decided ${n}`,
-    pinned: "Brittany's pick", only: 'the only stay suggested', byVote: 'won the vote', close: 'Close', yours: 'Your vote',
+    nothing: 'Nothing to vote on yet.', replacing: (area: string) => `${area}: Brittany is finding a replacement`, short: (area: string) => `${area}: needs a 2nd stay`, waitRank: 'Waiting on the others to pick their top 2.', empty: 'Nobody suggested a stay here.', decided: (n: number) => `Decided ${n}`,
+    pinned: "Brittany's pick", byVote: 'won the vote', close: 'Close', yours: 'Your vote',
   },
 };
