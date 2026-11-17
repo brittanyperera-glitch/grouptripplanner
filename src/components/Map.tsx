@@ -92,7 +92,7 @@ export default function RouteMap({ route, drive = false, legs: dayLegs, parkAt }
   const day = dayLegs !== undefined;
   const seqKey = day ? dayLegs.join() : '';
   // The legs the tuk-tuk drives, in order: the day's, or the whole route.
-  const seq = useMemo(() => (day ? dayLegs.filter(k => k >= 0 && k < legs.length) : legs.map((_, k) => k)), [seqKey, legs]); // eslint-disable-line react-hooks/exhaustive-deps
+  const seq = useMemo(() => (day ? (seqKey ? seqKey.split(',').map(Number) : []).filter(k => k >= 0 && k < legs.length) : legs.map((_, k) => k)), [day, seqKey, legs]);
   const animate = drive && motion() === 'full' && seq.length > 0;
   const [at, setAt] = useState<Drive>('idle');
   const [seenKey, setSeenKey] = useState(seqKey);
@@ -113,7 +113,8 @@ export default function RouteMap({ route, drive = false, legs: dayLegs, parkAt }
 
   const stops = [...new Set(route)];
   const layout = useMemo(() => routeLayout(route).placed, [route]);
-  const run = animate && typeof at === 'object' ? at : null;
+  // On the pass that resets a new day's drive `at` is still the old day's step, which may be past the end of the new `seq`.
+  const run = animate && typeof at === 'object' && at.k < seq.length ? at : null;
   const ix = run ? seq[run.k] : 0; // the route leg being driven
   // Before the first leg starts (at === 'idle') nothing is drawn yet: deciding that in render, not in the effect, keeps the finished route off the first painted frame.
   const pre = animate && at === 'idle';

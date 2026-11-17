@@ -91,6 +91,7 @@ export function TripViewBody({ model, items, legs }: { model: TripModel; items: 
   );
 }
 
+// Not mounted in App yet on purpose: where Trip view lives is review item A11, an open plan change.
 export default function TripView({ group, today }: { group: GroupResult; today?: string }) {
   const { items, legs } = useApp();
   return <TripViewBody model={useTripModel(group, today)} items={items} legs={legs} />;

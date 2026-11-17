@@ -66,6 +66,15 @@ describe('RouteMap with a day\'s legs', () => {
     expect([...seen]).toEqual([D[3]]);
   });
 
+  it('survives a shorter day while the drive is on a later leg of a longer one', () => {
+    const { container, rerender } = render(<RouteMap route={ROUTE} drive legs={[0, 1, 2, 3]} />);
+    for (let i = 0; i < 60 && !driven(container).includes(D[3]); i++) act(() => { vi.advanceTimersByTime(100); });
+    expect(driven(container)).toEqual([D[3]]);
+    expect(() => rerender(<RouteMap route={ROUTE} drive legs={[0]} />)).not.toThrow();
+    for (let i = 0; i < 20; i++) act(() => { vi.advanceTimersByTime(300); });
+    expect(on(container)).toEqual([D[0]]);
+  });
+
   it('draws the whole route as before when no legs are given', () => {
     const { container } = render(<RouteMap route={ROUTE} />);
     expect(container.querySelector('.route-dim')).toBeNull();

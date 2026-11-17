@@ -8,6 +8,7 @@ import catalogue from '../data/catalogue.json';
 import legsData from '../data/legs.json';
 import { hubXY } from '../components/Map';
 import { motion } from '../components/motion';
+import { buildLegs, legD } from '../components/routeDrive';
 import { seedState } from '../guest/seed';
 import { groupResult } from '../lib/group';
 import { RELEASE } from '../lib/release';
@@ -143,6 +144,19 @@ describe('Trip view and the tuk-tuk', () => {
     await user.click(chip(legged(await views()).n));
     await waitFor(() => expect(document.querySelector('.map')).toHaveAttribute('data-drive'));
   });
+
+  it('tapping a shorter day while the tuk-tuk is on a later leg of a longer one does not crash', async () => {
+    vi.mocked(motion).mockReturnValue('full');
+    const m = await views();
+    const long = m.views.find(v => v.legs.length >= 2)!, short = m.views.find(v => v.legs.length === 1)!;
+    const user = await mount();
+    await user.click(chip(long.n));
+    const route = m.plan!.route, second = long.legs[1];
+    await waitFor(() => expect(document.querySelector('mask path')?.getAttribute('d')).toBe(legD(buildLegs(route.map(hubXY))[second])), { timeout: 6000 });
+    await user.click(chip(short.n));
+    expect(chip(short.n)).toHaveAttribute('aria-pressed', 'true');
+    expect(document.querySelector('.map')).toBeInTheDocument();
+  }, 10000);
 
   it('a day with no drive or train leg parks the tuk-tuk at that day\'s hub', async () => {
     const m = await views(), v = parked(m);
