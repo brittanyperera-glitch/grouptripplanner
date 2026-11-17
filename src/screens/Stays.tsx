@@ -7,7 +7,7 @@ import { IconCheck, IconLeft } from '../components/Icons';
 import { canCloseRanking, isAdmin } from '../lib/override';
 import { routePlan } from '../lib/openItems';
 import { releaseFor } from '../lib/release';
-import { nightsNote, outcome, rankedBy, scoutOf, STAY_COPY, STEPS, stayCtx, stayStatus } from '../lib/stayflow';
+import { finalSub, nightsNote, outcome, rankedBy, scoutOf, STAY_COPY, STEPS, stayCtx, stayStatus } from '../lib/stayflow';
 import type { Outcome, Step } from '../lib/stayflow';
 import { rankPoints } from '../lib/stays';
 import { useApp } from '../state';
@@ -143,7 +143,7 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
         return (
           <>
             <h2 className="st-step-title">{finished ? C.final.set : C.final.title}</h2>
-            <p className="sub">{finished ? C.final.setSub : votable ? C.final.sub : C.final.waiting}</p>
+            <p className="sub">{finished ? C.final.setSub : finalSub(outs, ctx.areas, isAdmin(me))}</p>
             {closable.map(a => (
               <button key={a} type="button" className="st-ghost st-close" title={C.closeRank.hint} onClick={() => { void store.saveStaysAdmin({ closed: [...ctx.admin.closed, a] }); }}>{C.closeRank.go(a)}</button>
             ))}
@@ -190,7 +190,7 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
                 )}
               </button>
               {/* After a fall the board is locked, so this row is Brittany's only way to add the replacement she pins. */}
-              {(o?.kind === 'empty' || (o?.kind === 'replacing' && isAdmin(me))) && <button type="button" className="st-ghost" onClick={() => setSheet({ area })}>{SUGGEST}</button>}
+              {(o?.kind === 'empty' || o?.kind === 'short' || (o?.kind === 'replacing' && isAdmin(me))) && <button type="button" className="st-ghost" onClick={() => setSheet({ area })}>{SUGGEST}</button>}
             </li>
           );
         })}

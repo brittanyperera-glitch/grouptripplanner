@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { AREAS, PEOPLE } from '../types';
 import type { Area, CrewStays, Hub, PlaceSuggestion, Player } from '../types';
 import { hubArea } from './calendar';
-import { flow, HOSTELS, HUB_AREA, hostelPrice, hostelsFor, outcome, parseUrl, rankAreas, STAY_COPY, STEPS, stayCtx } from './stayflow';
-import type { FlowInput, StayCtx } from './stayflow';
+import { finalSub, flow, HOSTELS, HUB_AREA, hostelPrice, hostelsFor, outcome, parseUrl, rankAreas, STAY_COPY, STEPS, stayCtx } from './stayflow';
+import type { FlowInput, Outcome, StayCtx } from './stayflow';
 
 function rng(seed: number) {
   let s = seed >>> 0;
@@ -104,9 +104,10 @@ const ctxOf = (suggestions: PlaceSuggestion[], crew: Partial<Record<Player, Crew
 
 describe('outcome per destination', () => {
   const locked = Object.fromEntries(PEOPLE.map(p => [p, crewRow(p)])) as Record<Player, CrewStays>;
-  it('no stays is empty, one is picked for us, two go straight to the head to head', () => {
+  it('no stays is empty, one is short of an option, two go straight to the head to head', () => {
     expect(outcome(ctxOf([], locked), 'Ella')).toEqual({ kind: 'empty' });
-    expect(outcome(ctxOf([stay('a1', 'Ella')], locked), 'Ella')).toEqual({ kind: 'decided', id: 'a1', via: 'only' });
+    // Changed deliberately (her 17 Nov decision: 2+ options then a vote): one stay used to decide the area alone.
+    expect(outcome(ctxOf([stay('a1', 'Ella')], locked), 'Ella')).toEqual({ kind: 'short', have: 1 });
     const two = outcome(ctxOf([stay('a1', 'Ella'), stay('a2', 'Ella')], locked), 'Ella');
     expect(two).toMatchObject({ kind: 'vote', pair: ['a1', 'a2'] });
   });
@@ -136,7 +137,8 @@ describe('outcome per destination', () => {
   it('a pin on a withdrawn stay stops counting, in outcome and rankAreas', () => {
     const admin = { pins: [{ area: 'Ella' as Area, suggestionId: 'a2', at: 't' }], scouts: {}, closed: [] };
     const two = [stay('a1', 'Ella'), stay('a2', 'Ella', { status: 'withdrawn' })];
-    expect(outcome(ctxOf(two, locked, { admin }), 'Ella')).toEqual({ kind: 'decided', id: 'a1', via: 'only' });
+    // Changed deliberately (her 17 Nov decision: 2+ options then a vote): the one live stay left is short, not decided.
+    expect(outcome(ctxOf(two, locked, { admin }), 'Ella')).toEqual({ kind: 'short', have: 1 });
     const three = [stay('a1', 'Ella'), stay('a2', 'Ella', { status: 'withdrawn' }), stay('a3', 'Ella'), stay('a4', 'Ella')];
     expect(rankAreas(ctxOf(three, locked, { admin }))).toEqual(['Ella']);
   });
@@ -144,6 +146,46 @@ describe('outcome per destination', () => {
     const two = [stay('a1', 'Ella'), stay('a2', 'Ella')];
     const votes = (['Alex', 'Antek', 'Lazza'] as const).map(name => ({ forkId: 'stay:Ella:a1:a2', name, choice: 'b' as const }));
     expect(outcome(ctxOf(two, locked, { votes }), 'Ella')).toEqual({ kind: 'decided', id: 'a2', via: 'vote' });
+  });
+});
+
+describe('short areas: 2+ options, then a vote (her 17 Nov decision)', () => {
+  const locked = Object.fromEntries(PEOPLE.map(p => [p, crewRow(p)])) as Record<Player, CrewStays>;
+  const pin = (id: string) => ({ pins: [{ area: 'Ella' as Area, suggestionId: id, at: 't' }], scouts: {}, closed: [] });
+  it('one live stay, no pin, not fallen is short, and a withdrawn second one does not count', () => {
+    expect(outcome(ctxOf([stay('a1', 'Ella')], locked), 'Ella')).toEqual({ kind: 'short', have: 1 });
+    expect(outcome(ctxOf([stay('a1', 'Ella'), stay('a2', 'Ella', { status: 'withdrawn' })], locked), 'Ella')).toEqual({ kind: 'short', have: 1 });
+  });
+  it('two live stays are the head to head pair, and 3 of 5 votes decide it', () => {
+    const two = [stay('a1', 'Ella'), stay('a2', 'Ella')];
+    expect(outcome(ctxOf(two, locked), 'Ella')).toMatchObject({ kind: 'vote', pair: ['a1', 'a2'] });
+    const votes = (['Alex', 'Antek', 'Lazza'] as const).map(name => ({ forkId: 'stay:Ella:a1:a2', name, choice: 'a' as const }));
+    expect(outcome(ctxOf(two, locked, { votes }), 'Ella')).toEqual({ kind: 'decided', id: 'a1', via: 'vote' });
+  });
+  it('her pin on the single stay decides it, and a pin on a fallen one is replacing, not short', () => {
+    expect(outcome(ctxOf([stay('a1', 'Ella')], locked, { admin: pin('a1') }), 'Ella')).toEqual({ kind: 'decided', id: 'a1', via: 'pin' });
+    const fell = { ...pin('a1'), fallen: [{ id: 'a1', area: 'Ella' as Area, at: '2026-11-02T10:00:00.000Z' }] };
+    expect(outcome(ctxOf([stay('a1', 'Ella')], locked, { admin: { ...fell, pins: [{ area: 'Ella', suggestionId: 'a1', at: '2026-11-01T10:00:00.000Z' }] } }), 'Ella')).toEqual({ kind: 'replacing' });
+  });
+});
+
+describe('the Stays header when nothing is votable', () => {
+  const decided: Outcome = { kind: 'decided', id: 'a1', via: 'pin' };
+  const C = STAY_COPY.final;
+  it('names a replacement to pin for Brittany and says Brittany is sorting it for a friend', () => {
+    const outs: Outcome[] = [decided, { kind: 'replacing' }];
+    expect(finalSub(outs, ['Ella', 'Kandy and Knuckles'], true)).toBe('Pin a Kandy and Knuckles replacement');
+    expect(finalSub(outs, ['Ella', 'Kandy and Knuckles'], false)).toBe('Brittany is sorting Kandy and Knuckles');
+    for (const s of [finalSub(outs, ['Ella', 'Kandy and Knuckles'], true), finalSub(outs, ['Ella', 'Kandy and Knuckles'], false)]) expect(s).not.toBe(C.waiting);
+  });
+  it('lists several areas with commas, since an area name can hold "and"', () => {
+    const outs: Outcome[] = [{ kind: 'short', have: 1 }, { kind: 'short', have: 1 }, { kind: 'short', have: 1 }];
+    expect(finalSub(outs, ['Ella', 'Kandy and Knuckles', 'Colombo'], false)).toBe('Waiting on a 2nd stay for Ella, Kandy and Knuckles and Colombo');
+  });
+  it('a short area asks for a 2nd stay, a waiting one keeps the old line, a vote keeps its line', () => {
+    expect(finalSub([decided, { kind: 'short', have: 1 }], ['Ella', 'Kandy and Knuckles'], false)).toBe('Waiting on a 2nd stay for Kandy and Knuckles');
+    expect(finalSub([{ kind: 'wait', ranked: 1 }, { kind: 'replacing' }], ['Ella', 'Kandy and Knuckles'], true)).toBe(C.waiting);
+    expect(finalSub([{ kind: 'vote', pair: ['a', 'b'], tieBreak: null, a: [], b: [], warns: {} }, { kind: 'replacing' }], ['Ella', 'Kandy and Knuckles'], true)).toBe(C.sub);
   });
 });
 

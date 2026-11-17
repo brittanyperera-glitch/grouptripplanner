@@ -347,7 +347,7 @@ describe('guests', () => {
     return new MemoryStore({ ...base, stays: { crew, suggestions: [place('a1', { title: 'Hill hut' })], admin: { pins: [], scouts: {}, closed: [] } } });
   };
 
-  it('the guest is the sixth to lock; until then nothing is decided, after it the lone stay is picked', async () => {
+  it('the guest is the sixth to lock; until then nothing is decided, after it the lone stay is short a 2nd option', async () => {
     const store = sandbox();
     const user = userEvent.setup();
     render(<AppProvider store={store} sandbox={{ onFinish: () => undefined }}><AsGuest /></AppProvider>);
@@ -356,7 +356,9 @@ describe('guests', () => {
     await screen.findByText('Where do we sleep?');
     expect(screen.queryByText('Hill hut')).toBeNull();
     await user.click(btn('I have none to add'));
-    expect(await screen.findByText('Hill hut')).toBeInTheDocument();
+    // Changed deliberately (her 17 Nov decision: 2+ options then a vote): the lone stay is no longer picked, the area waits for a 2nd.
+    expect(await screen.findByText('Waiting on a 2nd stay for Ella')).toBeInTheDocument();
+    expect(screen.queryByText('Hill hut')).toBeNull();
     expect(localStorage.getItem('tp:stays:Aunty')).toBeNull();
   });
 });

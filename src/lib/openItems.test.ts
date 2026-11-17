@@ -213,3 +213,51 @@ describe('routePlan: the route has been decided', () => {
     expect(ids(ctx({ group: reopened, state: { ...withFinals(['Alex']), stays: empty.stays } }))).not.toContain('stayAdd');
   });
 });
+
+describe('scout nudge: an area short of a 2nd stay', () => {
+  const day = (n: number) => ({ n, area: 'Ella' as const, entries: [], spare: 0, rainSlack: false });
+  const plan = { route: ['AIR'], areas: ['Ella'], chosen: [], dropped: [], travelHours: 0, fits: true, missingMusts: [], score: 0, days: [day(1), day(2)] } as Plan;
+  const route = group({ final: plan, locked: true });
+  const crew = Object.fromEntries(PEOPLE.map(n => [n, { ...quizDone(n), locked: true }]));
+  const stay = (id: string, over: Partial<NonNullable<AppState['stays']>['suggestions'][number]> = {}) =>
+    ({ id, name: 'Alex', area: 'Ella', kind: 'stay', title: `Stay ${id}`, status: 'live', createdAt: `2026-10-1${id.slice(-1)}`, ...over }) as NonNullable<AppState['stays']>['suggestions'][number];
+  const withStays = (list: ReturnType<typeof stay>[], admin: Partial<NonNullable<AppState['stays']>['admin']> = {}): AppState =>
+    ({ ...empty, stays: { crew, suggestions: list, admin: { pins: [], scouts: {}, closed: [], ...admin } } }) as AppState;
+  const mine = (who: Player, state: AppState) => openItems(ctx({ me: who, group: route, state }));
+  // The scout of the only area is Alex: scoutAssignments hands areas out over the sorted crew.
+  it('the scout is asked for a 2nd stay, a non-scout is asked for nothing', () => {
+    const one = withStays([stay('a1')]);
+    expect(mine('Alex', one)).toEqual([{ id: 'stayShort', label: 'Find a 2nd stay for Ella', count: 1, target: { tab: 'Stays' } }]);
+    expect(mine('Antek', one)).toEqual([]);
+    expect(tabBadges(mine('Alex', one))).toEqual({ Stays: 1 });
+  });
+  it('an empty area is not nudged: the Stays tab counts it as finished', () => {
+    expect(mine('Alex', withStays([]))).toEqual([]);
+  });
+  it('a scout of several short areas gets one item, so the id is unique, and the badge counts the areas', () => {
+    const areas = ['Colombo', 'North', 'East coast', 'Cultural Triangle', 'Kandy and Knuckles', 'Kitulgala'] as const;
+    // The last day has no night, so a 7th day keeps Kitulgala an area.
+    const days = [...areas, 'Ella' as const].map((area, i) => ({ ...day(i + 1), area }));
+    const wide = group({ final: { ...plan, areas: [...areas], days } as Plan, locked: true });
+    const list = areas.map((area, i) => stay(`s${i}`, { area }));
+    // Six areas dealt over five sorted names: Alex scouts the first and the sixth.
+    const got = openItems(ctx({ me: 'Alex', group: wide, state: withStays(list) }));
+    expect(got).toEqual([{ id: 'stayShort', label: 'Find a 2nd stay for Colombo and Kitulgala', count: 2, target: { tab: 'Stays' } }]);
+    expect(tabBadges(got)).toEqual({ Stays: 2 });
+  });
+  it("Brittany's scout override moves the item to the person she named", () => {
+    const one = withStays([stay('a1')], { scouts: { Ella: 'Antek' } });
+    expect(mine('Antek', one).map(i => i.label)).toEqual(['Find a 2nd stay for Ella']);
+    expect(mine('Alex', one)).toEqual([]);
+  });
+  it('a decided area raises nothing: two stays, or one pinned stay', () => {
+    expect(mine('Alex', withStays([stay('a1'), stay('a2')]))).toEqual([]);
+    expect(mine('Alex', withStays([stay('a1')], { pins: [{ area: 'Ella', suggestionId: 'a1', at: 't' }] }))).toEqual([]);
+  });
+  it('waits until everyone has locked in, when the generic Find somewhere to stay still covers it', () => {
+    const open = withStays([stay('a1')]);
+    const notAll = { ...open, stays: { ...open.stays!, crew: { ...crew, Alex: { ...crew.Alex, locked: false } } } } as AppState;
+    expect(mine('Alex', notAll).map(i => i.label)).toEqual(['Find somewhere to stay']);
+  });
+});
+
