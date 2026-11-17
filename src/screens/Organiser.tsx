@@ -101,7 +101,7 @@ function LastDayStart({ value }: { value: string | null }) {
   const [v, setV] = useState(value ?? '');
   return (
     <form className="og-form" onSubmit={e => { e.preventDefault(); run(saveTripSettings({ lastDayStart: v || null }, v ? `Last day starts at ${v}` : 'Last day start cleared')); }}>
-      <input className="field" type="time" aria-label="Last day starts at" value={v} onChange={e => setV(e.target.value)} />
+      <label className="og-field"><span className="og-fl">Last day starts at</span><input className="field" type="time" value={v} onChange={e => setV(e.target.value)} /></label>
       <div className="og-act">
         <button type="submit" className="cta" disabled={v === (value ?? '')}>Save hour</button>
         <Result message={message} />

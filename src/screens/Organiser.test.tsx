@@ -150,6 +150,7 @@ describe('Organiser', () => {
   it('saves the last day start', async () => {
     const { store, user } = await mount();
     await open(user, /^Start date/);
+    expect(await screen.findByText('Last day starts at')).toBeVisible();
     await user.type(await screen.findByLabelText('Last day starts at'), '07:00');
     await user.click(screen.getByRole('button', { name: 'Save hour' }));
     await waitFor(() => expect(store.saves).toHaveLength(1));
