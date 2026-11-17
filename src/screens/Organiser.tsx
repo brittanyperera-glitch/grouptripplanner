@@ -25,6 +25,7 @@ const TITLE_MAX = 60, NOTE_MAX = 200, MAX_STOP_HOURS = 12;
 
 const COPY = {
   title: 'Organiser',
+  spyTitle: 'Command',
   back: 'Back',
   sub: 'Only you see this. Changes reach everyone once saved.',
   pwLabel: 'Organiser password',
@@ -405,9 +406,9 @@ function Panel({ onBack }: { onBack?: () => void }) {
           ? onBack && <button type="button" className="spy-back" onClick={onBack}>{`‹ ${COPY.back}`}</button>
           : onBack && <div className="og-bar"><button type="button" className="og-back" aria-label={COPY.back} onClick={onBack}><IconLeft size={20} /></button></div>}
         {spy
-          ? <header className="spy-head"><div className="spy-code">Command</div><h1>{COPY.title}</h1></header>
+          ? <header className="spy-head"><div className="spy-code">Operation Homecoming · Command</div><h1>{COPY.spyTitle}</h1></header>
           : <h2 className="big display small og-h">{COPY.title}</h2>}
-        <section className={spy ? 'og og-main og-spy' : 'og og-main'} aria-label={COPY.title}>{top}{sections}</section>
+        <section className={spy ? 'og og-main og-spy' : 'og og-main'} aria-label={spy ? COPY.spyTitle : COPY.title}>{top}{sections}</section>
       </div>
     </div>
   );

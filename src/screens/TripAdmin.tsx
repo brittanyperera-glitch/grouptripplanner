@@ -21,6 +21,7 @@ import './TripAdmin.css';
 
 const COPY = {
   title: 'Trip admin',
+  spyTitle: 'Supply runs',
   code: 'Operation Homecoming · Supply runs',
   back: 'Back',
   sub: 'Claim a booking, then mark it secured. The group sees who is on it.',
@@ -149,7 +150,7 @@ export function SupplyBoard(p: SupplyProps) {
   );
   if (spy) {
     return (
-      <SpyScreen code={COPY.code} title={COPY.title} back={{ label: COPY.back, onClick: p.onBack }}>
+      <SpyScreen code={COPY.code} title={COPY.spyTitle} back={{ label: COPY.back, onClick: p.onBack }}>
         <div className="ta ta-spy"><p className="ta-sub">{COPY.sub}</p>{body}</div>
       </SpyScreen>
     );

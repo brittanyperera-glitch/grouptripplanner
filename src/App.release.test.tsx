@@ -10,6 +10,7 @@ import legsData from './data/legs.json';
 import { seenWalkToday, submittedResp } from './__fixtures__/seed';
 import { seedState } from './guest/seed';
 import { groupResult } from './lib/group';
+import { ADMIN_KEY } from './store/tripKey';
 import { RELEASE } from './lib/release';
 import { ADMIN_IDS } from './lib/tripadmin';
 import { SEEN_KEY } from './screens/MissionComplete';
@@ -60,7 +61,7 @@ describe('released app, My trip tab', () => {
     seed('Lazza', true);
     render(<App />);
     await userEvent.click(await screen.findByRole('button', { name: /^Supply runs/ }));
-    expect(await screen.findByRole('heading', { name: 'Trip admin' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Supply runs' })).toBeInTheDocument();
   });
 
   it('with every mission done, inside the trip dates, shows Today for the day; Trip view is only on Group trip', async () => {
@@ -172,6 +173,13 @@ describe('released app, Menu', () => {
     await userEvent.click(m.getByRole('button', { name: 'Touchdown' }));
     expect(await screen.findByRole('heading', { name: 'Touchdown' })).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole('tablist')).toBeNull());
+  });
+  it('Command in the Menu opens the organiser panel headed Command, as the Menu names it', async () => {
+    const m = await menu('Brittany');
+    localStorage.setItem(ADMIN_KEY, 'k');
+    await userEvent.click(m.getByRole('button', { name: 'Command' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Command' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Command' })).toBeInTheDocument();
   });
 });
 
