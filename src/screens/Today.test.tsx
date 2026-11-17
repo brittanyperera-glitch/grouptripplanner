@@ -143,6 +143,7 @@ describe('Today on the released plan from 2026-12-08', () => {
     // jsdom has no layout, so the geometry is pinned in the one rule: in the flow, it cannot sit over the title or the credit button.
     const rule = /\.tt-postmark \{([^}]*)\}/.exec(readFileSync('src/screens/Today.css', 'utf8'))![1];
     expect(rule).not.toMatch(/position:\s*(absolute|fixed)/);
+    expect(rule).not.toMatch(/margin[^;]*-\d|translate/);
   });
 
   // A sibling in the window tells us the state has loaded, so the empty box is not just "not loaded yet".

@@ -130,7 +130,7 @@ export function Flights({ me, travellers, startDate, days, onSave, lastDay, appE
       })}
     </ul>
   );
-  if (spy) return <SpyScreen code="Operation Homecoming · Touchdown" title={COPY.spyTitle} back={onBack && { label: COPY.back, onClick: onBack }}><section className="fx fx-spy" aria-label={COPY.title}><p className="sub">{COPY.sub}</p>{list}</section></SpyScreen>;
+  if (spy) return <SpyScreen code="Operation Homecoming · Touchdown" title={COPY.spyTitle} back={onBack && { label: COPY.back, onClick: onBack }}><section className="fx fx-spy" aria-label={COPY.spyTitle}><p className="sub">{COPY.sub}</p>{list}</section></SpyScreen>;
   return (
     <section className="body fx" aria-label={COPY.title}>
       {onBack && <button type="button" className="fx-back" onClick={onBack}>{`‹ ${COPY.back}`}</button>}

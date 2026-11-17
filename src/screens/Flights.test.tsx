@@ -247,6 +247,7 @@ describe('Touchdown board', () => {
     const props = { me: 'Alex' as const, travellers: {}, startDate: null, days: null, onSave: vi.fn(async () => true) };
     const { rerender } = render(<Flights {...props} spy />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Touchdown$/);
+    expect(screen.getByRole('region', { name: 'Touchdown' })).toBeInTheDocument();
     rerender(<Flights {...props} />);
     expect(screen.getByRole('heading', { name: 'Flights' })).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Flights' })).toBeInTheDocument();
