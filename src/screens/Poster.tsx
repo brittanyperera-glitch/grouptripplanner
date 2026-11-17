@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import profile from '../content/profile.json';
 
 const MONTH_YEAR = new Intl.DateTimeFormat('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
 /** 'Dec 2026' style month and year of the trip start ('YYYY-MM-DD'); the planned month until a date is set. */
 export const tripWhen = (start: string | null | undefined): string => (start ? MONTH_YEAR.format(new Date(`${start}T00:00:00Z`)) : 'Dec 2026');
+
+/** The month on the shared poster; the app provides the organiser's start date, so Reveal's TravelPoster follows it with no prop. */
+export const PosterWhen = createContext(tripWhen(null));
 
 export async function shareOrDownload(file: File, when = tripWhen(null)): Promise<'shared' | 'downloaded'> {
   if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
@@ -31,11 +34,12 @@ export async function posterFile(): Promise<File> {
 
 /** The illustrated group poster, shown at the end of the route reveal. Save shares or downloads the same file. */
 export function TravelPoster({ when }: { when?: string }) {
+  const inherited = useContext(PosterWhen);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(false);
   const save = async () => {
     setBusy(true); setErr(false);
-    try { await shareOrDownload(await posterFile(), when); } catch { setErr(true); }
+    try { await shareOrDownload(await posterFile(), when ?? inherited); } catch { setErr(true); }
     setBusy(false);
   };
   return (

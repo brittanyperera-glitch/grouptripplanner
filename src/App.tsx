@@ -38,7 +38,7 @@ import Interview from './screens/Interview';
 import { markSeen as markWalkSeen, readSeen as readWalkSeen, shouldShow as walkShould, todayKey } from './lib/walkthrough';
 import Pace from './screens/Pace';
 import Plan from './screens/Plan';
-import { tripWhen } from './screens/Poster';
+import { PosterWhen, tripWhen } from './screens/Poster';
 import Premiere, { Reveal } from './screens/Reveal';
 import { compromises } from './lib/compromises';
 import { RELEASE, releaseFor } from './lib/release';
@@ -137,6 +137,10 @@ function ReleasedTrip({ group }: { group: GroupResult }) {
   const [finale, setFinale] = useState(false);
   const [done, setDone] = useState(false);
   if (!spy && !finale && !done && readFinaleSeen() !== '1') setFinale(true);
+  // A mission reopened after the finale: the latch must drop, or the next close shows a MissionComplete that has already been seen (blank).
+  if (spy && finale) setFinale(false);
+  // The day hash is a deep link, not a tab state: chips on Group trip write it, and it must not outlive this tab.
+  useEffect(() => () => { if (DAY_HASH.test(window.location.hash)) history.replaceState(null, '', window.location.pathname + window.location.search); }, []);
   const open = (f: MissionId) => { if (f === 'stays') openStays?.(); else if (f === 'supply') openAdmin?.(); else openFile?.('flights'); };
   if (view === 'group') {
     const back = () => { history.replaceState(null, '', window.location.pathname + window.location.search); setView('mine'); };
@@ -285,9 +289,11 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const { state, store, items, legs, copy, clearMe, finishSandbox } = useApp();
   const logout = useContext(LogoutCtx);
   const seed = releaseFor(me);
-  // The organiser's saved plan replaces the seed; while settings load the seed stands in, so no vote-flow plan flashes up.
+  // The organiser's saved plan replaces the seed. While settings load the seed still computes (so the vote flow never does),
+  // but nothing of it is shown: no group until the saved plan is known, or the old seed plan flashes up first.
   const release = useMemo(() => seed && effectiveRelease(releaseState(state.tripSettings), seed, { ...seed, dayEdits: [] }), [seed, state.tripSettings]);
-  const { data: group } = useGroupResult(state, items, legs, release);
+  const { data: computed } = useGroupResult(state, items, legs, release);
+  const group = seed && state.tripSettings === undefined ? null : computed;
   const released = !!seed;
   const [file, setFile] = useState<FileId | null>(null);
   const [draft, setDraft] = useState<Response>(() => {
@@ -347,8 +353,8 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   // replaces that entry rather than stacking on it, and closing it by hand pops it (selfPop swallows that popstate).
   const selfPop = useRef(false);
   const setTab = useCallback((t: Tab) => {
-    const entry = { ...history.state, tpTab: t, tpOverlay: undefined };
-    if (history.state?.tpOverlay) history.replaceState(entry, ''); else history.pushState(entry, '');
+    const entry = { ...history.state, tpTab: t, tpOverlay: undefined, tpFile: undefined };
+    if (history.state?.tpOverlay || history.state?.tpFile) history.replaceState(entry, ''); else history.pushState(entry, '');
     setOverlay(null);
     setFile(null);
     setTabState(t);
@@ -358,23 +364,33 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     if (overlay === null && o !== 'awards') scrollBack.current = window.scrollY;
     setOverlay(o);
     if (step !== 'tabs') return;
-    const entry = { ...history.state, tpTab: tabRef.current, tpOverlay: o };
-    if (history.state?.tpOverlay) history.replaceState(entry, ''); else history.pushState(entry, '');
+    const entry = { ...history.state, tpTab: tabRef.current, tpOverlay: o, tpFile: undefined };
+    if (history.state?.tpOverlay || history.state?.tpFile) history.replaceState(entry, ''); else history.pushState(entry, '');
   };
   const dropOverlay = () => {
     setOverlay(null);
     if (history.state?.tpOverlay) { selfPop.current = true; history.back(); }
   };
   const closeOverlay = () => navigate('back', dropOverlay);
-  const openFile = useCallback((f: FileId) => navigate('fwd', () => setFile(f)), []);
-  const closeFile = () => navigate('back', () => setFile(null));
+  // A file (Touchdown, Command) owns one history entry like an overlay, so the phone's Back closes it onto the tab it came from.
+  const showFile = useCallback((f: FileId) => {
+    setFile(f);
+    history.pushState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined, tpFile: f }, '');
+  }, []);
+  const openFile = useCallback((f: FileId) => navigate('fwd', () => showFile(f)), [showFile]);
+  const closeFile = () => navigate('back', () => {
+    setFile(null);
+    if (history.state?.tpFile) { selfPop.current = true; history.back(); }
+  });
   useEffect(() => {
     if (step !== 'tabs') return;
-    history.replaceState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined }, '');
+    history.replaceState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined, tpFile: undefined }, '');
     const onPop = (e: PopStateEvent) => {
       if (selfPop.current) { selfPop.current = false; return; }
-      const t = (e.state as { tpTab?: Tab } | null)?.tpTab;
-      if (t && TABS.includes(t)) navigate('back', () => { setOverlay(null); setFile(null); setTabState(t); });
+      const st = e.state as { tpTab?: Tab; tpOverlay?: Overlay; tpFile?: FileId } | null;
+      const t = st?.tpTab;
+      // The entry says what was open: Back from a file onto an overlay entry lands on that overlay.
+      if (t && TABS.includes(t)) navigate('back', () => { setOverlay(st.tpOverlay ?? null); setFile(st.tpFile ?? null); setTabState(t); });
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -551,6 +567,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   }, [screenKey]);
 
   return (
+    <PosterWhen.Provider value={tripWhen(state.tripSettings?.startDate)}>
     <GroupCtx.Provider value={group}>
       <header className="top">
         <button className="who" aria-label={`${me}, ${profileCopy.headerLabel}`} onClick={openProfile}>
@@ -575,6 +592,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
       )}
       {screen === 'awards' && <Awards awards={awardList} onClose={closeAwards} />}
     </GroupCtx.Provider>
+    </PosterWhen.Provider>
   );
 }
 

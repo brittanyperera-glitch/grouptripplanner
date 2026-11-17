@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,6 +13,7 @@ import { groupResult } from './lib/group';
 import { RELEASE } from './lib/release';
 import { ADMIN_IDS } from './lib/tripadmin';
 import { SEEN_KEY } from './screens/MissionComplete';
+import { LocalStore } from './store/local';
 import { PEOPLE } from './types';
 import type { Area, Item, Leg, Person } from './types';
 
@@ -158,5 +159,82 @@ describe('released app, Menu', () => {
     await userEvent.click(m.getByRole('button', { name: 'Touchdown' }));
     expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole('tablist')).toBeNull());
+  });
+});
+
+describe('released app, deep link, Back and the loading plan', () => {
+  it('a day chosen on Group trip is not a deep link: leaving My trip and coming back lands on Mission HQ', async () => {
+    seed('Lazza', true);
+    render(<App />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Group trip' }));
+    await userEvent.click(await screen.findByRole('button', { name: /Day 2/ }));
+    expect(window.location.hash).toBe('#/day-2');
+    await userEvent.click(screen.getByRole('tab', { name: /Stays/ }));
+    await userEvent.click(screen.getByRole('tab', { name: /My trip/ }));
+    expect(await screen.findByRole('heading', { name: 'Mission HQ' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Trip view')).toBeNull();
+  });
+
+  it('the phone Back button closes Touchdown onto the tab it was opened from, not another tab or out of the app', async () => {
+    seed('Lazza', true);
+    render(<App />);
+    await userEvent.click(await screen.findByRole('tab', { name: /Stays/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name: 'Touchdown' }));
+    expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
+    const depth = history.length;
+    history.back();
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Flights' })).toBeNull());
+    expect(screen.getByRole('tab', { name: /Stays/ })).toHaveAttribute('aria-selected', 'true');
+    // The Back link inside the screen leaves no extra entry behind.
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name: 'Touchdown' }));
+    await userEvent.click(await screen.findByRole('button', { name: /Back/ }));
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Flights' })).toBeNull());
+    await waitFor(() => expect(history.state?.tpFile).toBeUndefined());
+    expect(screen.getByRole('tab', { name: /Stays/ })).toHaveAttribute('aria-selected', 'true');
+    expect(history.length).toBeLessThanOrEqual(depth + 1);
+  });
+
+  it('shares the poster with the month the organiser set', async () => {
+    seed('Lazza', true);
+    put('tp:settings', { startDate: '2027-01-03', plan: null, bookingDates: {}, overrides: [], updatedAt: AT });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('jpg', { status: 200, headers: { 'content-type': 'image/jpeg' } })));
+    const share = vi.fn(async () => {});
+    Object.assign(navigator, { share, canShare: () => true });
+    render(<App />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Group trip' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Play route reveal' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'See the poster' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Save poster' }));
+    await waitFor(() => expect(share).toHaveBeenCalledOnce());
+    expect((share.mock.calls[0] as unknown as [{ title: string }])[0].title).toBe('Sri Lanka, Jan 2027');
+    vi.unstubAllGlobals();
+  });
+
+  it('a mission reopened and closed again after the finale shows the day, not a blank My trip', async () => {
+    clock('2026-12-10T08:00:00Z');
+    seed('Lazza', true);
+    const store = new LocalStore();
+    const all = (done: boolean) => Object.fromEntries(ADMIN_IDS.map(id => [id, { done, doneAt: AT }]));
+    render(<App store={store} />);
+    expect(await screen.findByRole('heading', { name: 'Mission HQ' })).toBeInTheDocument();
+    await act(async () => { await store.saveTripAdmin('Brittany', all(true)); });
+    expect(await screen.findByRole('button', { name: 'Go to the trip' })).toBeInTheDocument();
+    await act(async () => { await store.saveTripAdmin('Brittany', all(false)); });
+    expect(await screen.findByRole('heading', { name: 'Mission HQ' })).toBeInTheDocument();
+    await act(async () => { await store.saveTripAdmin('Brittany', all(true)); });
+    expect(await screen.findByLabelText('Today')).toBeInTheDocument();
+  });
+
+  it('while the trip settings are still loading no plan shows, not the seed plan', async () => {
+    seed('Lazza', true);
+    const inner = new LocalStore();
+    const loading = Object.assign(Object.create(inner), {
+      load: async () => { const { tripSettings, ...rest } = await inner.load(); void tripSettings; return rest; },
+    }) as LocalStore;
+    render(<App store={loading} />);
+    expect(await screen.findByText('Working out the plan...')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Mission HQ' })).toBeNull();
   });
 });
