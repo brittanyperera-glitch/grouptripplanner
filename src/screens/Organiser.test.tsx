@@ -154,6 +154,7 @@ describe('Organiser', () => {
     await user.click(screen.getByRole('button', { name: 'Save hour' }));
     await waitFor(() => expect(store.saves).toHaveLength(1));
     expect(store.saves[0].lastDayStart).toBe('07:00');
+    expect(store.saves[0].overrides?.at(-1)?.what).toBe('Last day starts at 07:00');
   });
 
   it('lists the overrides log newest first', async () => {

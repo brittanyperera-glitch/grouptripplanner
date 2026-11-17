@@ -534,7 +534,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
     saveTripSettings: (patch: SettingsPatch, what?: string) => {
       const at = new Date().toISOString();
       const prev = settings.ref.current;
-      const edited = patch.plan !== undefined || patch.startDate !== undefined || patch.bookingDates !== undefined;
+      const edited = patch.plan !== undefined || patch.startDate !== undefined || patch.lastDayStart !== undefined || patch.bookingDates !== undefined;
       // Capped so the jsonb never reaches its size check, which would refuse every later save.
       const log = [...(prev?.patch.overrides ?? stateRef.current?.tripSettings?.overrides ?? []), { at, what: what ?? Object.keys(patch).join(', ') }].slice(-MAX_OVERRIDES).map(o => ({ ...o, what: capWhat(o.what) }));
       const full = edited ? { ...patch, overrides: log } : patch;
