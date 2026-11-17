@@ -17,6 +17,7 @@ const COPY = {
   stayLink: 'Open the stay',
   noStay: 'No stay chosen yet. Suggest one on the Stays tab.',
   unclaimed: 'nobody has claimed it yet',
+  replay: 'Replay mission',
 };
 
 const DAY_HASH = /^#\/day-(\d+)$/;
@@ -46,7 +47,7 @@ function StaySheet({ model, day, area, onClose }: { model: TripModel; day: numbe
 }
 
 /** Props-in Trip view: the map, a strip of day chips, and the one selected day as a postcard. */
-export function TripViewBody({ model, items, legs }: { model: TripModel; items: Item[]; legs: Leg[] }) {
+export function TripViewBody({ model, items, legs, onReplay }: { model: TripModel; items: Item[]; legs: Leg[]; onReplay?(): void }) {
   const count = model.views.length;
   const [day, setDay] = useState(() => hashDay(count));
   const [place, setPlace] = useState<Item | null>(null);
@@ -85,6 +86,7 @@ export function TripViewBody({ model, items, legs }: { model: TripModel; items: 
           onPlace={id => setPlace(items.find(i => i.id === id) ?? null)} onStay={setStay}
         />
       </div>
+      {onReplay && <button type="button" className="cta alt" onClick={onReplay}>{COPY.replay}</button>}
       {place && <ItemSheet items={[place]} title={place.name} onClose={() => setPlace(null)} />}
       {stay && <StaySheet model={model} day={day} area={stay} onClose={() => setStay(null)} />}
     </section>
@@ -92,7 +94,7 @@ export function TripViewBody({ model, items, legs }: { model: TripModel; items: 
 }
 
 // Not mounted in App yet on purpose: where Trip view lives is review item A11, an open plan change.
-export default function TripView({ group, today }: { group: GroupResult; today?: string }) {
+export default function TripView({ group, today, onReplay }: { group: GroupResult; today?: string; onReplay?(): void }) {
   const { items, legs } = useApp();
-  return <TripViewBody model={useTripModel(group, today)} items={items} legs={legs} />;
+  return <TripViewBody model={useTripModel(group, today)} items={items} legs={legs} onReplay={onReplay} />;
 }
