@@ -14,7 +14,6 @@ import { readAdminKey } from '../store/tripKey';
 import { AREAS, PEOPLE } from '../types';
 import type { Area, BookingDates, DayEdit, Pace, Person, ReleasePlan } from '../types';
 import { useGroupResult } from '../workers/usePlan';
-import { SAVE_COPY } from './saveStatus';
 import './Organiser.css';
 
 const TITLE_MAX = 60, NOTE_MAX = 200, MAX_STOP_HOURS = 12;
@@ -28,7 +27,9 @@ const COPY = {
   wrong: "That's not it",
   offline: "Couldn't reach the server. Try again",
   checking: 'Checking',
-  ...SAVE_COPY,
+  saved: 'Saved',
+  unsaved: "Not saved yet, will retry when you're online",
+  failed: "Couldn't save",
   noRoute: 'No route is set yet.',
   loading: 'Loading',
 };
