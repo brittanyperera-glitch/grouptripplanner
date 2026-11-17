@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Avatar from '../components/Avatar';
 import { IconLeft } from '../components/Icons';
 import { isAdmin, pinnedId, withNights, withPin } from '../lib/override';
@@ -8,15 +8,14 @@ import { stayItemId } from '../lib/tripadmin';
 import { tallySides } from '../lib/votes';
 import { useApp } from '../state';
 import { MAX_NIGHTS, MIN_NIGHTS, reactForkId } from '../types';
-import type { Area, PlaceKind, PlaceSuggestion } from '../types';
+import type { Area, Fallen, PlaceKind, PlaceSuggestion, Person } from '../types';
 import { StayFace, StayPhoto, Suggester } from './StayCard';
 import './Stays.css';
 
 const B = STAY_COPY.board;
+const F = STAY_COPY.fall;
 const KINDS: PlaceKind[] = ['stay', 'eat', 'do', 'gem'];
-// Not in STAY_COPY: lib/stayflow.ts is outside this screen's files.
-const FELL = 'Fell through';
-const PIN_REPLACEMENT = 'Pin the replacement.';
+const UNDO_MS = 6000;
 
 interface Props {
   ctx: StayCtx; status: StayStatus; area: Area;
@@ -25,7 +24,7 @@ interface Props {
 
 /** One destination: stays I can add to, and eat / do / gem ideas the crew just react to. */
 export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, onQuiz }: Props) {
-  const { store, claimBooking } = useApp();
+  const { state, store, claimBooking } = useApp();
   const [kind, setKind] = useState<PlaceKind>('stay');
   const nights = ctx.nights[area] ?? 0;
   const admin = isAdmin(ctx.me);
@@ -33,9 +32,26 @@ export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, on
   const setPin = (id: string | null) => { void store.saveStaysAdmin({ pins: withPin(ctx.admin.pins, area, id, new Date().toISOString()) }); };
   const out = status.open ? outcome(ctx, area) : null;
   // The claim goes with the stay: a replacement must never show as already booked.
-  const fellThrough = (id: string) => {
-    void store.saveStaysAdmin({ fallen: [...(ctx.admin.fallen ?? []), { id, area, at: new Date().toISOString() }] });
+  const [asking, setAsking] = useState<string | null>(null);
+  const [undo, setUndo] = useState<{ title: string; fallen: Fallen[]; owner: Person | null } | null>(null);
+  useEffect(() => {
+    if (!undo) return;
+    const t = setTimeout(() => setUndo(null), UNDO_MS);
+    return () => clearTimeout(t);
+  }, [undo]);
+  const claimOwner = state.bookingClaims?.[stayItemId(area)]?.owner ?? null;
+  const fellThrough = (s: PlaceSuggestion) => {
+    const fallen = ctx.admin.fallen ?? [];
+    void store.saveStaysAdmin({ fallen: [...fallen, { id: s.id, area, at: new Date().toISOString() }] });
     void claimBooking(stayItemId(area), null);
+    setAsking(null);
+    setUndo({ title: s.title, fallen, owner: claimOwner });
+  };
+  const undoFall = () => {
+    if (!undo) return;
+    void store.saveStaysAdmin({ fallen: undo.fallen });
+    if (undo.owner) void claimBooking(stayItemId(area), undo.owner);
+    setUndo(null);
   };
   const setNights = (n: number) => { void store.saveStaysAdmin({ nights: withNights(ctx.admin.nights ?? {}, area, n, ctx.derivedNights?.[area]) }); };
   const note = nightsNote(ctx, area);
@@ -54,7 +70,13 @@ export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, on
           {admin && (isPin
             ? <button type="button" className="st-ghost" onClick={() => setPin(null)}>{B.unpin}</button>
             : <button type="button" className="st-ghost" onClick={() => setPin(s.id)}>{B.pin}</button>)}
-          {admin && out?.kind === 'decided' && out.id === s.id && <button type="button" className="st-ghost" onClick={() => fellThrough(s.id)}>{FELL}</button>}
+          {admin && out?.kind === 'decided' && out.id === s.id && (asking === s.id ? (
+            <div className="st-ask" role="alertdialog" aria-label={F.go}>
+              <p className="st-warn">{F.ask(claimOwner, area)}</p>
+              <button type="button" className="st-ghost" onClick={() => fellThrough(s)}>{F.yes}</button>
+              <button type="button" className="st-ghost" onClick={() => setAsking(null)}>{F.keep}</button>
+            </div>
+          ) : <button type="button" className="st-ghost" onClick={() => setAsking(s.id)}>{F.go}</button>)}
           {mine && status.locked && <span className="stamp-label">{B.locked}</span>}
           {mine && !status.locked && (
             <>
@@ -108,10 +130,16 @@ export default function StayBoard({ ctx, status, area, onBack, onAdd, onEdit, on
           <button type="button" className="st-pill st-nstep" aria-label={N.more} disabled={nights >= MAX_NIGHTS} onClick={() => setNights(nights + 1)}>+</button>
         </div>
       )}
+      {undo && (
+        <div className="st-undo" role="status">
+          <span>{F.done(undo.title)}</span>
+          <button type="button" className="st-ghost" onClick={undoFall}>{F.undo}</button>
+        </div>
+      )}
       <div className="st-kinds" role="group" aria-label="Kind">
         {KINDS.map(k => <button key={k} type="button" className="st-pill" aria-pressed={kind === k} onClick={() => setKind(k)}>{KIND_LABEL[k]}</button>)}
       </div>
-      {kind === 'stay' && out?.kind === 'replacing' && <p className="sub">{admin ? PIN_REPLACEMENT : STAY_COPY.vote.replacing(area)}</p>}
+      {kind === 'stay' && out?.kind === 'replacing' && <p className="sub">{STAY_COPY.replacing(admin, area)}</p>}
       {kind === 'stay' && (status.locked
         ? <p className="sub">{B.lockedLine}</p>
         : status.quizDone

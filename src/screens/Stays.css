@@ -88,3 +88,16 @@
 .st-nstep:disabled { opacity: 0.4; cursor: default; }
 .st-nval { min-width: 88px; text-align: center; font-weight: 800; }
 .st-nightsnote { margin: 0; }
+
+/* Spy mode: the app's colour tokens are re-pointed at the spy kit's (set by SpyScreen's .spy), so every st- rule above follows. The accent stays on .cta only. */
+.st-spy { --card: var(--s-card); --ink: var(--s-ink); --muted: var(--s-dim); --line: var(--s-line); --line-strong: var(--s-dim); --chip: var(--s-chip); --white: var(--s-card); --shadow-card: none; --shadow-btn: none; --teal: var(--s-dim); --teal-deep: var(--s-dim); --on-teal: var(--s-bg); --red-deep: var(--s-accent); --on-red: var(--s-bg); --red-ink: var(--s-warn); --coconut-text: var(--s-warn); color: var(--s-ink); }
+.st-spy .st-top-bar { display: none; }
+.st-spy .st-step[data-state='now'] .st-dot, .st-spy .st-badge { background: var(--s-chip); color: var(--s-ink); }
+.st-spy .st-pill[aria-pressed='true'] { background: var(--s-ink); color: var(--s-bg); }
+.st-spy .st-fold-admin { color: var(--s-dim); font-size: 12px; }
+.st-spy .st-fold-admin summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-family: var(--s-mono); letter-spacing: .08em; text-transform: uppercase; }
+.st-spy .st-vstamp { position: absolute; top: 10px; right: 10px; z-index: 1; }
+
+.st-ask { flex: 1 0 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+.st-ask > p { flex: 1 0 100%; font-size: 13.5px; font-weight: 700; }
+.st-undo { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 4px 4px 14px; border-radius: var(--r-card); background: var(--chip); font-weight: 700; }

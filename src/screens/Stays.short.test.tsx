@@ -38,13 +38,13 @@ describe('Stays header with one area replacing and the rest decided (review A4)'
   it('Brittany is told to pin the replacement', async () => {
     seed();
     await mount('Brittany');
-    expect(screen.getByText('Pin a Ella replacement')).toBeInTheDocument();
+    expect(screen.getAllByText('Pin a replacement for Ella')).toHaveLength(2);
     expect(screen.queryByText('Waiting on the others to pick their top 2.')).toBeNull();
   });
   it('a friend is told Brittany is sorting it', async () => {
     seed();
     await mount('Alex');
-    expect(screen.getByText('Brittany is sorting Ella')).toBeInTheDocument();
+    expect(screen.getAllByText('Brittany is finding a replacement for Ella')).toHaveLength(2);
     expect(screen.queryByText('Waiting on the others to pick their top 2.')).toBeNull();
   });
 });
