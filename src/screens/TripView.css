@@ -2,7 +2,7 @@
 .tv { min-width: 0; }
 .tv-map { min-width: 0; }
 /* The island is tall; capping it keeps the chips on the first screen (the sea fills the letterbox). */
-.tv-map .map svg { max-height: 38dvh; }
+.tv-map svg { max-height: 38dvh; }
 .tv-strip { display: flex; gap: 8px; margin: 0 -20px; padding: 2px 20px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
 .tv-strip::-webkit-scrollbar { display: none; }
 .tv-chip { all: unset; box-sizing: border-box; flex: none; scroll-snap-align: center; cursor: pointer; min-width: 76px; min-height: 52px; padding: 6px 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px; border-radius: var(--r-md); background: var(--card); color: var(--ink); box-shadow: var(--shadow-card), inset 0 0 0 1.5px var(--line); transition: transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease); }
