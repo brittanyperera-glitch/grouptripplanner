@@ -249,7 +249,7 @@ const CLAIMS: Pending<ClaimOverlay> = {
 function withFinal(s: AppState, settings: SettingsOverlay, travellers: TravellerOverlay, claims: ClaimOverlay): AppState {
   let out = s;
   if (settings && ahead(settings, s.tripSettings ?? undefined)) {
-    const base: TripSettings = s.tripSettings ?? { startDate: null, plan: null, bookingDates: {}, overrides: [], updatedAt: '' };
+    const base: TripSettings = s.tripSettings ?? { startDate: null, lastDayStart: null, plan: null, bookingDates: {}, overrides: [], updatedAt: '' };
     out = { ...out, tripSettings: { ...base, ...settings.patch, updatedAt: settings.updatedAt } };
   }
   const tv = (Object.entries(travellers) as [Person, NonNullable<TravellerOverlay[Person]>][]).filter(([n, t]) => ahead(t, s.travellers?.[n]));

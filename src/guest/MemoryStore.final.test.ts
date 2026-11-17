@@ -28,6 +28,12 @@ describe('MemoryStore final-stage fields', () => {
     expect(seen).toBe(5);
   });
 
+  it('round-trips the last day start', async () => {
+    const st = new MemoryStore();
+    await st.saveTripSettings({ lastDayStart: '07:00' });
+    expect((await st.load()).tripSettings?.lastDayStart).toBe('07:00');
+  });
+
   it('never refuses an organiser write, and two stores share nothing', async () => {
     localStorage.setItem('tp-local-admin-key', 'secret');
     await new MemoryStore().saveTripSettings({ startDate: '2026-12-01' });

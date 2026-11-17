@@ -97,6 +97,24 @@ describe('per-person leave-by', () => {
   });
 });
 
+describe('last day starts at', () => {
+  const air: DayEntry = { kind: 'drive', label: 'drive', hours: 0.8, from: 'Ella', to: 'AIR' };
+  const flags = (depart: string, lastDayStart: string | null) =>
+    arrivalFlags({ Alex: tr('Alex', '2026-12-08T09:00', depart) }, '2026-12-08', 9, day(air), lastDayStart);
+  it('flags a 05:00 flight whose leave-by (01:12) is before the hour set', () => {
+    const f = flags('2026-12-16T05:00', '07:00');
+    expect(f.map(x => x.kind)).toEqual(['early']);
+    expect(f[0].text).toContain('2026-12-16T01:12');
+    expect(f[0].text).toContain('07:00');
+  });
+  it('flags it only before midnight when no hour is set', () => {
+    expect(flags('2026-12-16T05:00', null)).toEqual([]);
+  });
+  it('leaves a 14:30 flight alone', () => {
+    expect(flags('2026-12-16T14:30', '07:00')).toEqual([]);
+  });
+});
+
 describe('flightsDark and arrivalFlags agree on a malformed time', () => {
   it('a traveller with arriveLocal garbage is dark and missing, and a good pair is neither', () => {
     const bad = tr('Alex', 'garbage', '2026-12-09T20:00');

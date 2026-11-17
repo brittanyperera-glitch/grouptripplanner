@@ -66,6 +66,13 @@ describe('SupabaseStore final-stage load', () => {
     expect((await store().load()).tripSettings).toBeNull();
   });
 
+  it('maps last_day_start, and a missing column to null', async () => {
+    fake.rows.trip_settings = [{ id: 1, start_date: null, plan: null, last_day_start: '07:00', updated_at: 'U' }];
+    expect((await store().load()).tripSettings?.lastDayStart).toBe('07:00');
+    fake.rows.trip_settings = [{ id: 1, start_date: null, plan: null, updated_at: 'U' }];
+    expect((await store().load()).tripSettings?.lastDayStart).toBeNull();
+  });
+
   it('maps the three tables', async () => {
     fake.rows.trip_settings = [{ id: 1, start_date: '2026-12-01', plan: { days: 9 }, booking_dates: { train: { bookBy: '2026-11-20' } }, overrides: [{ at: 't', what: 'w' }], updated_at: 'U' }];
     fake.rows.travellers = [{ name: 'Alex', arrive_local: '2026-12-01T09:30', arrive_flight: 'UL 504', depart_local: null, depart_flight: null, updated_at: 'U' }];

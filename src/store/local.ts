@@ -113,7 +113,7 @@ export class LocalStore implements Store, FinalStore {
 
   async saveTripSettings(patch: Partial<Omit<TripSettings, 'updatedAt'>>): Promise<void> {
     requireAdmin();
-    const stored = read<TripSettings | null>(SETTINGS, null) ?? { startDate: null, plan: null, bookingDates: {}, overrides: [], updatedAt: '' };
+    const stored = read<TripSettings | null>(SETTINGS, null) ?? { startDate: null, lastDayStart: null, plan: null, bookingDates: {}, overrides: [], updatedAt: '' };
     write(SETTINGS, { ...stored, ...patch, updatedAt: new Date().toISOString() });
     await this.emit();
   }

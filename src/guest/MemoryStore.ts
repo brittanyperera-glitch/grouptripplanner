@@ -75,7 +75,7 @@ export class MemoryStore implements Store, FinalStore {
 
   // The sandbox has no organiser key to check: the guest plays the organiser too.
   async saveTripSettings(patch: Partial<Omit<TripSettings, 'updatedAt'>>): Promise<void> {
-    const stored = this.state.tripSettings ?? { startDate: null, plan: null, bookingDates: {}, overrides: [], updatedAt: '' };
+    const stored = this.state.tripSettings ?? { startDate: null, lastDayStart: null, plan: null, bookingDates: {}, overrides: [], updatedAt: '' };
     this.state.tripSettings = structuredClone({ ...stored, ...patch, updatedAt: new Date().toISOString() });
     this.emit();
   }

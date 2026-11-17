@@ -45,7 +45,7 @@ const missingColumn = (e: unknown, col: string): boolean => {
 const missingTable = (e: { code?: string; message?: string }): boolean =>
   e.code ? ['42P01', 'PGRST205', 'PGRST204'].includes(e.code) : /in the schema cache|relation "[^"]+" does not exist/i.test(e.message ?? '');
 interface AdminRow { pins: StaysAdmin['pins'] | null; scouts: StaysAdmin['scouts'] | null; closed?: StaysAdmin['closed'] | null; nights?: unknown; fallen?: unknown }
-interface SettingsRow { start_date: string | null; plan: TripSettings['plan']; booking_dates: TripSettings['bookingDates'] | null; overrides: TripSettings['overrides'] | null; updated_at: string | null }
+interface SettingsRow { start_date: string | null; last_day_start?: string | null; plan: TripSettings['plan']; booking_dates: TripSettings['bookingDates'] | null; overrides: TripSettings['overrides'] | null; updated_at: string | null }
 interface TravellerRow { name: Person; arrive_local: string | null; arrive_flight: string | null; depart_local: string | null; depart_flight: string | null; updated_at: string | null }
 interface ClaimRow { item_id: string; owner: Person | null; updated_at: string | null }
 const EPOCH = new Date(0).toISOString();
@@ -155,7 +155,7 @@ export class SupabaseStore implements Store, FinalStore {
   private loadTripSettings(): Promise<TripSettings | null> {
     return this.soft<TripSettings | null>('trip_settings', null, rows => {
       const r = (rows as SettingsRow[])[0];
-      return r ? { startDate: r.start_date, plan: r.plan ?? null, bookingDates: r.booking_dates ?? {}, overrides: Array.isArray(r.overrides) ? r.overrides : [], updatedAt: r.updated_at ?? EPOCH } : null;
+      return r ? { startDate: r.start_date, lastDayStart: r.last_day_start ?? null, plan: r.plan ?? null, bookingDates: r.booking_dates ?? {}, overrides: Array.isArray(r.overrides) ? r.overrides : [], updatedAt: r.updated_at ?? EPOCH } : null;
     });
   }
 
@@ -173,6 +173,7 @@ export class SupabaseStore implements Store, FinalStore {
   async saveTripSettings(patch: Partial<Omit<TripSettings, 'updatedAt'>>): Promise<void> {
     const cols: Record<string, unknown> = { id: 1, updated_at: new Date().toISOString() };
     if (patch.startDate !== undefined) cols.start_date = patch.startDate;
+    if (patch.lastDayStart !== undefined) cols.last_day_start = patch.lastDayStart;
     if (patch.plan !== undefined) cols.plan = patch.plan;
     if (patch.bookingDates !== undefined) cols.booking_dates = patch.bookingDates;
     if (patch.overrides !== undefined) cols.overrides = patch.overrides;
