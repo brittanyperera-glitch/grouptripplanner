@@ -39,6 +39,10 @@
    "line": "Time to put your {stays} on the table. Or none, we won't judge.",
    "button": "Add a stay"
   },
+  "stayShort": {
+   "line": "One stay is not a vote. {Add a 2nd} so the group has something to choose between.",
+   "button": "Add a stay"
+  },
   "stayLock": {
    "line": "Happy with your list? {Lock in} your stays so the voting can start.",
    "button": "Lock in"

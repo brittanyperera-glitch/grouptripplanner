@@ -178,6 +178,10 @@ describe('the Stays header when nothing is votable', () => {
     expect(finalSub(outs, ['Ella', 'Kandy and Knuckles'], false)).toBe('Brittany is sorting Kandy and Knuckles');
     for (const s of [finalSub(outs, ['Ella', 'Kandy and Knuckles'], true), finalSub(outs, ['Ella', 'Kandy and Knuckles'], false)]) expect(s).not.toBe(C.waiting);
   });
+  it('lists several areas with commas, since an area name can hold "and"', () => {
+    const outs: Outcome[] = [{ kind: 'short', have: 1 }, { kind: 'short', have: 1 }, { kind: 'short', have: 1 }];
+    expect(finalSub(outs, ['Ella', 'Kandy and Knuckles', 'Colombo'], false)).toBe('Waiting on a 2nd stay for Ella, Kandy and Knuckles and Colombo');
+  });
   it('a short area asks for a 2nd stay, a waiting one keeps the old line, a vote keeps its line', () => {
     expect(finalSub([decided, { kind: 'short', have: 1 }], ['Ella', 'Kandy and Knuckles'], false)).toBe('Waiting on a 2nd stay for Kandy and Knuckles');
     expect(finalSub([{ kind: 'wait', ranked: 1 }, { kind: 'replacing' }], ['Ella', 'Kandy and Knuckles'], true)).toBe(C.waiting);

@@ -227,13 +227,23 @@ describe('scout nudge: an area short of a 2nd stay', () => {
   // The scout of the only area is Alex: scoutAssignments hands areas out over the sorted crew.
   it('the scout is asked for a 2nd stay, a non-scout is asked for nothing', () => {
     const one = withStays([stay('a1')]);
-    expect(mine('Alex', one)).toEqual([{ id: 'stayAdd', label: 'Find a 2nd stay for Ella', count: 1, target: { tab: 'Stays' } }]);
+    expect(mine('Alex', one)).toEqual([{ id: 'stayShort', label: 'Find a 2nd stay for Ella', count: 1, target: { tab: 'Stays' } }]);
     expect(mine('Antek', one)).toEqual([]);
     expect(tabBadges(mine('Alex', one))).toEqual({ Stays: 1 });
   });
-  it('an area with no stay asks the scout for a first one', () => {
-    expect(mine('Alex', withStays([])).map(i => i.label)).toEqual(['Find a stay for Ella']);
-    expect(mine('Antek', withStays([]))).toEqual([]);
+  it('an empty area is not nudged: the Stays tab counts it as finished', () => {
+    expect(mine('Alex', withStays([]))).toEqual([]);
+  });
+  it('a scout of several short areas gets one item, so the id is unique, and the badge counts the areas', () => {
+    const areas = ['Colombo', 'North', 'East coast', 'Cultural Triangle', 'Kandy and Knuckles', 'Kitulgala'] as const;
+    // The last day has no night, so a 7th day keeps Kitulgala an area.
+    const days = [...areas, 'Ella' as const].map((area, i) => ({ ...day(i + 1), area }));
+    const wide = group({ final: { ...plan, areas: [...areas], days } as Plan, locked: true });
+    const list = areas.map((area, i) => stay(`s${i}`, { area }));
+    // Six areas dealt over five sorted names: Alex scouts the first and the sixth.
+    const got = openItems(ctx({ me: 'Alex', group: wide, state: withStays(list) }));
+    expect(got).toEqual([{ id: 'stayShort', label: 'Find a 2nd stay for Colombo and Kitulgala', count: 2, target: { tab: 'Stays' } }]);
+    expect(tabBadges(got)).toEqual({ Stays: 2 });
   });
   it("Brittany's scout override moves the item to the person she named", () => {
     const one = withStays([stay('a1')], { scouts: { Ella: 'Antek' } });

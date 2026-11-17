@@ -47,6 +47,8 @@ export const photoOf = (s: PlaceSuggestion): string | undefined => {
 };
 
 export const gbp = (n: number) => `£${n.toFixed(2).replace(/\.00$/, '')}`;
+/** "A, B and C". Area names can hold "and" themselves, so a comma list reads clearer than "A and B and C". */
+export const andList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
 export const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** Only web links ever reach an href or an img src. A missing scheme is added; anything else is rejected. */
@@ -156,7 +158,7 @@ export function outcome(ctx: StayCtx, area: Area): Outcome {
 /** The Final step's one line when nothing can be voted on yet: who is being waited on, and for what. */
 export function finalSub(outs: Outcome[], areas: Area[], admin: boolean): string {
   const C = STAY_COPY.final;
-  const names = (k: Outcome['kind']) => areas.filter((_, i) => outs[i]?.kind === k).join(' and ');
+  const names = (k: Outcome['kind']) => andList(areas.filter((_, i) => outs[i]?.kind === k));
   if (outs.some(o => o.kind === 'vote')) return C.sub;
   if (outs.some(o => o.kind === 'wait')) return C.waiting;
   if (outs.some(o => o.kind === 'replacing')) return admin ? C.pinReplacement(names('replacing')) : C.sorting(names('replacing'));
@@ -198,7 +200,7 @@ export const STAY_COPY = {
   rank: { title: 'Pick your top 2', sub: 'First place gets 2 points, second gets 1.', go: 'Pick my top 2', waitHead: 'Top 2 is in', waitSub: 'Waiting on the others to pick.', caption: (n: number, of: number) => `${n} of ${of} picked`, label: 'Who has picked', done: 'picked', wait: 'still to pick' },
   final: { title: 'Head to head', sub: 'Two finalists per place. Three votes settle it.', go: 'Head to head', waiting: 'Waiting on the others to pick their top 2.', pinReplacement: (area: string) => `Pin a ${area} replacement`, sorting: (area: string) => `Brittany is sorting ${area}`, short: (area: string) => `Waiting on a 2nd stay for ${area}`, set: 'Your stays are set', setSub: 'One stay per place.' },
   closeRank: { go: (area: string) => `Close ranking for ${area}`, hint: 'Goes ahead with the top 2s already in.' },
-  nudge: { short: (area: string) => `Find a 2nd stay for ${area}`, empty: (area: string) => `Find a stay for ${area}` },
+  nudge: (areas: string) => `Find a 2nd stay for ${areas}`,
   scout: (names: string) => `You scout ${names}`,
   scoutTag: 'You scout',
   destinations: 'Where we stay',
