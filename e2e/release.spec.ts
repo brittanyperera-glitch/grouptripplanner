@@ -11,6 +11,11 @@ const seed = NAMES.map(name => ({ name, days: 9, flex: false, pace: 0, ranking, 
 const release = JSON.parse(fs.readFileSync('src/content/release.json', 'utf8')) as { days: number; items: string[] };
 const REVEAL_KEY = `${release.days}:${release.items.join(',')}`;
 const SHOTS = process.env.SHOTS_DIR;
+// Since the 17 Nov wiring, My trip is Mission HQ while missions are open; the itinerary is on the Group trip view.
+const toGroupTrip = async (page: import('@playwright/test').Page) => {
+  await expect(page.getByRole('heading', { name: 'Mission HQ' })).toBeVisible();
+  await page.getByRole('button', { name: 'Group trip' }).click();
+};
 const shot = async (page: import('@playwright/test').Page, name: string) => { if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.png` }); };
 
 for (const [w, h] of [[1680, 900], [1440, 900], [1280, 800], [1024, 768]]) for (const scheme of ['light', 'dark'] as const) {
@@ -35,6 +40,7 @@ for (const [w, h] of [[1680, 900], [1440, 900], [1280, 800], [1024, 768]]) for (
     await page.getByRole('button', { name: 'Close' }).click();
 
     // 3. The full itinerary is the group plan, with the released days and a way on to Stays.
+    await toGroupTrip(page);
     await expect(page.getByRole('tablist')).toBeVisible();
     await expect(page.getByText('9 days, about')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
@@ -65,14 +71,23 @@ for (const w of [320, 375]) {
     await page.reload();
     const overflow = () => page.evaluate(() => {
       const de = document.documentElement;
-      const wide = [...document.querySelectorAll<HTMLElement>('button, a, h1, h2, .big, .cta')].filter(e => e.getBoundingClientRect().right > de.clientWidth + 1).map(e => e.textContent?.trim().slice(0, 30));
+      // A designed scroll-snap strip may hold chips past the edge, but only if the scroller itself fits the viewport.
+      const inScroller = (e: HTMLElement) => { for (let a = e.parentElement; a; a = a.parentElement) {
+        const ox = getComputedStyle(a).overflowX, b = a.getBoundingClientRect();
+        if ((ox === 'auto' || ox === 'scroll') && b.left >= -0.5 && b.right <= innerWidth + 0.5) return true;
+      } return false; };
+      const wide = [...document.querySelectorAll<HTMLElement>('button, a, h1, h2, .big, .cta')].filter(e => e.getBoundingClientRect().right > de.clientWidth + 1 && !inScroller(e)).map(e => e.textContent?.trim().slice(0, 30));
       return { page: de.scrollWidth - de.clientWidth, wide };
     });
     await expect(page.getByText('Mission unlocked')).toBeVisible();
     expect(await overflow(), 'reveal').toEqual({ page: 0, wide: [] });
     await page.getByRole('button', { name: 'Close' }).click();
+    await toGroupTrip(page);
     await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
     expect(await overflow(), 'itinerary').toEqual({ page: 0, wide: [] });
+    const strip = (await page.getByRole('group', { name: 'Days' }).boundingBox())!;
+    expect(strip.x, 'day strip left').toBeGreaterThanOrEqual(-0.5);
+    expect(strip.x + strip.width, 'day strip right').toBeLessThanOrEqual(w + 0.5);
     await page.getByRole('button', { name: 'Next: find somewhere to stay' }).click();
     await expect(page.getByText('Working out the route.')).toHaveCount(0);
     expect(await overflow(), 'stays').toEqual({ page: 0, wide: [] });
@@ -114,6 +129,7 @@ test('the Awards dialog does not open over the itinerary after the reveal', asyn
   }, [varied]);
   await page.reload();
   await page.getByRole('button', { name: 'Close' }).click();
+  await toGroupTrip(page);
   await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
   await expect(page.getByText('The group awards', { exact: false })).toHaveCount(0);
   await page.getByRole('button', { name: 'Menu' }).click();
@@ -153,7 +169,7 @@ for (const [w, h] of [[320, 640], [390, 844], [1280, 800]]) {
   });
 }
 
-test('closing the reveal lands on the itinerary even on the first visit of the day, with the welcome-back walkthrough not yet seen', async ({ page }) => {
+test('closing the reveal lands on Mission HQ, one tap from the itinerary, even on the first visit of the day, with the welcome-back walkthrough not yet seen', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.evaluate(([rows]) => {
@@ -163,6 +179,7 @@ test('closing the reveal lands on the itinerary even on the first visit of the d
   }, [seed]);
   await page.reload();
   await page.getByRole('button', { name: 'Close' }).click();
+  await toGroupTrip(page);
   await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
   await expect(page.getByRole('tablist')).toBeVisible();
 });
@@ -204,6 +221,7 @@ test('one member starting over does not take the released plan away from the oth
     localStorage.setItem('tp:reveal-seen', key as string);
   }, [open, REVEAL_KEY]);
   await page.reload();
+  await toGroupTrip(page);
   await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Stays' })).toBeVisible();
 });
@@ -220,7 +238,16 @@ test('the group plan holds the released places and none of the ruled-out ones', 
   await page.reload();
   // The seen key differs from the release key, so the reveal plays first.
   await page.getByRole('button', { name: 'Close' }).click();
-  const body = await page.locator('main, body').first().innerText();
+  await toGroupTrip(page);
+  const chips = page.getByRole('group', { name: 'Days' }).getByRole('button');
+  const days = await chips.count();
+  expect(days, 'every released day is visited').toBe(9);
+  let body = '';
+  for (let d = 0; d < days; d++) {
+    await chips.nth(d).click();
+    await expect(chips.nth(d)).toHaveAttribute('aria-pressed', 'true');
+    body += '\n' + await page.locator('.tv-card').innerText();
+  }
   for (const gone of ['Yala', 'Udawalawe', 'Ella Rock', 'Anuradhapura', 'Polonnaruwa', 'Horton', 'Scuba']) expect(body, gone).not.toContain(gone);
   for (const kept of ['Elephant safari', 'Pidurangala', 'Knuckles']) expect(body, kept).toContain(kept);
 });
