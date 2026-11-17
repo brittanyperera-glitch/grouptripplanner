@@ -148,12 +148,13 @@ function ReleasedTrip({ group }: { group: GroupResult }) {
   }
   const start = model.start && model.today < model.start ? `Trip starts ${WEEKDAY_DAY_MONTH.format(new Date(`${model.start}T00:00:00Z`))}` : null;
   let body;
+  const today = model.views.some(v => v.date === model.today);
   if (spy) body = <MissionHQ group={group} onGo={m => open(m.file)} onOpen={open} onExit={() => undefined} onGroup={() => setView('group')} />;
   else if (finale && !done) return <MissionComplete group={group} onTrip={() => setDone(true)} />;
-  else if (model.views.some(v => v.date === model.today)) body = <TodayScreen group={group} onWholeTrip={n => { window.location.hash = `#/day-${n}`; setView('group'); }} />;
+  else if (today) body = <TodayScreen group={group} onWholeTrip={n => { window.location.hash = `#/day-${n}`; setView('group'); }} />;
   else body = start && <section className="body"><p className="sub">{start}</p></section>;
-  // The HQ is the whole screen and carries its own Group trip button, so no paper strip shows under it.
-  return <>{body}{!spy && <div className="body"><button type="button" className="link" onClick={() => setView('group')}>Group trip</button></div>}</>;
+  // The HQ carries its own Group trip button and Today its "See the whole trip", so neither gets a second one.
+  return <>{body}{!spy && !today && <div className="body"><button type="button" className="link" onClick={() => setView('group')}>Group trip</button></div>}</>;
 }
 const readFinaleSeen = () => { try { return localStorage.getItem(FINALE_SEEN_KEY); } catch { return null; } };
 

@@ -71,6 +71,7 @@ describe('released app, My trip tab', () => {
     expect(within(today).getByLabelText('Day 3')).toBeInTheDocument();
     expect(screen.queryByLabelText('Trip view')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Replay mission' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Group trip' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'See the whole trip' }));
     expect(await screen.findByLabelText('Trip view')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Day 3/ })).toHaveAttribute('aria-pressed', 'true');
@@ -80,7 +81,7 @@ describe('released app, My trip tab', () => {
     clock('2026-12-10T08:00:00Z');
     seed('Lazza', false);
     render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Group trip' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'See the whole trip' }));
     expect(await screen.findByLabelText('Trip view')).toBeInTheDocument();
     expect(screen.queryByText(/Your best \d+ days/)).toBeNull();
     expect(screen.getByText(/9 days, about/)).toBeInTheDocument();
