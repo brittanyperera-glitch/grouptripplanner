@@ -1,0 +1,17 @@
+/* Flights. Only fx- classes lead a rule here; shared classes are used in markup, never restyled. */
+.fx { min-width: 0; }
+.fx-h { margin: 0; overflow-wrap: anywhere; }
+.fx-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.fx-row { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; min-width: 0; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow-card); overflow-wrap: anywhere; }
+.fx-who { display: flex; align-items: center; gap: 8px; }
+.fx-name { font-weight: 800; }
+.fx-line { margin: 0; font-size: 14px; }
+.fx-fl { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.fx-flag { margin: 0; font-size: 13.5px; font-weight: 700; color: var(--red-deep); }
+.fx-form { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.fx-set { display: flex; flex-direction: column; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.fx-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.fx-in { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.fx-save { flex: none; }
+.fx-saved { font-size: 12.5px; font-weight: 700; color: var(--teal); }
+.fx-bad { font-size: 12.5px; font-weight: 700; color: var(--red-deep); }
