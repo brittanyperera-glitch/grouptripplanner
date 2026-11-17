@@ -187,11 +187,12 @@ describe('nextMove', () => {
 });
 
 describe('an empty file', () => {
-  it('is not complete, so it has no Done stamp and spy mode stays on', () => {
+  it('is not complete, so it has no Done stamp, but it never holds spy mode on by itself', () => {
     const [stays, supply] = missionFiles({ state: pins([]), plan: null, model: model([]) });
     expect(stays).toMatchObject({ total: 0, complete: false });
     expect(supply).toMatchObject({ total: 0, complete: false });
-    expect(spyActive(input(pins(AREAS5), model([])))).toBe(true);
+    expect(spyActive(input(pins(AREAS5), model([])))).toBe(false);
+    expect(spyActive(input(pins(AREAS5), model([], ['Antek'])))).toBe(true);
   });
 });
 

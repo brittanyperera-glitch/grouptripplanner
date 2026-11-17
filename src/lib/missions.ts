@@ -100,5 +100,5 @@ export function nextMove(me: Person, i: MissionInput): Move | null {
   return i.model.missing.flights.includes(me) ? { file: 'touchdown', label: 'Add your flights' } : null;
 }
 
-/** Spy mode lasts only while a mission file is open. */
-export const spyActive = (i: MissionInput): boolean => missionFiles(i).some(f => !f.complete);
+/** Spy mode lasts only while a mission file with work in it is open; an empty file would otherwise hold it on forever. */
+export const spyActive = (i: MissionInput): boolean => missionFiles(i).some(f => f.total > 0 && !f.complete);
