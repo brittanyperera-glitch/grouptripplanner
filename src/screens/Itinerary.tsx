@@ -3,30 +3,18 @@ import { useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import RouteMap, { hubName } from '../components/Map';
 import { dayView } from '../lib/dayView';
-import { nightsNote, outcome, STAY_COPY, stayCtx } from '../lib/stayflow';
-import { voteOpen } from '../lib/stays';
+import { chosenStays, type ChosenStay } from '../lib/chosenStays';
+import { STAY_COPY } from '../lib/stayflow';
 import { useApp } from '../state';
-import { PEOPLE } from '../types';
-import type { AppState, Area, GroupResult, Item, Leg, Plan, Player, StayType } from '../types';
+import type { GroupResult, Item, Leg, Plan, StayType } from '../types';
 import { bookOf, tipsOf } from './BookCard';
 import TripDay, { dateLabel, flightText, STATUS_LABEL } from './TripDay';
 import { useTripModel, type TripModel } from './useTripModel';
 
-export interface ChosenStay { area: Area; title: string; stayType?: StayType; priceGbp?: number; nights: number; itineraryNights?: number; link?: string }
+// Kept here so existing importers of the stay list still resolve; the logic lives in lib/chosenStays.
+export { chosenStays, type ChosenStay };
 
 const TYPE_NAME: Record<StayType, string> = { hostel: 'Hostel', guesthouse: 'Guesthouse', boutique: 'Boutique stay', hotel: 'Hotel', villa: 'Villa', other: 'Stay' };
-
-/** One stay per destination, only where something is decided: a pin, or the result once everyone has locked in. */
-export function chosenStays(state: AppState, me: Player | null, plan: Plan): ChosenStay[] {
-  // stayCtx only needs `me` to know whether a guest is voting; the group trip has no guest when nobody is signed in.
-  const ctx = stayCtx(state, me ?? PEOPLE[0], plan);
-  const open = voteOpen(ctx.crewOf, ctx.participants);
-  return ctx.areas.flatMap(area => {
-    const o = outcome(ctx, area);
-    const s = o.kind === 'decided' && (o.via === 'pin' || open) ? ctx.suggestions.find(x => x.id === o.id && x.kind === 'stay' && x.status === 'live') : undefined;
-    return s ? [{ area, title: s.title, stayType: s.stayType, priceGbp: s.priceGbp, nights: ctx.nights[area] ?? 0, ...(nightsNote(ctx, area) ? { itineraryNights: ctx.derivedNights?.[area] } : {}), link: s.link }] : [];
-  });
-}
 
 const dayLabel = (n: number | null) => (n === null ? '' : `Day ${n}`);
 

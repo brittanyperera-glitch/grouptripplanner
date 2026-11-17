@@ -38,7 +38,7 @@ export default function Plan({ group, reveal }: { group: GroupResult; reveal?: R
       {openStays && <button type="button" className="cta" onClick={openStays}>Next: find somewhere to stay</button>}
       <TripAdminLink group={group} onOpen={openAdmin ?? (() => {})} />
       <RouteMap route={plan.route} />
-      <SaveItinerary plan={plan} kind="Group" provisional={!(reopened || (group.final && group.locked))} />
+      <SaveItinerary plan={plan} kind="Group" group={group} provisional={!(reopened || (group.final && group.locked))} />
       <DayRows plan={plan} items={items} legs={legs} quests={sideQuests(plan, me, state, items)} tips={tips} skippedBy={id => PEOPLE.filter(p => { const r = state.responses[p]; return !!r && tierOf(r.ranking, id) === 'skip'; })} />
     </section>
   );

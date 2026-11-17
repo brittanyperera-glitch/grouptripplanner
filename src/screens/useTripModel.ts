@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { nightBlocks } from '../lib/calendar';
+import { chosenStays, type ChosenStay } from '../lib/chosenStays';
 import { dayView } from '../lib/dayView';
 import { bookingsByDay } from '../lib/deadlines';
 import { tripIcs } from '../lib/ics';
@@ -7,7 +8,6 @@ import { ADMIN_IDS, claimIsFresh, doneBy, stayItemId } from '../lib/tripadmin';
 import { useApp } from '../state';
 import { AREAS, PACE_HOURS, PEOPLE } from '../types';
 import type { Area, DayBooking, DayView, GroupResult, NightBlock, Person, Plan } from '../types';
-import { chosenStays, type ChosenStay } from './Itinerary';
 
 export interface TripModel {
   plan: Plan | null; start: string | null; today: string;
@@ -27,8 +27,8 @@ const colomboToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Co
 type Live = Pick<ReturnType<typeof useApp>, 'state' | 'me' | 'items'>;
 
 /**
- * The one place app state becomes dated, stay-aware day views, so Trip view, Today, Organiser, Trip admin and the
- * print document cannot disagree. `today` is for tests.
+ * The one place app state becomes dated, stay-aware day views. Only the print document reads it so far; Trip view,
+ * Today, Organiser and Trip admin still build their own days. `today` is for tests.
  */
 export function useTripModel(group: GroupResult, today?: string): TripModel {
   const { state, me, items } = useApp();

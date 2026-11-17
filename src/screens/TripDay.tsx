@@ -1,24 +1,12 @@
 import './MyTrip.css';
 import './TripDay.css';
-import { IconCar, IconPin, IconSun, IconTrain } from '../components/Icons';
+import { IconPin } from '../components/Icons';
 import { Cover } from '../components/PhotoCard';
 import TransportLine, { hm, transportOf, transportText } from '../components/TransportLine';
 import type { SideQuest } from '../lib/sideQuests';
-import type { Area, BookingStatus, DayBooking, DayEntry, DayView, Item, Leg } from '../types';
+import type { Area, BookingStatus, DayBooking, DayView, Item, Leg } from '../types';
 import type { DayTip } from './BookCard';
-
-// MyTrip.tsx keeps these private, and importing it here would loop back through Itinerary; TripDay.test.tsx compares the two so they cannot drift.
-const LONG_DRIVE_HOURS = 5;
-const MIN_ROUND_TRIP = 0.25;
-const hrs = (h: number) => h.toFixed(1);
-const hrsShort = (h: number) => (Number.isInteger(h) ? String(h) : hrs(h));
-const andList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
-const ICON = { drive: IconCar, train: IconTrain, free: IconSun, activity: IconPin } as const;
-
-function entryText(e: DayEntry): string {
-  if (e.kind === 'activity') return `${e.label}, ${hrsShort(e.onSite ?? e.hours)} h`;
-  return e.hours > 0 ? `${e.label}, ${hrsShort(e.hours)} h` : e.label;
-}
+import { andList, entryText, hrs, hrsShort, ICON, LONG_DRIVE_HOURS, MIN_ROUND_TRIP } from './dayParts';
 
 const DATE = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 /** 'Wed 9 Dec' from 'YYYY-MM-DD'; read as UTC so no timezone can move the day. */
@@ -98,7 +86,7 @@ function Print({ view, items = [], legs = [], quests = [], tips = [], skippedBy,
   );
 }
 
-/** One day, drawn the same way in Trip view, Today and the print document. */
+/** One day from the trip model. The print layout is live; the photo-strip card is not rendered by any screen yet (DayRows still draws Trip view). */
 export default function TripDay(props: TripDayProps) {
   if (props.compact) return <Print {...props} />;
   const { view, items = [], legs = [], quests = [], tips = [], skippedBy, onPlace, onStay, note, rainSlack } = props;
