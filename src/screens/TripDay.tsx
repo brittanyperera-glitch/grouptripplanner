@@ -4,8 +4,9 @@ import { IconPin } from '../components/Icons';
 import { Cover } from '../components/PhotoCard';
 import TransportLine, { hm, transportOf, transportText } from '../components/TransportLine';
 import type { SideQuest } from '../lib/sideQuests';
-import type { Area, BookingStatus, DayBooking, DayView, Item, Leg } from '../types';
+import type { Area, DayBooking, DayView, Item, Leg } from '../types';
 import type { DayTip } from './BookCard';
+import { bookingParts, bookingText } from './bookingText';
 import { andList, entryText, hrs, hrsShort, ICON, LONG_DRIVE_HOURS, MIN_ROUND_TRIP } from './dayParts';
 
 const DATE = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -15,7 +16,6 @@ export function dateLabel(date: string): string {
   return `${p.weekday} ${p.day} ${p.month}`;
 }
 
-export const STATUS_LABEL: Record<BookingStatus, string> = { undated: 'No date yet', 'not-open': 'Not open yet', open: 'Open', overdue: 'Overdue', done: 'Done' };
 export const flightText = (f: DayView['flights'][number]) => `${f.name} ${f.kind === 'arrive' ? 'arrives' : 'leaves'} ${f.time.slice(11)}${f.flight ? ` · ${f.flight}` : ''}`;
 const tonightText = (t: NonNullable<DayView['tonight']>) => `${t.checkIn ? 'Tonight, check in' : 'Tonight'}: ${t.title ? `${t.title}, ${t.area}` : `No stay chosen yet in ${t.area}`}`;
 
@@ -36,19 +36,23 @@ export interface TripDayProps {
 function Bookings({ list }: { list: DayBooking[] }) {
   return (
     <ul className="td-list" aria-label="Day bookings">
-      {list.map(b => (
-        <li key={b.id}>
-          <span className="td-name">{b.label}</span>
-          <span className={`td-chip td-${b.status}`}>{STATUS_LABEL[b.status]}</span>
-          {b.owner && <span className="td-owner">{b.owner}</span>}
-        </li>
-      ))}
+      {list.map(b => {
+        const p = bookingParts(b);
+        return (
+          <li key={b.id}>
+            <span className="td-name">{b.label}</span>
+            <span className={`td-chip td-${b.status}`}>{p.status}</span>
+            {p.owner && <span className="td-owner">{p.owner}{p.note && <small> {p.note}</small>}</span>}
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
 function Print({ view, items = [], legs = [], quests = [], tips = [], skippedBy, note, rainSlack }: TripDayProps) {
   const byId = new Map(items.map(i => [i.id, i]));
+  const listed = new Set(view.bookings.map(b => b.id));
   return (
     <section className="it-day" aria-label={`Day ${view.n}`}>
       <h2 className="it-dayhead">{`Day ${view.n}${view.date ? ` · ${dateLabel(view.date)}` : ''}`}{view.area && <span className="it-area">{view.area}</span>}</h2>
@@ -66,7 +70,7 @@ function Print({ view, items = [], legs = [], quests = [], tips = [], skippedBy,
               {item && (item.when || item.fee) && (
                 <span className="it-sub">{[item.when && `Best time: ${item.when}`, item.fee && `Cost: ${item.fee}`].filter(Boolean).join('. ')}</span>
               )}
-              {item?.book && <span className="it-sub"><b>Book:</b> {item.book}</span>}
+              {item?.book && !listed.has(`book:${item.id}`) && <span className="it-sub"><b>Book:</b> {item.book}</span>}
               {item?.warn && <span className="it-sub"><b>Heads up:</b> {item.warn}</span>}
               {item?.britt && <span className="it-sub"><b>Britt says:</b> {item.britt}</span>}
               {skipped.length > 0 && <span className="it-sub">Skipped by {andList(skipped)}</span>}
@@ -79,7 +83,7 @@ function Print({ view, items = [], legs = [], quests = [], tips = [], skippedBy,
         {tips.filter(t => t.day === view.n).map(t => <li key={t.name} className="it-move">{t.name}: {t.text}</li>)}
         {rainSlack && <li className="it-move">Spare for rain</li>}
         {view.tonight && <li className="it-move">{tonightText(view.tonight)}</li>}
-        {view.bookings.map(b => <li key={b.id} className="it-move">Book: {b.label}, {STATUS_LABEL[b.status].toLowerCase()}{b.owner ? `, ${b.owner}` : ''}</li>)}
+        {view.bookings.map(b => <li key={b.id} className="it-move">Book: {b.label}, {bookingText(b)}</li>)}
         {view.flights.map(f => <li key={`${f.name}${f.kind}`} className="it-move">{flightText(f)}</li>)}
       </ul>
     </section>

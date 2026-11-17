@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AppState, PlaceSuggestion, Plan } from '../types';
 import { applyAdmin, cleanNights, EMPTY_STAYS } from '../types';
-import { chosenStays } from '../screens/Itinerary';
+import { chosenStays } from './chosenStays';
 import { withNights } from './override';
 import { effectiveNights, nightsNote, stayCtx, STAY_COPY } from './stayflow';
 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { nightBlocks } from '../lib/calendar';
 import { chosenStays, type ChosenStay } from '../lib/chosenStays';
 import { dayView } from '../lib/dayView';
@@ -24,6 +24,20 @@ export interface TripModel {
 /** Today in Sri Lanka as 'YYYY-MM-DD'; en-CA prints the date in that order. */
 const colomboToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' }).format(new Date());
 
+/** Re-reads the Colombo date once a minute and when the tab returns, so statuses turn over at midnight in an open app. */
+function useColomboToday(on: boolean): string {
+  const [day, setDay] = useState(colomboToday);
+  useEffect(() => {
+    if (!on) return;
+    const tick = () => setDay(colomboToday());
+    const back = () => { if (document.visibilityState === 'visible') tick(); };
+    const id = setInterval(tick, 60_000);
+    document.addEventListener('visibilitychange', back);
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', back); };
+  }, [on]);
+  return day;
+}
+
 type Live = Pick<ReturnType<typeof useApp>, 'state' | 'me' | 'items'>;
 
 /**
@@ -32,7 +46,8 @@ type Live = Pick<ReturnType<typeof useApp>, 'state' | 'me' | 'items'>;
  */
 export function useTripModel(group: GroupResult, today?: string): TripModel {
   const { state, me, items } = useApp();
-  const now = useMemo(() => today ?? colomboToday(), [today]);
+  const clock = useColomboToday(today === undefined);
+  const now = today ?? clock;
   // `items` is liveItems(state), rebuilt every render, so `state` stands for it.
   return useMemo(() => buildModel(group, { state, me, items }, now), [group.final, group.pace, group.warnings, state, me, now]);
 }

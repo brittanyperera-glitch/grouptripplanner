@@ -1,4 +1,4 @@
-import { cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -129,5 +129,40 @@ describe('stays, bookings and flights from live state', () => {
     expect(ics.match(/BEGIN:VEVENT/g)!.length).toBeGreaterThanOrEqual(9);
     expect(ics).toContain('SUMMARY:Day 1 · ');
     expect(ics).toContain('DTSTART;VALUE=DATE:20261208');
+  });
+});
+
+describe('today stays current while the app is open', () => {
+  // 18:29 UTC is 23:59 in Colombo (UTC+5:30, no daylight saving). Only Date and the interval are faked so waitFor keeps its real timers.
+  const fake = (iso: string) => vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'], now: new Date(iso) });
+  const live = () => renderHook(() => useTripModel(group), { wrapper });
+  const train = (m: ReturnType<typeof useTripModel>) => m.bookings.find(b => b.id === 'book:train')!;
+  beforeEach(() => put('tp:settings', { startDate: START, plan: null, bookingDates: { 'book:train': { bookBy: '2026-11-19' } }, overrides: [], updatedAt: AT }));
+  afterEach(() => vi.useRealTimers());
+
+  it('flips a booking from open to overdue when the clock crosses midnight in Colombo', async () => {
+    fake('2026-11-19T18:29:00Z');
+    const r = live();
+    await vi.waitFor(() => expect(train(r.result.current)).toMatchObject({ status: 'open' }));
+    expect(r.result.current.today).toBe('2026-11-19');
+    act(() => { vi.advanceTimersByTime(60_000); });
+    expect(r.result.current.today).toBe('2026-11-20');
+    expect(train(r.result.current)).toMatchObject({ status: 'overdue' });
+  });
+
+  it('catches up when the tab becomes visible again after sleeping past midnight', async () => {
+    fake('2026-11-19T18:29:00Z');
+    const r = live();
+    await vi.waitFor(() => expect(train(r.result.current).status).toBe('open'));
+    act(() => { vi.setSystemTime(new Date('2026-11-20T03:00:00Z')); document.dispatchEvent(new Event('visibilitychange')); });
+    expect(train(r.result.current).status).toBe('overdue');
+  });
+
+  it('keeps an injected today fixed', async () => {
+    fake('2026-11-19T18:29:00Z');
+    const r = renderHook(() => useTripModel(group, '2026-11-19'), { wrapper });
+    await vi.waitFor(() => expect(train(r.result.current).status).toBe('open'));
+    act(() => { vi.advanceTimersByTime(3_600_000); });
+    expect(r.result.current.today).toBe('2026-11-19');
   });
 });

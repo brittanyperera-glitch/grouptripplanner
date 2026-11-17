@@ -4,7 +4,8 @@ import catalogue from '../data/catalogue.json';
 import legsData from '../data/legs.json';
 import type { AppState, CrewStays, Item, Leg, Plan, PlaceSuggestion, StaysState } from '../types';
 import { EMPTY_STAYS, PEOPLE } from '../types';
-import { chosenStays, Itinerary } from './Itinerary';
+import { chosenStays } from '../lib/chosenStays';
+import { Itinerary } from './Itinerary';
 
 const ITEMS = (catalogue as unknown as { items: Item[] }).items;
 const legs = legsData as unknown as Leg[];
@@ -42,11 +43,11 @@ describe('Itinerary document', () => {
     expect(within(screen.getByRole('region', { name: 'Day 2' })).getByText(train.britt!, { exact: false })).toBeInTheDocument();
   });
 
-  it('omits the stays section when none is chosen and prints it when one is', () => {
+  it('omits the Where you sleep section when none is chosen and prints it when one is', () => {
     const { rerender } = render(<Itinerary plan={plan} items={ITEMS} legs={legs} heading="My itinerary" stays={[]} />);
-    expect(screen.queryByText('Where you are staying')).toBeNull();
+    expect(screen.queryByText('Where you sleep')).toBeNull();
     rerender(<Itinerary plan={plan} items={ITEMS} legs={legs} heading="My itinerary" stays={[{ area: 'Ella', title: 'Hill hut', nights: 2, priceGbp: 40, stayType: 'guesthouse', link: stay.link }]} />);
-    const sec = screen.getByRole('region', { name: 'Where you are staying' });
+    const sec = screen.getByRole('region', { name: 'Where you sleep' });
     expect(within(sec).getByText('Ella: Hill hut')).toBeInTheDocument();
     expect(within(sec).getByText('2 nights')).toBeInTheDocument();
     expect(within(sec).getByText('https://example.com/hut')).toBeInTheDocument();
