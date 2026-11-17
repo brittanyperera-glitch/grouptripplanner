@@ -22,9 +22,9 @@ describe('bookingText', () => {
 });
 
 describe('deadlineTag', () => {
-  it('B4: one wording for the Supply runs tag, with a date when there is one and no bare Open', () => {
+  it('B4: one wording for the Supply runs tag, with a date when there is one, else the same Open as the print lists', () => {
     expect(deadlineTag(b({ status: 'open', bookBy: '2026-12-01' }))).toBe('Book by 1 Dec');
-    expect(deadlineTag(b({ status: 'open' }))).toBe('Open now');
+    expect(deadlineTag(b({ status: 'open' }))).toBe('Open');
     expect(deadlineTag(b({ status: 'not-open', opensOn: '2026-11-08' }))).toBe('Opens 8 Nov');
     expect(deadlineTag(b({ status: 'overdue', bookBy: '2026-11-20' }))).toBe('Overdue');
     expect(deadlineTag(b({ status: 'undated' }))).toBe('No date yet');

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, DayEntry, Person, Traveller } from '../types';
-import { arrivalFlags, lastArrival, leaveBy, leaveByEach } from './arrivals';
+import { arrivalFlags, flightsDark, lastArrival, leaveBy, leaveByEach } from './arrivals';
 
 const tr = (name: Person, arriveLocal: string | null, departLocal: string | null): Traveller =>
   ({ name, arriveLocal, arriveFlight: null, departLocal, departFlight: null, updatedAt: '' });
@@ -94,5 +94,24 @@ describe('per-person leave-by', () => {
   it('a traveller already flagged for leaving before the last day gets one flag, not two', () => {
     const f = arrivalFlags({ Alex: tr('Alex', '2026-12-01T09:00', '2026-12-07T20:00') }, '2026-12-01', 9, day(air));
     expect(f).toHaveLength(1);
+  });
+});
+
+describe('flightsDark and arrivalFlags agree on a malformed time', () => {
+  it('a traveller with arriveLocal garbage is dark and missing, and a good pair is neither', () => {
+    const bad = tr('Alex', 'garbage', '2026-12-09T20:00');
+    expect(flightsDark(bad)).toBe(true);
+    expect(arrivalFlags({ Alex: bad }, '2026-12-01', 9).map(x => x.kind)).toEqual(['missing']);
+    expect(flightsDark(tr('Alex', '2026-12-01T09:00', '2026-12-09T20:00'))).toBe(false);
+    expect(flightsDark(undefined)).toBe(true);
+  });
+});
+
+describe('lastArrival on a date', () => {
+  it('is the latest landing among those on that date, so a day-2 landing does not hide day 1', () => {
+    const t = { Alex: tr('Alex', '2026-12-08T09:00', null), Lazza: tr('Lazza', '2026-12-08T17:45', null), Antek: tr('Antek', '2026-12-09T02:00', null) };
+    expect(lastArrival(t, '2026-12-08')).toBe('2026-12-08T17:45');
+    expect(lastArrival(t)).toBe('2026-12-09T02:00');
+    expect(lastArrival(t, '2026-12-07')).toBeNull();
   });
 });

@@ -71,12 +71,14 @@ describe('Mission complete', () => {
     expect(localStorage.getItem(SEEN_KEY)).toBeNull();
   });
 
-  it('a blocked storage does not crash it: the screen shows', async () => {
+  it('a blocked storage does not crash it, and counts as seen: no finale on every mount', async () => {
     seed();
     const real = Storage.prototype.getItem;
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (this: Storage, k: string) { if (k === SEEN_KEY) throw new Error('blocked'); return real.call(this, k); });
-    mount();
-    expect(await screen.findByText('Crew 5/5')).toBeInTheDocument();
+    const { view } = mount();
+    await new Promise(r => setTimeout(r, 30));
+    expect(view.container.innerHTML).toBe('');
+    expect(screen.queryByText('Crew 5/5')).toBeNull();
     vi.restoreAllMocks();
   });
 

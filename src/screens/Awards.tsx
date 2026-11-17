@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import Avatar from '../components/Avatar';
 import copy from '../content/awards.json';
 import type { Award } from '../lib/awards';
+import { andList } from '../lib/text';
 import './Awards.css';
 
 const COPY = copy as Record<string, { title: string; line: string }>;
 
-export const joinNames = (n: string[]) => (n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`);
 const fill = (line: string, a: Award) => line.replace('{value}', String(a.value)).replace('{unit}', a.unit);
 
 export default function Awards({ awards, onClose }: { awards: Award[]; onClose(): void }) {
@@ -30,7 +30,7 @@ export default function Awards({ awards, onClose }: { awards: Award[]; onClose()
             <article className="aw-card" key={a.id}>
               <h3 className="aw-title">{c?.title ?? a.id}</h3>
               <div className="aw-faces">{a.winners.map(w => <Avatar key={w} name={w} size={120} crop="bust" />)}</div>
-              <p className="aw-name">{joinNames(a.winners)}</p>
+              <p className="aw-name">{andList(a.winners)}</p>
               <p className="aw-line">{c ? fill(c.line, a) : `${a.value} ${a.unit}`}</p>
             </article>
           );

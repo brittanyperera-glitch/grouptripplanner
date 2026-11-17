@@ -84,8 +84,8 @@ export function routeLayout(route: Hub[]) {
 // Schematic island with the route drawn over it. `route` starts and ends at AIR.
 // `drive` (My trip): once it is true and motion is on, the route draws leg by leg while a tuk-tuk drives it, then parks.
 // `legs` (Trip view): indices into the route's legs (leg k joins route[k] and route[k+1]). The rest of the route is dimmed,
-// `drive` runs the same sequence over just these legs, and the tuk-tuk stays parked at the day's end (at `parkAt` when there is no leg).
-export default function RouteMap({ route, drive = false, legs: dayLegs, parkAt }: { route: Hub[]; drive?: boolean; legs?: number[]; parkAt?: Hub }) {
+// `dayN` names that day in the label. `drive` runs the same sequence over just these legs, and the tuk-tuk stays parked at the day's end (at `parkAt` when there is no leg).
+export default function RouteMap({ route, drive = false, legs: dayLegs, parkAt, dayN }: { route: Hub[]; drive?: boolean; legs?: number[]; parkAt?: Hub; dayN?: number }) {
   const uid = useId().replace(/[^A-Za-z0-9]/g, '');
   const line = pts(route.map(h => [HUB[h].lat, HUB[h].lon]));
   const legs = useMemo(() => buildLegs(route.map(hubXY)), [route]);
@@ -143,7 +143,7 @@ export default function RouteMap({ route, drive = false, legs: dayLegs, parkAt }
   );
   return (
     <div className="map" data-day={day ? '' : undefined} data-drive={animate ? (run ? 'on' : at) : undefined}>
-      <svg viewBox="-60 10 350 470" role="img" aria-label={`Route: ${route.map(h => HUB[h].name).join(', ')}`}>
+      <svg viewBox="-60 10 350 470" role="img" aria-label={`Route: ${route.map(h => HUB[h].name).join(', ')}${day && dayN ? `. Day ${dayN} highlighted` : ''}`}>
         <defs><clipPath id={`card${uid}`}><rect x="-60" y="10" width="350" height="470" rx="16" /></clipPath></defs>
         <g clipPath={`url(#card${uid})`}>
         <rect className="map-sea" x="-60" y="10" width="350" height="470" />

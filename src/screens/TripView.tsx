@@ -49,13 +49,18 @@ function StaySheet({ model, day, area, onClose }: { model: TripModel; day: numbe
 /** Props-in Trip view: the map, a strip of day chips, and the one selected day as a postcard. */
 export function TripViewBody({ model, items, legs, onReplay }: { model: TripModel; items: Item[]; legs: Leg[]; onReplay?(): void }) {
   const count = model.views.length;
-  const [day, setDay] = useState(() => hashDay(count));
+  const [picked, setDay] = useState(() => hashDay(count));
+  // A re-solve to fewer days can leave the pick past the end.
+  const day = Math.min(picked, Math.max(count, 1));
   const [place, setPlace] = useState<Item | null>(null);
   const [stay, setStay] = useState<Area | null>(null);
   const strip = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onHash = () => { if (DAY_HASH.test(window.location.hash)) setDay(hashDay(count)); };
+    // The model can fill after the first render, when the hash day had no day to point at yet.
+    const n = Number(DAY_HASH.exec(window.location.hash)?.[1]);
+    if (n >= 1 && n <= count) setDay(n);
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, [count]);
@@ -72,7 +77,7 @@ export function TripViewBody({ model, items, legs, onReplay }: { model: TripMode
   };
   return (
     <section className="body tv" aria-label="Trip view">
-      <div className="tv-map"><RouteMap route={model.plan.route} drive legs={view.legs} parkAt={view.parkAt} /></div>
+      <div className="tv-map"><RouteMap route={model.plan.route} drive legs={view.legs} parkAt={view.parkAt} dayN={day} /></div>
       <div ref={strip} className="tv-strip" role="group" aria-label="Days">
         {model.views.map(v => (
           <button key={v.n} type="button" className="tv-chip" aria-pressed={v.n === day} onClick={() => pick(v.n)}>

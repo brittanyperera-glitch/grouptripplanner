@@ -4,6 +4,7 @@ import type { AppState, Area, CrewStays, Hub, PlaceKind, PlaceSuggestion, Plan, 
 import { hubArea, nightBlocks, nightsFromBlocks } from './calendar';
 import { finalists, livePin, maxNightsOf, nightsWarnings, rankPoints, scoutAssignments, stayParticipants, stayResult, voteOpen, warnings } from './stays';
 import type { RanksByPerson } from './stays';
+import { andList } from './text';
 
 export const STEPS = ['quiz', 'suggest', 'lock', 'rank', 'final'] as const;
 export type Step = (typeof STEPS)[number];
@@ -47,8 +48,7 @@ export const photoOf = (s: PlaceSuggestion): string | undefined => {
 };
 
 export const gbp = (n: number) => `£${n.toFixed(2).replace(/\.00$/, '')}`;
-/** "A, B and C". Area names can hold "and" themselves, so a comma list reads clearer than "A and B and C". */
-export const andList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs.join(''));
+export { andList };
 export const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** Only web links ever reach an href or an img src. A missing scheme is added; anything else is rejected. */
@@ -207,8 +207,8 @@ export const STAY_COPY = {
   /** The one phrasing for a fallen-through area, on every Stays screen: the verb first, so no area name needs an article. */
   replacing: (admin: boolean, ...areas: string[]) => `${admin ? 'Pin' : 'Brittany is finding'} ${areas.length > 1 ? 'replacements' : 'a replacement'} for ${andList(areas)}`,
   fall: {
-    go: 'Fell through', ask: (owner: string | null, area: string) => `Mark it fell through? ${owner ? `This clears ${owner}'s claim on the ${area} booking.` : 'Pin a replacement next.'}`,
-    yes: 'Yes, it fell through', keep: 'Keep it', done: (title: string) => `${title} marked as fell through.`, undo: 'Undo',
+    go: 'Fell through', ask: (owner: string | null, area: string) => `Mark it as fallen through? ${owner ? `This clears ${owner}'s claim on the ${area} booking.` : 'Pin a replacement next.'}`,
+    yes: 'Yes, it fell through', keep: 'Keep it', done: (title: string) => `${title} marked as fallen through.`, undo: 'Undo',
   },
   spy: { settle: 'Tap one to stamp your vote. 3 settle it.', set: (n: number, of: number) => `${plural(of, 'area')}, ${n} set`, fold: 'Organiser tools', duty: (scout: string, mine: boolean, what: string) => (mine ? `Your duty: find ${what}` : `${scout} is finding ${what}`) },
   destinations: 'Where we stay',

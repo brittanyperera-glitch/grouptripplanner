@@ -81,7 +81,7 @@ describe('Trip view', () => {
     expect(screen.getByRole('region', { name: 'Day 6' })).toBeInTheDocument();
   });
 
-  it('follows the hash when it changes, and ignores a day the trip does not have', async () => {
+  it('follows the hash when it changes, and falls back to day 1 for a day the trip does not have', async () => {
     await mount();
     window.location.hash = '#/day-4';
     await waitFor(() => expect(chip(4)).toHaveAttribute('aria-pressed', 'true'));
@@ -185,5 +185,38 @@ describe('Trip view and the tuk-tuk', () => {
     await user.click(chip(v.n));
     expect(hubAt(tuk(document.body), m.plan!.route)).toBe(v.parkAt);
     expect(document.querySelector('.map')).not.toHaveAttribute('data-drive');
+  });
+});
+
+describe('Trip view when the model changes under it', () => {
+  const fewer = (m: Awaited<ReturnType<typeof views>>, n: number) => ({ ...m, views: m.views.slice(0, n), plan: { ...m.plan!, days: m.plan!.days.slice(0, n) } });
+
+  it('a re-solve to 7 days after picking day 9 does not throw and selects day 7', async () => {
+    const m = await views();
+    expect(m.views).toHaveLength(9);
+    const user = userEvent.setup();
+    const { rerender } = render(<TripViewBody model={m} items={items} legs={legsData as Leg[]} />);
+    await user.click(chip(9));
+    rerender(<TripViewBody model={fewer(m, 7)} items={items} legs={legsData as Leg[]} />);
+    expect(chip(7)).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('region', { name: 'Day 7' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Day 8\b/ })).toBeNull();
+  });
+
+  it('a hash day that arrives after the model fills is honoured', async () => {
+    window.location.hash = '#/day-5';
+    const m = await views();
+    const { rerender } = render(<TripViewBody model={{ ...m, views: [], plan: null }} items={items} legs={legsData as Leg[]} />);
+    expect(screen.queryByRole('group', { name: 'Days' })).toBeNull();
+    rerender(<TripViewBody model={m} items={items} legs={legsData as Leg[]} />);
+    expect(chip(5)).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('region', { name: 'Day 5' })).toBeInTheDocument();
+  });
+
+  it('the map names the highlighted day', async () => {
+    const user = await mount();
+    expect(screen.getByRole('img', { name: /Route: .*Day 1 highlighted/ })).toBeInTheDocument();
+    await user.click(chip(3));
+    expect(screen.getByRole('img', { name: /Route: .*Day 3 highlighted/ })).toBeInTheDocument();
   });
 });

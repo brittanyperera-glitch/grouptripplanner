@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -5,6 +6,7 @@ vi.unmock('../lib/release');
 import catalogue from '../data/catalogue.json';
 import legsData from '../data/legs.json';
 import { seedState } from '../guest/seed';
+import { leaveByEach } from '../lib/arrivals';
 import { groupResult } from '../lib/group';
 import { RELEASE } from '../lib/release';
 import { AppProvider } from '../state';
@@ -71,6 +73,19 @@ describe('Today on the released plan from 2026-12-08', () => {
     expect(within(today).queryByLabelText('Next leg')).toBeNull();
   });
 
+  it('on the last day each person sees their own leave-by, not the earliest flight of the group', async () => {
+    const lazzaDark = traveller('Lazza', '2026-12-08T09:00', '2026-12-16T03:15');
+    const alex = traveller('Alex', '2026-12-08T09:00', '2026-12-16T14:30');
+    trip({ 'tp:travellers': { Lazza: lazzaDark, Alex: alex } });
+    localStorage.setItem('tp:me', 'Alex');
+    screenOn('2026-12-16');
+    const today = await screen.findByLabelText('Today');
+    const own = leaveByEach({ Alex: { ...alex, name: 'Alex' } }, group.final!.days.at(-1)!).Alex!;
+    expect(own.slice(0, 10)).toBe('2026-12-16');
+    expect(within(today).getByText(/Leave for the airport by/)).toHaveTextContent(`Leave for the airport by ${own.slice(11)}`);
+    expect(within(today).getByText(/Leave for the airport by/)).toHaveTextContent(/by (0\d|1[0-4]):\d\d$/);
+  });
+
   it('shows tonight once, in its own box, and Britt\'s line for a place on the day', async () => {
     const days = group.final!.days;
     const items = (catalogue as unknown as { items: Item[] }).items;
@@ -101,6 +116,30 @@ describe('Today on the released plan from 2026-12-08', () => {
     trip({ 'tp:travellers': { Alex: traveller('Alex', '2026-12-08T09:00', null), Lazza: traveller('Lazza', '2026-12-08T17:45', null) } });
     screenOn('2026-12-08');
     expect(await screen.findByText('Last arrival: 17:45')).toBeInTheDocument();
+  });
+
+  it('on day 1 the last arrival is the latest among those landing that day, not one landing later', async () => {
+    trip({ 'tp:travellers': { Alex: traveller('Alex', '2026-12-08T09:00', null), Lazza: traveller('Lazza', '2026-12-08T17:45', null), Antek: traveller('Antek', '2026-12-09T02:00', null) } });
+    screenOn('2026-12-08');
+    expect(await screen.findByText('Last arrival: 17:45')).toBeInTheDocument();
+  });
+
+  it('on day 8 the next leg is the airport drive of day 9, and the last day has none', async () => {
+    trip();
+    screenOn('2026-12-15');
+    const leg = within(await screen.findByLabelText('Today')).getByRole('group', { name: 'Next leg' });
+    expect(leg).toHaveTextContent(new RegExp(`^Day ${group.final!.days.length}Drive`));
+    expect(leg).toHaveTextContent(/airport/i);
+  });
+
+  it('the postmark is hidden from screen readers (the card head says the same) and keeps off the photo credit corner', async () => {
+    trip();
+    screenOn('2026-12-10');
+    expect(await screen.findByLabelText('Postmark')).toHaveAttribute('aria-hidden', 'true');
+    const css = readFileSync('src/screens/Today.css', 'utf8');
+    const rule = /\.tt-postmark \{([^}]*)\}/.exec(css)![1];
+    // The credit button is 28px at top 12px (styles.css .credit-wrap), so it ends at 40px.
+    expect(rule).toMatch(/top:\s*(4[4-9]|[5-9]\d)px/);
   });
 
   // A sibling in the window tells us the state has loaded, so the empty box is not just "not loaded yet".
