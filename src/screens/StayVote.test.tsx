@@ -20,7 +20,7 @@ describe('the head to head page when a stay has fallen through', () => {
   it('names the area as being replaced, with no vote and no empty-page message', async () => {
     const ctx = stayCtx(state([{ id: 'a1', area: 'Ella', at: '2026-11-01T10:00' }]), 'Alex', plan);
     render(<AppProvider store={new LocalStore()}><StayVote ctx={ctx} onBack={() => {}} /></AppProvider>);
-    expect(await screen.findByText('Ella: Brittany is finding a replacement')).toBeInTheDocument();
+    expect(await screen.findByText('Brittany is finding a replacement for Ella')).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Stay vote: Ella' })).toBeNull();
     expect(screen.queryByText(/Nothing/i)).toBeNull();
   });

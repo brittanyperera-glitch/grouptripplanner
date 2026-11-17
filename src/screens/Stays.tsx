@@ -4,6 +4,7 @@ import Avatar from '../components/Avatar';
 import { useOpenAdmin } from '../components/AdminNav';
 import BigState from '../components/BigState';
 import { IconCheck, IconLeft } from '../components/Icons';
+import SpyScreen from '../components/spy/SpyScreen';
 import { canCloseRanking, isAdmin } from '../lib/override';
 import { routePlan } from '../lib/openItems';
 import { releaseFor } from '../lib/release';
@@ -25,11 +26,11 @@ const C = STAY_COPY;
 // Not in STAY_COPY: lib/stayflow.ts is outside this screen's files.
 const NEXT = 'Next: book your stays';
 const SUGGEST = 'Suggest a stay';
-const REPLACING = 'Brittany is finding a replacement';
 type View = { kind: 'home' } | { kind: 'lock' } | { kind: 'vote' } | { kind: 'board' | 'rank'; area: Area };
 
 /** The accommodation flow: where I am in it, one button for the next thing, and the destinations underneath. */
-export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
+/** `spy` is the HQ's spyActive: the same flow as a game; off, the screen is the normal postcard look. */
+export default function Stays({ onQuiz, spy = false }: { onQuiz?: () => void; spy?: boolean }) {
   const { state, me, store, items, legs } = useApp();
   const openAdmin = useOpenAdmin();
   const { data: group } = useGroupResult(state, items, legs, releaseFor(me));
@@ -39,7 +40,11 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
   const viewKey = 'area' in view ? `${view.kind}:${view.area}` : view.kind;
   useEffect(() => { root.current?.scrollIntoView?.({ block: 'start' }); }, [viewKey]);
 
-  const shell = (body: ReactNode) => <div ref={root}>{body}</div>;
+  const shell = (body: ReactNode) => (
+    <div ref={root}>
+      {spy ? <SpyScreen code="File 01" title="Stays" back={view.kind === 'home' ? undefined : { label: 'Stays', onClick: () => setView({ kind: 'home' }) }}><div className="st-spy">{body}</div></SpyScreen> : body}
+    </div>
+  );
   if (!me) return null;
   if (!group) return shell(<section className="body st"><p className="empty">{C.loading}</p></section>);
   const route = routePlan(group, state);
@@ -76,7 +81,7 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
     const area = view.area;
     return shell(<StayRank ctx={ctx} area={area} onBack={home} onDone={() => { const n = nextRank(area); if (n) setView({ kind: 'rank', area: n }); else home(); }} />);
   }
-  if (view.kind === 'vote') return shell(<StayVote ctx={ctx} onBack={home} />);
+  if (view.kind === 'vote') return shell(<StayVote ctx={ctx} onBack={home} spy={spy} />);
   if (view.kind === 'lock') {
     return shell(
       <section className="body st" aria-label={C.lockPage.title}>
@@ -157,7 +162,7 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
   const titleOf = (id: string) => ctx.suggestions.find(s => s.id === id)?.title;
   return shell(
     <section className="body st" aria-label="Stays">
-      <ol className="st-steps" aria-label={C.stepsLabel}>
+      {spy ? <p className="kicker">{C.spy.set(outs.filter(o => o.kind === 'decided').length, ctx.areas.length)}</p> : <ol className="st-steps" aria-label={C.stepsLabel}>
         {STEPS.map((k, i) => {
           const isDone = done.includes(k), now = !finished && k === status.current;
           return (
@@ -167,7 +172,7 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
             </li>
           );
         })}
-      </ol>
+      </ol>}
       <div className="st-card st-step-card">
         {step}
         {mineScouted.length > 0 && status.current !== 'rank' && status.current !== 'final' && <p className="st-scout">{C.scout(mineScouted.join(', '))}</p>}
@@ -177,14 +182,17 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
         {ctx.areas.map((area, i) => {
           const o = outs[i];
           const scout = scoutOf(ctx, area);
-          const count = ctx.suggestions.filter(s => s.kind === 'stay' && s.area === area && s.status === 'live').length;
+          const count = rankPoints(ctx.suggestions, {}, area).length;
+          const lacks = o?.kind === 'short' ? 'a 2nd stay' : o?.kind === 'empty' ? 'a stay' : null;
+          const duty = spy && lacks && scout ? C.spy.duty(scout, scout === me, lacks) : null;
           return (
             <li key={area}>
               <button type="button" className="st-row" onClick={() => setView({ kind: 'board', area })}>
                 <span className="st-row-main">{C.row(area, ctx.nights[area] ?? 0, count)}</span>
                 {nightsNote(ctx, area) && <span className="st-row-sub">{nightsNote(ctx, area)}</span>}
-                {scout === me ? <span className="stamp-label">{C.scoutTag}</span> : scout && <span className="st-scout-av" role="img" aria-label={`Scout: ${scout}`}><Avatar name={scout} size={22} /></span>}
-                {o?.kind === 'replacing' && <span className="st-row-sub">{REPLACING}</span>}
+                {scout === me ? (o?.kind !== 'decided' && !duty && <span className="stamp-label">{C.scoutTag}</span>) : scout && <span className="st-scout-av" role="img" aria-label={`Scout: ${scout}`}><Avatar name={scout} size={22} /></span>}
+                {duty && <span className="st-row-sub">{duty}</span>}
+                {o?.kind === 'replacing' && <span className="st-row-sub">{C.replacing(isAdmin(me), area)}</span>}
                 {o?.kind === 'decided' && (
                   <span className="st-row-res">{titleOf(o.id) ?? ''}{o.via === 'pin' && <span className="stamp-label red">{C.vote.pinned}</span>}</span>
                 )}
@@ -195,7 +203,7 @@ export default function Stays({ onQuiz }: { onQuiz?: () => void }) {
           );
         })}
       </ul>
-      <StayUnlock ctx={ctx} />
+      {spy ? <details className="st-fold-admin"><summary>{C.spy.fold}</summary><StayUnlock ctx={ctx} /></details> : <StayUnlock ctx={ctx} />}
       {sheetEl}
     </section>,
   );

@@ -476,6 +476,7 @@ describe('a stay that fell through, and what comes after', () => {
     const user = await mount('Brittany');
     await user.click(row('Ella, 1 night, 2 stays'));
     await user.click(within(screen.getByRole('article', { name: 'River house' })).getByRole('button', { name: 'Fell through' }));
+    await user.click(btn('Yes, it fell through'));
     expect(stored<{ fallen: { id: string; area: string; at: string }[] }>('tp:staysadmin').fallen).toEqual([{ id: 'a2', area: 'Ella', at: expect.stringMatching(/^\d{4}-\d\d-\d\dT/) }]);
     expect(stored<Record<string, { owner: string | null }>>('tp:claims')['stay:Ella'].owner).toBeNull();
     expect(screen.queryByRole('button', { name: 'Fell through' })).toBeNull();
@@ -488,16 +489,17 @@ describe('a stay that fell through, and what comes after', () => {
     const user = await mount('Brittany');
     await user.click(row('Ella, 1 night, 2 stays'));
     await user.click(screen.getByRole('button', { name: 'Fell through' }));
+    await user.click(btn('Yes, it fell through'));
     expect(stored<{ fallen: { id: string }[] }>('tp:staysadmin').fallen.map(f => f.id)).toEqual(['a2', 'a1']);
   });
 
   it('a friend sees the replacing line on the home page and the board, with no vote, no Fell through and no pin', async () => {
     seedAll({ locked: true }); two(); fallen();
     const user = await mount('Alex');
-    expect(within(row('Ella, 1 night, 2 stays')).getByText('Brittany is finding a replacement')).toBeInTheDocument();
+    expect(within(row('Ella, 1 night, 2 stays')).getByText('Brittany is finding a replacement for Ella')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Head to head' })).toBeNull();
     await user.click(row('Ella, 1 night, 2 stays'));
-    expect(screen.getByText('Ella: Brittany is finding a replacement')).toBeInTheDocument();
+    expect(screen.getByText('Brittany is finding a replacement for Ella')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Fell through' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Pin as final' })).toBeNull();
   });
@@ -507,8 +509,8 @@ describe('a stay that fell through, and what comes after', () => {
     const user = await mount('Brittany');
     await user.click(row('Ella, 1 night, 2 stays'));
     expect(screen.getAllByRole('button', { name: 'Pin as final' })).toHaveLength(2);
-    expect(screen.getByText('Pin the replacement.')).toBeInTheDocument();
-    expect(screen.queryByText('Ella: Brittany is finding a replacement')).toBeNull();
+    expect(screen.getByText('Pin a replacement for Ella')).toBeInTheDocument();
+    expect(screen.queryByText('Brittany is finding a replacement for Ella')).toBeNull();
   });
 
   it('the finished state offers Next: book your stays, which opens Trip admin', async () => {

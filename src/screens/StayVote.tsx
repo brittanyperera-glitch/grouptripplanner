@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Avatar from '../components/Avatar';
 import { IconCheck, IconLeft, IconPin } from '../components/Icons';
-import { forkOf, gbp, outcome, STAY_COPY, warnLines } from '../lib/stayflow';
+import Stamp from '../components/spy/Stamp';
+import { isAdmin } from '../lib/override';
+import { forkOf, gbp, outcome, scoutOf, STAY_COPY, warnLines } from '../lib/stayflow';
 import type { Outcome, StayCtx } from '../lib/stayflow';
 import { myChoice } from '../lib/votes';
 import { useApp } from '../state';
@@ -50,10 +52,10 @@ function StayDetail({ s, lines, voted, onVote, onClose }: { s: PlaceSuggestion; 
   );
 }
 
-interface Props { ctx: StayCtx; onBack(): void }
+interface Props { ctx: StayCtx; onBack(): void; spy?: boolean }
 
 /** Round two: the two finalists per destination, knockout-style. Three votes settle it; a pin from Brittany beats the vote. */
-export default function StayVote({ ctx, onBack }: Props) {
+export default function StayVote({ ctx, onBack, spy = false }: Props) {
   const { store } = useApp();
   const [sheet, setSheet] = useState<{ area: Area; s: PlaceSuggestion; side: 'a' | 'b'; vote: Vote } | null>(null);
   const [decidedOpen, setDecidedOpen] = useState(false);
@@ -76,7 +78,7 @@ export default function StayVote({ ctx, onBack }: Props) {
     return (
       <div key={side} className="pick tall list scene" data-mine={mine}>
         <StayPhoto s={s} className="ph" />
-        {mine && <span className="mine" aria-hidden="true"><IconCheck size={16} /></span>}
+        {mine && (spy ? <span className="st-vstamp"><Stamp text={V.yours} /></span> : <span className="mine" aria-hidden="true"><IconCheck size={16} /></span>)}
         <button type="button" className="pick-open" aria-haspopup="dialog" aria-label={V.details(s.title)} onClick={() => setSheet({ area, s, side, vote })} />
         <span className="pick-copy">
           {s.priceGbp !== undefined && <span className="tag">{V.price(gbp(s.priceGbp))}</span>}
@@ -117,11 +119,12 @@ export default function StayVote({ ctx, onBack }: Props) {
             <span className="dots" aria-hidden="true">{ctx.participants.map((p, i) => <span key={p} className={i < o.a.length ? 'a' : i < o.a.length + o.b.length ? 'b' : ''} />)}</span>
             <span className="sub">{V.tally(o.a.length + o.b.length, total)}</span>
           </div>
+          {spy && <p className="sub">{STAY_COPY.spy.settle}</p>}
         </div>
       ))}
       {waiting.map(({ area, o }) => <p key={area} className="sub">{`${area}: ${STAY_COPY.rank.caption(o.kind === 'wait' ? o.ranked : 0, total)}`}</p>)}
-      {replacing.map(({ area }) => <p key={area} className="sub">{V.replacing(area)}</p>)}
-      {short.map(({ area }) => <p key={area} className="sub">{V.short(area)}</p>)}
+      {replacing.length > 0 && <p className="sub">{STAY_COPY.replacing(isAdmin(ctx.me), ...replacing.map(r => r.area))}</p>}
+      {short.map(({ area }) => { const scout = scoutOf(ctx, area); return <p key={area} className="sub">{V.short(area)}{spy && scout && `. ${STAY_COPY.spy.duty(scout, scout === ctx.me, 'a 2nd stay')}`}</p>; })}
       {decided.length > 0 && (
         <div>
           <button type="button" className="st-fold" aria-expanded={showDecided} onClick={() => setDecidedOpen(d => !d)}><IconCheck size={16} />{V.decided(decided.length)}</button>

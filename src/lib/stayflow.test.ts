@@ -174,8 +174,8 @@ describe('the Stays header when nothing is votable', () => {
   const C = STAY_COPY.final;
   it('names a replacement to pin for Brittany and says Brittany is sorting it for a friend', () => {
     const outs: Outcome[] = [decided, { kind: 'replacing' }];
-    expect(finalSub(outs, ['Ella', 'Kandy and Knuckles'], true)).toBe('Pin a Kandy and Knuckles replacement');
-    expect(finalSub(outs, ['Ella', 'Kandy and Knuckles'], false)).toBe('Brittany is sorting Kandy and Knuckles');
+    expect(finalSub(outs, ['Ella', 'Kandy and Knuckles'], true)).toBe('Pin a replacement for Kandy and Knuckles');
+    expect(finalSub(outs, ['Ella', 'Kandy and Knuckles'], false)).toBe('Brittany is finding a replacement for Kandy and Knuckles');
     for (const s of [finalSub(outs, ['Ella', 'Kandy and Knuckles'], true), finalSub(outs, ['Ella', 'Kandy and Knuckles'], false)]) expect(s).not.toBe(C.waiting);
   });
   it('lists several areas with commas, since an area name can hold "and"', () => {
