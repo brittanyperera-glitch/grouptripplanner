@@ -16,7 +16,6 @@ export function dateLabel(date: string): string {
   return `${p.weekday} ${p.day} ${p.month}`;
 }
 
-export { STATUS_LABEL } from './bookingText';
 export const flightText = (f: DayView['flights'][number]) => `${f.name} ${f.kind === 'arrive' ? 'arrives' : 'leaves'} ${f.time.slice(11)}${f.flight ? ` · ${f.flight}` : ''}`;
 const tonightText = (t: NonNullable<DayView['tonight']>) => `${t.checkIn ? 'Tonight, check in' : 'Tonight'}: ${t.title ? `${t.title}, ${t.area}` : `No stay chosen yet in ${t.area}`}`;
 

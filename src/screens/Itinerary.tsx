@@ -34,14 +34,26 @@ export function Itinerary({ plan, items, legs, heading, stays = [], provisional 
   // With a model the list is the model's, in day order, stays included, and the how-to text lives only here. Without one
   // the days list no bookings, so each activity keeps its own how-to text and this list is just names and days.
   const rows = m
-    ? Object.entries(m.bookingsByDay).flatMap(([day, list]) => list.map(b => ({ id: b.id, name: b.label, day: Number(day), text: bookingText(b), how: howTo.get(b.id) })))
+    ? [
+        ...Object.entries(m.bookingsByDay).flatMap(([day, list]) => list.map(b => ({ id: b.id, name: b.label, day: Number(day), text: bookingText(b), how: howTo.get(b.id) }))),
+        // A chosen item no day carries has no day line to hold its how-to text, so it keeps a row here.
+        ...book.filter(({ item }) => !m.bookings.some(b => b.id === `book:${item.id}`)).map(({ item, day }) => ({ id: item.id, name: item.name, day, text: null, how: item.book })),
+      ]
     : book.map(({ item, day }) => ({ id: item.id, name: item.name, day, text: null, how: undefined }));
   const flights = views.flatMap(v => v.flights);
   const blocks = m?.blocks ?? [];
   // A night block per row when the calendar works; else the chosen stays alone.
   const sleep = blocks.length > 0
-    ? blocks.map(b => ({ key: `${b.fromDay}`, area: b.area, nights: b.nights, dates: b.checkIn && b.checkOut ? `${dateLabel(b.checkIn)} to ${dateLabel(b.checkOut)}, ` : '', stay: m?.staysByArea[b.area] }))
-    : stays.map(s => ({ key: s.area, area: s.area, nights: s.nights, dates: '', stay: s }));
+    ? blocks.map((b, i) => {
+      const stay = m?.staysByArea[b.area];
+      const dates = b.checkIn && b.checkOut ? `${dateLabel(b.checkIn)} to ${dateLabel(b.checkOut)}` : '';
+      // A stay's nights are set once per area, so the set figure and its note go on the area's first block only.
+      const first = blocks.findIndex(x => x.area === b.area) === i;
+      const set = stay?.itineraryNights !== undefined;
+      const count = set ? (first ? stay.nights : null) : b.nights;
+      return { key: `${b.fromDay}`, area: b.area, dur: [dates, count !== null && `${count} ${count === 1 ? 'night' : 'nights'}`].filter(Boolean).join(', '), note: first ? stay?.itineraryNights : undefined, stay };
+    })
+    : stays.map(s => ({ key: s.area, area: s.area, dur: `${s.nights} ${s.nights === 1 ? 'night' : 'nights'}`, note: s.itineraryNights, stay: s }));
   return (
     <div className="it-print" data-testid="itinerary">
       <header className="it-top">
@@ -91,11 +103,11 @@ export function Itinerary({ plan, items, legs, heading, stays = [], provisional 
         <section className="it-block" aria-label="Where you sleep">
           <h2 className="it-dayhead">Where you sleep</h2>
           <ul className="it-list" aria-label="Nights">
-            {sleep.map(({ key, area, nights, dates, stay: s }) => (
+            {sleep.map(({ key, area, dur, note, stay: s }) => (
               <li key={key} className="it-act">
                 <span className="it-name">{area}: {s?.title ?? 'No stay chosen yet'}</span>{' '}
-                <span className="it-dur">{dates}{nights} {nights === 1 ? 'night' : 'nights'}</span>
-                {s?.itineraryNights !== undefined && <span className="it-sub">{STAY_COPY.nightsNote(s.itineraryNights)}</span>}
+                <span className="it-dur">{dur}</span>
+                {note !== undefined && <span className="it-sub">{STAY_COPY.nightsNote(note)}</span>}
                 {s && (s.stayType || s.priceGbp !== undefined) && (
                   <span className="it-sub">{[s.stayType && TYPE_NAME[s.stayType], s.priceGbp !== undefined && `about £${s.priceGbp} a night`].filter(Boolean).join(', ')}</span>
                 )}
@@ -134,7 +146,7 @@ export function SaveItinerary({ plan, kind, provisional = false, group }: { plan
       <button type="button" className="it-save" onClick={save}>Save itinerary as PDF</button>
       {printing && createPortal(
         group
-          ? <ModelItinerary group={group} plan={plan} items={items} legs={legs} heading={heading} provisional={provisional} stays={chosenStays(state, me, plan)} />
+          ? <ModelItinerary group={group} plan={plan} items={items} legs={legs} heading={heading} provisional={provisional} />
           : <Itinerary plan={plan} items={items} legs={legs} heading={heading} provisional={provisional} stays={chosenStays(state, me, plan)} />,
         document.body,
       )}
