@@ -32,4 +32,12 @@ describe('useSaveStatus', () => {
     await act(async () => { result.current.run(Promise.reject(new Error('no'))); });
     expect(result.current.message).toBe(SAVE_COPY.failed);
   });
+
+  it('clear() drops the verdict so an edit after a save leaves nothing stale', async () => {
+    const { result } = renderHook(() => useSaveStatus(null));
+    await act(async () => { result.current.run(Promise.resolve(true)); });
+    expect(result.current.message).toBe(SAVE_COPY.saved);
+    act(() => result.current.clear());
+    expect(result.current.status).toBeNull();
+  });
 });

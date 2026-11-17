@@ -4,6 +4,7 @@ import { chosenStays, type ChosenStay } from '../lib/chosenStays';
 import { dayView } from '../lib/dayView';
 import { bookingsByDay } from '../lib/deadlines';
 import { tripIcs } from '../lib/ics';
+import { flightsDark } from '../lib/arrivals';
 import { ADMIN_IDS, claimIsFresh, doneBy, stayItemId } from '../lib/tripadmin';
 import { useApp } from '../state';
 import { AREAS, PACE_HOURS, PEOPLE } from '../types';
@@ -91,7 +92,7 @@ function buildModel(group: GroupResult, { state, me, items }: Live, now: string)
   const views = plan.days.map((_, i) => dayView(input, i + 1));
 
   const missing = {
-    flights: PEOPLE.filter(p => !state.travellers?.[p]?.arriveLocal || !state.travellers?.[p]?.departLocal),
+    flights: PEOPLE.filter(p => flightsDark(state.travellers?.[p])),
     stays: [...new Set(blocks.map(b => b.area))].filter(a => !staysByArea[a]),
     bookings: bookings.filter(b => b.status !== 'done').length,
     startDate: start === null,
