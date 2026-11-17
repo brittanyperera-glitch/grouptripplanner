@@ -126,6 +126,27 @@ describe('Trip view', () => {
   });
 });
 
+describe('Trip view replay link', () => {
+  it('offers Replay mission only when given onReplay, and tapping it calls it without animating', async () => {
+    const model = await views();
+    const { rerender } = render(<TripViewBody model={model} items={items} legs={legsData as Leg[]} />);
+    expect(screen.queryByRole('button', { name: 'Replay mission' })).toBeNull();
+    const onReplay = vi.fn();
+    rerender(<TripViewBody model={model} items={items} legs={legsData as Leg[]} onReplay={onReplay} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Replay mission' }));
+    expect(onReplay).toHaveBeenCalledTimes(1);
+    expect(document.querySelector('.flip')).toBeNull();
+    expect(document.querySelector('.map')).not.toHaveAttribute('data-drive');
+  });
+
+  it('the container passes onReplay through', async () => {
+    const onReplay = vi.fn();
+    render(<TripView group={group} today="2026-12-01" onReplay={onReplay} />, { wrapper });
+    await userEvent.click(await screen.findByRole('button', { name: 'Replay mission' }));
+    expect(onReplay).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('Trip view and the tuk-tuk', () => {
   const legged = (m: Awaited<ReturnType<typeof views>>) => m.views.find(v => v.legs.length > 0)!;
   const parked = (m: Awaited<ReturnType<typeof views>>) => m.views.find(v => v.legs.length === 0)!;

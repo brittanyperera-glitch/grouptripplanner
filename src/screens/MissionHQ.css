@@ -1,0 +1,5 @@
+/* Classes lead with spyhq-, so no rule here leads with a class that spy.css or the app also defines. */
+.spyhq-board { display: grid; gap: 8px; }
+.spyhq-plain { display: grid; gap: 8px; }
+.spyhq-plain ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.spyhq-done { display: grid; justify-items: center; gap: 14px; padding: 48px 14px; text-align: center; }
