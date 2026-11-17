@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { PACE_LABEL } from '../store/choices';
 import type { Pace as PaceT } from '../types';
 import './Rate.css';
 
@@ -30,9 +31,9 @@ const ART: Record<PaceT, ReactNode> = {
 };
 
 const OPTIONS: [PaceT, string, string][] = [
-  [0, 'Pack it in', 'early starts, move every 1 to 2 nights'],
-  [1, 'Balanced', 'one big thing a day, some free afternoons'],
-  [2, 'Slow', 'fewer stops, longer in each'],
+  [0, PACE_LABEL[0], 'early starts, move every 1 to 2 nights'],
+  [1, PACE_LABEL[1], 'one big thing a day, some free afternoons'],
+  [2, PACE_LABEL[2], 'fewer stops, longer in each'],
 ];
 
 export default function Pace({ pace, onPick, onBack }: { pace: PaceT | null; onPick: (p: PaceT) => void; onBack: () => void }) {

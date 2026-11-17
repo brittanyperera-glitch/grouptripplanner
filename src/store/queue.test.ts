@@ -337,3 +337,44 @@ describe('WriteQueue trip admin', () => {
     expect(await base.loadComplaints()).toMatchObject([{ name: 'Alex', text: 'Too hot' }]);
   });
 });
+
+describe('WriteQueue saves resolve with whether the write was stored', () => {
+  const denied = Object.assign(new Error('denied'), { code: '42501' });
+
+  it('true after a successful write, false after a failed one, false after a refused one', async () => {
+    let mode: 'ok' | 'offline' | 'denied' = 'ok';
+    class Mode extends LocalStore {
+      override async saveTraveller(...a: Parameters<LocalStore['saveTraveller']>) {
+        if (mode === 'offline') throw new Error('offline');
+        return super.saveTraveller(...a);
+      }
+      override async saveTripSettings(...a: Parameters<LocalStore['saveTripSettings']>) {
+        if (mode === 'denied') throw denied;
+        return super.saveTripSettings(...a);
+      }
+    }
+    const q = new WriteQueue(new Mode(), { ...hooks(), onAdminDenied() {} });
+    expect(await q.saves.saveTraveller('Alex', { arriveFlight: 'UL 504' })).toBe(true);
+    mode = 'offline';
+    expect(await q.saves.saveTraveller('Alex', { arriveFlight: 'UL 505' })).toBe(false);
+    mode = 'denied';
+    expect(await q.saves.saveTripSettings({ startDate: '2026-12-01' })).toBe(false);
+  });
+
+  it('two coalesced callers both learn the failure, and a later save after the retry reports true', async () => {
+    let offline = true;
+    class Flaky extends LocalStore {
+      override async saveBookingClaim(...a: Parameters<LocalStore['saveBookingClaim']>) {
+        if (offline) throw new Error('offline');
+        return super.saveBookingClaim(...a);
+      }
+    }
+    const q = new WriteQueue(new Flaky(), hooks());
+    const first = q.saves.saveBookingClaim('train', 'Alex');
+    const second = q.saves.saveBookingClaim('train', null);
+    expect(await Promise.all([first, second])).toEqual([false, false]);
+    offline = false;
+    expect(await q.flush()).toBe(true);
+    expect(await q.saves.saveBookingClaim('train', 'Alex')).toBe(true);
+  });
+});

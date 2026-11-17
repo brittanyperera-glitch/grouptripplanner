@@ -32,10 +32,10 @@ interface AppValue {
   items: Item[]; legs: Leg[]; copy: Copy; error: string | null; retry(): void;
   sandbox: boolean; finishSandbox?: () => void;
   /** `what` is the log line for the organiser overrides; it is only logged when the plan, start date or booking dates change. */
-  saveTripSettings(patch: SettingsPatch, what?: string): Promise<void>;
-  saveTraveller(name: Person, patch: TravellerPatch): Promise<void>;
-  /** owner null unclaims. */
-  claimBooking(itemId: string, owner: Person | null): Promise<void>;
+  saveTripSettings(patch: SettingsPatch, what?: string): Promise<boolean>;
+  saveTraveller(name: Person, patch: TravellerPatch): Promise<boolean>;
+  /** owner null unclaims. The three setters resolve true only once the write was stored, false when it failed or was refused. */
+  claimBooking(itemId: string, owner: Person | null): Promise<boolean>;
   /** An organiser write was refused: ask for the key, then call setAdminKey. */
   needsAdminKey: boolean;
   /** Checks the key with the server (rejects when it cannot be reached); a good one is kept and clears needsAdminKey. */
@@ -541,15 +541,15 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
       const next = { patch: { ...prev?.patch, ...full }, updatedAt: at };
       settings.ref.current = next;
       settings.set(next);
-      return queue.store.saveTripSettings(full);
+      return queue.saves.saveTripSettings(full);
     },
     saveTraveller: (name: Person, patch: TravellerPatch) => {
       travellers.set(l => ({ ...l, [name]: { patch: { ...l[name]?.patch, ...patch }, updatedAt: new Date().toISOString() } }));
-      return queue.store.saveTraveller(name, patch);
+      return queue.saves.saveTraveller(name, patch);
     },
     claimBooking: (itemId: string, owner: Person | null) => {
       claims.set(l => ({ ...l, [itemId]: { owner, updatedAt: new Date().toISOString() } }));
-      return queue.store.saveBookingClaim(itemId, owner);
+      return queue.saves.saveBookingClaim(itemId, owner);
     },
   }, [queue]);
 

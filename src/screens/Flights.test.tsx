@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProvider } from '../state';
@@ -101,5 +101,49 @@ describe('Flights', () => {
   it('with the trip length unknown, no leaves-early flag is guessed', () => {
     render(<Flights me="Alex" travellers={{ Antek: { name: 'Antek', arriveLocal: '2026-12-07T06:40', arriveFlight: null, departLocal: '2026-12-10T21:15', departFlight: null, updatedAt: '' } }} startDate="2026-12-07" days={null} onSave={vi.fn()} />);
     expect(screen.queryByText(/before the last day/)).toBeNull();
+  });
+});
+
+describe('Flights honest saves, flight length and row sync', () => {
+  const row = (over: Partial<Parameters<typeof Flights>[0]['travellers'] & object> = {}) => ({ Alex: { name: 'Alex' as const, arriveLocal: '2026-12-08T06:40', arriveFlight: 'UL 504', departLocal: null, departFlight: null, updatedAt: '' }, ...over });
+  const props = { me: 'Alex' as const, startDate: null, days: null, onSave: vi.fn(async () => true) };
+
+  it('a save the server refuses resolves false and the row says it is not saved, never Saved', async () => {
+    const { save, user } = await mount('Alex');
+    save.mockRejectedValue(Object.assign(new Error('denied'), { code: '42501' }));
+    const mine = within(screen.getByRole('listitem', { name: 'Alex' }));
+    await user.type(mine.getByLabelText('Arrival date'), '2026-12-08');
+    await user.type(mine.getByLabelText('Arrival time'), '06:40');
+    await user.click(mine.getByRole('button', { name: 'Save' }));
+    expect(await mine.findByRole('status')).toHaveTextContent("Not saved yet, will retry when you're online");
+    expect(mine.queryByText('Saved')).toBeNull();
+  });
+
+  it('a flight number pasted as Sri Lankan UL504 is cut to 12 characters before it reaches the store', async () => {
+    const { save, user } = await mount('Alex');
+    const mine = within(screen.getByRole('listitem', { name: 'Alex' }));
+    expect(mine.getByLabelText('Arrival flight')).toHaveAttribute('maxLength', '12');
+    expect(mine.getByLabelText('Departure flight')).toHaveAttribute('maxLength', '12');
+    // fireEvent skips the input's maxLength, as an autofill does.
+    fireEvent.change(mine.getByLabelText('Arrival flight'), { target: { value: '  Sri Lankan UL504 ' } });
+    fireEvent.change(mine.getByLabelText('Departure flight'), { target: { value: 'Sri Lankan UL504' } });
+    await user.click(mine.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    const sent = save.mock.calls[0][1];
+    expect(sent.arriveFlight).toBe('Sri Lankan U');
+    expect(sent.departFlight).toBe('Sri Lankan U');
+    expect(sent.arriveFlight!.length).toBeLessThanOrEqual(12);
+  });
+
+  it('inputs take the stored row when it arrives after mount, and never overwrite typing in progress', () => {
+    const { rerender } = render(<Flights {...props} travellers={{}} />);
+    const mine = () => within(screen.getByRole('listitem', { name: 'Alex' }));
+    expect(mine().getByLabelText('Arrival flight')).toHaveValue('');
+    rerender(<Flights {...props} travellers={row()} />);
+    expect(mine().getByLabelText('Arrival flight')).toHaveValue('UL 504');
+    expect(mine().getByLabelText('Arrival date')).toHaveValue('2026-12-08');
+    fireEvent.change(mine().getByLabelText('Arrival flight'), { target: { value: 'QR 664' } });
+    rerender(<Flights {...props} travellers={row({ Alex: { ...row().Alex, arriveFlight: 'EK 650' } })} />);
+    expect(mine().getByLabelText('Arrival flight')).toHaveValue('QR 664');
   });
 });

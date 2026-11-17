@@ -57,5 +57,6 @@ export function applyDayEdits(plan: Plan, edits: DayEdit[], paceHours: number, i
   }
   // A hidden place must leave the print's book-ahead and tips too, which read plan.chosen.
   const gone = new Set([...hidden].filter(id => !days.some(d => d.entries.some(x => x.itemId === id))));
-  return { plan: { ...plan, days, chosen: plan.chosen.filter(id => !gone.has(id)) }, warnings };
+  // The planner's `fits` knows nothing of the edits: a day they overfill must not read as "Every place fits".
+  return { plan: { ...plan, days, fits: plan.fits && !days.some(d => d.spare < 0), chosen: plan.chosen.filter(id => !gone.has(id)) }, warnings };
 }
