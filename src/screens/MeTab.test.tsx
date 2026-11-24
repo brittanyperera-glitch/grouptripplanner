@@ -54,6 +54,7 @@ describe('MeTab', () => {
     expect(screen.queryByRole('button', { name: /^Back$/ })).toBeNull();
   });
 
+  // Changed deliberately (C4, her 24 Nov "No database change"): the 'Suggest an idea' row left Me; ideas start on a day card.
   it.each([
     ['Group stats', { sub: 'crew-stats' }],
     ['How we decided', { sub: 'crew-decided' }],
