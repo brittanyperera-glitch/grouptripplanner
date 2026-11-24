@@ -1,0 +1,2 @@
+/* Classes lead with todo-, so no rule here leads with a class another stylesheet defines. */
+.todo-fun { min-height: 44px; text-align: left; }

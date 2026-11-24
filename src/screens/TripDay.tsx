@@ -1,5 +1,6 @@
 import './MyTrip.css';
 import './TripDay.css';
+import './RouteTab.css';
 import { IconPin } from '../components/Icons';
 import { Cover } from '../components/PhotoCard';
 import TransportLine, { hm, transportOf, transportText } from '../components/TransportLine';
@@ -24,6 +25,8 @@ export interface TripDayProps {
   view: DayView;
   quests?: SideQuest[]; tips?: DayTip[]; skippedBy?: (id: string) => string[];
   onPlace?(itemId: string): void; onStay?(area: Area): void;
+  /** The day card's doors: when given, a booking or the flights line is a button that opens its screen. */
+  onBooking?(id: string): void; onFlights?(): void;
   /** The print layout: the saved itinerary's own list markup, no photo strip and no buttons. */
   compact?: boolean;
   /** Only for the photo strip and the print facts. */
@@ -34,14 +37,14 @@ export interface TripDayProps {
   rainSlack?: boolean;
 }
 
-function Bookings({ list }: { list: DayBooking[] }) {
+function Bookings({ list, onBooking }: { list: DayBooking[]; onBooking?(id: string): void }) {
   return (
     <ul className="td-list" aria-label="Day bookings">
       {list.map(b => {
         const p = bookingParts(b);
         return (
           <li key={b.id}>
-            <span className="td-name">{b.label}</span>
+            {onBooking ? <button type="button" className="td-name rt-door" onClick={() => onBooking(b.id)}>{b.label}</button> : <span className="td-name">{b.label}</span>}
             <span className={`td-chip td-${b.status}`}>{p.status}</span>
             {p.owner && <span className="td-owner">{p.owner}{p.note && <small> {p.note}</small>}</span>}
           </li>
@@ -92,7 +95,7 @@ function Print({ view, items = [], legs = [], quests = [], tips = [], skippedBy,
 /** One day from the trip model. The print layout is the Itinerary's; the photo-strip card is Trip view's and Today's. */
 export default function TripDay(props: TripDayProps) {
   if (props.compact) return <Print {...props} />;
-  const { view, items = [], legs = [], quests = [], tips = [], skippedBy, onPlace, onStay, note, rainSlack } = props;
+  const { view, items = [], legs = [], quests = [], tips = [], skippedBy, onPlace, onStay, onBooking, onFlights, note, rainSlack } = props;
   const byId = new Map(items.map(i => [i.id, i]));
   const first = view.entries.map(e => (e.itemId ? byId.get(e.itemId) : undefined)).find(Boolean);
   const driving = view.entries.filter(e => e.kind === 'drive').reduce((s, e) => s + e.hours, 0);
@@ -148,8 +151,8 @@ export default function TripDay(props: TripDayProps) {
         {view.tonight && (onStay
           ? <button type="button" className="td-tonight" onClick={() => onStay(view.tonight!.area)}>{tonightText(view.tonight)}</button>
           : <span className="td-tonight">{tonightText(view.tonight)}</span>)}
-        {view.bookings.length > 0 && <Bookings list={view.bookings} />}
-        {view.flights.length > 0 && <ul className="td-list" aria-label="Day flights">{view.flights.map(f => <li key={`${f.name}${f.kind}`}>{flightText(f)}</li>)}</ul>}
+        {view.bookings.length > 0 && <Bookings list={view.bookings} onBooking={onBooking} />}
+        {view.flights.length > 0 && <ul className="td-list" aria-label="Day flights">{view.flights.map(f => <li key={`${f.name}${f.kind}`}>{onFlights ? <button type="button" className="rt-door" onClick={onFlights}>{flightText(f)}</button> : flightText(f)}</li>)}</ul>}
       </span>
     </section>
   );

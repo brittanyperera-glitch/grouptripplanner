@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { ReactNode } from 'react';
 import RouteMap from '../components/Map';
 import { useOpenAdmin } from '../components/AdminNav';
@@ -9,22 +8,29 @@ import { releaseFor } from '../lib/release';
 import { tierOf } from '../lib/ranking';
 import { sideQuests } from '../lib/sideQuests';
 import { PEOPLE } from '../types';
-import type { GroupResult } from '../types';
+import type { GroupResult, Plan as PlanData } from '../types';
 import { tipsOf } from './BookCard';
 import { SaveItinerary } from './Itinerary';
-import MissionHQ from './MissionHQ';
 import { TripAdminLink } from './TripAdmin';
 import { DayRows } from './MyTrip';
 import TripView from './TripView';
 
-/** `spy` is the HQ's spyActive; Replay would show unfinished missions as done, so it is offered only when it is false. */
-export default function Plan({ group, reveal, spy = true }: { group: GroupResult; reveal?: ReactNode; spy?: boolean }) {
+/** The plan the screens show: while only late votes are open, the plan they are asked against, never the pre-vote base (S1). */
+export const shownPlan = (g: GroupResult): PlanData | null => g.final ?? g.held ?? g.base;
+
+/** Save itinerary for the plan on show; provisional unless the plan is locked or re-opened. */
+export function PlanSave({ group }: { group: GroupResult }) {
+  const { state } = useApp();
+  const plan = shownPlan(group);
+  return plan ? <SaveItinerary plan={plan} kind="Group" group={group} provisional={!(isReopened(group, state) || (group.final && group.locked))} /> : null;
+}
+
+/** `spy` is no longer read: friends have no Replay. Callers still pass it until the shell is rewired. */
+export default function Plan({ group, reveal }: { group: GroupResult; reveal?: ReactNode; spy?: boolean }) {
   const { state, items, legs, me } = useApp();
-  const [replay, setReplay] = useState(false);
   const openAdmin = useOpenAdmin();
   const openStays = useOpenStays();
-  // S1: while only late votes are open, show the plan they are asked against, never the pre-vote base.
-  const plan = group.final ?? group.held ?? group.base;
+  const plan = shownPlan(group);
   if (!plan) return null;
   const reopened = isReopened(group, state);
   const pending = group.knockouts.map(k => items.find(i => i.id === k.a[0])?.name ?? k.a[0]).join(', ');
@@ -41,15 +47,12 @@ export default function Plan({ group, reveal, spy = true }: { group: GroupResult
             : `Provisional until all five finalize their lists (${group.finalized.length} of 5 done)`}
       </div>
       {reveal}
-      {openStays && <button type="button" className="cta" onClick={openStays}>Next: find somewhere to stay</button>}
+      {!releaseFor(me) && openStays && <button type="button" className="cta" onClick={openStays}>Next: find somewhere to stay</button>}
       <TripAdminLink group={group} onOpen={openAdmin ?? (() => {})} />
     </>
   );
-  const save = <SaveItinerary plan={plan} kind="Group" group={group} provisional={!(reopened || (group.final && group.locked))} />;
-  if (releaseFor(me)) {
-    if (replay) return <MissionHQ group={group} replay onGo={() => undefined} onOpen={() => undefined} onExit={() => setReplay(false)} />;
-    return <><section className="body" aria-label="The trip">{head}{save}</section><TripView group={group} onReplay={spy ? undefined : () => setReplay(true)} /></>;
-  }
+  const save = <PlanSave group={group} />;
+  if (releaseFor(me)) return <><section className="body" aria-label="The trip">{head}{save}</section><TripView group={group} /></>;
   return (
     <section className="body" aria-label="The trip">
       {head}

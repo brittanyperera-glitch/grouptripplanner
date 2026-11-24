@@ -1,0 +1,6 @@
+/* Me tab rows. Every class starts me- because all CSS is global (src/css-collisions.test.ts). */
+.me-rows { gap: 8px; }
+.me-row { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 8px 16px; border-radius: var(--r-card); background: var(--card); color: var(--ink); font-weight: 700; box-shadow: var(--shadow-card); }
+.me-row:active { transform: scale(.98); }
+.me-row:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
+.me-row svg { flex: none; color: var(--muted); }

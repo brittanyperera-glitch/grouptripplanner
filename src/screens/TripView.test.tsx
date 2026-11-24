@@ -126,24 +126,16 @@ describe('Trip view', () => {
   });
 });
 
-describe('Trip view replay link', () => {
-  it('offers Replay mission only when given onReplay, and tapping it calls it without animating', async () => {
-    const model = await views();
-    const { rerender } = render(<TripViewBody model={model} items={items} legs={legsData as Leg[]} />);
+describe('Trip view replay link retired', () => {
+  it('draws no Replay mission button', async () => {
+    render(<TripViewBody model={await views()} items={items} legs={legsData as Leg[]} />);
     expect(screen.queryByRole('button', { name: 'Replay mission' })).toBeNull();
-    const onReplay = vi.fn();
-    rerender(<TripViewBody model={model} items={items} legs={legsData as Leg[]} onReplay={onReplay} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Replay mission' }));
-    expect(onReplay).toHaveBeenCalledTimes(1);
-    expect(document.querySelector('.flip')).toBeNull();
-    expect(document.querySelector('.map')).not.toHaveAttribute('data-drive');
   });
 
-  it('the container passes onReplay through', async () => {
-    const onReplay = vi.fn();
-    render(<TripView group={group} today="2026-12-01" onReplay={onReplay} />, { wrapper });
-    await userEvent.click(await screen.findByRole('button', { name: 'Replay mission' }));
-    expect(onReplay).toHaveBeenCalledTimes(1);
+  it('the container draws none either', async () => {
+    render(<TripView group={group} today="2026-12-01" />, { wrapper });
+    await screen.findByRole('group', { name: 'Days' });
+    expect(screen.queryByRole('button', { name: 'Replay mission' })).toBeNull();
   });
 });
 

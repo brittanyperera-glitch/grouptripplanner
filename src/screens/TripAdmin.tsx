@@ -1,9 +1,10 @@
-import { useContext, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import Avatar from '../components/Avatar';
 import { IconCheck, IconLeft } from '../components/Icons';
 import SpyScreen from '../components/spy/SpyScreen';
 import Stamp from '../components/spy/Stamp';
-import { spyActive } from '../lib/missions';
+import SubBack from '../components/SubBack';
+import { gameOn } from '../lib/missions';
 import { routePlan } from '../lib/openItems';
 import { releaseFor } from '../lib/release';
 import { isAdmin } from '../lib/override';
@@ -77,7 +78,9 @@ export interface SupplyRow {
 }
 export interface SupplyProps {
   spy: boolean; pending: boolean; rows: SupplyRow[]; left: number; me: Person | null; hasCalendar: boolean;
-  onBack(): void; onCalendar(): void;
+  onBack?(): void; onCalendar(): void;
+  /** The shell's Back (shared look, `backLabel` text) and the booking id to scroll into view. */
+  back?(): void; backLabel?: string; target?: string;
   onTick(id: string, done: boolean): void; onClaim(id: string, owner: Person | null): void; onNote(id: string, note: string): void;
 }
 
@@ -86,6 +89,10 @@ export function SupplyBoard(p: SupplyProps) {
   const { spy, me } = p;
   const [open, setOpen] = useState<string | null>(null);
   const [note, setNote] = useState('');
+  const targetRow = useRef<HTMLLIElement>(null);
+  const ready = !p.pending && p.rows.length > 0;
+  useEffect(() => { if (p.target) targetRow.current?.scrollIntoView?.({ block: 'center' }); }, [p.target, ready]);
+  const shared = p.back && <SubBack label={p.backLabel ?? COPY.back} onClick={p.back} />;
   // A stamp is the quiet mark in the postcard look.
   const mark = (text: string, quiet = false) => (spy ? <Stamp text={text} tone={quiet ? 'quiet' : 'accent'} /> : <span className="ta-mark">{text}</span>);
   const claimable = (r: SupplyRow) => me !== null && !r.waiting && !!r.booking && !r.booking.owner && r.done.length === 0;
@@ -112,7 +119,7 @@ export function SupplyBoard(p: SupplyProps) {
       );
     }
     return (
-      <li key={r.id} className="ta-row" data-done={r.done.length > 0}>
+      <li key={r.id} ref={r.id === p.target ? targetRow : undefined} className="ta-row" data-done={r.done.length > 0}>
         <button type="button" role="checkbox" aria-checked={r.mine} aria-label={r.label} className="ta-box" onClick={() => p.onTick(r.id, !r.mine)}>
           {r.mine && <IconCheck size={18} />}
         </button>
@@ -150,16 +157,16 @@ export function SupplyBoard(p: SupplyProps) {
   );
   if (spy) {
     return (
-      <SpyScreen code={COPY.code} title={COPY.spyTitle} back={{ label: COPY.back, onClick: p.onBack }}>
-        <div className="ta ta-spy"><p className="ta-sub">{COPY.sub}</p>{body}</div>
+      <SpyScreen code={COPY.code} title={COPY.spyTitle} back={!p.back && p.onBack ? { label: COPY.back, onClick: p.onBack } : undefined}>
+        <div className="ta ta-spy">{shared}<p className="ta-sub">{COPY.sub}</p>{body}</div>
       </SpyScreen>
     );
   }
   return (
     <section className="body ta" aria-label={COPY.title}>
-      <div className="ta-bar">
+      {shared ?? (p.onBack && <div className="ta-bar">
         <button type="button" className="ta-back" aria-label={COPY.back} onClick={p.onBack}><IconLeft size={20} /></button>
-      </div>
+      </div>)}
       <h2 className="big display small ta-h">{COPY.title}</h2>
       <p className="sub">{COPY.sub}</p>
       {body}
@@ -168,7 +175,7 @@ export function SupplyBoard(p: SupplyProps) {
 }
 
 /** The container: reads the app, works out the rows, and wires each control to its save. Everyone sees who ticked what; a note is shown only to whoever wrote it. */
-export default function TripAdmin({ onBack, today }: { onBack: () => void; today?: string }) {
+export default function TripAdmin({ onBack, today, back, backLabel, target }: { onBack?: () => void; today?: string; back?: () => void; backLabel?: string; target?: string }) {
   const { state, me, store, items, legs, claimBooking, error } = useApp();
   const { data: group, loading } = useGroupResult(state, items, legs, releaseFor(me));
   // A route reopened by a late vote still has its bookings, so the model reads the same plan as the checklist.
@@ -200,10 +207,10 @@ export default function TripAdmin({ onBack, today }: { onBack: () => void; today
   ];
   return (
     <SupplyBoard
-      spy={spyActive({ state, plan, model })} pending={loading && group === null} rows={rows}
+      spy={gameOn({ state, plan, model })} pending={loading && group === null} rows={rows}
       left={defs.filter(d => doneBy(state, d.id).length === 0).length}
       me={PEOPLE.includes(me as Person) ? (me as Person) : null} hasCalendar={!!model.start}
-      onBack={onBack} onCalendar={() => void saveIcs(model.icsText(), month)}
+      onBack={onBack} back={back} backLabel={backLabel} target={target} onCalendar={() => void saveIcs(model.icsText(), month)}
       onTick={(id, done) => put(id, toggleDone(entry(id), done, new Date().toISOString()))}
       onNote={(id, note) => put(id, withDetails(entry(id), { price: '', note }))}
       onClaim={(id, owner) => track(id, claimBooking(id, owner))}

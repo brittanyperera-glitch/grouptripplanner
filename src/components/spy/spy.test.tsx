@@ -60,15 +60,13 @@ describe('Stamp', () => {
 });
 
 describe('SpyScreen', () => {
-  it('shows the code and title, goes back, and a replay banner has an Exit', () => {
-    const back = vi.fn(), exit = vi.fn();
-    render(<SpyScreen code="File 01" title="Stays" back={{ label: 'HQ', onClick: back }} replay={{ onExit: exit }}><p>body</p></SpyScreen>);
+  it('shows the code and title, and goes back', () => {
+    const back = vi.fn();
+    render(<SpyScreen code="File 01" title="Stays" back={{ label: 'HQ', onClick: back }}><p>body</p></SpyScreen>);
     expect(screen.getByRole('heading', { name: 'Stays' })).toBeTruthy();
     expect(screen.getByText('File 01')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /HQ/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Exit' }));
     expect(back).toHaveBeenCalledTimes(1);
-    expect(exit).toHaveBeenCalledTimes(1);
     expect(document.querySelector('.spy')).not.toBeNull();
   });
 

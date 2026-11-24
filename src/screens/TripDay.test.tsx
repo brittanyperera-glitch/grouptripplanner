@@ -160,3 +160,23 @@ describe('TripDay carries what DayRows carries', () => {
     expect(screen.getByText('By the lake')).toBeInTheDocument();
   });
 });
+
+describe('TripDay doors', () => {
+  const booking = (o: Partial<DayBooking>): DayBooking => ({ id: 'book:train', label: 'Ella train', status: 'open', opensOn: null, bookBy: '2026-12-01', owner: 'Alex', ...o });
+  const v = view(1, { bookingsByDay: { 1: [booking({})] }, travellers: { Saulie: { name: 'Saulie', arriveLocal: '2026-12-09T09:30', arriveFlight: 'UL 504', departLocal: null, departFlight: null, updatedAt: '' } } });
+
+  it('passes the booking id to onBooking and calls onFlights from the flights line', () => {
+    const onBooking = vi.fn(), onFlights = vi.fn();
+    render(<TripDay view={v} onBooking={onBooking} onFlights={onFlights} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ella train' }));
+    expect(onBooking).toHaveBeenCalledWith('book:train');
+    fireEvent.click(screen.getByRole('button', { name: /Saulie arrives 09:30/ }));
+    expect(onFlights).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws no buttons for them when no handler is given', () => {
+    render(<TripDay view={v} />);
+    expect(screen.queryByRole('button', { name: 'Ella train' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Saulie arrives/ })).toBeNull();
+  });
+});

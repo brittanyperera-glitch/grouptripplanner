@@ -15,7 +15,7 @@ import { freshStartFromUrl } from '../store/fresh';
 import { LocalStore } from '../store/local';
 import { PEOPLE } from '../types';
 import type { GroupResult, Item, Leg } from '../types';
-import MissionComplete, { SEEN_KEY } from './MissionComplete';
+import MissionComplete, { finaleDue, markFinaleSeen, SEEN_KEY } from './MissionComplete';
 
 const group: GroupResult = groupResult(seedState(), (catalogue as unknown as { items: Item[] }).items, legsData as Leg[], [], RELEASE);
 const areas = [...new Set(group.final!.days.flatMap(d => (d.area ? [d.area] : [])))];
@@ -31,8 +31,8 @@ const seed = (dark?: string) => {
   put('tp:travellers', Object.fromEntries(PEOPLE.filter(p => p !== dark).map(p => [p, { name: p, arriveLocal: '2026-12-08T09:00', arriveFlight: null, departLocal: '2026-12-16T09:00', departFlight: null, updatedAt: AT }])));
   put('tp:tripadmin:Brittany', { name: 'Brittany', items: Object.fromEntries(ADMIN_IDS.map(id => [id, { done: true, doneAt: AT }])), updatedAt: AT });
 };
-const mount = (onTrip = vi.fn()) => {
-  const view = render(<AppProvider store={new LocalStore()}><MissionComplete group={group} today="2026-12-01" onTrip={onTrip} /></AppProvider>);
+const mount = (onTrip = vi.fn(), markOnShow?: boolean) => {
+  const view = render(<AppProvider store={new LocalStore()}><MissionComplete group={group} today="2026-12-01" onTrip={onTrip} markOnShow={markOnShow} /></AppProvider>);
   return { onTrip, view };
 };
 
@@ -104,5 +104,27 @@ describe('Mission complete', () => {
       expect(localStorage.getItem(SEEN_KEY)).toBeNull();
       cleanup();
     }
+  });
+
+  it('with markOnShow off it is not marked seen until its button is pressed', async () => {
+    seed();
+    const { onTrip } = mount(vi.fn(), false);
+    expect(await screen.findByText('Crew 5/5')).toBeInTheDocument();
+    await new Promise(r => setTimeout(r, 30));
+    expect(localStorage.getItem(SEEN_KEY)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Go to the trip' }));
+    expect(localStorage.getItem(SEEN_KEY)).toBe('1');
+    expect(onTrip).toHaveBeenCalledTimes(1);
+  });
+
+  it('finaleDue is true for one of the five with nothing open and the flag unset, until markFinaleSeen', async () => {
+    seed();
+    const i = { state: { responses: {}, suggestions: [], votes: [] }, plan: null, model: { bookings: [], missing: { flights: [], stays: [], bookings: 0, startDate: false } } };
+    expect(finaleDue('Lazza', i)).toBe(true);
+    expect(finaleDue('Mum', i)).toBe(false);
+    expect(finaleDue(null, i)).toBe(false);
+    expect(finaleDue('Lazza', { ...i, model: { ...i.model, missing: { ...i.model.missing, flights: ['Antek' as const] } } })).toBe(false);
+    markFinaleSeen();
+    expect(finaleDue('Lazza', i)).toBe(false);
   });
 });

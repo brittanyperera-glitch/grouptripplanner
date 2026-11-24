@@ -5,69 +5,57 @@ import CrewRing from '../components/spy/CrewRing';
 import MissionFile from '../components/spy/MissionFile';
 import NextMove from '../components/spy/NextMove';
 import SpyScreen from '../components/spy/SpyScreen';
-import { WEEKDAY_DAY_MONTH } from '../lib/dates';
-import { crewReadiness, missionFiles, nextMove, spyActive } from '../lib/missions';
+import { crewReadiness, missionFiles, nextMove } from '../lib/missions';
 import type { MissionId, MissionInput, Move } from '../lib/missions';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
 import type { GroupResult, Person } from '../types';
-import { CODE, Finale } from './MissionComplete';
+import { CODE } from './MissionComplete';
 import { useTripModel } from './useTripModel';
 
-const COPY = { notSet: 'Launch date not set', launch: 'Wheels down Colombo', files: 'Mission files', plain: 'Mission HQ', clear: 'Every mission is done.', group: 'Group trip' };
+const COPY = { notSet: 'Launch date not set', launch: 'Wheels down Colombo', files: 'Mission files', title: 'Mission HQ', group: 'Group trip' };
 
-// The wording each file shows when it is done, so the replay reads like the real thing.
-const DONE_STATUS: Record<MissionId, (total: number) => string> = {
-  stays: n => `${n} of ${n} decided`, supply: n => `${n} of ${n} secured`, touchdown: () => 'Everyone is down',
-};
+/** The countdown and the crew ring: the part of the board the To do tab shares with this screen. */
+export function HqStanding({ start, crew }: { start: string | null; crew: ReturnType<typeof crewReadiness> }) {
+  return (
+    <>
+      {start
+        ? <Countdown at={`${start}T00:00`} label={COPY.launch} />
+        : <div className="spy-cd"><span className="spy-code">{COPY.notSet}</span></div>}
+      <CrewRing percent={crew.percent} people={crew.people} />
+    </>
+  );
+}
 
 interface BodyProps {
-  me: Person; input: MissionInput; start: string | null; replay?: boolean;
-  onGo(m: Move): void; onOpen(id: MissionId): void; onExit(): void;
+  me: Person; input: MissionInput; start: string | null;
+  onGo(m: Move): void; onOpen(id: MissionId): void;
   /** The way on to Group trip, drawn inside the HQ so no paper shows below it. */
   onGroup?(): void;
 }
 
-/** Props-in HQ. The spy look is on only while a mission has work left, or while the finale is replayed. */
-export function MissionHQBody({ me, input, start, replay = false, onGo, onOpen, onExit, onGroup }: BodyProps) {
-  const real = missionFiles(input);
-  if (!replay && !spyActive(input)) {
-    return (
-      <section className="body spyhq-plain" aria-label={COPY.plain}>
-        <h2>{COPY.plain}</h2>
-        <p>{COPY.clear}</p>
-        <ul>{real.map(f => <li key={f.id}>{`${f.title}: ${f.status}`}</li>)}</ul>
-        <p>{start ? `Trip starts ${WEEKDAY_DAY_MONTH.format(new Date(`${start}T00:00:00Z`))}` : COPY.notSet}</p>
-      </section>
-    );
-  }
-  const files = replay ? real.map(f => ({ ...f, done: f.total, complete: true, status: DONE_STATUS[f.id](f.total) })) : real;
+/** Props-in HQ for today's shell. The board stays once every mission is done, stamped: the game does not switch off. */
+export function MissionHQBody({ me, input, start, onGo, onOpen, onGroup }: BodyProps) {
   const crew = crewReadiness(input);
-  const people = replay ? crew.people.map(p => ({ ...p, done: p.total })) : crew.people;
-  const mine = people.find(p => p.name === me) ?? { done: 0, total: 1 };
-  const move = replay ? null : nextMove(me, input);
+  const mine = crew.people.find(p => p.name === me) ?? { done: 0, total: 1 };
   return (
-    <SpyScreen code={CODE} title={COPY.plain} replay={replay ? { onExit } : undefined}>
-      {!replay && <NextMove me={me} move={move} done={mine.done} total={mine.total} onStart={onGo} />}
-      {start
-        ? <Countdown at={`${start}T00:00`} label={COPY.launch} />
-        : <div className="spy-cd"><span className="spy-code">{COPY.notSet}</span></div>}
-      <CrewRing percent={replay ? 100 : crew.percent} people={people} />
+    <SpyScreen code={CODE} title={COPY.title}>
+      <NextMove me={me} move={nextMove(me, input)} done={mine.done} total={mine.total} onStart={onGo} />
+      <HqStanding start={start} crew={crew} />
       <div className="spyhq-board">
         <span className="spy-code">{COPY.files}</span>
-        {files.map(f => <MissionFile key={f.id} file={f} onOpen={replay ? undefined : onOpen} />)}
+        {missionFiles(input).map(f => <MissionFile key={f.id} file={f} onOpen={onOpen} />)}
       </div>
-      {replay && <Finale ready={PEOPLE.length} of={PEOPLE.length} />}
-      {!replay && onGroup && <button type="button" className="spy-btn spyhq-group" onClick={onGroup}>{COPY.group}</button>}
+      {onGroup && <button type="button" className="spy-btn spyhq-group" onClick={onGroup}>{COPY.group}</button>}
     </SpyScreen>
   );
 }
 
-/** Container: reads the app and the trip model, nothing else. A guest or nobody signed in has no HQ. */
-export default function MissionHQ({ group, replay, onGo, onOpen, onExit, onGroup, today }: { group: GroupResult; replay?: boolean; today?: string } & Pick<BodyProps, 'onGo' | 'onOpen' | 'onExit' | 'onGroup'>) {
+/** Container: reads the app and the trip model, nothing else. A guest or nobody signed in has no HQ. `replay` and `onExit` are ignored: kept only so App.tsx and Plan.tsx still compile until the shell drops them. */
+export default function MissionHQ({ group, onGo, onOpen, onGroup, today }: { group: GroupResult; today?: string; replay?: boolean; onExit?(): void } & Pick<BodyProps, 'onGo' | 'onOpen' | 'onGroup'>) {
   const { state, me } = useApp();
   const model = useTripModel(group, today);
   const input = useMemo<MissionInput>(() => ({ state, plan: model.plan, model }), [state, model]);
   if (!me || !PEOPLE.includes(me as Person)) return null;
-  return <MissionHQBody me={me as Person} input={input} start={model.start} replay={replay} onGo={onGo} onOpen={onOpen} onExit={onExit} onGroup={onGroup} />;
+  return <MissionHQBody me={me as Person} input={input} start={model.start} onGo={onGo} onOpen={onOpen} onGroup={onGroup} />;
 }

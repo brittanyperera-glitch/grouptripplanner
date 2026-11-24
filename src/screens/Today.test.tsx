@@ -130,7 +130,7 @@ describe('Today on the released plan from 2026-12-08', () => {
     trip();
     screenOn('2026-12-15');
     const leg = within(await screen.findByLabelText('Today')).getByRole('group', { name: 'Next leg' });
-    expect(leg).toHaveTextContent(new RegExp(`^Day ${group.final!.days.length}Drive`));
+    expect(leg).toHaveTextContent(new RegExp(`^Next drive · Day ${group.final!.days.length}Drive`));
     expect(leg).toHaveTextContent(/airport/i);
   });
 

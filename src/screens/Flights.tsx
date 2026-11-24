@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import Avatar from '../components/Avatar';
 import SpyScreen from '../components/spy/SpyScreen';
+import SubBack from '../components/SubBack';
 import { arrivalFlags, flightsDark, leaveByEach } from '../lib/arrivals';
 import { WEEKDAY_DAY_MONTH } from '../lib/dates';
-import { spyActive } from '../lib/missions';
+import { gameOn } from '../lib/missions';
 import { routePlan } from '../lib/openItems';
 import { releaseFor } from '../lib/release';
 import { useApp } from '../state';
@@ -25,8 +26,8 @@ const COPY = {
   time: 'time',
   flight: 'flight',
   none: 'Not entered',
-  dark: 'Dark',
-  darkNote: 'Dark · no flights yet',
+  dark: 'Waiting on flights',
+  darkNote: 'No flights yet',
   leaveBy: 'Leave by',
   back: 'Back',
   save: 'Save',
@@ -39,6 +40,8 @@ type Patch = Pick<Traveller, 'arriveLocal' | 'arriveFlight' | 'departLocal' | 'd
 export interface FlightsProps {
   me: Person; travellers: Travellers; startDate: string | null; lastDayStart?: string | null; days: number | null; onSave(patch: Patch): Promise<boolean>;
   lastDay?: Day; appError?: string | null; onBack?(): void; spy?: boolean;
+  /** The shell's Back: when given it renders the shared Back with `backLabel` instead of this screen's own. */
+  back?(): void; backLabel?: string;
 }
 
 // supabase/schema.sql checks char_length(flight) <= 12 on both flight columns.
@@ -103,7 +106,8 @@ function MyRow({ mine, onSave, appError }: { mine: Traveller | undefined; onSave
 }
 
 /** Everyone's flights, only my own row editable. Only this screen shows the arrival and departure flags; `days` is the trip length the plan uses (group.days). */
-export function Flights({ me, travellers, startDate, lastDayStart, days, onSave, lastDay, appError = null, onBack, spy = false }: FlightsProps) {
+export function Flights({ me, travellers, startDate, lastDayStart, days, onSave, lastDay, appError = null, onBack, spy = false, back, backLabel = COPY.back }: FlightsProps) {
+  const shared = back && <SubBack label={backLabel} onClick={back} />;
   const flags = arrivalFlags(travellers, startDate, days, lastDay, lastDayStart).filter(x => x.kind !== 'missing');
   const leave = lastDay ? leaveByEach(travellers, lastDay) : {};
   const list = (
@@ -130,10 +134,11 @@ export function Flights({ me, travellers, startDate, lastDayStart, days, onSave,
       })}
     </ul>
   );
-  if (spy) return <SpyScreen code="Operation Homecoming · Flights" title={COPY.spyTitle} back={onBack && { label: COPY.back, onClick: onBack }}><section className="fx fx-spy" aria-label={COPY.spyTitle}><p className="sub">{COPY.sub}</p>{list}</section></SpyScreen>;
+  if (spy) return <SpyScreen code="Operation Homecoming · Flights" title={COPY.spyTitle} back={!back && onBack ? { label: COPY.back, onClick: onBack } : undefined}><section className="fx fx-spy" aria-label={COPY.spyTitle}>{shared}<p className="sub">{COPY.sub}</p>{list}</section></SpyScreen>;
   return (
     <section className="body fx" aria-label={COPY.title}>
-      {onBack && <button type="button" className="fx-back" onClick={onBack}>{`‹ ${COPY.back}`}</button>}
+      {shared}
+      {!back && onBack && <button type="button" className="fx-back" onClick={onBack}>{`‹ ${COPY.back}`}</button>}
       <h2 className="big display small fx-h">{COPY.title}</h2>
       <p className="sub">{COPY.sub}</p>
       {list}
@@ -141,7 +146,7 @@ export function Flights({ me, travellers, startDate, lastDayStart, days, onSave,
   );
 }
 
-export default function FlightsScreen({ onBack }: { onBack?: () => void }) {
+export default function FlightsScreen({ onBack, back, backLabel }: { onBack?: () => void; back?: () => void; backLabel?: string }) {
   const { me, state, items, legs, saveTraveller, error } = useApp();
   // Until the plan has run, days is null and the 'leaves before last day' flag stays off rather than guess.
   const { data: group } = useGroupResult(state, items, legs, state.tripSettings?.plan ?? releaseFor(me));
@@ -150,6 +155,6 @@ export default function FlightsScreen({ onBack }: { onBack?: () => void }) {
   if (!me || isGuest(me)) return null;
   const days = group?.days ?? null;
   // Spy look only once the plan is known: before that the model is empty and would read as a mission still open.
-  const spy = group !== null && spyActive({ state, plan, model });
-  return <Flights me={me} travellers={state.travellers ?? {}} startDate={state.tripSettings?.startDate ?? null} lastDayStart={state.tripSettings?.lastDayStart ?? null} days={days} lastDay={plan?.days.at(-1)} appError={error} onBack={onBack} spy={spy} onSave={patch => saveTraveller(me, patch)} />;
+  const spy = group !== null && gameOn({ state, plan, model });
+  return <Flights me={me} travellers={state.travellers ?? {}} startDate={state.tripSettings?.startDate ?? null} lastDayStart={state.tripSettings?.lastDayStart ?? null} days={days} lastDay={plan?.days.at(-1)} appError={error} onBack={onBack} back={back} backLabel={backLabel} spy={spy} onSave={patch => saveTraveller(me, patch)} />;
 }

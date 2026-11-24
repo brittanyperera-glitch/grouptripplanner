@@ -4,8 +4,9 @@ import Avatar from '../components/Avatar';
 import { useOpenAdmin } from '../components/AdminNav';
 import BigState from '../components/BigState';
 import { IconCheck, IconLeft } from '../components/Icons';
+import SubBack from '../components/SubBack';
 import SpyScreen from '../components/spy/SpyScreen';
-import { canCloseRanking, isAdmin } from '../lib/override';
+import { canCloseRanking, isAdmin, unlockable } from '../lib/override';
 import { routePlan } from '../lib/openItems';
 import { releaseFor } from '../lib/release';
 import { finalSub, nightsNote, outcome, rankedBy, scoutOf, STAY_COPY, STEPS, stayCtx, stayStatus } from '../lib/stayflow';
@@ -29,20 +30,23 @@ const SUGGEST = 'Suggest a stay';
 type View = { kind: 'home' } | { kind: 'lock' } | { kind: 'vote' } | { kind: 'board' | 'rank'; area: Area };
 
 /** The accommodation flow: where I am in it, one button for the next thing, and the destinations underneath. */
-/** `spy` is the HQ's spyActive: the same flow as a game; off, the screen is the normal postcard look. */
-export default function Stays({ onQuiz, spy = false }: { onQuiz?: () => void; spy?: boolean }) {
+/** `spy` is the game switch the shell passes for friends; off, the screen is the plain look. `target` scrolls that area's row into view; `back` adds the shared Back on the home view. */
+export default function Stays({ onQuiz, spy = false, target, back, backLabel = 'Back' }: { onQuiz?: () => void; spy?: boolean; target?: Area; back?: () => void; backLabel?: string }) {
   const { state, me, store, items, legs } = useApp();
   const openAdmin = useOpenAdmin();
   const { data: group } = useGroupResult(state, items, legs, releaseFor(me));
   const [view, setView] = useState<View>({ kind: 'home' });
   const [sheet, setSheet] = useState<{ area: Area; kind?: PlaceKind; editing?: PlaceSuggestion } | null>(null);
   const root = useRef<HTMLDivElement>(null);
+  const targetRow = useRef<HTMLLIElement>(null);
   const viewKey = 'area' in view ? `${view.kind}:${view.area}` : view.kind;
   useEffect(() => { root.current?.scrollIntoView?.({ block: 'start' }); }, [viewKey]);
+  useEffect(() => { if (target) targetRow.current?.scrollIntoView?.({ block: 'center' }); }, [target, group !== null]);
+  const goBack = back && view.kind === 'home' ? <SubBack label={backLabel} onClick={back} /> : null;
 
   const shell = (body: ReactNode) => (
     <div ref={root}>
-      {spy ? <SpyScreen code="File 01" title="Stays" back={view.kind === 'home' ? undefined : { label: 'Stays', onClick: () => setView({ kind: 'home' }) }}><div className="st-spy">{body}</div></SpyScreen> : body}
+      {spy ? <SpyScreen code="File 01" title="Stays" back={view.kind === 'home' ? undefined : { label: 'Stays', onClick: () => setView({ kind: 'home' }) }}><div className="st-spy">{goBack}{body}</div></SpyScreen> : <>{goBack}{body}</>}
     </div>
   );
   if (!me) return null;
@@ -153,7 +157,7 @@ export default function Stays({ onQuiz, spy = false }: { onQuiz?: () => void; sp
               <button key={a} type="button" className="st-ghost st-close" title={C.closeRank.hint} onClick={() => { void store.saveStaysAdmin({ closed: [...ctx.admin.closed, a] }); }}>{C.closeRank.go(a)}</button>
             ))}
             {votable && <button type="button" className="cta" onClick={() => setView({ kind: 'vote' })}>{C.final.go}</button>}
-            {finished && openAdmin && <button type="button" className="cta" onClick={openAdmin}>{NEXT}</button>}
+            {finished && openAdmin && !releaseFor(me) && <button type="button" className="cta" onClick={openAdmin}>{NEXT}</button>}
           </>
         );
     }
@@ -186,7 +190,7 @@ export default function Stays({ onQuiz, spy = false }: { onQuiz?: () => void; sp
           const lacks = o?.kind === 'short' ? 'a 2nd stay' : o?.kind === 'empty' ? 'a stay' : null;
           const duty = spy && lacks && scout ? C.spy.duty(scout, scout === me, lacks) : null;
           return (
-            <li key={area}>
+            <li key={area} ref={area === target ? targetRow : undefined}>
               <button type="button" className="st-row" onClick={() => setView({ kind: 'board', area })}>
                 <span className="st-row-main">{C.row(area, ctx.nights[area] ?? 0, count)}</span>
                 {nightsNote(ctx, area) && <span className="st-row-sub">{nightsNote(ctx, area)}</span>}
@@ -203,7 +207,7 @@ export default function Stays({ onQuiz, spy = false }: { onQuiz?: () => void; sp
           );
         })}
       </ul>
-      {spy ? <details className="st-fold-admin"><summary>{C.spy.fold}</summary><StayUnlock ctx={ctx} /></details> : <StayUnlock ctx={ctx} />}
+      {spy ? unlockable(ctx.me, ctx.crewOf, ctx.participants).length > 0 && <details className="st-fold-admin"><summary>{C.spy.fold}</summary><StayUnlock ctx={ctx} /></details> : <StayUnlock ctx={ctx} />}
       {sheetEl}
     </section>,
   );

@@ -128,7 +128,7 @@ function Card({ d, tilt }: { d: CardData; tilt: boolean }) {
   );
 }
 
-type ProfileProps = { name: Player; players?: Players; onBack: () => void; onQuiz?: () => void; onBingo?: () => void };
+type ProfileProps = { name: Player; players?: Players; onBack?: () => void; onQuiz?: () => void; onBingo?: () => void };
 
 /** The Profile screen inside the app: reads the group's friendship stats for the card. */
 export default function Profile(props: ProfileProps) {
@@ -208,7 +208,7 @@ export function ProfileView({ name, players = {}, onBack, friends, trip, onQuiz,
   return (
     <div className="body pf-screen" data-view={view}>
       <div className="pf-top">
-        <button className="link pf-back" onClick={onBack}>{profile.back}</button>
+        {onBack && <button className="link pf-back" onClick={onBack}>{profile.back}</button>}
         <div className="pf-switch" role="group" aria-label={profile.switchLabel}>
           <button aria-pressed={view === 'card'} onClick={() => setView('card')}>{profile.viewCard}</button>
           <button aria-pressed={view === 'character'} onClick={() => setView('character')}>{profile.viewCharacter}</button>

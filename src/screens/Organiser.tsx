@@ -1,10 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { IconLeft } from '../components/Icons';
+import SubBack from '../components/SubBack';
 import '../components/spy/spy.css';
 import { addDays } from '../lib/calendar';
 import { DAY_MONTH, WEEKDAY_DAY_MONTH } from '../lib/dates';
-import { missionFiles, spyActive } from '../lib/missions';
+import { gameOn, missionFiles } from '../lib/missions';
 import { routePlan } from '../lib/openItems';
 import { isAdmin } from '../lib/override';
 import { MAX_DAYS, MIN_DAYS } from '../lib/group';
@@ -351,7 +352,9 @@ function BookingRow({ b }: { b: DayBooking }) {
   );
 }
 
-function Panel({ onBack }: { onBack?: () => void }) {
+type BackProps = { onBack?: () => void; back?: () => void; backLabel?: string };
+
+function Panel({ onBack, back, backLabel = COPY.back }: BackProps) {
   const { state, me, items, legs, needsAdminKey } = useApp();
   const settings = state.tripSettings ?? null;
   const loading = state.tripSettings === undefined;
@@ -413,11 +416,11 @@ function Panel({ onBack }: { onBack?: () => void }) {
   );
 
   // One tree for both looks: swapping the root would remount every section, drop an unsaved route and clear a typed password.
-  const spy = spyActive(input);
+  const spy = gameOn(input);
   return (
     <div className={spy ? 'spy' : 'body og'}>
       <div className={spy ? 'spy-body' : 'og-wrap'}>
-        {spy
+        {back ? <SubBack label={backLabel} onClick={back} /> : spy
           ? onBack && <button type="button" className="spy-back" onClick={onBack}>{`‹ ${COPY.back}`}</button>
           : onBack && <div className="og-bar"><button type="button" className="og-back" aria-label={COPY.back} onClick={onBack}><IconLeft size={20} /></button></div>}
         {spy
@@ -430,10 +433,13 @@ function Panel({ onBack }: { onBack?: () => void }) {
 }
 
 /** Brittany's panel. A friend gets nothing, not even the password prompt. */
-export default function Organiser({ onBack }: { onBack?: () => void }) {
+export default function Organiser({ onBack, back, backLabel = COPY.back }: BackProps) {
   const { me } = useApp();
   const [verified, setVerified] = useState(false);
   if (!isAdmin(me)) return null;
-  if (!verified && readAdminKey() === null) return <section className="body og"><h2 className="big display small og-h">{COPY.title}</h2><Gate onOk={() => setVerified(true)} /></section>;
-  return <Panel onBack={onBack} />;
+  if (!verified && readAdminKey() === null) {
+    const leave = back ?? onBack;
+    return <section className="body og">{leave && <SubBack label={backLabel} onClick={leave} />}<h2 className="big display small og-h">{COPY.title}</h2><Gate onOk={() => setVerified(true)} /></section>;
+  }
+  return <Panel onBack={onBack} back={back} backLabel={backLabel} />;
 }

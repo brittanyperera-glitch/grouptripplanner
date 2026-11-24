@@ -56,6 +56,20 @@ describe('Organiser', () => {
     expect(view.container.innerHTML).toBe('');
   });
 
+  it('puts the shared Back on the password screen and on the panel', async () => {
+    localStorage.setItem('tp:me', 'Brittany');
+    const back = vi.fn();
+    const { unmount } = render(<AppProvider store={new Spy()}><Organiser back={back} backLabel="Me" /></AppProvider>);
+    await userEvent.click(await screen.findByRole('button', { name: '‹ Me' }));
+    expect(screen.getByLabelText('Organiser password')).toBeInTheDocument();
+    expect(back).toHaveBeenCalledTimes(1);
+    unmount();
+    localStorage.setItem('tp-admin-key', 'k');
+    render(<AppProvider store={new Spy()}><Organiser back={back} backLabel="Me" /></AppProvider>);
+    await userEvent.click(await screen.findByRole('button', { name: '‹ Me' }));
+    expect(back).toHaveBeenCalledTimes(2);
+  });
+
   it('asks the organiser password first, refuses a wrong one and opens on the right one', async () => {
     localStorage.setItem('tp-local-admin-key', 'secret');
     const { user } = await mount('Brittany', {}, false);
@@ -431,7 +445,7 @@ describe('Organiser panel', () => {
     expect(document.querySelector('.og')!.textContent).not.toMatch(/will retry/);
   });
 
-  it('wears the spy look while a mission file is open and the normal look once all are done', async () => {
+  it('wears the game look while a mission file is open and keeps it once all are done', async () => {
     await mountProbe({ startDate: '2026-12-08' });
     expect((await probe()).active).toBe(true);
     expect(document.querySelector('.spy')).not.toBeNull();
@@ -446,7 +460,7 @@ describe('Organiser panel', () => {
     put('tp:tripadmin:Brittany', { name: 'Brittany', items: Object.fromEntries(ids.map(id => [id, { done: true, doneAt: '2026-11-20T00:00:00Z' }])), updatedAt: AT });
     await mountProbe({ startDate: '2026-12-08' });
     await waitFor(async () => expect((await probe()).active).toBe(false));
-    expect(document.querySelector('.spy')).toBeNull();
+    expect(document.querySelector('.spy')).not.toBeNull();
   });
 
   it('Save dates keeps its row and shows Saved beside it, even though the dates in use change', async () => {
@@ -465,7 +479,7 @@ describe('Organiser panel', () => {
     expect(row).toHaveTextContent(`Book by ${DAY_MONTH.format(new Date(`${next}T00:00:00Z`))}`);
   });
 
-  it('keeps an open section and an unsaved route when the last mission file completes and the spy look goes', async () => {
+  it('keeps an open section and an unsaved route when the last mission file completes and the game look stays', async () => {
     put('tp:placesug', AREAS5.map(area => ({ id: `s-${area}`, name: 'Alex', area, kind: 'stay', title: `House ${area}`, status: 'live', createdAt: AT })));
     put('tp:staysadmin', { pins: AREAS5.map(area => ({ area, suggestionId: `s-${area}`, at: AT })), scouts: {}, closed: [] });
     landed([]);
@@ -480,7 +494,8 @@ describe('Organiser panel', () => {
     await user.selectOptions(await screen.findByLabelText('Days'), '12');
     put('tp:tripadmin:Brittany', ticks(ids));
     window.dispatchEvent(new StorageEvent('storage', { key: 'tp:tripadmin:Brittany' }));
-    await waitFor(() => expect(document.querySelector('.spy')).toBeNull());
+    await waitFor(async () => expect((await probe()).active).toBe(false));
+    expect(document.querySelector('.spy')).not.toBeNull();
     expect(screen.getByLabelText('Days')).toHaveValue('12');
     expect(screen.getByRole('button', { name: /^Route/ })).toHaveAttribute('aria-expanded', 'true');
   });

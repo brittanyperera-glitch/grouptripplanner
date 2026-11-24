@@ -91,7 +91,7 @@ describe('released app, My trip tab', () => {
     spy.mockRestore();
   });
 
-  it('Group trip shows Trip view with a Replay mission control, and Exit returns to it', async () => {
+  it('Group trip shows Trip view with no Replay mission control', async () => {
     clock('2026-12-10T08:00:00Z');
     seed('Lazza', false);
     render(<App />);
@@ -99,10 +99,7 @@ describe('released app, My trip tab', () => {
     expect(await screen.findByLabelText('Trip view')).toBeInTheDocument();
     expect(screen.queryByText(/Your best \d+ days/)).toBeNull();
     expect(screen.getByText(/9 days, about/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Replay mission' }));
-    expect(await screen.findByText('Replay')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Exit' }));
-    expect(await screen.findByLabelText('Trip view')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Replay mission' })).toBeNull();
   });
 
   it('while a mission is open Group trip has Trip view but no Replay mission control', async () => {
