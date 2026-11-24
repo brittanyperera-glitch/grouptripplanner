@@ -199,3 +199,29 @@ describe('TripDay header photo on a day with no visit', () => {
     expect(container.querySelector('.strip.plain')).not.toBeNull();
   });
 });
+
+describe('TripDay ideas', () => {
+  const ideas = [{ id: 'i1', name: 'Lazza', title: 'Tea factory', text: 'go early' }];
+
+  it('lists a pending idea with who sent it and that it waits on Brittany', () => {
+    render(<TripDay view={view(3)} ideas={ideas} />);
+    expect(screen.getByText('Tea factory')).toBeInTheDocument();
+    expect(screen.getByText('go early')).toBeInTheDocument();
+    expect(screen.getByText('Idea · Lazza · waiting on Brittany')).toBeInTheDocument();
+  });
+
+  it('the door is there only when a handler is given, and calls it', () => {
+    const onIdea = vi.fn();
+    const { rerender } = render(<TripDay view={view(3)} />);
+    expect(screen.queryByRole('button', { name: 'Add an idea for this day' })).toBeNull();
+    rerender(<TripDay view={view(3)} onIdea={onIdea} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an idea for this day' }));
+    expect(onIdea).toHaveBeenCalledTimes(1);
+  });
+
+  it('the print layout carries neither', () => {
+    render(<TripDay view={view(3)} ideas={ideas} onIdea={() => {}} compact />);
+    expect(screen.queryByText('Tea factory')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add an idea for this day' })).toBeNull();
+  });
+});

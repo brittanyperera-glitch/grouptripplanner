@@ -16,13 +16,14 @@ import { useApp } from '../state';
 import { PACE_LABEL as PACES } from '../store/choices';
 import { readAdminKey } from '../store/tripKey';
 import { AREAS, PEOPLE } from '../types';
-import type { Area, BookingDates, DayBooking, DayEdit, GroupResult, Pace, Person, ReleasePlan } from '../types';
+import type { Area, BookingDates, DayBooking, DayEdit, GroupResult, Pace, Person, ReleasePlan, Suggestion } from '../types';
 import { useGroupResult } from '../workers/usePlan';
+import { parseIdea } from './IdeaSheet';
 import { SAVE_COPY, useSaveStatus } from './saveStatus';
 import { useTripModel } from './useTripModel';
 import './Organiser.css';
 
-const TITLE_MAX = 60, NOTE_MAX = 200, MAX_STOP_HOURS = 12;
+const TITLE_MAX = 60, NOTE_MAX = 200, MAX_STOP_HOURS = 12, IDEA_STOP_HOURS = 1;
 
 const COPY = {
   title: 'Organiser',
@@ -58,8 +59,8 @@ const when = (iso: string) => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('en-GB', { timeZone: 'Asia/Colombo', dateStyle: 'medium', timeStyle: 'short' });
 };
 
-function Section({ title, line, children }: { title: string; line: string; children: ReactNode }) {
-  const [open, setOpen] = useState(false);
+function Section({ title, line, start = false, children }: { title: string; line: string; start?: boolean; children: ReactNode }) {
+  const [open, setOpen] = useState(start);
   const id = useId();
   return (
     <section className="og-sec">
@@ -126,6 +127,12 @@ function StartDate({ value }: { value: string | null }) {
   );
 }
 
+/** The stop the Route editor's Add stop builds, numbered after the stops already there. */
+function customStop(edits: DayEdit[], day: number, title: string, area: Area, hours: number, note: string): DayEdit {
+  const n = Math.max(0, ...edits.filter(x => x.kind === 'custom').map(x => Number(x.id.slice(2)) || 0)) + 1;
+  return { kind: 'custom', id: `c:${n}`, day, title, area, hours, ...(note ? { note } : {}) };
+}
+
 const sameEdit = (a: DayEdit, b: DayEdit) => JSON.stringify(a) === JSON.stringify(b);
 /** One short log line for the difference between the saved route and the candidate. */
 function describeChange(base: ReleasePlan, next: ReleasePlan, name: (id: string) => string): string {
@@ -178,9 +185,7 @@ function RouteEditor({ base }: { base: ReleasePlan }) {
   const addStop = (e: FormEvent) => {
     e.preventDefault();
     if (!stopOk) return;
-    const n = Math.max(0, ...edits.filter(x => x.kind === 'custom').map(x => Number(x.id.slice(2)) || 0)) + 1;
-    const note = stop.note.trim();
-    set({ dayEdits: [...edits, { kind: 'custom', id: `c:${n}`, day: stopDay, title: stop.title.trim(), area: stop.area, hours, ...(note ? { note } : {}) }] });
+    set({ dayEdits: [...edits, customStop(edits, stopDay, stop.title.trim(), stop.area, hours, stop.note.trim())] });
     setStop(s => ({ ...s, title: '', note: '' }));
   };
 
@@ -352,9 +357,50 @@ function BookingRow({ b }: { b: DayBooking }) {
   );
 }
 
-type BackProps = { onBack?: () => void; back?: () => void; backLabel?: string };
+/** Pending ideas by the day their note names; Add to the day is offered only where the idea has a day this route has. */
+function Ideas({ base }: { base: ReleasePlan | null }) {
+  const { state, store, saveTripSettings } = useApp();
+  const { message, run } = useSave();
+  const [busy, setBusy] = useState(false);
+  const pending = state.suggestions.filter(s => s.status === 'pending').map(s => ({ s, ...parseIdea(s.note) }));
+  const dayOf = (day: number | null) => (base && day !== null && day <= base.days ? day : null);
+  const groups = [...Array.from({ length: base?.days ?? 0 }, (_, k): number | null => k + 1), null]
+    .map(d => ({ d, list: pending.filter(p => dayOf(p.day) === d) })).filter(g => g.list.length > 0);
+  const place = (s: Suggestion, day: number, text: string) => {
+    if (!base || busy) return;
+    const stop = customStop(base.dayEdits, day, s.title.trim().slice(0, TITLE_MAX), s.area, IDEA_STOP_HOURS, text.slice(0, NOTE_MAX));
+    // A retry after the status write failed must not add the same stop twice.
+    const there = base.dayEdits.some(e => e.kind === 'custom' && e.day === day && e.title === stop.title);
+    setBusy(true);
+    run((there ? Promise.resolve(true) : saveTripSettings({ plan: { ...base, dayEdits: [...base.dayEdits, stop] } }, `Route: added stop ${stop.title} on day ${day}`))
+      .then(async ok => { if (ok) await store.setSuggestionStatus(s.id, 'live'); return ok; }).finally(() => setBusy(false)));
+  };
+  return (
+    <>
+      {groups.length === 0 && <p className="og-msg">Nothing waiting.</p>}
+      {groups.map(g => (
+        <div key={g.d ?? 'none'} className="og-day" role="group" aria-label={g.d ? `Day ${g.d}` : 'No day'}>
+          <p className="og-dayh">{g.d ? `Day ${g.d}` : 'No day'}</p>
+          <ul className="og-rows">
+            {g.list.map(({ s, text }) => (
+              <li key={s.id} className="og-row">
+                <span className="og-rowname">{s.title} <span className="og-hrs">{s.area}, from {s.name}</span></span>
+                {text && <span className="og-msg">{text}</span>}
+                {g.d && <button type="button" className="og-btn" disabled={busy} aria-label={`Add to the day: ${s.title}`} onClick={() => place(s, g.d!, text)}>Add to the day</button>}
+                <button type="button" className="og-btn" disabled={busy} aria-label={`Not this time: ${s.title}`} onClick={() => void store.setSuggestionStatus(s.id, 'rejected')}>Not this time</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+      <Result message={message} />
+    </>
+  );
+}
 
-function Panel({ onBack, back, backLabel = COPY.back }: BackProps) {
+type BackProps = { onBack?: () => void; back?: () => void; backLabel?: string; /** 'ideas' opens the Ideas section. */ target?: string };
+
+function Panel({ onBack, back, backLabel = COPY.back, target }: BackProps) {
   const { state, me, items, legs, needsAdminKey } = useApp();
   const settings = state.tripSettings ?? null;
   const loading = state.tripSettings === undefined;
@@ -380,6 +426,7 @@ function Panel({ onBack, back, backLabel = COPY.back }: BackProps) {
   // Without a route the counts below would be zeros and "every traveller missing", so say why there are none instead.
   const noPlan = loading || (base && current === null) ? COPY.loading : COPY.noRoute;
   const log = [...(settings?.overrides ?? [])].reverse();
+  const waiting = state.suggestions.filter(s => s.status === 'pending').length;
   const top = (
     <>
       <p className="sub">{COPY.sub}</p>
@@ -412,6 +459,7 @@ function Panel({ onBack, back, backLabel = COPY.back }: BackProps) {
           <ul className="og-rows">{model.bookings.map(b => <BookingRow key={b.id} b={b} />)}</ul>
         )}
       </Section>
+      <Section title="Ideas" line={waiting ? `${waiting} waiting` : 'None waiting'} start={target === 'ideas'}><Ideas base={base} /></Section>
     </>
   );
 
@@ -433,7 +481,7 @@ function Panel({ onBack, back, backLabel = COPY.back }: BackProps) {
 }
 
 /** Brittany's panel. A friend gets nothing, not even the password prompt. */
-export default function Organiser({ onBack, back, backLabel = COPY.back }: BackProps) {
+export default function Organiser({ onBack, back, backLabel = COPY.back, target }: BackProps) {
   const { me } = useApp();
   const [verified, setVerified] = useState(false);
   if (!isAdmin(me)) return null;
@@ -441,5 +489,5 @@ export default function Organiser({ onBack, back, backLabel = COPY.back }: BackP
     const leave = back ?? onBack;
     return <section className="body og">{leave && <SubBack label={backLabel} onClick={leave} />}<h2 className="big display small og-h">{COPY.title}</h2><Gate onOk={() => setVerified(true)} /></section>;
   }
-  return <Panel onBack={onBack} back={back} backLabel={backLabel} />;
+  return <Panel onBack={onBack} back={back} backLabel={backLabel} target={target} />;
 }

@@ -588,7 +588,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     const sub = file.id === 'stays' ? <div role="tabpanel" aria-label="Stays" className="panel"><StaysTab onQuiz={() => showOverlay('quiz')} target={file.target as Area | undefined} {...shared} /></div>
       : file.id === 'bookings' ? <TripAdmin target={file.target} {...shared} />
       : file.id === 'flights' ? <FlightsScreen {...shared} />
-      : file.id === 'organiser' ? <Organiser {...shared} />
+      : file.id === 'organiser' ? <Organiser target={file.target} {...shared} />
       : <CrewPage which={file.id as CrewWhich} group={group ?? undefined} {...shared} />;
     content = nav(sub);
   }
