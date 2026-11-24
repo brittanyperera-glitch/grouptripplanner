@@ -132,11 +132,11 @@ export function SupplyBoard(p: SupplyProps) {
     }
     return (
       <li key={r.id} ref={r.id === p.target ? targetRow : undefined} className="ta-row" data-done={r.done.length > 0}>
-        {canTick(r) && (
+        {canTick(r) ? (
           <button type="button" role="checkbox" aria-checked={r.mine} aria-label={r.label} className="ta-box" onClick={() => p.onTick(r.id, !r.mine)}>
             {r.mine && <IconCheck size={18} />}
           </button>
-        )}
+        ) : <span className="ta-box ta-nobox" aria-hidden="true" />}
         <div className="ta-main">
           <p className="ta-label">{r.label}</p>
           <p className="ta-hint">{r.hint}</p>
