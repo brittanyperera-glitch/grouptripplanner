@@ -219,7 +219,7 @@ export const STAY_COPY = {
   sheet: {
     title: 'Add a stay', edit: 'Edit your stay', close: 'Close', save: 'Add this stay', saveEdit: 'Save changes',
     guide: "Choose from the guide's hostels", guideNone: 'Pick one to fill it in', link: 'Link', name: 'Name', price: 'Price per person per night (GBP)', priceHint: 'Needed unless you chose a guide hostel.',
-    rooms: 'Room setup', type: 'Stay type',
+    fold: 'Name, price and details', rooms: 'Room setup', type: 'Stay type',
     kind: 'What are you adding?', titleIdea: 'Add an idea', cost: 'Rough cost per person (GBP, optional)', saveIdea: 'Add this idea', whyIdea: 'Why it is good (optional, one line)', why: 'Why (optional, one line)', photo: 'Photo link (optional)', where: 'Destination', badLink: 'Use a web link starting with https.',
   },
   admin: { unlockTitle: 'Reopen a stays list', unlock: (name: string) => `Unlock ${name}` },
