@@ -64,8 +64,10 @@ describe('spy screens wear the cream look', () => {
     expect(rulesFor(read('components/spy/spy.css'), '.spy .spy-stamp').join(' ')).toMatch(/white-space:\s*nowrap/);
   });
 
-  it('.spy .spy-stamp-big declares a clamp() font-size', () => {
-    expect(rulesFor(read('components/spy/spy.css'), '.spy .spy-stamp-big').join(' ')).toMatch(/font-size:\s*clamp\(/);
+  it('.spy .spy-stamp-big wraps to two lines and sizes with a vw clamp() up to 46px', () => {
+    const big = rulesFor(read('components/spy/spy.css'), '.spy .spy-stamp-big').join(' ');
+    expect(big).toMatch(/white-space:\s*normal/);
+    expect(big).toMatch(/font-size:\s*clamp\([^)]*vw[^)]*,\s*46px\)/);
   });
 
   it('the cream text tokens and the warn token reach 4.5:1 on white and on paper', () => {

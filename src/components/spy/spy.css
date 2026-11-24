@@ -50,7 +50,7 @@
 /* Stamps: a short thunk and a small burst. The animation classes are only added when motion() is 'full'. */
 .spy .spy-stamp { --tilt: -9deg; position: relative; display: inline-block; white-space: nowrap; padding: 0 8px; border: 3px double var(--s-accent); border-radius: 6px; font-family: var(--s-head); font-size: 20px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--s-accent); transform: rotate(var(--tilt)); opacity: .9; pointer-events: none; }
 .spy .spy-stamp-quiet { border-color: var(--s-dim); color: var(--s-dim); }
-.spy .spy-stamp-big { --tilt: -7deg; padding: 8px 14px; border-width: 5px; border-radius: 10px; font-size: clamp(24px, 8vw, 46px); line-height: .9; }
+.spy .spy-stamp-big { --tilt: -7deg; padding: 8px 14px; border-width: 5px; border-radius: 10px; white-space: normal; font-size: clamp(28px, 12vw, 46px); line-height: .9; }
 .spy .spy-mission > .spy-stamp { position: absolute; top: 10px; right: 10px; }
 /* A stamp never covers the title it marks. */
 .spy .spy-mission:has(> .spy-stamp) .spy-m-top { padding-right: 84px; }
