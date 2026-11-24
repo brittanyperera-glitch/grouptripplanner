@@ -42,44 +42,52 @@ const clock = (iso: string) => vi.useFakeTimers({ toFake: ['Date'] }).setSystemT
 beforeEach(() => { localStorage.clear(); window.location.hash = ''; });
 afterEach(() => { cleanup(); vi.useRealTimers(); window.location.hash = ''; });
 
-describe('released app, My trip tab', () => {
-  it('while a mission is open shows Mission HQ, no toggle and no day rows; the Flights file opens the flights screen', async () => {
+const tabNamed = (name: RegExp) => screen.findByRole('tab', { name });
+
+describe('released app, Route and To do tabs', () => {
+  it('To do shows the board while a task is open; the Flights card opens the flights screen with the tab bar still there', async () => {
     seed('Lazza', true);
     render(<App />);
-    expect(await screen.findByRole('heading', { name: 'Mission HQ' })).toBeInTheDocument();
+    await userEvent.click(await tabNamed(/^To do/));
+    expect(await screen.findByRole('heading', { name: 'To do' })).toBeInTheDocument();
     expect(document.querySelector('.mt-seg')).toBeNull();
     expect(screen.queryByRole('list', { name: 'Days' })).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: /Flights/ }));
     expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Mission HQ' })).toBeNull();
-    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'To do' })).toBeNull();
+    expect(screen.getByRole('tablist')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /Back/ }));
-    expect(await screen.findByRole('heading', { name: 'Mission HQ' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'To do' })).toBeInTheDocument();
   });
 
-  it('the Stays file goes to the Stays tab, the Supply file to Trip admin', async () => {
+  it('the Stays and Bookings cards open sub-screens over To do, each with a Back that names To do', async () => {
     seed('Lazza', true);
     render(<App />);
+    await userEvent.click(await tabNamed(/^To do/));
+    await userEvent.click(await screen.findByRole('button', { name: /Stays/ }));
+    expect(await screen.findByRole('button', { name: /Back to To do/ })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /^To do/ })).toHaveAttribute('aria-selected', 'true');
+    await userEvent.click(screen.getByRole('button', { name: /Back to To do/ }));
     await userEvent.click(await screen.findByRole('button', { name: /^Bookings/ }));
     expect(await screen.findByRole('heading', { name: 'Bookings' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Back to To do/ })).toBeInTheDocument();
   });
 
-  it('with every mission done, inside the trip dates, shows Today for the day; Trip view is only on Group trip', async () => {
+  it('with every mission done, inside the trip dates, Route shows today\'s card with the strip and map, and there is no To do tab', async () => {
     clock('2026-12-10T08:00:00Z');
     seed('Lazza', false);
     render(<App />);
     const today = await screen.findByLabelText('Today');
     expect(within(today).getByLabelText('Day 3')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Trip view')).toBeNull();
+    expect(screen.getByLabelText('Trip view')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Day 3/ })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByRole('button', { name: 'Replay mission' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Group trip' })).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: 'See the whole trip' }));
-    expect(await screen.findByLabelText('Trip view')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Day 3/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('tab', { name: /^To do/ })).toBeNull();
   });
 
-  it('with storage blocked for the finale flag, My trip still shows the day instead of a blank finale', async () => {
-    clock('2026-12-10T08:00:00Z');
+  it('with storage blocked for the finale flag, To do still shows the board and Route still shows the route', async () => {
+    clock('2026-12-01T08:00:00Z');
     seed('Lazza', false);
     const get = Storage.prototype.getItem;
     const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (this: Storage, k: string) {
@@ -87,60 +95,63 @@ describe('released app, My trip tab', () => {
       return get.call(this, k);
     });
     render(<App />);
-    expect(await screen.findByLabelText('Today')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Trip view')).toBeInTheDocument();
+    await userEvent.click(await tabNamed(/^To do/));
+    expect(await screen.findByRole('heading', { name: 'To do' })).toBeInTheDocument();
     spy.mockRestore();
   });
 
-  it('Group trip shows Trip view with no Replay mission control', async () => {
-    clock('2026-12-10T08:00:00Z');
+  it('Route before the trip shows Trip view and the countdown line, with no Replay mission control', async () => {
+    clock('2026-12-01T08:00:00Z');
     seed('Lazza', false);
     render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: 'See the whole trip' }));
     expect(await screen.findByLabelText('Trip view')).toBeInTheDocument();
     expect(screen.queryByText(/Your best \d+ days/)).toBeNull();
     expect(screen.getByText(/9 days, about/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Replay mission' })).toBeNull();
   });
 
-  it('while a mission is open Group trip has Trip view but no Replay mission control', async () => {
+  it('while a task is open Route shows the map and the day strip, with no Replay mission control', async () => {
     seed('Lazza', true);
     render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Group trip' }));
     expect(await screen.findByLabelText('Trip view')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Days' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Replay mission' })).toBeNull();
   });
 
-  it('Mission HQ is the whole screen: its Group trip link is inside the spy look, with nothing on the paper below', async () => {
+  it('the route is the first tab, not a link inside the board', async () => {
     seed('Lazza', true);
     render(<App />);
-    const link = await screen.findByRole('button', { name: 'Group trip' });
-    const shown = screen.getByRole('tabpanel', { name: 'My trip' });
-    expect(shown.children).toHaveLength(1);
-    expect(shown.firstElementChild).toHaveClass('spy');
-    expect(shown.firstElementChild!.contains(link)).toBe(true);
-    await userEvent.click(link);
-    expect(await screen.findByLabelText('Trip view')).toBeInTheDocument();
+    const first = (await screen.findAllByRole('tab'))[0];
+    expect(first).toHaveAccessibleName(/^Route/);
+    expect(first).toHaveAttribute('aria-selected', 'true');
+    expect(within(screen.getByRole('tabpanel', { name: 'Route' })).getByLabelText('Trip view')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Group trip' })).toBeNull();
   });
 
-  it('plays Mission complete once, then the next screen', async () => {
+  it('plays Mission complete once on open, is marked seen when its button is pressed, and lands on Route', async () => {
     clock('2026-12-10T08:00:00Z');
     seed('Lazza', false);
     localStorage.removeItem(SEEN_KEY);
     render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Go to the trip' }));
+    const go = await screen.findByRole('button', { name: 'Go to the trip' });
+    expect(localStorage.getItem(SEEN_KEY)).toBeNull();
+    await userEvent.click(go);
+    expect(localStorage.getItem(SEEN_KEY)).toBe('1');
     expect(await screen.findByLabelText('Today')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /^Route/ })).toHaveAttribute('aria-selected', 'true');
     cleanup();
     render(<App />);
     expect(await screen.findByLabelText('Today')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Go to the trip' })).toBeNull();
   });
 
-  it('outside the trip dates shows one line and a link, not Trip view; a #/day-N link wins over Today', async () => {
+  it('outside the trip dates Route leads with the map and the countdown line; a #/day-N link selects that chip', async () => {
     clock('2026-12-01T08:00:00Z');
     seed('Lazza', false);
     const { unmount } = render(<App />);
     expect(await screen.findByText(/^Trip starts/)).toBeInTheDocument();
-    expect(screen.queryByLabelText('Trip view')).toBeNull();
+    expect(screen.getByLabelText('Trip view')).toBeInTheDocument();
     unmount();
     clock('2026-12-10T08:00:00Z');
     seenWalkToday();
@@ -148,109 +159,110 @@ describe('released app, My trip tab', () => {
     render(<App />);
     expect(await screen.findByLabelText('Trip view')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Day 5/ })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.queryByLabelText('Today')).toBeNull();
   });
 
-  it('keeps Change days or pace out of the Menu and the Picks tab, even while I am still rating', async () => {
+  it('gives a friend no Menu and no Picks tab, even while I am still rating', async () => {
     seed('Lazza', true);
     put('tp:resp:Lazza', { ...submittedResp('Lazza'), submitted: false });
     render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Menu' }));
-    expect(screen.queryByRole('button', { name: 'Change days or pace' })).toBeNull();
+    await screen.findByRole('button', { name: /^Lazza,/ });
+    expect(screen.queryByRole('button', { name: 'Menu' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Picks/ })).toBeNull();
   });
 });
 
-describe('released app, Menu', () => {
-  const menu = async (me: Person) => {
+describe('released app, Me and the task doors', () => {
+  const toDo = async (me: Person) => {
     seed(me, true);
     render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Menu' }));
-    return within(screen.getByRole('group', { name: 'Menu' }));
+    await userEvent.click(await tabNamed(/^To do/));
   };
-  it('offers Organiser to Brittany only and Flights to everyone, never safe house', async () => {
-    const b = await menu('Brittany');
-    expect(b.getByRole('button', { name: 'Organiser' })).toBeInTheDocument();
-    expect(b.getByRole('button', { name: 'Flights' })).toBeInTheDocument();
+  const meTab = async (me: Person) => {
+    seed(me, true);
+    render(<App />);
+    await userEvent.click(await tabNamed(/^Me/));
+  };
+  it('offers Organiser under Me to Brittany only and the Flights card on To do to everyone, never safe house', async () => {
+    await meTab('Brittany');
+    expect(screen.getByRole('button', { name: 'Organiser' })).toBeInTheDocument();
+    await userEvent.click(await tabNamed(/^To do/));
+    expect(screen.getByRole('button', { name: /Flights/ })).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/safe house/i);
     cleanup(); localStorage.clear();
-    const a = await menu('Alex');
-    expect(a.queryByRole('button', { name: 'Organiser' })).toBeNull();
-    expect(a.getByRole('button', { name: 'Flights' })).toBeInTheDocument();
+    await meTab('Alex');
+    expect(screen.queryByRole('button', { name: 'Organiser' })).toBeNull();
+    await userEvent.click(await tabNamed(/^To do/));
+    expect(screen.getByRole('button', { name: /Flights/ })).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/safe house/i);
   });
-  it('Flights in the Menu opens the flights screen', async () => {
-    const m = await menu('Alex');
-    await userEvent.click(m.getByRole('button', { name: 'Flights' }));
+  it('the Flights card opens the flights screen and the tab bar stays', async () => {
+    await toDo('Alex');
+    await userEvent.click(screen.getByRole('button', { name: /Flights/ }));
     expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
-    await waitFor(() => expect(screen.queryByRole('tablist')).toBeNull());
+    expect(screen.getByRole('tablist')).toBeInTheDocument();
   });
   it('an organiser change refused for want of the key says so outside Organiser, and the notice opens Organiser', async () => {
     seed('Brittany', true);
     localStorage.setItem('tp-local-admin-key', 'secret');
     localStorage.setItem(ADMIN_KEY, 'wrong');
     render(<App />);
-    await userEvent.click(await screen.findByRole('tab', { name: /^Stays/ }));
+    await userEvent.click(await tabNamed(/^To do/));
+    await userEvent.click(await screen.findByRole('button', { name: /Stays/ }));
     await userEvent.click((await screen.findAllByRole('button', { name: /\d nights?/ }))[0]);
     await userEvent.click((await screen.findAllByRole('button', { name: 'Unpin' }))[0]);
     await userEvent.click(await screen.findByRole('button', { name: /not saved.*organiser password/i }));
     expect(await screen.findByLabelText('Organiser password')).toBeInTheDocument();
   });
-  it('Organiser in the Menu opens the organiser panel headed Organiser, as the Menu names it', async () => {
-    const m = await menu('Brittany');
+  it('Organiser under Me opens the organiser panel headed Organiser', async () => {
+    await meTab('Brittany');
     localStorage.setItem(ADMIN_KEY, 'k');
-    await userEvent.click(m.getByRole('button', { name: 'Organiser' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Organiser' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Organiser' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Organiser' })).toBeInTheDocument();
   });
 });
 
 describe('released app, deep link, Back and the loading plan', () => {
-  it('a day chosen on Group trip is not a deep link: leaving My trip and coming back lands on Mission HQ', async () => {
+  it('a day chosen on Route is not a deep link: another tab starts clean, and the phone Back brings Route back with that day picked', async () => {
     seed('Lazza', true);
     render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Group trip' }));
     await userEvent.click(await screen.findByRole('button', { name: /Day 2/ }));
     expect(window.location.hash).toBe('#/day-2');
-    await userEvent.click(screen.getByRole('tab', { name: /Stays/ }));
-    await userEvent.click(screen.getByRole('tab', { name: /My trip/ }));
-    expect(await screen.findByRole('heading', { name: 'Mission HQ' })).toBeInTheDocument();
-    expect(screen.queryByLabelText('Trip view')).toBeNull();
+    await userEvent.click(screen.getByRole('tab', { name: /^To do/ }));
+    expect(window.location.hash).toBe('');
+    history.back();
+    expect(await screen.findByRole('button', { name: /Day 2/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('tab', { name: /^Route/ })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it.each([['Profile', 'My profile'], ['Group', 'Group stats']])('a Menu action for the tab already open (%s: %s) still closes the Touchdown file over it', async (tab, action) => {
+  it.each([['the open tab', 'To do'], ['another tab', 'Me']])('tapping %s while Flights is open closes it (%s)', async (_which, tab) => {
     seed('Lazza', true);
     render(<App />);
-    await userEvent.click(await screen.findByRole('tab', { name: new RegExp(`^${tab}`) }));
-    const menu = async (name: string) => {
-      await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
-      await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name }));
-    };
-    await menu('Flights');
+    await userEvent.click(await tabNamed(/^To do/));
+    await userEvent.click(screen.getByRole('button', { name: /Flights/ }));
     expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
-    await menu(action);
+    await userEvent.click(screen.getByRole('tab', { name: new RegExp(`^${tab}`) }));
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'Flights' })).toBeNull());
     expect(screen.getByRole('tab', { name: new RegExp(`^${tab}`) })).toHaveAttribute('aria-selected', 'true');
     await waitFor(() => expect(history.state?.tpFile).toBeUndefined());
   });
 
-  it('the phone Back button closes Touchdown onto the tab it was opened from, not another tab or out of the app', async () => {
+  it('the phone Back button closes Flights onto the tab it was opened from, not another tab or out of the app', async () => {
     seed('Lazza', true);
     render(<App />);
-    await userEvent.click(await screen.findByRole('tab', { name: /Stays/ }));
-    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name: 'Flights' }));
+    await userEvent.click(await tabNamed(/^To do/));
+    await userEvent.click(screen.getByRole('button', { name: /Flights/ }));
     expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
     const depth = history.length;
     history.back();
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'Flights' })).toBeNull());
-    expect(screen.getByRole('tab', { name: /Stays/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /^To do/ })).toHaveAttribute('aria-selected', 'true');
     // The Back link inside the screen leaves no extra entry behind.
-    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name: 'Flights' }));
+    await userEvent.click(screen.getByRole('button', { name: /Flights/ }));
     await userEvent.click(await screen.findByRole('button', { name: /Back/ }));
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'Flights' })).toBeNull());
     await waitFor(() => expect(history.state?.tpFile).toBeUndefined());
-    expect(screen.getByRole('tab', { name: /Stays/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /^To do/ })).toHaveAttribute('aria-selected', 'true');
     expect(history.length).toBeLessThanOrEqual(depth + 1);
   });
 
@@ -261,7 +273,6 @@ describe('released app, deep link, Back and the loading plan', () => {
     const share = vi.fn(async () => {});
     Object.assign(navigator, { share, canShare: () => true });
     render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Group trip' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Play route reveal' }));
     await userEvent.click(await screen.findByRole('button', { name: 'See the poster' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Save poster' }));
@@ -270,19 +281,21 @@ describe('released app, deep link, Back and the loading plan', () => {
     vi.unstubAllGlobals();
   });
 
-  it('a mission reopened and closed again after the finale shows the day, not a blank My trip', async () => {
+  it('a task reopened and closed again after the finale shows the board on To do, not a blank, and no second finale', async () => {
     clock('2026-12-10T08:00:00Z');
     seed('Lazza', true);
     const store = new LocalStore();
     const all = (done: boolean) => Object.fromEntries(ADMIN_IDS.map(id => [id, { done, doneAt: AT }]));
     render(<App store={store} />);
-    expect(await screen.findByRole('heading', { name: 'Mission HQ' })).toBeInTheDocument();
+    await userEvent.click(await tabNamed(/^To do/));
+    expect(await screen.findByRole('heading', { name: 'To do' })).toBeInTheDocument();
     await act(async () => { await store.saveTripAdmin('Brittany', all(true)); });
     expect(await screen.findByRole('button', { name: 'Go to the trip' })).toBeInTheDocument();
     await act(async () => { await store.saveTripAdmin('Brittany', all(false)); });
-    expect(await screen.findByRole('heading', { name: 'Mission HQ' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'To do' })).toBeInTheDocument();
     await act(async () => { await store.saveTripAdmin('Brittany', all(true)); });
     expect(await screen.findByLabelText('Today')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Go to the trip' })).toBeNull();
   });
 
   it('while the trip settings are still loading no plan shows, not the seed plan', async () => {
@@ -293,6 +306,6 @@ describe('released app, deep link, Back and the loading plan', () => {
     }) as LocalStore;
     render(<App store={loading} />);
     expect(await screen.findByText('Working out the plan...')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Mission HQ' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Route' })).toBeNull();
   });
 });

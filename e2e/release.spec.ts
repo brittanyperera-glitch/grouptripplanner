@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import { seenWalkthroughToday } from './helpers';
 
-// The released plan: the route reveal opens first, then the full itinerary, then a button on to Stays.
+// The released plan: the route reveal opens first, then the Route tab, with Stays one tap away on To do.
 const cat = JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string }[] };
 const ids = cat.items.map(i => i.id);
 const ranking = { must: [['sigiriya']], keen: [], meh: ids.filter(i => i !== 'sigiriya').map(i => [i]), skip: [] };
@@ -11,10 +11,16 @@ const seed = NAMES.map(name => ({ name, days: 9, flex: false, pace: 0, ranking, 
 const release = JSON.parse(fs.readFileSync('src/content/release.json', 'utf8')) as { days: number; items: string[] };
 const REVEAL_KEY = `${release.days}:${release.items.join(',')}`;
 const SHOTS = process.env.SHOTS_DIR;
-// Since the 17 Nov wiring, My trip is Mission HQ while missions are open; the itinerary is on the Group trip view.
-const toGroupTrip = async (page: import('@playwright/test').Page) => {
-  await expect(page.getByRole('heading', { name: 'Mission HQ' })).toBeVisible();
-  await page.getByRole('button', { name: 'Group trip' }).click();
+// The route is the first tab, in every stage: it is on screen at open, with the map and the day strip.
+const routeOnScreen = async (page: import('@playwright/test').Page) => {
+  await expect(page.getByRole('tab', { name: 'Route' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByLabel('Trip view')).toBeVisible();
+};
+// Stays is opened from its card on To do and sits over that tab.
+const staysFromTodo = async (page: import('@playwright/test').Page) => {
+  await page.getByRole('tab', { name: 'To do' }).click();
+  await page.getByRole('button', { name: /^Stays/ }).click();
+  await expect(page.getByRole('button', { name: /Back to To do/ })).toBeVisible();
 };
 const shot = async (page: import('@playwright/test').Page, name: string) => { if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name}.png` }); };
 
@@ -39,16 +45,14 @@ for (const [w, h] of [[1680, 900], [1440, 900], [1280, 800], [1024, 768]]) for (
     // 2. Close it.
     await page.getByRole('button', { name: 'Close' }).click();
 
-    // 3. The full itinerary is the group plan, with the released days and a way on to Stays.
-    await toGroupTrip(page);
+    // 3. The full itinerary is the group plan, with the released days.
+    await routeOnScreen(page);
     await expect(page.getByRole('tablist')).toBeVisible();
     await expect(page.getByText('9 days, about')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
     await shot(page, `${w}-${scheme}-3-itinerary`);
 
-    // 4. The button opens Stays; and the reveal does not play again on reload.
-    await page.getByRole('button', { name: 'Next: find somewhere to stay' }).click();
-    await expect(page.getByRole('tab', { name: 'Stays' })).toHaveAttribute('aria-selected', 'true');
+    // 4. The To do card opens Stays; and the reveal does not play again on reload.
+    await staysFromTodo(page);
     await expect(page.getByText('Working out the route.')).toHaveCount(0);
     await expect(page.getByRole('tabpanel', { name: 'Stays' }).locator('button').first()).toBeVisible();
     await page.waitForTimeout(500);
@@ -82,13 +86,12 @@ for (const w of [320, 375]) {
     await expect(page.getByText('Mission unlocked')).toBeVisible();
     expect(await overflow(), 'reveal').toEqual({ page: 0, wide: [] });
     await page.getByRole('button', { name: 'Close' }).click();
-    await toGroupTrip(page);
-    await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
+    await routeOnScreen(page);
     expect(await overflow(), 'itinerary').toEqual({ page: 0, wide: [] });
     const strip = (await page.getByRole('group', { name: 'Days' }).boundingBox())!;
     expect(strip.x, 'day strip left').toBeGreaterThanOrEqual(-0.5);
     expect(strip.x + strip.width, 'day strip right').toBeLessThanOrEqual(w + 0.5);
-    await page.getByRole('button', { name: 'Next: find somewhere to stay' }).click();
+    await staysFromTodo(page);
     await expect(page.getByText('Working out the route.')).toHaveCount(0);
     expect(await overflow(), 'stays').toEqual({ page: 0, wide: [] });
   });
@@ -129,10 +132,9 @@ test('the Awards dialog does not open over the itinerary after the reveal', asyn
   }, [varied]);
   await page.reload();
   await page.getByRole('button', { name: 'Close' }).click();
-  await toGroupTrip(page);
-  await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
+  await routeOnScreen(page);
   await expect(page.getByText('The group awards', { exact: false })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.getByRole('tab', { name: 'Me' }).click();
   await expect(page.getByRole('button', { name: 'Awards' })).toBeVisible();
 });
 
@@ -150,7 +152,7 @@ for (const [w, h] of [[320, 640], [390, 844], [1280, 800]]) {
     await page.reload();
     const posterRequests: string[] = [];
     page.on('request', r => { if (r.url().includes('/img/poster/')) posterRequests.push(r.url()); });
-    await page.getByRole('tab', { name: 'Profile' }).click();
+    await page.getByRole('tab', { name: 'Me' }).click();
     const spill = () => page.evaluate(() => {
       const vw = document.documentElement.clientWidth;
       const bad = [...document.querySelectorAll<HTMLElement>('.pf-top > *, .pf-flip, .pf-actions, .pf-actions > button')].filter(e => { const r = e.getBoundingClientRect(); return r.right > vw + 1 || r.left < -1; });
@@ -169,7 +171,7 @@ for (const [w, h] of [[320, 640], [390, 844], [1280, 800]]) {
   });
 }
 
-test('closing the reveal lands on Mission HQ, one tap from the itinerary, even on the first visit of the day, with the welcome-back walkthrough not yet seen', async ({ page }) => {
+test('closing the reveal lands on Route, even on the first visit of the day, with the welcome-back walkthrough not yet seen', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await page.evaluate(([rows]) => {
@@ -179,8 +181,7 @@ test('closing the reveal lands on Mission HQ, one tap from the itinerary, even o
   }, [seed]);
   await page.reload();
   await page.getByRole('button', { name: 'Close' }).click();
-  await toGroupTrip(page);
-  await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
+  await routeOnScreen(page);
   await expect(page.getByRole('tablist')).toBeVisible();
 });
 
@@ -221,9 +222,8 @@ test('one member starting over does not take the released plan away from the oth
     localStorage.setItem('tp:reveal-seen', key as string);
   }, [open, REVEAL_KEY]);
   await page.reload();
-  await toGroupTrip(page);
-  await expect(page.getByRole('button', { name: 'Next: find somewhere to stay' })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Stays' })).toBeVisible();
+  await routeOnScreen(page);
+  await expect(page.getByRole('group', { name: 'Days' })).toBeVisible();
 });
 
 test('the group plan holds the released places and none of the ruled-out ones', async ({ page }) => {
@@ -238,7 +238,7 @@ test('the group plan holds the released places and none of the ruled-out ones', 
   await page.reload();
   // The seen key differs from the release key, so the reveal plays first.
   await page.getByRole('button', { name: 'Close' }).click();
-  await toGroupTrip(page);
+  await routeOnScreen(page);
   const chips = page.getByRole('group', { name: 'Days' }).getByRole('button');
   const days = await chips.count();
   expect(days, 'every released day is visited').toBe(9);
@@ -252,7 +252,7 @@ test('the group plan holds the released places and none of the ruled-out ones', 
   for (const kept of ['Elephant safari', 'Pidurangala', 'Knuckles']) expect(body, kept).toContain(kept);
 });
 
-// Sub-screens and the phone Back. "My trip" is today's name for Route and the mission board for To do.
+// Sub-screens and the phone Back.
 const TRIP = '2099-03-01';
 const AT = '2026-11-02T00:00:00Z';
 const bookIds = (JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string; book?: unknown }[] }).items.filter(i => i.book).map(i => `book:${i.id}`);
@@ -279,42 +279,41 @@ const openApp = async (page: import('@playwright/test').Page, allDone = false) =
 
 test('a day picked on Route survives Guide, back to Route, and two phone Backs', async ({ page }) => {
   await openApp(page);
-  await page.getByRole('button', { name: 'Group trip' }).click(); // A3b: rename (Route shows its days with no tap)
   await page.getByRole('button', { name: /Day 3/ }).click();
   await expect(page.getByRole('button', { name: /Day 3/ })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('tab', { name: 'Guide' }).click();
-  await page.getByRole('tab', { name: 'My trip' }).click(); // A3b: rename
+  await page.getByRole('tab', { name: 'Route' }).click();
   await page.goBack();
   await expect(page.getByRole('tab', { name: 'Guide' })).toHaveAttribute('aria-selected', 'true');
   await page.goBack();
-  await expect(page.getByRole('tab', { name: 'My trip' })).toHaveAttribute('aria-selected', 'true'); // A3b: rename
+  await expect(page.getByRole('tab', { name: 'Route' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('button', { name: /Day 3/ })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('Bookings opened from the board keeps the tab bar and phone Back returns to the board', async ({ page }) => {
   await openApp(page);
-  await expect(page.getByRole('heading', { name: 'Mission HQ' })).toBeVisible(); // A3b: rename (To do)
+  await page.getByRole('tab', { name: 'To do' }).click();
+  await expect(page.getByRole('heading', { name: 'To do' })).toBeVisible();
   await expect(page.getByRole('tablist')).toBeVisible();
   await page.getByRole('button', { name: /^Bookings/ }).click();
   await expect(page.getByRole('heading', { name: 'Bookings' })).toBeVisible();
   await expect(page.getByRole('tablist')).toBeVisible();
   await page.goBack();
-  await expect(page.getByRole('heading', { name: 'Mission HQ' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'To do' })).toBeVisible();
   await expect(page.getByRole('tablist')).toBeVisible();
 });
 
 test('Stays opened from the board sits over its tab, and closing the travel profile returns to Stays', async ({ page }) => {
   await openApp(page);
-  await page.getByRole('button', { name: /^Stays/ }).click();
-  await expect(page.getByRole('tab', { name: 'My trip' })).toHaveAttribute('aria-selected', 'true'); // A3b: rename
-  await expect(page.getByRole('button', { name: /Back.*My trip/ })).toBeVisible();
+  await staysFromTodo(page);
+  await expect(page.getByRole('tab', { name: 'To do' })).toHaveAttribute('aria-selected', 'true');
   await page.getByRole('button', { name: 'Start my travel profile' }).click();
   await expect(page.getByText('1 of 6')).toBeVisible();
   await page.getByRole('button', { name: 'Close', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Mission HQ' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'To do' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Start my travel profile' })).toBeVisible();
-  await page.getByRole('button', { name: /Back.*My trip/ }).click();
-  await expect(page.getByRole('heading', { name: 'Mission HQ' })).toBeVisible();
+  await page.getByRole('button', { name: /Back to To do/ }).click();
+  await expect(page.getByRole('heading', { name: 'To do' })).toBeVisible();
 });
 
 test('with every mission done the finale shows once on open, its button lands on the route, and a reload does not show it', async ({ page }) => {
@@ -324,10 +323,102 @@ test('with every mission done the finale shows once on open, its button lands on
   await expect.soft(page.getByRole('tablist'), 'a full-screen moment hides the tab bar').toHaveCount(0);
   expect.soft(await finaleSeen(), 'not marked seen by showing').toBeNull();
   await page.getByRole('button', { name: 'Go to the trip' }).click();
-  await expect(page.getByLabel('Trip view')).toBeVisible(); // A3b: Route tab
+  await routeOnScreen(page);
   await expect(page.getByRole('tablist')).toBeVisible();
   expect(await finaleSeen()).toBe('1');
   await page.reload();
   await expect(page.getByRole('tablist')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Go to the trip' })).toHaveCount(0);
+});
+
+// The four tabs.
+const colomboToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Colombo' }).format(new Date());
+
+test('the tab bar is Route, To do, Guide, Me at 320 wide with every label whole', async ({ page }) => {
+  await openApp(page);
+  await page.setViewportSize({ width: 320, height: 700 });
+  await expect(page.getByRole('tab')).toHaveCount(4);
+  for (const name of ['Route', 'To do', 'Guide', 'Me']) await expect(page.getByRole('tab', { name, exact: true })).toBeVisible();
+  const m = await page.evaluate(() => {
+    const bar = document.querySelector('.tabs')!.getBoundingClientRect();
+    const tabs = [...document.querySelectorAll('.tabs [role=tab]')];
+    return {
+      clipped: tabs.flatMap(t => [...t.querySelectorAll('span')].filter(s => s.scrollWidth > s.clientWidth + 1).map(s => s.textContent)),
+      outside: tabs.filter(t => { const r = t.getBoundingClientRect(); return r.left < bar.left - 1 || r.right > bar.right + 1; }).map(t => t.textContent),
+    };
+  });
+  expect(m).toEqual({ clipped: [], outside: [] });
+});
+
+// Lazza has done everything but the stays vote: it is open and she has not ranked her top 2 in Hill country.
+const openTopTwo = async (page: import('@playwright/test').Page) => {
+  await openApp(page, true);
+  const { AREAS } = await import('../src/types');
+  await page.evaluate(([areas, at, people]) => {
+    const put = (k: string, v: unknown) => localStorage.setItem(k, JSON.stringify(v));
+    const stay = (a: string, k: number) => ({ id: `s-${a}-${k}`, name: 'Alex', area: a, kind: 'stay', title: `House ${a} ${k}`, status: 'live', createdAt: at });
+    localStorage.setItem('tp:me', 'Lazza');
+    localStorage.setItem('tp:mission-complete-seen', '1');
+    put('tp:placesug', (areas as string[]).flatMap(a => (a === 'Hill country' ? [0, 1, 2] : [0]).map(k => stay(a, k))));
+    put('tp:staysadmin', { pins: [], scouts: Object.fromEntries((areas as string[]).map(a => [a, 'Alex'])), closed: [] });
+    for (const p of people as string[]) put(`tp:stays:${p}`, { name: p, prefs: [], quizDone: true, locked: true, ranks: {}, bingo: [], updatedAt: at });
+  }, [AREAS, AT, NAMES]);
+  await page.reload();
+};
+
+test('a friend at the top 2 step is told so on Route, as the board\'s top card, and by To do badge 1', async ({ page }) => {
+  await openTopTwo(page);
+  await expect(page.getByRole('button', { name: 'Next: Pick your top 2' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'To do' }).locator('.badge-count')).toHaveText('1');
+  await page.getByRole('tab', { name: 'To do' }).click();
+  await expect(page.locator('.spy-me')).toContainText('Pick your top 2');
+  await page.getByRole('button', { name: 'Start', exact: true }).click();
+  await expect(page.getByRole('button', { name: /Back to To do/ })).toBeVisible();
+});
+
+test('a friend has no Menu button, on any tab', async ({ page }) => {
+  await openApp(page);
+  await expect(page.getByRole('tablist')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Me' }).click();
+  await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
+});
+
+test('on a trip day with nobody owing there is no To do tab, and a booking on the day card opens Bookings', async ({ page }) => {
+  await openApp(page, true);
+  await page.evaluate(([day]) => {
+    const s = JSON.parse(localStorage.getItem('tp:settings')!);
+    localStorage.setItem('tp:settings', JSON.stringify({ ...s, startDate: day }));
+    localStorage.setItem('tp:mission-complete-seen', '1');
+  }, [colomboToday()]);
+  await page.reload();
+  await expect(page.getByRole('tab')).toHaveCount(3);
+  await expect(page.getByRole('tab', { name: 'To do' })).toHaveCount(0);
+  const doors = page.getByRole('list', { name: 'Day bookings' }).getByRole('button');
+  const chips = page.getByRole('group', { name: 'Days' }).getByRole('button');
+  for (let d = 0; d < await chips.count() && await doors.count() === 0; d++) await chips.nth(d).click();
+  await doors.first().click();
+  await expect(page.getByRole('heading', { name: 'Bookings' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Back to Route/ })).toBeVisible();
+});
+
+test('Start over is not offered to a friend', async ({ page }) => {
+  await openApp(page);
+  // A friend would look in the Menu first; on a build that still has one, open it.
+  const menu = page.getByRole('button', { name: 'Menu' });
+  if (await menu.count()) await menu.click();
+  await expect(page.getByRole('button', { name: /start over/i })).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Me' }).click();
+  await expect(page.getByRole('button', { name: /start over/i })).toHaveCount(0);
+});
+
+test('a Crew page opened from Me closes onto Me with the phone Back', async ({ page }) => {
+  await openApp(page);
+  await page.getByRole('tab', { name: 'Me' }).click();
+  await page.getByRole('button', { name: 'Group stats' }).click();
+  await expect(page.getByRole('button', { name: /Back to Me/ })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole('button', { name: /Back to Me/ })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: 'Me' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('button', { name: 'Group stats' })).toBeVisible();
 });

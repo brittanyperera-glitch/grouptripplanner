@@ -17,7 +17,7 @@ import './Flights.css';
 
 const COPY = {
   title: 'Flights',
-  // The Menu item and the HQ file call this screen Touchdown, so its spy heading does too.
+  // The To do card and this screen share the name Flights, so the game heading matches the plain one.
   spyTitle: 'Flights',
   sub: 'Everyone sees everyone\'s flights. You can only change your own. Times are Sri Lanka local.',
   arrival: 'Arrival',
@@ -114,7 +114,7 @@ export function Flights({ me, travellers, startDate, lastDayStart, days, onSave,
     <ul className="fx-list" aria-label={COPY.title}>
       {PEOPLE.map(p => {
         const t = travellers[p];
-        // Dark is Touchdown's word: a missing arrival or a missing departure. Someone who gave nothing at all has no lines to show.
+        // Dark here means a missing arrival or a missing departure. Someone who gave nothing at all has no lines to show.
         const dark = flightsDark(t);
         const empty = !t?.arriveLocal && !t?.departLocal && !t?.arriveFlight && !t?.departFlight;
         const bare = p !== me && empty;

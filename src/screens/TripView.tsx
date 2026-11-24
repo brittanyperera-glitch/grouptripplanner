@@ -16,7 +16,7 @@ const COPY = {
   empty: 'The trip appears here once the route is set.',
   back: 'Back to the trip',
   stayLink: 'Open the stay',
-  noStay: 'No stay chosen yet. Suggest one on the Stays tab.',
+  noStay: 'No stay chosen yet.',
   unclaimed: 'nobody has claimed it yet',
 };
 
