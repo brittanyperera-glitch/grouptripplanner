@@ -97,6 +97,8 @@ type TripView = 'mine' | 'group';
 const GroupCtx = createContext<GroupResult | null>(null);
 // Back to the landing screen (guest or trip password); only set for the trip, never inside a guest sandbox.
 const LogoutCtx = createContext<(() => void) | null>(null);
+// A guest never logged in, so their exit says what it does (audit 25).
+const GUEST_EXIT = 'Leave the demo';
 const useGroup = () => useContext(GroupCtx);
 // A task screen sits over the tab it came from, with one history entry.
 interface SubFile { id: SubId; target?: string }
@@ -220,7 +222,7 @@ const START_OVER_ARMED_MS = 4000;
  * on a phone (Brittany 2026-10-15). Start over takes two taps; the first arms it for a few seconds, no browser dialog.
  */
 // Log out is the same item for everyone: a trip member forgets the password, a guest's demo resets; both land on the entry screen.
-function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLogout, todo = 0, onItems, onAwards, onAdmin }: { onProfile(): void; onChange?(): void; onStats?(): void; onNotYou(): void; onStartOver(): void; onLogout?(): void; todo?: number; onItems?(): void; onAwards?(): void; onAdmin?(): void }) {
+function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLogout, logoutLabel = 'Log out', todo = 0, onItems, onAwards, onAdmin }: { onProfile(): void; onChange?(): void; onStats?(): void; onNotYou(): void; onStartOver(): void; onLogout?(): void; logoutLabel?: string; todo?: number; onItems?(): void; onAwards?(): void; onAdmin?(): void }) {
   const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -251,7 +253,7 @@ function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLog
           {onStats && <button onClick={pick(onStats)}>Group stats</button>}
           {onChange && <button onClick={pick(onChange)}>Change days or pace</button>}
           <button onClick={pick(onNotYou)}>Not you?</button>
-          {onLogout && <button onClick={pick(onLogout)}>Log out</button>}
+          {onLogout && <button onClick={pick(onLogout)}>{logoutLabel}</button>}
           <button className={armed ? 'armed' : undefined} onClick={armed ? pick(onStartOver) : () => setArmed(true)}>
             {armed ? 'Tap again to start over' : 'Start over'}
           </button>
@@ -610,7 +612,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
           <Avatar name={me} size={30} />
           <b>{me}</b>
         </button>
-        {!released && <HeaderMenu onProfile={openProfile} onChange={(shown === 'rate' || shown === 'tabs') && !locked ? changeDays : undefined} onStats={shown === 'tabs' && statsOpen ? () => openGroup('stats') : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} onLogout={finishSandbox ?? logout ?? undefined}
+        {!released && <HeaderMenu onProfile={openProfile} onChange={(shown === 'rate' || shown === 'tabs') && !locked ? changeDays : undefined} onStats={shown === 'tabs' && statsOpen ? () => openGroup('stats') : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} onLogout={finishSandbox ?? logout ?? undefined} logoutLabel={finishSandbox ? GUEST_EXIT : undefined}
           todo={todo.length} onItems={shown === 'tabs' ? openItemsPage : undefined} onAwards={shown === 'tabs' && awardList.length > 0 ? () => showOverlay('awards') : undefined} onAdmin={shown === 'tabs' ? openBookings : undefined} />}
       </header>
       {/* A refused pin, nights or fell-through edit is dropped, so say so wherever it happened; the Organiser holds the key prompt. */}
@@ -670,7 +672,8 @@ function Shell() {
       {me
         ? <Flow key={`${me}:${resets}`} me={me} say={say} onStartOver={startOver} />
         : <Name when={tripWhen(state.tripSettings?.startDate)} welcome={sandbox ? copy.guestWelcome ?? copy.welcome : copy.welcome} welcomeSub={sandbox ? copy.guestWelcomeSub : copy.welcomeSub} players={copy.players}
-            roster={sandbox ? GUESTS : PEOPLE} onPick={p => { setMe(p); say(pickQuip(copy.quips.name[p])); }} onLogout={finishSandbox ?? logout ?? undefined} />}
+            roster={sandbox ? GUESTS : PEOPLE} onPick={p => { setMe(p); say(pickQuip(copy.quips.name[p])); }} onLogout={finishSandbox ?? logout ?? undefined}
+            logoutLabel={finishSandbox ? GUEST_EXIT : undefined} />}
       {toast && <QuipBurst key={toast.id} text={toast.text} kind={toast.kind} onDone={clear} />}
     </div>
   );
@@ -698,5 +701,5 @@ export default function App({ store }: { store?: Store }) {
     try { localStorage.removeItem(ME_KEY); } catch { /* storage unavailable: nothing stored to clear */ }
     setEntry('landing');
   };
-  return <LogoutCtx.Provider value={logout}><AppProvider store={store}><Shell /></AppProvider></LogoutCtx.Provider>;
+  return <LogoutCtx.Provider value={logout}><AppProvider store={store} onGateBack={() => setEntry('landing')}><Shell /></AppProvider></LogoutCtx.Provider>;
 }

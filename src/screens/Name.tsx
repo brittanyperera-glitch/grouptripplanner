@@ -55,8 +55,10 @@ function FlashName({ name }: { name: string }) {
   return <span ref={ref} className="flash-name">{name}</span>;
 }
 
-export default function Name({ welcome, welcomeSub, when = tripWhen(null), players = {}, roster = PEOPLE, onPick, onLogout }: {
+export default function Name({ welcome, welcomeSub, when = tripWhen(null), players = {}, roster = PEOPLE, onPick, onLogout, logoutLabel = 'Log out' }: {
   welcome: string; when?: string; welcomeSub?: string; players?: Players; roster?: readonly Player[]; onPick: (p: Player) => void; onLogout?: () => void;
+  /** A guest leaves the demo; a trip member logs out. */
+  logoutLabel?: string;
 }) {
   const [mode] = useState(motion);
   const still = mode === 'still';
@@ -132,7 +134,7 @@ export default function Name({ welcome, welcomeSub, when = tripWhen(null), playe
 
   return (
     <div className="welcome">
-      {onLogout && <button type="button" className="link name-out" onClick={onLogout}>Log out</button>}
+      {onLogout && <button type="button" className="link name-out" onClick={onLogout}>{logoutLabel}</button>}
       {page === 'intro' ? (
         <div className="intro landing">
           <main className="landing-body">

@@ -195,7 +195,8 @@ describe('guest exit', () => {
     await screen.findByRole('tab', { name: 'Group' });
     expect(window.location.hash).toBe('#/guest');
     openMenu();
-    await user.click(await screen.findByRole('button', { name: 'Log out' }));
+    // Changed deliberately (audit 25, C5): a guest leaves the demo; members keep Log out.
+    await user.click(await screen.findByRole('button', { name: 'Leave the demo' }));
     // Changed deliberately (Brittany 2026-10-16): the landing heading is now the brand, GROUP TRIP HERO.
     await screen.findByRole('heading', { name: 'Group Trip Hero' });
     expect(window.location.hash).toBe('');

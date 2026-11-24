@@ -32,7 +32,8 @@ async function runToTabs(page: Page) {
 
 async function finishAndReset(page: Page) {
   await page.getByRole('button', { name: 'Menu' }).click();
-  await page.getByRole('button', { name: 'Log out' }).click();
+  // Changed deliberately (audit 25, C5): a guest leaves the demo; members keep Log out.
+  await page.getByRole('button', { name: 'Leave the demo' }).click();
 }
 
 test('guest flow: play through, reset, start clean', async ({ page }) => {

@@ -383,7 +383,7 @@ export function useApp(): AppValue {
   return v;
 }
 
-export function AppProvider({ children, store: injected, sandbox }: { children: ReactNode; store?: Store; sandbox?: { onFinish(): void } }) {
+export function AppProvider({ children, store: injected, sandbox, onGateBack }: { children: ReactNode; store?: Store; sandbox?: { onFinish(): void }; onGateBack?(): void }) {
   const [attempt, setAttempt] = useState(0);
   // The password gate stands in front of the shared database only; an injected or local store skips it.
   const access = useTripAccess(!injected && supabaseConfigured());
@@ -575,7 +575,7 @@ export function AppProvider({ children, store: injected, sandbox }: { children: 
     setMeState(null);
   }, [sandbox]);
 
-  if (access.status === 'gate') return createElement(PasswordGate, { onAccept: access.accept });
+  if (access.status === 'gate') return createElement(PasswordGate, { onAccept: access.accept, onBack: onGateBack });
   if (access.status === 'checking' && !snap) return createElement('div', { className: 'app' }, createElement('div', { className: 'body' }, createElement('div', { className: 'sub' }, 'Loading')));
 
   if (!state) {

@@ -85,7 +85,8 @@ describe('guest mode in the app shell', () => {
     const before = JSON.stringify(Object.entries(localStorage).sort());
     await pickGuest(user);
     await user.click(await screen.findByRole('button', { name: 'Menu' }));
-    await user.click(await screen.findByRole('button', { name: 'Log out' }));
+    // Changed deliberately (audit 25, C5): a guest leaves the demo; members keep Log out.
+    await user.click(await screen.findByRole('button', { name: 'Leave the demo' }));
     expect(await screen.findByRole('heading', { name: 'Group Trip Hero' })).toBeInTheDocument();
     expect(JSON.stringify(Object.entries(localStorage).sort())).toBe(before);
   });
