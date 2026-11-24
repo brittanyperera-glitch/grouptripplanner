@@ -8,7 +8,6 @@ import './StayAddSheet.css';
 
 const C = STAY_COPY.sheet;
 const MAX_TITLE = 80, MAX_WHY = 140;
-const FOLD = 'Add details';
 
 interface Props { area: Area; kind?: PlaceKind; areas: Area[]; editing?: PlaceSuggestion; onClose(): void }
 
@@ -28,6 +27,7 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
   const [open, setOpen] = useState(!!editing);
   const [focusField, setFocusField] = useState<'name' | 'price' | null>(null);
   const nameRef = useRef<HTMLInputElement>(null), priceRef = useRef<HTMLInputElement>(null);
+  const pasting = useRef(false);
   const hostels = hostelsFor(where);
   const chosen = hostelOf(hostelId);
   const linkOk = parseUrl(link), photoOk = parseUrl(photo);
@@ -40,7 +40,9 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
   const ready = !!me && name.trim() !== '' && priceFine && linkOk.ok && photoOk.ok && areas.includes(where);
 
   // A shortcut (guide pick or link) opens the fold only when it leaves a required field empty; a paste also lands the cursor there.
+  // Only a stay has a fold; the other kinds show every field already.
   const reveal = (nm: string, pr: string, guided: boolean, focus: boolean) => {
+    if (!isStay) return;
     const empty = nm.trim() === '' ? 'name' : isStay && pr.trim() === '' && !guided ? 'price' : null;
     if (!empty) return;
     setOpen(true);
@@ -62,14 +64,22 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
     setRooms(h.bunkGbp !== null ? 'dorm' : 'private'); setType('hostel');
     reveal(h.name, p === null ? '' : String(p), true, false);
   };
+  // Reveal when the link turns into a web link, not on every later keystroke, so a fold shut by hand stays shut.
   const typeLink = (v: string) => {
+    const wasLink = link.trim() !== '' && linkOk.ok, isLink = v.trim() !== '' && parseUrl(v).ok;
     setLink(v);
-    if (parseUrl(v).ok && v.trim() !== '') reveal(name, price, !!chosen, false);
+    if (isLink && !wasLink) reveal(name, price, !!chosen, pasting.current);
+    pasting.current = false;
   };
+  // The browser inserts the clipboard text after the paste event, into whatever has focus by then. So the cursor
+  // may only move from the change that follows, never from the paste itself.
   const pasteLink = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const t = e.clipboardData.getData('text'), r = parseUrl(t);
-    if (r.ok && r.url) reveal(name, price, !!chosen, true);
+    const r = parseUrl(e.clipboardData.getData('text'));
+    pasting.current = r.ok && !!r.url;
+    setTimeout(() => { pasting.current = false; }, 0);
   };
+  // A fold shut by hand must not hide the reason Save is off for a bad photo link.
+  useEffect(() => { if (!photoOk.ok) setOpen(true); }, [photoOk.ok, open]);
 
   const save = () => {
     if (!ready || !me) return;
@@ -163,7 +173,7 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
       </div>
       {isStay ? (
         <details className="sa-fold" open={open} onToggle={e => setOpen(e.currentTarget.open)}>
-          <summary className="sa-sum">{FOLD}</summary>
+          <summary className="sa-sum">{C.fold}</summary>
           <div className="sa-body">{fields}</div>
         </details>
       ) : fields}

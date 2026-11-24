@@ -1,11 +1,11 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppProvider } from '../state';
 import { LocalStore } from '../store/local';
 import { PEOPLE } from '../types';
 import type { Area, CrewStays, GroupResult, Plan, PlaceSuggestion } from '../types';
-import { HOSTELS, HUB_AREA, hostelPrice } from '../lib/stayflow';
+import { HOSTELS, HUB_AREA, STAY_COPY, hostelPrice } from '../lib/stayflow';
 import Stays from './Stays';
 
 const grp = vi.hoisted(() => ({ current: null as unknown }));
@@ -32,6 +32,7 @@ const openSheet = async (user: Awaited<ReturnType<typeof mount>>, area: Area) =>
   await user.click(btn('+ Add a stay'));
   return within(screen.getByRole('dialog'));
 };
+const FOLD = STAY_COPY.sheet.fold;
 const fold = () => screen.getByRole('dialog').querySelector('details') as HTMLDetailsElement;
 
 beforeEach(() => {
@@ -47,7 +48,7 @@ describe('add a stay starts with the guide pick and the link', () => {
     expect(dlg.getByLabelText("Choose from the guide's hostels")).toBeVisible();
     expect(dlg.getByLabelText('Link')).toBeVisible();
     expect(fold().open).toBe(false);
-    expect(fold().querySelector('summary')).toHaveTextContent('Add details');
+    expect(fold().querySelector('summary')).toHaveTextContent(FOLD);
     expect(dlg.getByRole('button', { name: 'Add this stay' })).toBeDisabled();
   });
 
@@ -67,8 +68,25 @@ describe('add a stay starts with the guide pick and the link', () => {
     await user.click(dlg.getByLabelText('Link'));
     await user.paste('https://example.com/hut');
     expect(fold().open).toBe(true);
+    expect(dlg.getByLabelText('Link')).toHaveValue('https://example.com/hut');
+    expect(dlg.getByLabelText('Name')).toHaveValue('');
     expect(dlg.getByLabelText('Name')).toHaveFocus();
     expect(dlg.getByRole('button', { name: 'Add this stay' })).toBeDisabled();
+  });
+
+  // jsdom's user.paste inserts into the element it started on, which hides the real order: a browser dispatches
+  // paste, then inserts the text into whatever has focus by then. This replays that order.
+  it('the cursor stays on the link through the paste itself, so the browser inserts the text there', async () => {
+    const user = await mount();
+    const dlg = await openSheet(user, 'Ella');
+    const link = dlg.getByLabelText('Link');
+    await user.click(link);
+    fireEvent.paste(link, { clipboardData: { getData: () => 'https://example.com/hut' } });
+    expect(document.activeElement).toBe(link);
+    fireEvent.change(document.activeElement as HTMLInputElement, { target: { value: 'https://example.com/hut' } });
+    expect(link).toHaveValue('https://example.com/hut');
+    expect(dlg.getByLabelText('Name')).toHaveValue('');
+    expect(dlg.getByLabelText('Name')).toHaveFocus();
   });
 
   it('with the name already filled, the pasted link puts the cursor in the price instead', async () => {
@@ -77,6 +95,9 @@ describe('add a stay starts with the guide pick and the link', () => {
     await user.type(dlg.getByLabelText('Name'), 'Hill hut');
     await user.click(dlg.getByLabelText('Link'));
     await user.paste('https://example.com/hut');
+    expect(dlg.getByLabelText('Link')).toHaveValue('https://example.com/hut');
+    expect(dlg.getByLabelText('Name')).toHaveValue('Hill hut');
+    expect(dlg.getByLabelText(/^Price per person/)).toHaveValue('');
     expect(dlg.getByLabelText(/^Price per person/)).toHaveFocus();
     expect(dlg.getByRole('button', { name: 'Add this stay' })).toBeDisabled();
     await user.type(dlg.getByLabelText(/^Price per person/), '12');
@@ -100,12 +121,33 @@ describe('add a stay starts with the guide pick and the link', () => {
     expect(fold().open).toBe(false);
   });
 
+  it('a fold closed by hand stays closed while the link is still being typed', async () => {
+    const user = await mount();
+    const dlg = await openSheet(user, 'Ella');
+    await user.type(dlg.getByLabelText('Link'), 'example.com');
+    expect(fold().open).toBe(true);
+    await user.click(screen.getByText(FOLD));
+    expect(fold().open).toBe(false);
+    await user.type(dlg.getByLabelText('Link'), '/hut');
+    expect(fold().open).toBe(false);
+  });
+
+  it('a bad photo link cannot be hidden: the fold stays open on its error', async () => {
+    const user = await mount();
+    const dlg = await openSheet(user, 'Ella');
+    await user.click(screen.getByText(FOLD));
+    await user.type(dlg.getByLabelText(/^Photo link/), 'ftp://x');
+    expect(dlg.getAllByRole('alert')).toHaveLength(1);
+    await user.click(screen.getByText(FOLD));
+    expect(fold().open).toBe(true);
+  });
+
   it('the fold opens and closes by hand', async () => {
     const user = await mount();
     await openSheet(user, 'Ella');
-    await user.click(screen.getByText('Add details'));
+    await user.click(screen.getByText(FOLD));
     expect(fold().open).toBe(true);
-    await user.click(screen.getByText('Add details'));
+    await user.click(screen.getByText(FOLD));
     expect(fold().open).toBe(false);
   });
 
@@ -116,6 +158,19 @@ describe('add a stay starts with the guide pick and the link', () => {
     await user.click(btn('+ Add an idea'));
     expect(screen.getByRole('dialog').querySelector('details')).toBeNull();
     expect(within(screen.getByRole('dialog')).getByLabelText('Name')).toBeVisible();
+  });
+
+  it('pasting a link into an idea sheet leaves the cursor on the link and the name empty', async () => {
+    const user = await mount();
+    await user.click(screen.getByRole('button', { name: /^Ella, / }));
+    await user.click(btn('Gems'));
+    await user.click(btn('+ Add an idea'));
+    const dlg = within(screen.getByRole('dialog'));
+    await user.click(dlg.getByLabelText('Link'));
+    await user.paste('https://example.com/gem');
+    expect(dlg.getByLabelText('Link')).toHaveValue('https://example.com/gem');
+    expect(dlg.getByLabelText('Link')).toHaveFocus();
+    expect(dlg.getByLabelText('Name')).toHaveValue('');
   });
 });
 
