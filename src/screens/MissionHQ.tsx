@@ -51,8 +51,8 @@ export function MissionHQBody({ me, input, start, onGo, onOpen, onGroup }: BodyP
   );
 }
 
-/** Container: reads the app and the trip model, nothing else. A guest or nobody signed in has no HQ. `replay` and `onExit` are ignored: kept only so App.tsx and Plan.tsx still compile until the shell drops them. */
-export default function MissionHQ({ group, onGo, onOpen, onGroup, today }: { group: GroupResult; today?: string; replay?: boolean; onExit?(): void } & Pick<BodyProps, 'onGo' | 'onOpen' | 'onGroup'>) {
+/** Container: reads the app and the trip model, nothing else. A guest or nobody signed in has no HQ. */
+export default function MissionHQ({ group, onGo, onOpen, onGroup, today }: { group: GroupResult; today?: string } & Pick<BodyProps, 'onGo' | 'onOpen' | 'onGroup'>) {
   const { state, me } = useApp();
   const model = useTripModel(group, today);
   const input = useMemo<MissionInput>(() => ({ state, plan: model.plan, model }), [state, model]);

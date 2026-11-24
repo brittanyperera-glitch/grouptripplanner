@@ -31,8 +31,8 @@ const seed = (dark?: string) => {
   put('tp:travellers', Object.fromEntries(PEOPLE.filter(p => p !== dark).map(p => [p, { name: p, arriveLocal: '2026-12-08T09:00', arriveFlight: null, departLocal: '2026-12-16T09:00', departFlight: null, updatedAt: AT }])));
   put('tp:tripadmin:Brittany', { name: 'Brittany', items: Object.fromEntries(ADMIN_IDS.map(id => [id, { done: true, doneAt: AT }])), updatedAt: AT });
 };
-const mount = (onTrip = vi.fn(), markOnShow?: boolean) => {
-  const view = render(<AppProvider store={new LocalStore()}><MissionComplete group={group} today="2026-12-01" onTrip={onTrip} markOnShow={markOnShow} /></AppProvider>);
+const mount = (onTrip = vi.fn()) => {
+  const view = render(<AppProvider store={new LocalStore()}><MissionComplete group={group} today="2026-12-01" onTrip={onTrip} /></AppProvider>);
   return { onTrip, view };
 };
 
@@ -40,13 +40,13 @@ beforeEach(() => localStorage.clear());
 afterEach(cleanup);
 
 describe('Mission complete', () => {
-  it('shows once: the stamp, crew 5/5 and one button to the trip, then sets the seen flag', async () => {
+  it('shows once: the stamp, crew 5/5 and one button to the trip; pressing it sets the seen flag', async () => {
     seed();
     const { onTrip } = mount();
     expect(await screen.findByText('Crew 5/5')).toBeInTheDocument();
     expect(screen.getAllByText('Mission complete').length).toBeGreaterThan(0);
-    await waitFor(() => expect(localStorage.getItem(SEEN_KEY)).toBe('1'));
     await userEvent.click(screen.getByRole('button', { name: 'Go to the trip' }));
+    await waitFor(() => expect(localStorage.getItem(SEEN_KEY)).toBe('1'));
     expect(onTrip).toHaveBeenCalledTimes(1);
     cleanup();
     const again = mount();
@@ -85,6 +85,7 @@ describe('Mission complete', () => {
   it('the flag is a tp: key, so ?fresh resets it and the finale shows again', async () => {
     seed();
     mount();
+    await userEvent.click(await screen.findByRole('button', { name: 'Go to the trip' }));
     await waitFor(() => expect(localStorage.getItem(SEEN_KEY)).toBe('1'));
     freshStartFromUrl('https://x.test/?fresh');
     expect(localStorage.getItem(SEEN_KEY)).toBeNull();
@@ -106,9 +107,9 @@ describe('Mission complete', () => {
     }
   });
 
-  it('with markOnShow off it is not marked seen until its button is pressed', async () => {
+  it('it is not marked seen until its button is pressed', async () => {
     seed();
-    const { onTrip } = mount(vi.fn(), false);
+    const { onTrip } = mount();
     expect(await screen.findByText('Crew 5/5')).toBeInTheDocument();
     await new Promise(r => setTimeout(r, 30));
     expect(localStorage.getItem(SEEN_KEY)).toBeNull();

@@ -251,3 +251,83 @@ test('the group plan holds the released places and none of the ruled-out ones', 
   for (const gone of ['Yala', 'Udawalawe', 'Ella Rock', 'Anuradhapura', 'Polonnaruwa', 'Horton', 'Scuba']) expect(body, gone).not.toContain(gone);
   for (const kept of ['Elephant safari', 'Pidurangala', 'Knuckles']) expect(body, kept).toContain(kept);
 });
+
+// Sub-screens and the phone Back. "My trip" is today's name for Route and the mission board for To do.
+const TRIP = '2099-03-01';
+const AT = '2026-11-02T00:00:00Z';
+const bookIds = (JSON.parse(fs.readFileSync('src/data/catalogue.json', 'utf8')) as { items: { id: string; book?: unknown }[] }).items.filter(i => i.book).map(i => `book:${i.id}`);
+const openApp = async (page: import('@playwright/test').Page, allDone = false) => {
+  const { AREAS } = await import('../src/types');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seenWalkthroughToday(page);
+  await page.goto('/');
+  await page.evaluate(([rows, key, done, trip, at, books, areas, people]) => {
+    localStorage.clear();
+    for (const r of rows as { name: string }[]) localStorage.setItem(`tp:resp:${r.name}`, JSON.stringify(r));
+    localStorage.setItem('tp:me', 'Brittany');
+    localStorage.setItem('tp:reveal-seen', key as string);
+    if (!done) return;
+    const put = (k: string, v: unknown) => localStorage.setItem(k, JSON.stringify(v));
+    put('tp:settings', { startDate: trip, plan: null, bookingDates: {}, overrides: [], updatedAt: at });
+    put('tp:placesug', (areas as string[]).map(a => ({ id: `s-${a}`, name: 'Alex', area: a, kind: 'stay', title: a, status: 'live', createdAt: at })));
+    put('tp:staysadmin', { pins: (areas as string[]).map(a => ({ area: a, suggestionId: `s-${a}`, at })), scouts: {}, closed: [] });
+    put('tp:travellers', Object.fromEntries((people as string[]).map(p => [p, { name: p, arriveLocal: `${trip}T09:00`, arriveFlight: null, departLocal: `${trip}T09:00`, departFlight: null, updatedAt: at }])));
+    put('tp:tripadmin:Brittany', { name: 'Brittany', items: Object.fromEntries([...(books as string[]), ...(areas as string[]).map(a => `stay:${a}`)].map(id => [id, { done: true, doneAt: at }])), updatedAt: at });
+  }, [seed, REVEAL_KEY, allDone, TRIP, AT, bookIds, AREAS, NAMES]);
+  await page.reload();
+};
+
+test('a day picked on Route survives Guide, back to Route, and two phone Backs', async ({ page }) => {
+  await openApp(page);
+  await page.getByRole('button', { name: 'Group trip' }).click(); // A3b: rename (Route shows its days with no tap)
+  await page.getByRole('button', { name: /Day 3/ }).click();
+  await expect(page.getByRole('button', { name: /Day 3/ })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('tab', { name: 'Guide' }).click();
+  await page.getByRole('tab', { name: 'My trip' }).click(); // A3b: rename
+  await page.goBack();
+  await expect(page.getByRole('tab', { name: 'Guide' })).toHaveAttribute('aria-selected', 'true');
+  await page.goBack();
+  await expect(page.getByRole('tab', { name: 'My trip' })).toHaveAttribute('aria-selected', 'true'); // A3b: rename
+  await expect(page.getByRole('button', { name: /Day 3/ })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Bookings opened from the board keeps the tab bar and phone Back returns to the board', async ({ page }) => {
+  await openApp(page);
+  await expect(page.getByRole('heading', { name: 'Mission HQ' })).toBeVisible(); // A3b: rename (To do)
+  await expect(page.getByRole('tablist')).toBeVisible();
+  await page.getByRole('button', { name: /^Bookings/ }).click();
+  await expect(page.getByRole('heading', { name: 'Bookings' })).toBeVisible();
+  await expect(page.getByRole('tablist')).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole('heading', { name: 'Mission HQ' })).toBeVisible();
+  await expect(page.getByRole('tablist')).toBeVisible();
+});
+
+test('Stays opened from the board sits over its tab, and closing the travel profile returns to Stays', async ({ page }) => {
+  await openApp(page);
+  await page.getByRole('button', { name: /^Stays/ }).click();
+  await expect(page.getByRole('tab', { name: 'My trip' })).toHaveAttribute('aria-selected', 'true'); // A3b: rename
+  await expect(page.getByRole('button', { name: /Back.*My trip/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Start my travel profile' }).click();
+  await expect(page.getByText('1 of 6')).toBeVisible();
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Mission HQ' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Start my travel profile' })).toBeVisible();
+  await page.getByRole('button', { name: /Back.*My trip/ }).click();
+  await expect(page.getByRole('heading', { name: 'Mission HQ' })).toBeVisible();
+});
+
+test('with every mission done the finale shows once on open, its button lands on the route, and a reload does not show it', async ({ page }) => {
+  await openApp(page, true);
+  const finaleSeen = () => page.evaluate(() => localStorage.getItem('tp:mission-complete-seen'));
+  await expect(page.getByRole('button', { name: 'Go to the trip' })).toBeVisible();
+  await expect.soft(page.getByRole('tablist'), 'a full-screen moment hides the tab bar').toHaveCount(0);
+  expect.soft(await finaleSeen(), 'not marked seen by showing').toBeNull();
+  await page.getByRole('button', { name: 'Go to the trip' }).click();
+  await expect(page.getByLabel('Trip view')).toBeVisible(); // A3b: Route tab
+  await expect(page.getByRole('tablist')).toBeVisible();
+  expect(await finaleSeen()).toBe('1');
+  await page.reload();
+  await expect(page.getByRole('tablist')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Go to the trip' })).toHaveCount(0);
+});

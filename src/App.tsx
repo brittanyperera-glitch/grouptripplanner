@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Avatar from './components/Avatar';
-import { AdminNav, useOpenAdmin } from './components/AdminNav';
+import { AdminNav } from './components/AdminNav';
 import { GuideNav } from './components/GuideNav';
 import { MUTE_KEY } from './components/sound';
 import { IconBook, IconGroup, IconList, IconPin, IconRoute, IconSpark } from './components/Icons';
@@ -12,11 +12,13 @@ import { groupAwards } from './lib/awards';
 import { awardForks, awardsKey, awardsOpen, isFinalizing, openItems, routePlan, tabBadges, toRate } from './lib/openItems';
 import type { OpenItem } from './lib/openItems';
 import { WEEKDAY_DAY_MONTH } from './lib/dates';
-import { spyActive } from './lib/missions';
+import { gameOn, spyActive } from './lib/missions';
 import type { MissionId } from './lib/missions';
 import { isAdmin } from './lib/override';
 import { hidesTabs, pickScreen } from './lib/overlay';
 import type { Overlay } from './lib/overlay';
+import { normaliseSub } from './lib/tabs';
+import type { SubId } from './lib/todo';
 import { removeId, setTier } from './lib/ranking';
 import Awards from './screens/Awards';
 import Bingo from './screens/Bingo';
@@ -27,7 +29,9 @@ import FlightsScreen from './screens/Flights';
 import Guide from './screens/Guide';
 import GroupHub from './screens/GroupHub';
 import type { GroupView } from './screens/GroupHub';
-import MissionComplete, { SEEN_KEY as FINALE_SEEN_KEY } from './screens/MissionComplete';
+import CrewPage from './screens/Crew';
+import type { CrewWhich } from './screens/Crew';
+import MissionComplete, { finaleDue } from './screens/MissionComplete';
 import MissionHQ from './screens/MissionHQ';
 import MyTrip from './screens/MyTrip';
 import Name from './screens/Name';
@@ -43,7 +47,7 @@ import Premiere, { Reveal } from './screens/Reveal';
 import { compromises } from './lib/compromises';
 import { RELEASE, releaseFor } from './lib/release';
 import { effectiveRelease, releaseState } from './lib/tripPlan';
-import { StaysNav, useOpenStays } from './components/StaysNav';
+import { StaysNav } from './components/StaysNav';
 import Profile from './screens/Profile';
 import profileCopy from './content/profile.json';
 import Raw, { wantsRaw } from './screens/Raw';
@@ -69,7 +73,7 @@ import { clearLocalProgress } from './store/fresh';
 import { isLocalStoreKey } from './store/local';
 import { useGroupResult, usePersonPlan } from './workers/usePlan';
 import { AREAS, emptyRanking, GUESTS, isGuest, PEOPLE } from './types';
-import type { Genre, GroupResult, Item, Pace as PaceT, Player, Ranking, Response, Store, Tier } from './types';
+import type { Area, Genre, GroupResult, Item, Pace as PaceT, Player, Ranking, Response, Store, Tier } from './types';
 
 type Step = 'days' | 'pace' | 'howto' | 'rate' | 'tabs';
 const howtoCopy = () => (copyData as unknown as { howto?: HowToCopy }).howto;
@@ -93,15 +97,24 @@ const GroupCtx = createContext<GroupResult | null>(null);
 // Back to the landing screen (guest or trip password); only set for the trip, never inside a guest sandbox.
 const LogoutCtx = createContext<(() => void) | null>(null);
 const useGroup = () => useContext(GroupCtx);
-// Lets the HQ and the Menu open the screens that sit over the tabs, like Trip admin does for AdminNav.
-type FileId = 'flights' | 'command';
-const FileNav = createContext<((f: FileId) => void) | null>(null);
+// The one way a friend opens a task screen: it sits over the tab it came from, with one history entry.
+interface SubFile { id: SubId; target?: string }
+const FileNav = createContext<((f: SubId, target?: string) => void) | null>(null);
 
-/** Spy mode: some mission file still has work in it. Same input as the HQ, so every screen agrees. */
-function useSpy(group: GroupResult): boolean {
+/** The game parts of the missions (levels, stamps): the same switch every task screen reads. */
+function useGame(group: GroupResult): boolean {
   const { state } = useApp();
   const model = useTripModel(group);
-  return spyActive({ state, plan: model.plan, model });
+  return gameOn({ state, plan: model.plan, model });
+}
+
+/** Tells the shell when every mission is done and the finale has not been seen; draws nothing. */
+function FinaleWatch({ group, onDue }: { group: GroupResult; onDue(due: boolean): void }) {
+  const { state, me } = useApp();
+  const model = useTripModel(group);
+  const due = finaleDue(me, { state, plan: model.plan, model });
+  useEffect(() => { onDue(due); }, [due, onDue]);
+  return null;
 }
 
 /** The group plan, shown under My trip once all five have rated. */
@@ -110,60 +123,42 @@ function GroupTrip() {
   if (!group) return <div className="body"><div className="sub">Working out the plan...</div></div>;
   return (
     <>
-      <GroupPlan group={group} />
+      <Plan group={group} reveal={<Premiere group={group} />} />
       <Extras group={group} />
     </>
   );
 }
 
-function GroupPlan({ group }: { group: GroupResult }) {
-  const { me } = useApp();
-  return releaseFor(me) ? <SpyPlan group={group} /> : <Plan group={group} reveal={<Premiere group={group} />} />;
-}
-function SpyPlan({ group }: { group: GroupResult }) {
-  return <Plan group={group} reveal={<Premiere group={group} />} spy={useSpy(group)} />;
-}
-
 const DAY_HASH = /^#\/day-\d+$/;
 
-/** A released member's My trip: the HQ while a mission is open, then the finale once, then Today or a line; Group trip is one link away. */
-function ReleasedTrip({ group }: { group: GroupResult }) {
+/** A released member's My trip: the HQ while a mission is open, then Today or a line; Group trip is one link away. The finale is the shell's. */
+function ReleasedTrip({ group, routeFirst }: { group: GroupResult; routeFirst: boolean }) {
   const { state } = useApp();
   const model = useTripModel(group);
   const spy = spyActive({ state, plan: model.plan, model });
-  const openStays = useOpenStays(), openAdmin = useOpenAdmin(), openFile = useContext(FileNav);
-  const [view, setView] = useState<TripView>(() => (DAY_HASH.test(window.location.hash) ? 'group' : 'mine'));
-  // Latched at the moment the last mission closes, because MissionComplete sets its own seen flag as it shows.
-  const [finale, setFinale] = useState(false);
-  const [done, setDone] = useState(false);
-  if (!spy && !finale && !done && readFinaleSeen() !== '1') setFinale(true);
-  // A mission reopened after the finale: the latch must drop, or the next close shows a MissionComplete that has already been seen (blank).
-  if (spy && finale) setFinale(false);
-  // The day hash is a deep link, not a tab state: chips on Group trip write it, and it must not outlive this tab.
-  useEffect(() => () => { if (DAY_HASH.test(window.location.hash)) history.replaceState(null, '', window.location.pathname + window.location.search); }, []);
-  const open = (f: MissionId) => { if (f === 'stays') openStays?.(); else if (f === 'supply') openAdmin?.(); else openFile?.('flights'); };
+  const openFile = useContext(FileNav);
+  const today = model.views.some(v => v.date === model.today);
+  // The day pick lives in the history entry's address, so a Back onto this entry brings the Group trip view and the day with it.
+  const [view, setView] = useState<TripView>(() => (DAY_HASH.test(window.location.hash) || (routeFirst && !today) ? 'group' : 'mine'));
+  const open = (f: MissionId, target?: string) => openFile?.(f === 'stays' ? 'stays' : f === 'supply' ? 'bookings' : 'flights', target);
   if (view === 'group') {
-    const back = () => { history.replaceState(null, '', window.location.pathname + window.location.search); setView('mine'); };
+    const back = () => { history.replaceState(history.state, '', window.location.pathname + window.location.search); setView('mine'); };
     return <><button type="button" className="link" onClick={back}>Back to My trip</button><GroupTrip /></>;
   }
   const start = model.start && model.today < model.start ? `Trip starts ${WEEKDAY_DAY_MONTH.format(new Date(`${model.start}T00:00:00Z`))}` : null;
   let body;
-  const today = model.views.some(v => v.date === model.today);
-  if (spy) body = <MissionHQ group={group} onGo={m => open(m.file)} onOpen={open} onExit={() => undefined} onGroup={() => setView('group')} />;
-  else if (finale && !done) return <MissionComplete group={group} onTrip={() => setDone(true)} />;
-  else if (today) body = <TodayScreen group={group} onWholeTrip={n => { window.location.hash = `#/day-${n}`; setView('group'); }} />;
+  if (spy) body = <MissionHQ group={group} onGo={m => open(m.file, m.id)} onOpen={f => open(f)} onGroup={() => setView('group')} />;
+  else if (today) body = <TodayScreen group={group} onWholeTrip={n => { history.replaceState(history.state, '', `#/day-${n}`); setView('group'); }} />;
   else body = start && <section className="body"><p className="sub">{start}</p></section>;
   // The HQ carries its own Group trip button and Today its "See the whole trip", so neither gets a second one.
   return <>{body}{!spy && !today && <div className="body"><button type="button" className="link" onClick={() => setView('group')}>Group trip</button></div>}</>;
 }
-// Blocked storage counts as seen, as in MissionComplete: the finale could not remember itself and would render nothing.
-const readFinaleSeen = () => { try { return localStorage.getItem(FINALE_SEEN_KEY); } catch { return '1'; } };
 
-function MyTripTab() {
+function MyTripTab({ routeFirst }: { routeFirst: boolean }) {
   const { me } = useApp();
   const group = useGroup();
   if (!releaseFor(me)) return <VoteTripTab />;
-  return group ? <ReleasedTrip group={group} /> : <div className="body"><div className="sub">Working out the plan...</div></div>;
+  return group ? <ReleasedTrip group={group} routeFirst={routeFirst} /> : <div className="body"><div className="sub">Working out the plan...</div></div>;
 }
 
 function VoteTripTab() {
@@ -196,13 +191,14 @@ function VoteTripTab() {
   );
 }
 
-function StaysTab({ onQuiz }: { onQuiz(): void }) {
+type StaysOpen = { back?(): void; backLabel?: string; target?: Area };
+function StaysTab({ onQuiz, ...open }: { onQuiz(): void } & StaysOpen) {
   const { me } = useApp();
   const group = useGroup();
-  return group && releaseFor(me) ? <SpyStays group={group} onQuiz={onQuiz} /> : <Stays onQuiz={onQuiz} />;
+  return group && releaseFor(me) ? <SpyStays group={group} onQuiz={onQuiz} {...open} /> : <Stays onQuiz={onQuiz} {...open} />;
 }
-function SpyStays({ group, onQuiz }: { group: GroupResult; onQuiz(): void }) {
-  return <Stays onQuiz={onQuiz} spy={useSpy(group)} />;
+function SpyStays({ group, onQuiz, ...open }: { group: GroupResult; onQuiz(): void } & StaysOpen) {
+  return <Stays onQuiz={onQuiz} spy={useGame(group)} {...open} />;
 }
 
 function GroupTab({ view, onView }: { view: GroupView; onView(v: GroupView): void }) {
@@ -298,7 +294,15 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const { data: computed } = useGroupResult(state, items, legs, release);
   const group = seed && state.tripSettings === undefined ? null : computed;
   const released = !!seed;
-  const [file, setFile] = useState<FileId | null>(null);
+  const [file, setFile] = useState<SubFile | null>(null);
+  // The finale is the shell's: `finale` is on while every mission is done and unpressed; it plays once per open of the app.
+  const [finale, setFinale] = useState(false);
+  const finalePlayed = useRef(false);
+  const [routeFirst, setRouteFirst] = useState(false);
+  const onFinaleDue = useCallback((due: boolean) => {
+    if (!due) setFinale(false);
+    else if (!finalePlayed.current) { finalePlayed.current = true; setFinale(true); }
+  }, []);
   const [draft, setDraft] = useState<Response>(() => {
     const saved = state.responses[me];
     return saved ? structuredClone(saved) : blank(me);
@@ -356,31 +360,35 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   // replaces that entry rather than stacking on it, and closing it by hand pops it (selfPop swallows that popstate).
   const selfPop = useRef(false);
   const setTab = useCallback((t: Tab) => {
-    const entry = { ...history.state, tpTab: t, tpOverlay: undefined, tpFile: undefined };
-    if (history.state?.tpOverlay || history.state?.tpFile) history.replaceState(entry, ''); else history.pushState(entry, '');
+    const entry = { ...history.state, tpTab: t, tpOverlay: undefined, tpFile: undefined, tpTarget: undefined };
+    // A day pick belongs to the entry it was made in; a new entry starts clean. Only released members' Route uses the day hash.
+    const url = released && DAY_HASH.test(window.location.hash) ? window.location.pathname + window.location.search : undefined;
+    if (history.state?.tpOverlay || history.state?.tpFile) history.replaceState(entry, '', url); else history.pushState(entry, '', url);
     setOverlay(null);
     setFile(null);
+    setRouteFirst(false);
     setTabState(t);
-  }, []);
+  }, [released]);
+  // An overlay opened over a sub-screen keeps it: its entry is pushed on top, so closing the overlay lands back on the sub-screen.
   const showOverlay = (o: Overlay) => {
-    setFile(null);
     if (overlay === null && o !== 'awards') scrollBack.current = window.scrollY;
     setOverlay(o);
     if (step !== 'tabs') return;
-    const entry = { ...history.state, tpTab: tabRef.current, tpOverlay: o, tpFile: undefined };
-    if (history.state?.tpOverlay || history.state?.tpFile) history.replaceState(entry, ''); else history.pushState(entry, '');
+    const entry = { ...history.state, tpTab: tabRef.current, tpOverlay: o, tpFile: file?.id, tpTarget: file?.target };
+    if (history.state?.tpOverlay) history.replaceState(entry, ''); else history.pushState(entry, '');
   };
   const dropOverlay = () => {
     setOverlay(null);
     if (history.state?.tpOverlay) { selfPop.current = true; history.back(); }
   };
   const closeOverlay = () => navigate('back', dropOverlay);
-  // A file (Touchdown, Command) owns one history entry like an overlay, so the phone's Back closes it onto the tab it came from.
-  const showFile = useCallback((f: FileId) => {
-    setFile(f);
-    history.pushState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined, tpFile: f }, '');
+  // A sub-screen (Stays, Bookings, Flights, Organiser, the Crew pages) owns one history entry like an overlay, so the phone's Back closes it onto the tab it came from.
+  const showFile = useCallback((f: SubId, target?: string) => {
+    setFile({ id: f, target });
+    const entry = { ...history.state, tpTab: tabRef.current, tpOverlay: undefined, tpFile: f, tpTarget: target };
+    if (history.state?.tpFile) history.replaceState(entry, ''); else history.pushState(entry, '');
   }, []);
-  const openFile = useCallback((f: FileId) => navigate('fwd', () => showFile(f)), [showFile]);
+  const openFile = useCallback((f: SubId, target?: string) => navigate('fwd', () => showFile(f, target)), [showFile]);
   const dropFile = () => {
     setFile(null);
     if (history.state?.tpFile) { selfPop.current = true; history.back(); }
@@ -388,13 +396,14 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const closeFile = () => navigate('back', dropFile);
   useEffect(() => {
     if (step !== 'tabs') return;
-    history.replaceState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined, tpFile: undefined }, '');
+    history.replaceState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined, tpFile: undefined, tpTarget: undefined }, '');
     const onPop = (e: PopStateEvent) => {
       if (selfPop.current) { selfPop.current = false; return; }
-      const st = e.state as { tpTab?: Tab; tpOverlay?: Overlay; tpFile?: FileId } | null;
+      const st = e.state as { tpTab?: Tab; tpOverlay?: Overlay; tpFile?: string; tpTarget?: string } | null;
       const t = st?.tpTab;
       // The entry says what was open: Back from a file onto an overlay entry lands on that overlay.
-      if (t && TABS.includes(t)) navigate('back', () => { setOverlay(st.tpOverlay ?? null); setFile(st.tpFile ?? null); setTabState(t); });
+      const sub = st?.tpFile ? normaliseSub(st.tpFile) : null;
+      if (t && TABS.includes(t)) navigate('back', () => { setOverlay(st.tpOverlay ?? null); setFile(sub ? { id: sub, target: st.tpTarget } : null); setTabState(t); });
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -450,7 +459,8 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   if (overlay && !revealDue && releaseKey !== null && revealSeen !== releaseKey) revealWaived.current = true;
   const revealUnseen = revealDue && !revealWaived.current;
   // With a released plan the itinerary comes first (Brittany 2026-10-19): awards stay in the Menu and the to-do list.
-  const screen = pickScreen({ shown, overlay, awardsUnseen: awardsUnseen && !releaseFor(me), revealUnseen, walkEligible });
+  // A sub-screen the member opened keeps the finale waiting: it plays when they come back, never over their page.
+  const screen = pickScreen({ shown, overlay, awardsUnseen: awardsUnseen && !releaseFor(me), revealUnseen, finaleUnseen: finale && !file, walkEligible });
   const closeReveal = () => {
     // The reveal is today's welcome: closing it lands on the itinerary, not on the welcome-back walkthrough.
     // Written first so another tab reacting to the seen key already finds the walkthrough marked.
@@ -458,13 +468,22 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     try { localStorage.setItem(REVEAL_SEEN_KEY, releaseKey ?? ''); } catch { /* storage unavailable: plays again next visit */ }
     setRevealSeen(releaseKey);
   };
-  const openStays = () => navigate('tab', () => setTab('Stays'));
+  // Friends open a sub-screen; guests keep the Stays tab and the Trip admin overlay.
+  const openStays = () => (released ? openFile('stays') : navigate('tab', () => setTab('Stays')));
+  const openBookings = () => (released ? openFile('bookings') : navigate('fwd', () => showOverlay('admin')));
+  // The finale's button lands on the route: today that is My trip's Group trip view.
+  const endFinale = () => {
+    setFinale(false);
+    if (tabRef.current !== 'My trip') setTab('My trip'); // A3b: Route tab
+    setRouteFirst(true);
+  };
   const finishWalk = () => { setWalkDay(today); markWalkSeen(); };
 
   const changeDays = () => navigate('back', () => { setOverlay(null); setEditing(true); setStep('days'); });
   const pickTab = (t: Tab) => {
     if (t !== tab) navigate('tab', () => { if (t === 'Group') setGroupView('hub'); setTab(t); });
     else if (overlay) navigate('back', dropOverlay);
+    else if (file) navigate('back', dropFile);
     else if (t === 'Group' && groupView !== 'hub') navigate('back', () => setGroupView('hub'));
   };
   const changeLink = released ? null : <button className="link" onClick={changeDays}>Change days or pace</button>;
@@ -503,6 +522,12 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     navigate('fwd', () => setStep('tabs'));
   };
 
+  // The doors the screens under a tab use. Friends' doors open sub-screens; the voting build keeps today's.
+  const nav = (children: JSX.Element) => (
+    <AdminNav.Provider value={openBookings}><GuideNav.Provider value={() => navigate('tab', () => setTab('Guide'))}><StaysNav.Provider value={routeFinal ? openStays : null}>
+      <FileNav.Provider value={openFile}>{children}</FileNav.Provider>
+    </StaysNav.Provider></GuideNav.Provider></AdminNav.Provider>
+  );
   let content;
   if (shown === 'days') {
     content = <Days days={draft.days} flex={draft.flex} onPick={(days, flex) => {
@@ -544,12 +569,10 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     content = <div role="tabpanel" aria-label="Profile" className="panel"><Profile name={me} players={copy.players} onBack={() => history.back()} onQuiz={() => showOverlay('quiz')} onBingo={() => showOverlay('bingo')} /></div>;
   } else {
     const Panel = tab === 'Group' || tab === 'My trip' ? null : PANELS[tab];
-    content = (
-      <div role="tabpanel" aria-label={tab} className="panel"><AdminNav.Provider value={() => navigate('fwd', () => showOverlay('admin'))}><GuideNav.Provider value={() => navigate('tab', () => setTab('Guide'))}><StaysNav.Provider value={routeFinal ? openStays : null}>
-        <FileNav.Provider value={openFile}>{Panel ? <Panel /> : tab === 'My trip' ? <MyTripTab /> : <GroupTab view={groupView} onView={setGroupView} />}</FileNav.Provider>
-      </StaysNav.Provider></GuideNav.Provider></AdminNav.Provider></div>
-    );
+    content = <div role="tabpanel" aria-label={tab} className="panel">{nav(Panel ? <Panel /> : tab === 'My trip' ? <MyTripTab routeFirst={routeFirst} /> : <GroupTab view={groupView} onView={setGroupView} />)}</div>;
   }
+  // A sub-screen shows over the tab it came from, unless a page the member opened (an overlay) is on top of it.
+  const subUp = file !== null && (overlay === null || overlay === 'awards');
 
   const enter = cssEnter() ? lastNav() : null;
   if (screen === 'reveal' && group?.final) content = <Reveal plan={group.final} cards={compromises(group, state, items)} onClose={closeReveal} />;
@@ -558,14 +581,22 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   if (screen === 'quiz') content = <Interview me={me} initial={state.stays?.crew[me]?.prefs} onSave={prefs => { void store.saveCrewStays(me, { prefs, quizDone: prefs.some(a => !a.skipped && (a.noPreference || Object.keys(a.picks).length > 0)) }); }} onDone={closeOverlay} onClose={closeOverlay} />;
   if (screen === 'bingo') content = <Bingo onBack={closeOverlay} />;
   if (screen === 'admin') content = <TripAdmin onBack={closeOverlay} />;
-  if (file === 'flights') content = <FlightsScreen onBack={closeFile} />;
-  if (file === 'command') content = <Organiser onBack={closeFile} />;
+  if (screen === 'finale' && group) content = <MissionComplete group={group} onTrip={endFinale} />;
+  if (subUp) {
+    const shared = { back: closeFile, backLabel: `Back to ${tab}` };
+    const sub = file.id === 'stays' ? <div role="tabpanel" aria-label="Stays" className="panel"><StaysTab onQuiz={() => showOverlay('quiz')} target={file.target as Area | undefined} {...shared} /></div>
+      : file.id === 'bookings' ? <TripAdmin target={file.target} {...shared} />
+      : file.id === 'flights' ? <FlightsScreen {...shared} />
+      : file.id === 'organiser' ? <Organiser {...shared} />
+      : <CrewPage which={file.id as CrewWhich} group={group ?? undefined} {...shared} />;
+    content = nav(sub);
+  }
   // The quiz and Bingo only exist on the tabs, so the card before them leaves their rows out.
   if (screen === 'profile') content = <Profile name={me} players={copy.players} onBack={closeProfile} />;
   const baseKey = shown === 'tabs' ? `tabs:${tab}` : shown === 'rate' && unrated.length === 0 ? 'rerank' : shown;
-  const screenKey = file ?? (screen === 'base' || screen === 'awards' ? baseKey : screen);
+  const screenKey = subUp ? `sub:${file.id}` : screen === 'base' || screen === 'awards' ? baseKey : screen;
   useLayoutEffect(() => {
-    const over = screenKey === 'flights' || screenKey === 'command' || screenKey === 'profile' || screenKey === 'items' || screenKey === 'quiz' || screenKey === 'bingo' || screenKey === 'admin';
+    const over = screenKey.startsWith('sub:') || screenKey === 'profile' || screenKey === 'items' || screenKey === 'quiz' || screenKey === 'bingo' || screenKey === 'admin';
     if (!/jsdom/.test(navigator.userAgent)) window.scrollTo(0, over ? 0 : scrollBack.current ?? 0);
     if (!over) scrollBack.current = null;
   }, [screenKey]);
@@ -579,13 +610,14 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
           <b>{me}</b>
         </button>
         <HeaderMenu onProfile={openProfile} onChange={(shown === 'rate' || shown === 'tabs') && !locked && !released ? changeDays : undefined} onStats={shown === 'tabs' && statsOpen ? () => openGroup('stats') : undefined} onNotYou={() => navigate('back', clearMe)} onStartOver={onStartOver} onLogout={finishSandbox ?? logout ?? undefined}
-          todo={todo.length} onItems={shown === 'tabs' ? openItemsPage : undefined} onAwards={shown === 'tabs' && awardList.length > 0 ? () => showOverlay('awards') : undefined} onAdmin={shown === 'tabs' ? () => navigate('fwd', () => showOverlay('admin')) : undefined}
-          onFlights={shown === 'tabs' && released ? () => openFile('flights') : undefined} onCommand={shown === 'tabs' && released && isAdmin(me) ? () => openFile('command') : undefined} />
+          todo={todo.length} onItems={shown === 'tabs' ? openItemsPage : undefined} onAwards={shown === 'tabs' && awardList.length > 0 ? () => showOverlay('awards') : undefined} onAdmin={shown === 'tabs' ? openBookings : undefined}
+          onFlights={shown === 'tabs' && released ? () => openFile('flights') : undefined} onCommand={shown === 'tabs' && released && isAdmin(me) ? () => openFile('organiser') : undefined} />
       </header>
       {/* A refused pin, nights or fell-through edit is dropped, so say so wherever it happened; Command holds the key prompt. */}
-      {needsAdminKey && isAdmin(me) && file !== 'command' && <button type="button" className="errbar" onClick={() => openFile('command')}>Organiser change not saved. Tap to enter the organiser password</button>}
+      {needsAdminKey && isAdmin(me) && file?.id !== 'organiser' && <button type="button" className="errbar" onClick={() => openFile('organiser')}>Organiser change not saved. Tap to enter the organiser password</button>}
       <div className={`screen${enter ? ` enter-${enter}` : ''}`} key={screenKey}>{content}</div>
-      {shown === 'tabs' && !hidesTabs(screen) && !file && (
+      {/* A3b: the bar stays over Flights and the Organiser too (M2); App.release.test.tsx:46 and :184 still pin them without it. */}
+      {shown === 'tabs' && !hidesTabs(screen) && !(subUp && (file.id === 'flights' || file.id === 'organiser')) && (
         <nav className="tabs" role="tablist" aria-label="Sections">
           {tabs.map(t => {
             const Icon = TAB_ICON[t];
@@ -597,6 +629,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
         </nav>
       )}
       {screen === 'awards' && <Awards awards={awardList} onClose={closeAwards} />}
+      {released && group && shown === 'tabs' && <FinaleWatch group={group} onDue={onFinaleDue} />}
     </GroupCtx.Provider>
     </PosterWhen.Provider>
   );

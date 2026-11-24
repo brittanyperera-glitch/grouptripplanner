@@ -25,8 +25,7 @@ export function PlanSave({ group }: { group: GroupResult }) {
   return plan ? <SaveItinerary plan={plan} kind="Group" group={group} provisional={!(isReopened(group, state) || (group.final && group.locked))} /> : null;
 }
 
-/** `spy` is no longer read: friends have no Replay. Callers still pass it until the shell is rewired. */
-export default function Plan({ group, reveal }: { group: GroupResult; reveal?: ReactNode; spy?: boolean }) {
+export default function Plan({ group, reveal }: { group: GroupResult; reveal?: ReactNode }) {
   const { state, items, legs, me } = useApp();
   const openAdmin = useOpenAdmin();
   const openStays = useOpenStays();

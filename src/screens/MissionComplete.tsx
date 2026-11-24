@@ -1,5 +1,5 @@
 import './MissionHQ.css';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import SpyScreen from '../components/spy/SpyScreen';
 import Stamp from '../components/spy/Stamp';
@@ -44,15 +44,13 @@ export function MissionCompleteBody({ ready, of, onTrip }: { ready: number; of: 
   );
 }
 
-/** Shows once: to one of the five, when every mission is done and the seen flag is unset. Pressing its button sets the flag.
- *  `markOnShow` is a WORKAROUND for today's caller in App.tsx, which relies on the mount-time mark; the shell passes false and marks on close. */
-export default function MissionComplete({ group, onTrip, today, markOnShow = true }: { group: GroupResult; onTrip(): void; today?: string; markOnShow?: boolean }) {
+/** Shows once: to one of the five, when every mission is done and the seen flag is unset. Pressing its button sets the flag. */
+export default function MissionComplete({ group, onTrip, today }: { group: GroupResult; onTrip(): void; today?: string }) {
   const { state, me } = useApp();
   const model = useTripModel(group, today);
   const input = useMemo<MissionInput>(() => ({ state, plan: model.plan, model }), [state, model]);
   const [first] = useState(() => !finaleSeen());
   const show = first && eligible(me, input);
-  useEffect(() => { if (show && markOnShow) markFinaleSeen(); }, [show, markOnShow]);
   if (!show) return null;
   const { people } = crewReadiness(input);
   return <MissionCompleteBody ready={people.filter(p => p.done >= p.total).length} of={people.length} onTrip={() => { markFinaleSeen(); onTrip(); }} />;
