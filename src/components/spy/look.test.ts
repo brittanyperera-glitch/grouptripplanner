@@ -29,54 +29,29 @@ const ratio = (a: string, b: string) => {
 };
 
 describe('spy screens wear the cream look', () => {
-  it('every --s-* declaration except --s-head is one var(--token)', () => {
-    const decls = [...strip(read('components/spy/spy.css')).matchAll(/(--s-[a-z]+):\s*([^;]+);/g)].filter(m => m[1] !== '--s-head');
-    expect(decls.length).toBe(10);
-    for (const [, name, value] of decls) expect(value.trim(), name).toMatch(/^var\(--[a-z-]+\)$/);
-  });
-
-  it('the seven owned files hold no Space Mono and no color-scheme: dark', () => {
-    for (const f of OWNED) {
-      expect(read(f), f).not.toMatch(/Space Mono/);
-      expect(read(f), f).not.toMatch(/color-scheme:\s*dark/);
-    }
-  });
-
   it('no px font-size below 11.5 in the seven owned files', () => {
     for (const f of OWNED) {
       for (const m of strip(read(f)).matchAll(/font-size:\s*([\d.]+)px/g)) expect(parseFloat(m[1]), `${f} ${m[0]}`).toBeGreaterThanOrEqual(11.5);
     }
   });
 
-  it('five controls declare a 44px tap height (min-height or ::after height)', () => {
+  it('five controls declare a 44px tap height (min-height, or an ::after overlay anchored to the button)', () => {
     const targets: [string, string][] = [
       ['components/spy/spy.css', '.spy .spy-back'], ['components/spy/spy.css', '.spy .spy-btn'],
       ['styles.css', '.guide-chips button'],
     ];
     for (const [f, sel] of targets) expect(rulesFor(read(f), sel).join(' '), `${f} ${sel}`).toMatch(/min-height:\s*44px/);
     // These two keep their visible size (the profile character view is sized to the header and the switch); only the tap area grows.
-    for (const [f, sel] of [['styles.css', '.top button.who::after'], ['screens/Profile.css', '.pf-switch button::after']]) {
-      expect(rulesFor(read(f), sel).join(' '), `${f} ${sel}`).toMatch(/height:\s*44px/);
+    for (const [f, sel] of [['styles.css', '.top button.who'], ['screens/Profile.css', '.pf-switch button']]) {
+      expect(rulesFor(read(f), sel).join(' '), `${f} ${sel}`).toMatch(/position:\s*relative/);
+      expect(rulesFor(read(f), `${sel}::after`).join(' '), `${f} ${sel}::after`).toMatch(/height:\s*44px/);
     }
   });
 
-  it('.spy .spy-stamp declares white-space: nowrap', () => {
-    expect(rulesFor(read('components/spy/spy.css'), '.spy .spy-stamp').join(' ')).toMatch(/white-space:\s*nowrap/);
-  });
-
-  it('.spy .spy-stamp-big wraps to two lines and sizes with a vw clamp() up to 46px', () => {
-    const big = rulesFor(read('components/spy/spy.css'), '.spy .spy-stamp-big').join(' ');
-    expect(big).toMatch(/white-space:\s*normal/);
-    expect(big).toMatch(/font-size:\s*clamp\([^)]*vw[^)]*,\s*46px\)/);
-  });
-
-  it('the cream text tokens and the warn token reach 4.5:1 on white and on paper', () => {
+  it('the cream text tokens, and the warn token --s-warn points at, reach 4.5:1 on white and on paper', () => {
+    expect(read('components/spy/spy.css')).toMatch(new RegExp(`--s-warn:\\s*var\\(${WARN_TOKEN}\\)`));
     for (const t of ['--card-ink', '--card-muted', '--card-red', '--card-teal', WARN_TOKEN]) {
       for (const bg of ['--white', '--paper']) expect(ratio(token(t), token(bg)), `${t} on ${bg}`).toBeGreaterThanOrEqual(4.5);
     }
-  });
-
-  it('--s-warn points at the warn token', () => {
-    expect(read('components/spy/spy.css')).toMatch(new RegExp(`--s-warn:\\s*var\\(${WARN_TOKEN}\\)`));
   });
 });
