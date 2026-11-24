@@ -12,6 +12,9 @@
 .ta-box::before { content: ''; grid-area: 1 / 1; width: 26px; height: 26px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--line-strong); }
 .ta-box[aria-checked='true']::before { background: var(--teal-deep); box-shadow: none; }
 .ta-box svg { grid-area: 1 / 1; }
+/* A row I cannot tick keeps the box's 44px so every label lines up; no ring, so it does not read as a control. */
+.ta-nobox { cursor: default; }
+.ta-nobox::before { box-shadow: none; }
 .ta-main { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding-top: 10px; overflow-wrap: anywhere; }
 .ta-label { margin: 0; font-weight: 800; }
 .ta-hint { margin: 0; font-size: 13.5px; color: var(--muted); }
