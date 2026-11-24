@@ -27,14 +27,14 @@
 .ta-more { all: unset; box-sizing: border-box; cursor: pointer; flex: none; min-height: 44px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: var(--r-pill); font: 700 13px/1 var(--font-body); color: var(--teal-deep); text-decoration: underline; }
 .ta-form { display: flex; flex-direction: column; gap: 10px; padding: 6px 0 4px; }
 .ta-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.ta-fl { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.ta-fl { font-size: var(--fs-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .ta-priv { margin: 0; font-size: 12.5px; color: var(--muted); }
 .ta-form > button { flex: none; }
 .ta-link { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; min-height: 56px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; padding: 10px 14px; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow-card); }
 .ta-link:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 2px; }
 .ta-link-name { font-weight: 800; }
 .ta-link-n { font-size: 13px; font-weight: 700; color: var(--teal); }
-.ta-chip { padding: 2px 8px; border-radius: var(--r-pill); background: var(--chip); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.ta-chip { padding: 2px 8px; border-radius: var(--r-pill); background: var(--chip); font-size: var(--fs-xs); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .ta-chip[data-status='overdue'] { background: var(--red-deep); color: var(--on-red); }
 .ta-chip[data-status='done'] { background: var(--teal-deep); color: var(--on-teal); }
 .ta-claim, .ta-cal { all: unset; box-sizing: border-box; cursor: pointer; min-height: 44px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: var(--r-pill); font: 700 13px/1 var(--font-body); color: var(--teal-deep); text-decoration: underline; }
@@ -45,7 +45,7 @@ button.ta-owner { cursor: pointer; min-height: 44px; }
 /* Spy look: the kit's --s- colours come from the .spy shell this sits inside. */
 .ta-spy { display: flex; flex-direction: column; gap: 10px; }
 .ta-spy .ta-sub { margin: 0; color: var(--s-dim); }
-.ta-spy .ta-count { color: var(--s-dim); font-family: var(--s-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.ta-spy .ta-count { color: var(--s-dim); font-family: var(--s-mono); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .08em; }
 .ta-spy .ta-row { background: var(--s-card); box-shadow: none; border: 1px solid var(--s-line); border-radius: 10px; }
 /* Dimming a waiting row would put its dim hint at 4.2:1. */
 .ta-spy .ta-wait { opacity: 1; }
@@ -58,5 +58,5 @@ button.ta-owner { cursor: pointer; min-height: 44px; }
 .ta-spy .ta-chip[data-status='overdue'] { background: transparent; color: var(--s-warn); }
 .ta-spy .ta-claim { text-decoration: none; }
 .ta-spy .ta-more, .ta-spy .ta-cal, .ta-spy .ta-saved { color: var(--s-dim); }
-.ta-spy .ta-saved { font-family: var(--s-mono); font-size: 11px; }
+.ta-spy .ta-saved { font-family: var(--s-mono); font-size: var(--fs-xs); }
 .ta-spy .ta-owner { color: var(--s-ink); }
