@@ -103,7 +103,7 @@ export function TripViewBody({ model, items, legs, todayDay, todayCard, onBookin
       <div key={day} className={motion() === 'full' ? 'tv-card flip' : 'tv-card'}>
         {todayCard && day === todayDay ? todayCard : (
           <TripDay
-            view={view} items={items} legs={legs} rainSlack={model.plan.days[day - 1].rainSlack}
+            view={view} items={items} legs={legs} visited={model.plan.chosen} rainSlack={model.plan.days[day - 1].rainSlack}
             onPlace={id => setPlace(items.find(i => i.id === id) ?? null)} onStay={setStay} onBooking={onBooking} onFlights={onFlights}
           />
         )}

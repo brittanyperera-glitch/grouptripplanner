@@ -31,6 +31,8 @@ export interface TripDayProps {
   compact?: boolean;
   /** Only for the photo strip and the print facts. */
   items?: Item[]; legs?: Leg[];
+  /** The plan's visited places: a day with no visit takes its header photo from an area place not among them, so it repeats no other day's. */
+  visited?: string[];
   /** The day's journey note, from useJourneyNotes. */
   note?: string;
   /** DayView has no rain flag; the plan's day does. */
@@ -97,7 +99,10 @@ export default function TripDay(props: TripDayProps) {
   if (props.compact) return <Print {...props} />;
   const { view, items = [], legs = [], quests = [], tips = [], skippedBy, onPlace, onStay, onBooking, onFlights, note, rainSlack } = props;
   const byId = new Map(items.map(i => [i.id, i]));
-  const first = view.entries.map(e => (e.itemId ? byId.get(e.itemId) : undefined)).find(Boolean);
+  // A drive-and-flight day has no visit; a place from its area keeps the header a photo like every other day's.
+  const inArea = items.filter(i => i.area === view.area && i.photo);
+  const first = view.entries.map(e => (e.itemId ? byId.get(e.itemId) : undefined)).find(Boolean)
+    ?? inArea.find(i => !props.visited?.includes(i.id)) ?? inArea[0];
   const driving = view.entries.filter(e => e.kind === 'drive').reduce((s, e) => s + e.hours, 0);
   const head = (
     <span className="day-head td-head">
