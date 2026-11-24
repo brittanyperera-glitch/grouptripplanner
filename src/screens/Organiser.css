@@ -15,7 +15,7 @@
 .og-gate, .og-form, .og-route { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .og-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .og-pair > .og-field { flex: 1 1 120px; }
-.og-fl { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.og-fl { font-size: var(--fs-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .og-pair { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; min-width: 0; }
 .og-go { flex: none; }
 .og-form > button, .og-gate > button { flex: none; }

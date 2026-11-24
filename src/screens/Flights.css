@@ -6,7 +6,7 @@
 .fx-who { display: flex; align-items: center; gap: 8px; }
 .fx-name { font-weight: 800; }
 .fx-line { margin: 0; font-size: 14px; }
-.fx-fl { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.fx-fl { font-size: var(--fs-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .fx-flag { margin: 0; font-size: 13.5px; font-weight: 700; color: var(--red-deep); }
 .fx-form { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .fx-set { display: flex; flex-direction: column; gap: 8px; min-width: 0; margin: 0; padding: 0; border: 0; }
@@ -17,7 +17,7 @@
 .fx-bad { font-size: 12.5px; font-weight: 700; color: var(--red-deep); }
 
 .fx-back { all: unset; cursor: pointer; align-self: flex-start; font-size: 13px; font-weight: 700; color: var(--muted); }
-.fx-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.fx-tag { font-size: var(--fs-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .fx-dark { opacity: .75; }
 /* Spy look: the dark palette comes from the .spy shell; only the surfaces this screen draws are retuned. */
 .fx-spy .fx-row { background: var(--s-card); box-shadow: none; border: 1px solid var(--s-line); }
@@ -28,5 +28,5 @@
 .fx-spy .fx-saved { color: var(--s-ok); }
 .fx-spy .fx-bad { color: var(--s-warn); }
 .fx-spy > p { color: var(--s-dim); }
-.fx-spy .fx-in { background: var(--s-bg); color: var(--s-ink); box-shadow: inset 0 0 0 1.5px var(--s-dim); color-scheme: dark; }
+.fx-spy .fx-in { color: var(--s-ink); box-shadow: inset 0 0 0 1.5px var(--s-dim); }
 .fx-spy .fx-in:focus-visible { outline-color: var(--s-accent); }

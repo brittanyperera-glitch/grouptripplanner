@@ -75,7 +75,7 @@ svg { flex: none; }
 .top .who { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .top .who b { font-size: 22px; line-height: 1; color: var(--ink); }
 /* The header's avatar and name open the profile: the old span is now a button, same look. */
-.top button.who { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 8px; min-width: 0; border-radius: var(--r-sm); }
+.top button.who { all: unset; box-sizing: border-box; cursor: pointer; display: flex; min-height: 44px; align-items: center; gap: 8px; min-width: 0; border-radius: var(--r-sm); }
 .top button.who:focus-visible { outline: 2px solid var(--coconut); outline-offset: 3px; }
 .hmenu { position: relative; flex: none; }
 .hmenu > .link { position: relative; }
@@ -455,7 +455,7 @@ h1.big { margin: 0; }
 /* Chips grow to share the row and wrap only when their labels cannot fit, so none is ever cut off. */
 /* Equal columns: six sections sit in two even rows instead of one chip stretched across a row of its own. */
 .guide-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 2px 0 4px; }
-.guide-chips button { all: unset; cursor: pointer; text-align: center; padding: 10px 8px; border-radius: var(--r-pill); font-size: 12.5px; font-weight: 800; color: var(--ink); background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line-strong); transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
+.guide-chips button { all: unset; cursor: pointer; display: flex; align-items: center; justify-content: center; min-height: 44px; text-align: center; padding: 10px 8px; border-radius: var(--r-pill); font-size: 12.5px; font-weight: 800; color: var(--ink); background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line-strong); transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); }
 .guide-chips button[aria-pressed="true"] { color: var(--on-red); background: var(--red); box-shadow: none; }
 .guide-chips button:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
 .guide-section { display: flex; flex-direction: column; gap: 10px; }
