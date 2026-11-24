@@ -45,6 +45,17 @@ export interface TripDayProps {
   rainSlack?: boolean;
 }
 
+/**
+ * The place whose photo heads a day: the first visit, else (a drive-and-flight day has none) a place from its area the
+ * plan does not visit, so every day's header is a photo. The saved itinerary calls this too, so file and app agree.
+ */
+export function dayCover(view: DayView, items: Item[], visited?: string[]): Item | undefined {
+  const byId = new Map(items.map(i => [i.id, i]));
+  const inArea = items.filter(i => i.area === view.area && i.photo);
+  return view.entries.map(e => (e.itemId ? byId.get(e.itemId) : undefined)).find(Boolean)
+    ?? inArea.find(i => !visited?.includes(i.id)) ?? inArea[0];
+}
+
 function Bookings({ list, onBooking }: { list: DayBooking[]; onBooking?(id: string): void }) {
   return (
     <ul className="td-list" aria-label="Day bookings">
@@ -104,11 +115,7 @@ function Print({ view, items = [], legs = [], quests = [], tips = [], skippedBy,
 export default function TripDay(props: TripDayProps) {
   if (props.compact) return <Print {...props} />;
   const { view, items = [], legs = [], quests = [], tips = [], skippedBy, onPlace, onStay, onBooking, onFlights, ideas = [], onIdea, note, rainSlack } = props;
-  const byId = new Map(items.map(i => [i.id, i]));
-  // A drive-and-flight day has no visit; a place from its area keeps the header a photo like every other day's.
-  const inArea = items.filter(i => i.area === view.area && i.photo);
-  const first = view.entries.map(e => (e.itemId ? byId.get(e.itemId) : undefined)).find(Boolean)
-    ?? inArea.find(i => !props.visited?.includes(i.id)) ?? inArea[0];
+  const first = dayCover(view, items, props.visited);
   const driving = view.entries.filter(e => e.kind === 'drive').reduce((s, e) => s + e.hours, 0);
   const head = (
     <span className="day-head td-head">

@@ -5,32 +5,55 @@
 .it-save { all: unset; box-sizing: border-box; align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; cursor: pointer; font-weight: 800; font-size: 14px; color: var(--teal); text-decoration: underline; text-underline-offset: 3px; }
 .it-save:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; border-radius: 6px; }
 
-@page { margin: 12mm; }
+/* A4 with 14mm margins. The page number is a margin box: Chrome draws it, a browser without them prints the document as is. */
+@page { size: A4; margin: 14mm; @bottom-right { content: counter(page) " / " counter(pages); font: 8pt "Manrope", system-ui, sans-serif; color: #555; } }
 
 @media print {
   /* Everything the app renders sits under #root or in a portal on body: hide all of it, so the fixed header and tab bar go too. */
   body > *:not(.it-print) { display: none !important; }
   html, body { background: #fff !important; overflow: visible !important; height: auto !important; }
-  .it-print { display: block; background: #fff; color: #111; font: 10pt/1.4 var(--font-body, sans-serif); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* One 4mm step; every gap below is a multiple of it, except the 2mm half-step inside a row. */
+  .it-print { --it-s: 4mm; --it-h: 2mm; display: block; background: #fff; color: #111; font: 10pt/1.4 var(--font-body, sans-serif); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .it-print * { box-sizing: border-box; }
   .it-print b { font-weight: 800; }
+  .it-print img[hidden] { display: none; }
+  .it-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-  .it-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8mm; margin-bottom: 6mm; }
-  .it-titles { min-width: 0; flex: 1 1 auto; }
-  .it-title { margin: 0 0 2mm; font: 800 26pt/1 var(--font-head, sans-serif); }
-  .it-kind { margin: 0 0 3mm; font: 800 12pt/1.2 var(--font-head, sans-serif); color: #b8381f; }
-  .it-meta { margin: 0 0 1.5mm; color: #333; }
-  .it-map { flex: none; width: 64mm; }
-  .it-map svg { display: block; width: 100%; height: auto; }
+  /* Cover: one page. */
+  .it-cover { break-after: page; page-break-after: always; }
+  .it-hero { display: block; width: 100%; height: 70mm; object-fit: cover; margin: 0 0 calc(var(--it-s) * 2); }
+  .it-kind { margin: 0 0 var(--it-h); font: 800 11pt/1.2 var(--font-head, sans-serif); letter-spacing: .14em; text-transform: uppercase; color: var(--card-red, #b8381f); }
+  .it-title { margin: 0 0 var(--it-s); font: 800 52pt/.95 var(--font-head, sans-serif); text-transform: uppercase; }
+  .it-range { margin: 0 0 var(--it-s); font: 700 16pt/1.2 var(--font-head, sans-serif); }
+  .it-meta { margin: 0 0 var(--it-h); color: #333; font-size: 10.5pt; }
+  .it-label { margin-right: var(--it-h); font-size: 8pt; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--card-red, #b8381f); }
+  .it-routebox { display: grid; grid-template-columns: minmax(0, 1fr) 46mm; gap: calc(var(--it-s) * 2); align-items: start; margin-top: var(--it-s); }
+  .it-map svg { display: block; width: 100%; height: auto; max-height: 96mm; }
+  .it-route { list-style: none; counter-reset: stop; margin: 0; padding: 0; }
+  .it-route li { counter-increment: stop; display: flex; gap: var(--it-h); padding: 1.5mm 0; border-bottom: 0.2mm solid #ccc; font-weight: 700; }
+  .it-route li::before { content: counter(stop); flex: none; width: 5mm; font-size: 8pt; font-weight: 800; color: var(--card-red, #b8381f); }
 
-  .it-day, .it-block { break-inside: avoid; page-break-inside: avoid; margin: 0 0 5mm; padding-top: 2mm; border-top: 0.4mm solid #111; }
-  .it-dayhead { margin: 0 0 2mm; display: flex; align-items: baseline; gap: 3mm; font: 800 15pt/1.1 var(--font-head, sans-serif); }
-  .it-area { font-size: 9.5pt; font-weight: 700; color: #333; }
+  /* One day: photo band, then the schedule. */
+  .it-daywrap { break-inside: avoid; page-break-inside: avoid; margin: 0 0 calc(var(--it-s) * 2); padding-top: var(--it-s); border-top: 0.4mm solid #111; }
+  .it-photo { display: block; width: 100%; height: 30mm; object-fit: cover; margin: 0 0 var(--it-s); }
+  .it-dayhead { margin: 0 0 var(--it-h); display: flex; align-items: baseline; gap: var(--it-s); font: 800 16pt/1.1 var(--font-head, sans-serif); }
+  .it-area { font-size: 8.5pt; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--card-red, #b8381f); }
   .it-list { list-style: none; margin: 0; padding: 0; }
-  .it-list > li { margin: 0 0 1.8mm; }
+  .it-list > li { margin: 0 0 var(--it-h); }
   .it-name { font-weight: 800; overflow-wrap: anywhere; }
-  .it-dur { margin-left: 2mm; font-variant-numeric: tabular-nums; color: #333; white-space: nowrap; }
+  .it-dur { margin-left: var(--it-h); font-variant-numeric: tabular-nums; color: #333; white-space: nowrap; }
   .it-sub { display: block; color: #222; font-size: 9.5pt; overflow-wrap: anywhere; }
   .it-url { font-size: 8.5pt; word-break: break-all; }
-  .it-move { color: #444; font-size: 9pt; padding-left: 3mm; border-left: 0.5mm dashed #888; }
+  .it-move { color: #444; font-size: 9pt; padding-left: var(--it-s); border-left: 0.3mm solid #bbb; }
+
+  /* Back matter: each section is a name | detail table, and starts on a fresh page after the days. */
+  .it-block { margin: 0 0 calc(var(--it-s) * 2); }
+  .it-daywrap + .it-block { break-before: page; page-break-before: always; }
+  .it-block > .it-dayhead { margin: 0; padding-bottom: var(--it-h); border-bottom: 0.4mm solid #111; font-size: 18pt; break-after: avoid; }
+  .it-block .it-list > li { display: grid; grid-template-columns: 56mm minmax(0, 1fr); gap: var(--it-s); margin: 0; padding: var(--it-h) 0; border-bottom: 0.2mm solid #ccc; break-inside: avoid; page-break-inside: avoid; }
+  .it-block .it-list.it-flights > li { display: block; }
+  .it-lead .it-dur, .it-detail .it-dur { display: block; margin: 0; white-space: normal; }
+  .it-lead .it-dur { font-size: 8.5pt; color: #555; }
+  .it-detail { display: block; min-width: 0; }
+  .it-detail .it-dur { font-weight: 700; }
 }
