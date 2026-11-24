@@ -149,7 +149,7 @@ describe('Flights honest saves, flight length and row sync', () => {
   });
 });
 
-describe('Touchdown board', () => {
+describe('Flights board', () => {
   const when = /Leave by \w{3} (\d+) Dec (\d{2}):(\d{2})/;
   const crew = (s: LocalStore) => Promise.all([
     s.saveTripSettings({ startDate: '2026-12-08', plan: { ...releaseJson, pace: releaseJson.pace as Pace, dayEdits: [] } }),
@@ -243,11 +243,11 @@ describe('Touchdown board', () => {
     expect(props.onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('is called Touchdown in the spy look, as the Menu and the HQ file call it, and Flights in the normal look', () => {
+  it('is called Flights in both looks', () => {
     const props = { me: 'Alex' as const, travellers: {}, startDate: null, days: null, onSave: vi.fn(async () => true) };
     const { rerender } = render(<Flights {...props} spy />);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Touchdown$/);
-    expect(screen.getByRole('region', { name: 'Touchdown' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Flights$/);
+    expect(screen.getByRole('region', { name: 'Flights' })).toBeInTheDocument();
     rerender(<Flights {...props} />);
     expect(screen.getByRole('heading', { name: 'Flights' })).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Flights' })).toBeInTheDocument();

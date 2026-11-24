@@ -17,7 +17,7 @@ import './Flights.css';
 const COPY = {
   title: 'Flights',
   // The Menu item and the HQ file call this screen Touchdown, so its spy heading does too.
-  spyTitle: 'Touchdown',
+  spyTitle: 'Flights',
   sub: 'Everyone sees everyone\'s flights. You can only change your own. Times are Sri Lanka local.',
   arrival: 'Arrival',
   departure: 'Departure',
@@ -130,7 +130,7 @@ export function Flights({ me, travellers, startDate, lastDayStart, days, onSave,
       })}
     </ul>
   );
-  if (spy) return <SpyScreen code="Operation Homecoming · Touchdown" title={COPY.spyTitle} back={onBack && { label: COPY.back, onClick: onBack }}><section className="fx fx-spy" aria-label={COPY.spyTitle}><p className="sub">{COPY.sub}</p>{list}</section></SpyScreen>;
+  if (spy) return <SpyScreen code="Operation Homecoming · Flights" title={COPY.spyTitle} back={onBack && { label: COPY.back, onClick: onBack }}><section className="fx fx-spy" aria-label={COPY.spyTitle}><p className="sub">{COPY.sub}</p>{list}</section></SpyScreen>;
   return (
     <section className="body fx" aria-label={COPY.title}>
       {onBack && <button type="button" className="fx-back" onClick={onBack}>{`‹ ${COPY.back}`}</button>}

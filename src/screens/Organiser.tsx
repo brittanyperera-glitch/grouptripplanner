@@ -25,7 +25,7 @@ const TITLE_MAX = 60, NOTE_MAX = 200, MAX_STOP_HOURS = 12;
 
 const COPY = {
   title: 'Organiser',
-  spyTitle: 'Command',
+  spyTitle: 'Organiser',
   back: 'Back',
   sub: 'Only you see this. Changes reach everyone once saved.',
   pwLabel: 'Organiser password',
@@ -396,8 +396,8 @@ function Panel({ onBack }: { onBack?: () => void }) {
           <ul className="og-rows">{log.map((o, k) => <li key={`${o.at}:${k}`} className="og-log"><time dateTime={o.at}>{when(o.at)}</time> <span>{noISO(o.what)}</span></li>)}</ul>
         )}
       </Section>
-      <Section title="Missing intel" line={plan ? `${intel.reduce((n, i) => n + i.n, 0)} open` : noPlan}>
-        {!plan ? <p className="og-msg">{noPlan}</p> : <ul className="og-rows" aria-label="Missing intel">{intel.map(i => <li key={i.id} className="og-log"><strong>{i.id}:</strong> {i.text}</li>)}</ul>}
+      <Section title="Still missing" line={plan ? `${intel.reduce((n, i) => n + i.n, 0)} open` : noPlan}>
+        {!plan ? <p className="og-msg">{noPlan}</p> : <ul className="og-rows" aria-label="Still missing">{intel.map(i => <li key={i.id} className="og-log"><strong>{i.id}:</strong> {i.text}</li>)}</ul>}
       </Section>
       <Section title="Nights note" line={nights.length ? `${nights.length} to check` : 'Nights match the plan'}>
         {nights.length === 0 ? <p className="og-msg">Stay nights match the itinerary.</p> : (
@@ -421,7 +421,7 @@ function Panel({ onBack }: { onBack?: () => void }) {
           ? onBack && <button type="button" className="spy-back" onClick={onBack}>{`‹ ${COPY.back}`}</button>
           : onBack && <div className="og-bar"><button type="button" className="og-back" aria-label={COPY.back} onClick={onBack}><IconLeft size={20} /></button></div>}
         {spy
-          ? <header className="spy-head"><div className="spy-code">Operation Homecoming · Command</div><h1>{COPY.spyTitle}</h1></header>
+          ? <header className="spy-head"><div className="spy-code">Operation Homecoming · Organiser</div><h1>{COPY.spyTitle}</h1></header>
           : <h2 className="big display small og-h">{COPY.title}</h2>}
         <section className={spy ? 'og og-main og-spy' : 'og og-main'} aria-label={spy ? COPY.spyTitle : COPY.title}>{top}{sections}</section>
       </div>

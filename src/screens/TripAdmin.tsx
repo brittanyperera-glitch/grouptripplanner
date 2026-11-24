@@ -21,8 +21,8 @@ import './TripAdmin.css';
 
 const COPY = {
   title: 'Trip admin',
-  spyTitle: 'Supply runs',
-  code: 'Operation Homecoming · Supply runs',
+  spyTitle: 'Bookings',
+  code: 'Operation Homecoming · Bookings',
   back: 'Back',
   sub: 'Claim a booking, then mark it secured. The group sees who is on it.',
   groupEmpty: 'Group bookings appear once the route is set and each stay is decided.',

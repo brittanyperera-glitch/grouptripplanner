@@ -272,8 +272,8 @@ function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLog
           {onItems && <button onClick={pick(onItems)}>{todo > 0 ? `Open items (${todo})` : 'Open items'}</button>}
           {onAwards && <button onClick={pick(onAwards)}>Awards</button>}
           {onAdmin && <button onClick={pick(onAdmin)}>Trip admin</button>}
-          {onFlights && <button onClick={pick(onFlights)}>Touchdown</button>}
-          {onCommand && <button onClick={pick(onCommand)}>Command</button>}
+          {onFlights && <button onClick={pick(onFlights)}>Flights</button>}
+          {onCommand && <button onClick={pick(onCommand)}>Organiser</button>}
           <button onClick={pick(onProfile)}>{profileCopy.menuItem}</button>
           {onStats && <button onClick={pick(onStats)}>Group stats</button>}
           {onChange && <button onClick={pick(onChange)}>Change days or pace</button>}

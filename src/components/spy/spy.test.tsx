@@ -115,10 +115,10 @@ describe('the kit on real mission data', () => {
     const [stays, supply, touchdown] = missionFiles(input);
     render(<><MissionFile file={stays} onOpen={open} /><MissionFile file={supply} onOpen={open} /><MissionFile file={touchdown} onOpen={open} /></>);
     expect(screen.getByText('Book by 1 Dec')).toBeTruthy();
-    expect(screen.getByText('Antek still dark')).toBeTruthy();
+    expect(screen.getByText('Waiting on Antek')).toBeTruthy();
     expect(document.querySelectorAll('.spy-pips')[2].querySelectorAll('i')).toHaveLength(5);
     expect(document.querySelectorAll('.spy-pips')[2].querySelectorAll('i.spy-on')).toHaveLength(4);
-    fireEvent.click(screen.getByRole('button', { name: /Supply runs/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Bookings/ }));
     expect(open).toHaveBeenCalledWith('supply');
   });
 

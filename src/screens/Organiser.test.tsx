@@ -346,7 +346,7 @@ const mountProbe = async (over: Partial<TripSettings> = {}) => {
   return { user };
 };
 
-describe('Organiser as Command', () => {
+describe('Organiser panel', () => {
   // B1: a flex-basis on a child of a column container becomes a height there.
   it('no rule sets a flex-basis on a child of a column flex container', () => {
     const css = fs.readFileSync(path.resolve(process.cwd(), 'src/screens/Organiser.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -368,15 +368,15 @@ describe('Organiser as Command', () => {
   });
 
   // Hard case 1
-  it('Missing intel counts bookings, stays and flights the way missionFiles does', async () => {
+  it('Still missing counts bookings, stays and flights the way missionFiles does', async () => {
     landed(['Antek', 'Saulie']);
     const { user } = await mountProbe({ startDate: '2026-12-08' });
     const { files } = await probe();
     const open = (id: string) => { const f = files.find(x => x.id === id)!; return f.total - f.done; };
     expect(open('touchdown')).toBe(2);
     expect(open('supply')).toBeGreaterThan(0);
-    await user.click(await screen.findByRole('button', { name: /^Missing intel/ }));
-    const intel = within(screen.getByRole('list', { name: 'Missing intel' }));
+    await user.click(await screen.findByRole('button', { name: /^Still missing/ }));
+    const intel = within(screen.getByRole('list', { name: 'Still missing' }));
     expect(intel.getByText(/^Bookings/).closest('li')).toHaveTextContent(`Bookings: ${open('supply')} to secure`);
     expect(intel.getByText(/^Stays/).closest('li')).toHaveTextContent(`Stays: ${open('stays')} to decide`);
     expect(intel.getByText(/^Flights/).closest('li')).toHaveTextContent('Flights: 2 to add, Antek and Saulie');
@@ -485,12 +485,12 @@ describe('Organiser as Command', () => {
     expect(screen.getByRole('button', { name: /^Route/ })).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('with no route set, Missing intel says so instead of listing zeros and five missing flights', async () => {
+  it('with no route set, Still missing says so instead of listing zeros and five missing flights', async () => {
     const { user } = await mountProbe({ plan: { ...seed, items: [] } });
-    const head = await screen.findByRole('button', { name: /^Missing intel/ });
+    const head = await screen.findByRole('button', { name: /^Still missing/ });
     await waitFor(() => expect(head).toHaveTextContent('No route is set yet'));
     await user.click(head);
-    expect(screen.queryByRole('list', { name: 'Missing intel' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Still missing' })).toBeNull();
     expect(document.querySelector('.og')!.textContent).not.toMatch(/to add/);
   });
 
@@ -500,10 +500,10 @@ describe('Organiser as Command', () => {
     for (const name of PEOPLE) put(`tp:resp:${name}`, { name, days: 9, flex: false, pace: 1, ranking: { ...emptyRanking(), must: must.map(id => [id]) }, rated: must, submitted: true, updatedAt: AT });
     const { user } = await mountProbe({ plan: { ...seed, items: [] } });
     await waitFor(() => expect(screen.getByTestId('cand')).toHaveTextContent('candidate'));
-    const head = await screen.findByRole('button', { name: /^Missing intel/ });
+    const head = await screen.findByRole('button', { name: /^Still missing/ });
     expect(head).toHaveTextContent('No route is set yet');
     await user.click(head);
-    expect(screen.queryByRole('list', { name: 'Missing intel' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Still missing' })).toBeNull();
   });
 });
 
@@ -521,10 +521,10 @@ describe('Organiser fix round', () => {
     expect(css).toMatch(/^\.og-main \{[^}]*flex-direction: column; gap: 14px/m);
   });
 
-  it('Route headline and Missing intel read the same condition, also while the plan is still being worked out', async () => {
+  it('Route headline and Still missing read the same condition, also while the plan is still being worked out', async () => {
     await mountProbe({ startDate: '2026-12-08' });
     const route = await screen.findByRole('button', { name: /^Route/ });
-    const intel = screen.getByRole('button', { name: /^Missing intel/ });
+    const intel = screen.getByRole('button', { name: /^Still missing/ });
     expect(/ places/.test(route.textContent ?? '')).toBe(/ open/.test(intel.textContent ?? ''));
   });
 

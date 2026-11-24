@@ -39,7 +39,7 @@ describe('TripAdmin', () => {
     localStorage.setItem('tp:me', 'Alex');
     grp.current = null; grp.loading = true;
     render(<AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} /></AppProvider>);
-    await screen.findByRole('heading', { name: 'Supply runs' });
+    await screen.findByRole('heading', { name: 'Bookings' });
     expect(screen.getByText('Loading')).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/All done|Group bookings appear/);
   });

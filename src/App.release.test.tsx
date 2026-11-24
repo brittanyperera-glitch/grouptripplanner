@@ -43,14 +43,14 @@ beforeEach(() => { localStorage.clear(); window.location.hash = ''; });
 afterEach(() => { cleanup(); vi.useRealTimers(); window.location.hash = ''; });
 
 describe('released app, My trip tab', () => {
-  it('while a mission is open shows Mission HQ, no toggle and no day rows; the Touchdown file opens the flights screen', async () => {
+  it('while a mission is open shows Mission HQ, no toggle and no day rows; the Flights file opens the flights screen', async () => {
     seed('Lazza', true);
     render(<App />);
     expect(await screen.findByRole('heading', { name: 'Mission HQ' })).toBeInTheDocument();
     expect(document.querySelector('.mt-seg')).toBeNull();
     expect(screen.queryByRole('list', { name: 'Days' })).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: /Touchdown/ }));
-    expect(await screen.findByRole('heading', { name: 'Touchdown' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /Flights/ }));
+    expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Mission HQ' })).toBeNull();
     expect(screen.queryByRole('tablist')).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: /Back/ }));
@@ -60,8 +60,8 @@ describe('released app, My trip tab', () => {
   it('the Stays file goes to the Stays tab, the Supply file to Trip admin', async () => {
     seed('Lazza', true);
     render(<App />);
-    await userEvent.click(await screen.findByRole('button', { name: /^Supply runs/ }));
-    expect(await screen.findByRole('heading', { name: 'Supply runs' })).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('button', { name: /^Bookings/ }));
+    expect(await screen.findByRole('heading', { name: 'Bookings' })).toBeInTheDocument();
   });
 
   it('with every mission done, inside the trip dates, shows Today for the day; Trip view is only on Group trip', async () => {
@@ -170,24 +170,24 @@ describe('released app, Menu', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Menu' }));
     return within(screen.getByRole('group', { name: 'Menu' }));
   };
-  it('offers Command to Brittany only and Touchdown to everyone, never Organiser or safe house', async () => {
+  it('offers Organiser to Brittany only and Flights to everyone, never safe house', async () => {
     const b = await menu('Brittany');
-    expect(b.getByRole('button', { name: 'Command' })).toBeInTheDocument();
-    expect(b.getByRole('button', { name: 'Touchdown' })).toBeInTheDocument();
-    expect(document.body.textContent).not.toMatch(/Organiser|safe house/i);
+    expect(b.getByRole('button', { name: 'Organiser' })).toBeInTheDocument();
+    expect(b.getByRole('button', { name: 'Flights' })).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/safe house/i);
     cleanup(); localStorage.clear();
     const a = await menu('Alex');
-    expect(a.queryByRole('button', { name: 'Command' })).toBeNull();
-    expect(a.getByRole('button', { name: 'Touchdown' })).toBeInTheDocument();
-    expect(document.body.textContent).not.toMatch(/Organiser|safe house/i);
+    expect(a.queryByRole('button', { name: 'Organiser' })).toBeNull();
+    expect(a.getByRole('button', { name: 'Flights' })).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/safe house/i);
   });
-  it('Touchdown in the Menu opens the flights screen', async () => {
+  it('Flights in the Menu opens the flights screen', async () => {
     const m = await menu('Alex');
-    await userEvent.click(m.getByRole('button', { name: 'Touchdown' }));
-    expect(await screen.findByRole('heading', { name: 'Touchdown' })).toBeInTheDocument();
+    await userEvent.click(m.getByRole('button', { name: 'Flights' }));
+    expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole('tablist')).toBeNull());
   });
-  it('an organiser change refused for want of the key says so outside Command, and the notice opens Command', async () => {
+  it('an organiser change refused for want of the key says so outside Organiser, and the notice opens Organiser', async () => {
     seed('Brittany', true);
     localStorage.setItem('tp-local-admin-key', 'secret');
     localStorage.setItem(ADMIN_KEY, 'wrong');
@@ -198,12 +198,12 @@ describe('released app, Menu', () => {
     await userEvent.click(await screen.findByRole('button', { name: /not saved.*organiser password/i }));
     expect(await screen.findByLabelText('Organiser password')).toBeInTheDocument();
   });
-  it('Command in the Menu opens the organiser panel headed Command, as the Menu names it', async () => {
+  it('Organiser in the Menu opens the organiser panel headed Organiser, as the Menu names it', async () => {
     const m = await menu('Brittany');
     localStorage.setItem(ADMIN_KEY, 'k');
-    await userEvent.click(m.getByRole('button', { name: 'Command' }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Command' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Command' })).toBeInTheDocument();
+    await userEvent.click(m.getByRole('button', { name: 'Organiser' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Organiser' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Organiser' })).toBeInTheDocument();
   });
 });
 
@@ -228,10 +228,10 @@ describe('released app, deep link, Back and the loading plan', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
       await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name }));
     };
-    await menu('Touchdown');
-    expect(await screen.findByRole('heading', { name: 'Touchdown' })).toBeInTheDocument();
+    await menu('Flights');
+    expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
     await menu(action);
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Touchdown' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Flights' })).toBeNull());
     expect(screen.getByRole('tab', { name: new RegExp(`^${tab}`) })).toHaveAttribute('aria-selected', 'true');
     await waitFor(() => expect(history.state?.tpFile).toBeUndefined());
   });
@@ -241,17 +241,17 @@ describe('released app, deep link, Back and the loading plan', () => {
     render(<App />);
     await userEvent.click(await screen.findByRole('tab', { name: /Stays/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name: 'Touchdown' }));
-    expect(await screen.findByRole('heading', { name: 'Touchdown' })).toBeInTheDocument();
+    await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name: 'Flights' }));
+    expect(await screen.findByRole('heading', { name: 'Flights' })).toBeInTheDocument();
     const depth = history.length;
     history.back();
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Touchdown' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Flights' })).toBeNull());
     expect(screen.getByRole('tab', { name: /Stays/ })).toHaveAttribute('aria-selected', 'true');
     // The Back link inside the screen leaves no extra entry behind.
     await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
-    await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name: 'Touchdown' }));
+    await userEvent.click(within(screen.getByRole('group', { name: 'Menu' })).getByRole('button', { name: 'Flights' }));
     await userEvent.click(await screen.findByRole('button', { name: /Back/ }));
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Touchdown' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Flights' })).toBeNull());
     await waitFor(() => expect(history.state?.tpFile).toBeUndefined());
     expect(screen.getByRole('tab', { name: /Stays/ })).toHaveAttribute('aria-selected', 'true');
     expect(history.length).toBeLessThanOrEqual(depth + 1);
