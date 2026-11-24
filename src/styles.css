@@ -129,8 +129,10 @@ h1.big { margin: 0; }
 /* welcome: the Landing-style intro, then a character select */
 .welcome { view-transition-name: screen; display: flex; flex-direction: column; flex: 1; background: var(--paper); color: var(--ink); position: relative; }
 .name-out { position: absolute; right: 20px; top: calc(24px + env(safe-area-inset-top)); z-index: 3; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 44px; min-width: 44px; }
-/* The picker heading keeps clear of Log out at any width (it sits on one line on wide screens). */
-.welcome:has(> .name-out) .select-head { padding-right: 84px; }
+/* On the picker the exit is a flex item beside the heading, so a longer label narrows the heading instead of covering it. */
+.select-head .name-out { position: static; flex: none; }
+/* On the intro the stamp starts below the corner exit (24px offset + its 44px height + 8px), whatever the label's width. `main` is the intro's body. */
+.welcome:has(> .name-out) .intro > main { padding-top: calc(max(6dvh, 76px) + env(safe-area-inset-top)); }
 .intro { position: relative; height: 100dvh; overflow: hidden; container-type: inline-size; background: var(--bg); flex: none; font-family: var(--font-body); }
 .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .35) 0%, rgba(0, 0, 0, 0) 24%, rgba(0, 0, 0, 0) 42%, rgba(5, 6, 8, .9) 100%); pointer-events: none; }
 .credit-wrap { position: absolute; right: 12px; top: 12px; z-index: 3; }
@@ -140,7 +142,8 @@ h1.big { margin: 0; }
 .select .play { flex: none; align-self: stretch; }
 .select .play { margin-top: auto; }
 .select { padding: 12px 16px 16px; height: 100dvh; display: flex; flex-direction: column; gap: 8px; --ink: var(--ground-ink); --muted: var(--ground-muted); }
-.select-head { padding: 0 4px; }
+.select-head { padding: 0 4px; display: flex; align-items: flex-start; gap: 12px; }
+.select-titles { flex: 1; min-width: 0; }
 .select-head .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
 .carousel-wrap { position: relative; margin: 0 -16px; flex: 1 1 0; min-height: 0; }
 .carousel { height: 100%; display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 19% 2px; scrollbar-width: none; overscroll-behavior-x: contain; }

@@ -134,7 +134,7 @@ export default function Name({ welcome, welcomeSub, when = tripWhen(null), playe
 
   return (
     <div className="welcome">
-      {onLogout && <button type="button" className="link name-out" onClick={onLogout}>{logoutLabel}</button>}
+      {onLogout && page === 'intro' && <button type="button" className="link name-out" onClick={onLogout}>{logoutLabel}</button>}
       {page === 'intro' ? (
         <div className="intro landing">
           <main className="landing-body">
@@ -152,9 +152,13 @@ export default function Name({ welcome, welcomeSub, when = tripWhen(null), playe
         </div>
       ) : (
         <div className="select scene">
+          {/* The exit sits in the heading row here, so the row makes room for any label width. */}
           <div className="select-head">
-            <h2 className="choose">Choose your character</h2>
-            <div className="sub">You kinda have to pick yourself or it won't work.</div>
+            <div className="select-titles">
+              <h2 className="choose">Choose your character</h2>
+              <div className="sub">You kinda have to pick yourself or it won't work.</div>
+            </div>
+            {onLogout && <button type="button" className="link name-out" onClick={onLogout}>{logoutLabel}</button>}
           </div>
           <div className="carousel-wrap">
             <button className="nav prev" aria-label="Previous character" disabled={idx === 0} onClick={() => goTo(idx - 1)}><IconLeft size={20} /></button>

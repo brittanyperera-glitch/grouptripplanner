@@ -221,7 +221,7 @@ const START_OVER_ARMED_MS = 4000;
  * The header's one Menu: Change days or pace (while rating), Not you? and Start over, so the header stays one row
  * on a phone (Brittany 2026-10-15). Start over takes two taps; the first arms it for a few seconds, no browser dialog.
  */
-// Log out is the same item for everyone: a trip member forgets the password, a guest's demo resets; both land on the entry screen.
+// One exit item for everyone, labelled by who leaves: a trip member logs out (forgets the password), a guest leaves the demo (it resets); both land on the entry screen.
 function HeaderMenu({ onProfile, onChange, onStats, onNotYou, onStartOver, onLogout, logoutLabel = 'Log out', todo = 0, onItems, onAwards, onAdmin }: { onProfile(): void; onChange?(): void; onStats?(): void; onNotYou(): void; onStartOver(): void; onLogout?(): void; logoutLabel?: string; todo?: number; onItems?(): void; onAwards?(): void; onAdmin?(): void }) {
   const [open, setOpen] = useState(false);
   const [armed, setArmed] = useState(false);
