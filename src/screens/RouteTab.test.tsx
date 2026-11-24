@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -91,5 +91,29 @@ describe('Route tab', () => {
     const { onOpen, user } = await mount({ today: '2026-12-01' });
     await user.click(screen.getByRole('button', { name: /Saulie arrives 09:30/ }));
     expect(onOpen).toHaveBeenCalledWith({ sub: 'flights' });
+  });
+
+  it('a day card\'s stay line with no stay chosen opens a sheet whose door opens Stays at that area and closes the sheet', async () => {
+    const { onOpen, user } = await mount({ today: '2026-12-01' });
+    const area = group.final!.days[0].area!;
+    await user.click(screen.getByRole('button', { name: new RegExp(`No stay chosen yet in ${area}`) }));
+    const sheet = screen.getByRole('dialog');
+    await user.click(within(sheet).getByRole('button', { name: `Stays in ${area}` }));
+    expect(onOpen).toHaveBeenCalledWith({ sub: 'stays', target: area });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('on a trip day, a stop on today\'s card opens its place sheet and tonight\'s stay opens the stay sheet with the same door', async () => {
+    const { onOpen, user } = await mount({ today: '2026-12-10' });
+    const today = screen.getByLabelText('Today');
+    const stop = group.final!.days[2].entries.find(e => e.kind === 'activity' && e.itemId)!;
+    const place = items.find(i => i.id === stop.itemId)!;
+    await user.click(within(today).getAllByRole('button', { name: new RegExp(place.name) })[0]);
+    expect(screen.getByRole('dialog', { name: new RegExp(place.name) })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+    const area = group.final!.days[2].area!;
+    await user.click(within(screen.getByLabelText('Tonight')).getByRole('button', { name: new RegExp(`No stay chosen yet in ${area}`) }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: `Stays in ${area}` }));
+    expect(onOpen).toHaveBeenCalledWith({ sub: 'stays', target: area });
   });
 });

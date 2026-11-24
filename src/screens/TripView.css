@@ -25,3 +25,5 @@
 .tv-pin { position: sticky; top: var(--top-h); z-index: 20; padding-top: 6px; padding-bottom: 6px; background: var(--bg); }
 /* A chip's scroll lands the card's top clear of the app's bar and the pinned chips (52px chip + 12px padding). */
 .tv-day { scroll-margin-top: calc(var(--top-h) + 64px + 12px); }
+/* The stay sheet's footer: the door over Back to the trip, each at full width. */
+.tv-foot { flex: 1; display: flex; flex-direction: column; gap: 8px; }

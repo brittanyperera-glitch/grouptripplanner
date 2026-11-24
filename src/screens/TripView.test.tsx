@@ -119,6 +119,30 @@ describe('Trip view', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('with no stay chosen the stay sheet has a door named for the area, and using it opens Stays there and closes the sheet', async () => {
+    window.location.hash = '#/day-3';
+    const model = await views();
+    const area = model.views[2].tonight!.area;
+    const onStays = vi.fn();
+    const user = userEvent.setup();
+    render(<TripViewBody model={model} items={items} legs={legsData as Leg[]} onStays={onStays} />);
+    await user.click(screen.getByRole('button', { name: new RegExp(`No stay chosen yet in ${area}`) }));
+    const sheet = screen.getByRole('dialog');
+    expect(within(sheet).getByRole('button', { name: 'Back to the trip' })).toBeInTheDocument();
+    await user.click(within(sheet).getByRole('button', { name: `Stays in ${area}` }));
+    expect(onStays).toHaveBeenCalledWith(area);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('a stay with a booked link keeps its link and offers no Stays door', async () => {
+    const first = (await views()).blocks[0];
+    put('tp:placesug', [{ id: 's1', name: 'Alex', area: first.area, kind: 'stay', title: 'Kandy Hills Hostel', link: 'https://x.test/kandy', status: 'live', createdAt: AT }]);
+    put('tp:staysadmin', { pins: [{ area: first.area, suggestionId: 's1', at: AT }], scouts: {}, closed: [] });
+    const user = await mount();
+    await user.click(screen.getByRole('button', { name: /Tonight, check in: Kandy Hills Hostel/ }));
+    expect(screen.queryByRole('button', { name: /^Stays in / })).toBeNull();
+  });
+
   it('says so, and draws nothing else, when there is no route yet', async () => {
     render(<TripView group={{ ...group, final: null }} />, { wrapper });
     expect(await screen.findByText(/once the route is set/i)).toBeInTheDocument();

@@ -4,7 +4,7 @@ import TransportLine, { transportOf } from '../components/TransportLine';
 import { lastArrival as lastArrivalOf, leaveBy as leaveByOf, leaveByEach } from '../lib/arrivals';
 import { useApp } from '../state';
 import { PEOPLE } from '../types';
-import type { GroupResult, Item, Leg, Person } from '../types';
+import type { Area, GroupResult, Item, Leg, Person } from '../types';
 import { dayMonth } from './bookingText';
 import TripDay, { dateLabel } from './TripDay';
 import { useTripModel, type TripModel } from './useTripModel';
@@ -15,12 +15,13 @@ export interface TodayProps {
   leaveBy: string | null;
   /** 'HH:MM' of the last person to land on the start date. */
   lastArrival?: string | null;
-  onWholeTrip?(n: number): void;
   onBooking?(id: string): void; onFlights?(): void;
+  /** The day card's sheets: a stop with a catalogue place opens its place sheet, tonight's stay (with no booked link) its stay sheet. */
+  onPlace?(itemId: string): void; onStay?(area: Area): void;
 }
 
 /** The trip day that is today, as a postcard: postmark, Britt's line, tonight, the next leg and today's bookings. Nothing outside the trip. */
-export default function Today({ model, items, legs, leaveBy, lastArrival = null, onWholeTrip, onBooking, onFlights }: TodayProps) {
+export default function Today({ model, items, legs, leaveBy, lastArrival = null, onBooking, onFlights, onPlace, onStay }: TodayProps) {
   const at = model.views.findIndex(v => v.date === model.today);
   if (at < 0) return null;
   const view = model.views[at];
@@ -32,13 +33,17 @@ export default function Today({ model, items, legs, leaveBy, lastArrival = null,
   const leg = ahead.flatMap(v => v.entries.map(e => ({ n: v.n, t: transportOf(e, legs) }))).find(x => x.t);
   const tonight = view.tonight;
   const block = tonight && model.blocks.find(b => b.area === tonight.area && b.fromDay <= view.n && view.n <= b.toDay);
-  const stay = tonight?.title && (tonight.link ? <a href={tonight.link} target="_blank" rel="noopener noreferrer">{tonight.title}</a> : tonight.title);
+  // A booked link is already the door to the stay; the sheet is for the night with none.
+  const stayText = tonight && (tonight.title || `No stay chosen yet in ${tonight.area}`);
+  const stay = tonight && (tonight.link && tonight.title
+    ? <a href={tonight.link} target="_blank" rel="noopener noreferrer">{tonight.title}</a>
+    : onStay ? <button type="button" className="tt-door" onClick={() => onStay(tonight.area)}>{stayText}</button> : stayText);
 
   return (
     <section className="td-today" aria-label="Today">
       {view.area && <div className="tt-postmark" aria-hidden="true"><span>{view.area}</span><span>{dayMonth(view.date!)}</span><span>{view.date!.slice(0, 4)}</span></div>}
       <div className="tt-card">
-        <TripDay view={{ ...view, tonight: null }} items={items} legs={legs} onBooking={onBooking} onFlights={onFlights} />
+        <TripDay view={{ ...view, tonight: null }} items={items} legs={legs} onBooking={onBooking} onFlights={onFlights} onPlace={onPlace} />
       </div>
       {britt && <p className="tt-britt"><b>Britt says:</b> {britt}</p>}
       {leg && leg.t && (
@@ -50,19 +55,18 @@ export default function Today({ model, items, legs, leaveBy, lastArrival = null,
       {tonight && (
         <div role="group" className="tt-box tt-stay" aria-label="Tonight">
           <b>Tonight</b>
-          <span className="tt-title">{stay || `No stay chosen yet in ${tonight.area}`}</span>
+          <span className="tt-title">{stay}</span>
           {block && <small>{tonight.checkIn ? 'Check in today' : `Night ${view.n - block.fromDay + 1} of ${block.nights}`}{block.checkOut ? `, out ${dateLabel(block.checkOut)}` : ''}</small>}
         </div>
       )}
       {view.n === 1 && lastArrival && <p className="tt-note">Last arrival: {lastArrival}</p>}
       {last && leaveBy && <p className="tt-box tt-leave">Leave for the airport by {leaveBy}</p>}
-      {onWholeTrip && <button type="button" className="tt-whole" onClick={() => onWholeTrip(view.n)}>See the whole trip</button>}
     </section>
   );
 }
 
 /** Reads the app's own state. Leave-by and last arrival come from arrivals.ts here. Someone outside the five has no flights of their own, so they see the group's leave-by. */
-export function TodayScreen({ group, today, onWholeTrip, onBooking, onFlights }: { group: GroupResult; today?: string } & Pick<TodayProps, 'onWholeTrip' | 'onBooking' | 'onFlights'>) {
+export function TodayScreen({ group, today, onBooking, onFlights, onPlace, onStay }: { group: GroupResult; today?: string } & Pick<TodayProps, 'onBooking' | 'onFlights' | 'onPlace' | 'onStay'>) {
   const { state, me, items, legs } = useApp();
   const model = useTripModel(group, today);
   const days = model.plan?.days ?? [];
@@ -73,7 +77,7 @@ export function TodayScreen({ group, today, onWholeTrip, onBooking, onFlights }:
   const landed = model.start ? lastArrivalOf(travellers, model.start) : null;
   return (
     <Today
-      model={model} items={items} legs={legs} onWholeTrip={onWholeTrip} onBooking={onBooking} onFlights={onFlights}
+      model={model} items={items} legs={legs} onBooking={onBooking} onFlights={onFlights} onPlace={onPlace} onStay={onStay}
       leaveBy={leave && leave.slice(0, 10) === lastDate ? leave.slice(11) : null}
       lastArrival={landed ? landed.slice(11) : null}
     />

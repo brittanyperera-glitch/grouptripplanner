@@ -5,7 +5,7 @@ import { isAdmin } from './override';
 import { outcome, rankedBy, stayCtx, stayStatus } from './stayflow';
 import type { ReleasedTab } from './tabs';
 
-export const SUB_IDS = ['stays', 'bookings', 'flights', 'organiser', 'crew-stats', 'crew-decided', 'suggest', 'complaints'] as const;
+export const SUB_IDS = ['stays', 'bookings', 'flights', 'organiser', 'crew-stats', 'crew-decided', 'complaints'] as const;
 export type SubId = (typeof SUB_IDS)[number];
 export type Open = { sub: SubId; target?: string } | { overlay: 'quiz' | 'bingo' | 'awards' } | { tab: ReleasedTab };
 export interface Task {

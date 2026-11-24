@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.unmock('../lib/release');
@@ -25,10 +25,7 @@ const trip = (extra: Record<string, unknown> = {}) => {
   for (const [k, v] of Object.entries(extra)) put(k, v);
 };
 const traveller = (name: string, arriveLocal: string | null, departLocal: string | null) => ({ name, arriveLocal, arriveFlight: null, departLocal, departFlight: null, updatedAt: AT });
-const screenOn = (today: string) => {
-  const onWholeTrip = vi.fn();
-  return { onWholeTrip, ...render(<AppProvider store={new LocalStore()}><TodayScreen group={group} today={today} onWholeTrip={onWholeTrip} /></AppProvider>) };
-};
+const screenOn = (today: string) => render(<AppProvider store={new LocalStore()}><TodayScreen group={group} today={today} /></AppProvider>);
 
 beforeEach(() => { localStorage.clear(); });
 afterEach(cleanup);
@@ -55,13 +52,6 @@ describe('Today on the released plan from 2026-12-08', () => {
     const leg = within(await screen.findByLabelText('Today')).getByRole('group', { name: 'Next leg' });
     expect(leg).toHaveTextContent('Day 6Train · Nanu Oya to Ella');
     expect(leg.querySelector('.tline')).toHaveAttribute('data-mode', 'train');
-  });
-
-  it('calls onWholeTrip with the day number', async () => {
-    trip();
-    const { onWholeTrip } = screenOn('2026-12-10');
-    fireEvent.click(await screen.findByRole('button', { name: /See the whole trip/ }));
-    expect(onWholeTrip).toHaveBeenCalledWith(3);
   });
 
   it('on the last day, with a traveller departing 14:30, says when to leave for the airport', async () => {
@@ -149,10 +139,9 @@ describe('Today on the released plan from 2026-12-08', () => {
   // A sibling in the window tells us the state has loaded, so the empty box is not just "not loaded yet".
   it.each(['2026-12-07', '2026-12-17'])('renders nothing on %s, outside the trip dates', async date => {
     trip();
-    const onWholeTrip = vi.fn();
     render(<AppProvider store={new LocalStore()}>
-      <div data-testid="out"><TodayScreen group={group} today={date} onWholeTrip={onWholeTrip} /></div>
-      <div data-testid="in"><TodayScreen group={group} today="2026-12-10" onWholeTrip={onWholeTrip} /></div>
+      <div data-testid="out"><TodayScreen group={group} today={date} /></div>
+      <div data-testid="in"><TodayScreen group={group} today="2026-12-10" /></div>
     </AppProvider>);
     await within(await screen.findByTestId('in')).findByLabelText('Today');
     expect(screen.getByTestId('out')).toBeEmptyDOMElement();
@@ -166,15 +155,13 @@ describe('Today on the released plan from 2026-12-08', () => {
 });
 
 // The props-in component, on the real release and a real model, with leaveBy handed in as the container would.
-function Props({ today, leaveBy, onWholeTrip }: { today: string; leaveBy: string | null; onWholeTrip(n: number): void }) {
+function Props({ today, leaveBy }: { today: string; leaveBy: string | null }) {
   const { items, legs } = useApp();
-  return <Today model={useTripModel(group, today)} items={items} legs={legs} leaveBy={leaveBy} onWholeTrip={onWholeTrip} />;
+  return <Today model={useTripModel(group, today)} items={items} legs={legs} leaveBy={leaveBy} />;
 }
 const props = (today: string, leaveBy: string | null) => {
-  const onWholeTrip = vi.fn();
   trip();
-  const out = render(<AppProvider store={new LocalStore()}><div data-testid="in"><Props today="2026-12-10" leaveBy={null} onWholeTrip={onWholeTrip} /></div><div data-testid="at"><Props today={today} leaveBy={leaveBy} onWholeTrip={onWholeTrip} /></div></AppProvider>);
-  return { onWholeTrip, ...out };
+  return render(<AppProvider store={new LocalStore()}><div data-testid="in"><Props today="2026-12-10" leaveBy={null} /></div><div data-testid="at"><Props today={today} leaveBy={leaveBy} /></div></AppProvider>);
 };
 
 describe('Today props-in', () => {
@@ -195,12 +182,10 @@ describe('Today props-in', () => {
     expect(within(screen.getByTestId('at')).queryByText(/Leave for the airport/)).toBeNull();
   });
 
-  it('stamps the postmark with the area and date, and tapping See the whole trip on day 3 calls onWholeTrip(3)', async () => {
-    const { onWholeTrip } = props('2026-12-10', null);
+  it('stamps the postmark with the area and date', async () => {
+    props('2026-12-10', null);
     const at = within(await screen.findByTestId('at'));
     expect((await at.findByLabelText('Today')).querySelector('.tt-postmark')).toHaveTextContent(new RegExp(`${group.final!.days[2].area!}.*10 Dec.*2026`, 'i'));
-    fireEvent.click(at.getByRole('button', { name: /See the whole trip/ }));
-    expect(onWholeTrip).toHaveBeenCalledWith(3);
   });
 
   it.each(['2026-11-30', '2026-12-17'])('renders nothing on %s', async date => {

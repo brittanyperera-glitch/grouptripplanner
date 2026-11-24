@@ -19,6 +19,7 @@ const COPY = {
   empty: 'The trip appears here once the route is set.',
   back: 'Back to the trip',
   stayLink: 'Open the stay',
+  stayDoor: (area: Area) => `Stays in ${area}`,
   noStay: 'No stay chosen yet.',
   unclaimed: 'nobody has claimed it yet',
   one: 'One day',
@@ -42,7 +43,8 @@ const hashDay = (count: number) => {
   return n >= 1 && n <= count ? n : 1;
 };
 
-function StaySheet({ model, day, area, onClose }: { model: TripModel; day: number; area: Area; onClose(): void }) {
+/** `onStays` is the door to that area's row on the Stays screen; the sheet closes as it is used. */
+function StaySheet({ model, day, area, onClose, onStays }: { model: TripModel; day: number; area: Area; onClose(): void; onStays?(area: Area): void }) {
   const v = model.views[day - 1];
   const block = model.blocks.find(b => b.area === area && b.fromDay <= day && day <= b.toDay);
   const booking = model.bookings.find(b => b.id === stayItemId(area));
@@ -52,7 +54,12 @@ function StaySheet({ model, day, area, onClose }: { model: TripModel; day: numbe
       title={v.tonight?.title ?? `Stay in ${area}`} closeLabel="Close" onClose={onClose}
       footer={link
         ? <a className="cta" href={link} target="_blank" rel="noopener noreferrer">{COPY.stayLink}</a>
-        : <button type="button" className="cta alt" onClick={onClose}>{COPY.back}</button>}
+        : (
+          <div className="tv-foot">
+            {onStays && <button type="button" className="cta" onClick={() => { onClose(); onStays(area); }}>{COPY.stayDoor(area)}</button>}
+            <button type="button" className="cta alt" onClick={onClose}>{COPY.back}</button>
+          </div>
+        )}
     >
       <p className="tv-stay">{area}</p>
       {block?.checkIn && block.checkOut && <p className="tv-stay">Check in {dateLabel(block.checkIn)}, out {dateLabel(block.checkOut)}</p>}
@@ -66,17 +73,22 @@ function useAppIfAny() {
   try { return useApp(); } catch { return null; }
 }
 
+/** What a day card calls to open the place sheet or the stay sheet. */
+export interface SheetDoors { onPlace(itemId: string): void; onStay(area: Area): void }
+
 interface BodyProps {
   model: TripModel; items: Item[]; legs: Leg[];
   /** The trip day that is today: the chip starts pressed and the strip and card come before the map. A day in the hash still wins. */
   todayDay?: number;
-  /** Shown instead of the plain day card while today's chip is the one pressed. */
-  todayCard?: ReactNode;
+  /** Shown instead of the plain day card while today's chip is the one pressed. A function gets the doors to the sheets this body owns. */
+  todayCard?: ReactNode | ((doors: SheetDoors) => ReactNode);
   onBooking?(id: string): void; onFlights?(): void;
+  /** The door on a stay sheet with no booked link: opens the Stays screen at that area. */
+  onStays?(area: Area): void;
 }
 
 /** Props-in Trip view: the map, a strip of day chips, and the selected day as a postcard, or every day one under the other. */
-export function TripViewBody({ model, items, legs, todayDay, todayCard, onBooking, onFlights }: BodyProps) {
+export function TripViewBody({ model, items, legs, todayDay, todayCard, onBooking, onFlights, onStays }: BodyProps) {
   const count = model.views.length;
   const onTrip = todayDay !== undefined && todayDay >= 1 && todayDay <= count;
   const [picked, setDay] = useState(() => (DAY_HASH.test(window.location.hash) || !onTrip ? hashDay(count) : todayDay));
@@ -135,13 +147,17 @@ export function TripViewBody({ model, items, legs, todayDay, todayCard, onBookin
     return p.day === n ? [{ id: s.id, name: s.name, title: s.title, text: p.text }] : [];
   });
   const areaOf = (v: DayView) => v.area ?? v.tonight?.area ?? AREAS[0];
-  const card = (v: DayView) => (todayCard && v.n === todayDay ? todayCard : (
-    <TripDay
-      view={v} items={items} legs={legs} visited={plan.chosen} rainSlack={plan.days[v.n - 1].rainSlack}
-      onPlace={id => setPlace(items.find(i => i.id === id) ?? null)} onStay={a => setStay({ day: v.n, area: a })} onBooking={onBooking} onFlights={onFlights}
-      ideas={ideasOf(v.n)} onIdea={app && isMember(app.me) && releaseFor(app.me) ? () => setIdea({ day: v.n, area: areaOf(v) }) : undefined}
-    />
-  ));
+  const card = (v: DayView) => {
+    const doors: SheetDoors = { onPlace: id => setPlace(items.find(i => i.id === id) ?? null), onStay: a => setStay({ day: v.n, area: a }) };
+    if (todayCard && v.n === todayDay) return typeof todayCard === 'function' ? todayCard(doors) : todayCard;
+    return (
+      <TripDay
+        view={v} items={items} legs={legs} visited={plan.chosen} rainSlack={plan.days[v.n - 1].rainSlack}
+        {...doors} onBooking={onBooking} onFlights={onFlights}
+        ideas={ideasOf(v.n)} onIdea={app && isMember(app.me) && releaseFor(app.me) ? () => setIdea({ day: v.n, area: areaOf(v) }) : undefined}
+      />
+    );
+  };
   const chips = (
     <div ref={strip} className={view === 'all' ? 'tv-strip tv-pin' : 'tv-strip'} role="group" aria-label="Days">
       {model.views.map(v => (
@@ -174,7 +190,7 @@ export function TripViewBody({ model, items, legs, todayDay, todayCard, onBookin
       )}
       {place && <ItemSheet items={[place]} title={place.name} onClose={() => setPlace(null)} />}
       {idea && <IdeaSheet day={idea.day} area={idea.area} onClose={() => setIdea(null)} />}
-      {stay && <StaySheet model={model} day={stay.day} area={stay.area} onClose={() => setStay(null)} />}
+      {stay && <StaySheet model={model} day={stay.day} area={stay.area} onClose={() => setStay(null)} onStays={onStays} />}
     </section>
   );
 }

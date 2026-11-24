@@ -10,7 +10,7 @@
 .tt-box small { flex: 1 1 100%; font-size: 12.5px; font-weight: 600; color: var(--muted); }
 .tt-leave { border-left: 4px solid var(--red); }
 .tt-note { margin: 0; padding: 0 4px; font-size: 13px; font-weight: 700; color: var(--muted); }
-.tt-whole { all: unset; box-sizing: border-box; min-height: 44px; display: inline-flex; align-items: center; align-self: flex-start; padding: 0 4px; cursor: pointer; font: 800 14px/1 var(--font-body); color: var(--teal); text-decoration: underline; text-underline-offset: 3px; }
-.tt-whole:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; border-radius: 6px; }
+.tt-door { all: unset; box-sizing: border-box; min-height: 44px; display: inline-flex; align-items: center; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.tt-door:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; border-radius: 6px; }
 .tt-leg.go svg { animation: tt-slide var(--dur-slow) var(--ease) both; }
 @keyframes tt-slide { from { transform: translateX(-24px); opacity: 0; } }
