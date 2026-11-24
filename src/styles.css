@@ -75,7 +75,8 @@ svg { flex: none; }
 .top .who { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .top .who b { font-size: 22px; line-height: 1; color: var(--ink); }
 /* The header's avatar and name open the profile: the old span is now a button, same look. */
-.top button.who { all: unset; box-sizing: border-box; cursor: pointer; display: flex; min-height: 44px; align-items: center; gap: 8px; min-width: 0; border-radius: var(--r-sm); }
+.top button.who { all: unset; box-sizing: border-box; cursor: pointer; display: flex; position: relative; align-items: center; gap: 8px; min-width: 0; border-radius: var(--r-sm); }
+.top button.who::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
 .top button.who:focus-visible { outline: 2px solid var(--coconut); outline-offset: 3px; }
 .hmenu { position: relative; flex: none; }
 .hmenu > .link { position: relative; }

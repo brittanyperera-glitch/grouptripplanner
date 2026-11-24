@@ -48,12 +48,16 @@ describe('spy screens wear the cream look', () => {
     }
   });
 
-  it('five controls declare min-height: 44px', () => {
+  it('five controls declare a 44px tap height (min-height or ::after height)', () => {
     const targets: [string, string][] = [
       ['components/spy/spy.css', '.spy .spy-back'], ['components/spy/spy.css', '.spy .spy-btn'],
-      ['styles.css', '.top button.who'], ['screens/Profile.css', '.pf-switch button'], ['styles.css', '.guide-chips button'],
+      ['styles.css', '.guide-chips button'],
     ];
     for (const [f, sel] of targets) expect(rulesFor(read(f), sel).join(' '), `${f} ${sel}`).toMatch(/min-height:\s*44px/);
+    // These two keep their visible size (the profile character view is sized to the header and the switch); only the tap area grows.
+    for (const [f, sel] of [['styles.css', '.top button.who::after'], ['screens/Profile.css', '.pf-switch button::after']]) {
+      expect(rulesFor(read(f), sel).join(' '), `${f} ${sel}`).toMatch(/height:\s*44px/);
+    }
   });
 
   it('.spy .spy-stamp declares white-space: nowrap', () => {
