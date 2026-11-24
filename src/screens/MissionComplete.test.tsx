@@ -15,7 +15,7 @@ import { freshStartFromUrl } from '../store/fresh';
 import { LocalStore } from '../store/local';
 import { PEOPLE } from '../types';
 import type { GroupResult, Item, Leg } from '../types';
-import MissionComplete, { SEEN_KEY } from './MissionComplete';
+import MissionComplete, { finaleDue, markFinaleSeen, SEEN_KEY } from './MissionComplete';
 
 const group: GroupResult = groupResult(seedState(), (catalogue as unknown as { items: Item[] }).items, legsData as Leg[], [], RELEASE);
 const areas = [...new Set(group.final!.days.flatMap(d => (d.area ? [d.area] : [])))];
@@ -40,13 +40,13 @@ beforeEach(() => localStorage.clear());
 afterEach(cleanup);
 
 describe('Mission complete', () => {
-  it('shows once: the stamp, crew 5/5 and one button to the trip, then sets the seen flag', async () => {
+  it('shows once: the stamp, crew 5/5 and one button to the trip; pressing it sets the seen flag', async () => {
     seed();
     const { onTrip } = mount();
     expect(await screen.findByText('Crew 5/5')).toBeInTheDocument();
     expect(screen.getAllByText('Mission complete').length).toBeGreaterThan(0);
-    await waitFor(() => expect(localStorage.getItem(SEEN_KEY)).toBe('1'));
     await userEvent.click(screen.getByRole('button', { name: 'Go to the trip' }));
+    await waitFor(() => expect(localStorage.getItem(SEEN_KEY)).toBe('1'));
     expect(onTrip).toHaveBeenCalledTimes(1);
     cleanup();
     const again = mount();
@@ -85,6 +85,7 @@ describe('Mission complete', () => {
   it('the flag is a tp: key, so ?fresh resets it and the finale shows again', async () => {
     seed();
     mount();
+    await userEvent.click(await screen.findByRole('button', { name: 'Go to the trip' }));
     await waitFor(() => expect(localStorage.getItem(SEEN_KEY)).toBe('1'));
     freshStartFromUrl('https://x.test/?fresh');
     expect(localStorage.getItem(SEEN_KEY)).toBeNull();
@@ -104,5 +105,27 @@ describe('Mission complete', () => {
       expect(localStorage.getItem(SEEN_KEY)).toBeNull();
       cleanup();
     }
+  });
+
+  it('it is not marked seen until its button is pressed', async () => {
+    seed();
+    const { onTrip } = mount();
+    expect(await screen.findByText('Crew 5/5')).toBeInTheDocument();
+    await new Promise(r => setTimeout(r, 30));
+    expect(localStorage.getItem(SEEN_KEY)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Go to the trip' }));
+    expect(localStorage.getItem(SEEN_KEY)).toBe('1');
+    expect(onTrip).toHaveBeenCalledTimes(1);
+  });
+
+  it('finaleDue is true for one of the five with nothing open and the flag unset, until markFinaleSeen', async () => {
+    seed();
+    const i = { state: { responses: {}, suggestions: [], votes: [] }, plan: null, model: { bookings: [], missing: { flights: [], stays: [], bookings: 0, startDate: false } } };
+    expect(finaleDue('Lazza', i)).toBe(true);
+    expect(finaleDue('Mum', i)).toBe(false);
+    expect(finaleDue(null, i)).toBe(false);
+    expect(finaleDue('Lazza', { ...i, model: { ...i.model, missing: { ...i.model.missing, flights: ['Antek' as const] } } })).toBe(false);
+    markFinaleSeen();
+    expect(finaleDue('Lazza', i)).toBe(false);
   });
 });

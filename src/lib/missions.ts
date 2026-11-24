@@ -2,6 +2,7 @@ import type { TripModel } from '../screens/useTripModel';
 import { PEOPLE } from '../types';
 import type { AppState, Person, Plan } from '../types';
 import { DAY_MONTH } from './dates';
+import { NAMES } from './names';
 import { outcome, scoutOf, stayCtx } from './stayflow';
 import { voteOpen } from './stays';
 import { andList } from './text';
@@ -25,10 +26,10 @@ export interface Move {
 }
 
 // A booking that has not opened (or has no date) cannot be booked yet, so it is nobody's move and carries no deadline.
-const bookable = (b: { status: string }) => b.status === 'open' || b.status === 'overdue';
+export const bookable = (b: { status: string }) => b.status === 'open' || b.status === 'overdue';
 
 /** Every area that needs a stay, with who scouts it and where its decision stands. */
-function stayAreas({ state, plan }: MissionInput) {
+export function stayAreas({ state, plan }: MissionInput) {
   const ctx = stayCtx(state, PEOPLE[0], plan);
   const open = voteOpen(ctx.crewOf, ctx.participants);
   return ctx.areas.map(area => {
@@ -55,10 +56,10 @@ export function missionFiles(i: MissionInput): MissionFileInfo[] {
   const file = (id: MissionId, title: string, d: number, total: number, status: string, extra: Partial<MissionFileInfo> = {}): MissionFileInfo =>
     ({ id, title, done: d, total, complete: total > 0 && d >= total, status, ...extra });
   return [
-    file('stays', 'Stays', decided, areas.length, `${decided} of ${areas.length} decided`),
-    file('supply', 'Supply runs', done, bookings.length, `${done} of ${bookings.length} secured${unclaimed ? ` · ${unclaimed} unclaimed` : ''}`,
+    file('stays', NAMES.stays, decided, areas.length, `${decided} of ${areas.length} decided`),
+    file('supply', NAMES.bookings, done, bookings.length, `${done} of ${bookings.length} secured${unclaimed ? ` · ${unclaimed} unclaimed` : ''}`,
       { unclaimed, ...(due ? { tag: { text: `Book by ${DAY_MONTH.format(new Date(`${due}T00:00:00Z`))}`, tone: 'warn' as const } } : {}) }),
-    file('touchdown', 'Touchdown', landed, PEOPLE.length, missing.flights.length ? `${andList(missing.flights)} still dark` : 'Everyone is down',
+    file('touchdown', NAMES.flights, landed, PEOPLE.length, missing.flights.length ? `Waiting on ${andList(missing.flights)}` : 'Everyone is down',
       { missing: missing.flights, tag: { text: `${landed} of ${PEOPLE.length} in`, tone: 'dim' } }),
   ];
 }
@@ -86,14 +87,14 @@ export const toNextLevel = (done: number, total: number): number | null => {
 };
 
 /** Dated bookings by deadline, then undated ones (the train first), then the rest; mine before unclaimed at equal rank. */
-const rank = (b: { bookBy: string | null; id: string; owner: Person | null }, me: Person) =>
+export const bookingRank = (b: { bookBy: string | null; id: string; owner: Person | null }, me: Person) =>
   `${b.bookBy ? `0${b.bookBy}` : `1${b.id === 'book:train' ? 0 : 1}`}${b.owner === me ? 0 : 1}`;
 
 /** One most urgent open task for this person: a booking, then their scout duty, then their flights. */
 export function nextMove(me: Person, i: MissionInput): Move | null {
   const due = i.model.bookings
     .filter(b => bookable(b) && (b.owner === null || b.owner === me))
-    .sort((a, b) => (rank(a, me) < rank(b, me) ? -1 : 1))[0];
+    .sort((a, b) => (bookingRank(a, me) < bookingRank(b, me) ? -1 : 1))[0];
   if (due) return { file: 'supply', id: due.id, ...(due.bookBy ? { deadline: due.bookBy } : {}), label: `${due.owner ? 'Book' : 'Claim'} ${due.label}` };
   const dry = stayAreas(i).find(a => a.scout === me && a.duty);
   if (dry) return { file: 'stays', id: dry.area, label: `Find ${dry.what} for ${dry.area}` };
@@ -102,3 +103,6 @@ export function nextMove(me: Person, i: MissionInput): Move | null {
 
 /** Spy mode lasts only while a mission file with work in it is open; an empty file would otherwise hold it on forever. */
 export const spyActive = (i: MissionInput): boolean => missionFiles(i).some(f => f.total > 0 && !f.complete);
+
+/** The game parts (levels, stamps, board): on whenever spy mode is, and kept on once a route exists, so finishing the last task does not switch the look. */
+export const gameOn = (i: MissionInput): boolean => i.plan !== null || spyActive(i);

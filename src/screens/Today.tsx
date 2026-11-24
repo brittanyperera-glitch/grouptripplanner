@@ -15,11 +15,12 @@ export interface TodayProps {
   leaveBy: string | null;
   /** 'HH:MM' of the last person to land on the start date. */
   lastArrival?: string | null;
-  onWholeTrip(n: number): void;
+  onWholeTrip?(n: number): void;
+  onBooking?(id: string): void; onFlights?(): void;
 }
 
 /** The trip day that is today, as a postcard: postmark, Britt's line, tonight, the next leg and today's bookings. Nothing outside the trip. */
-export default function Today({ model, items, legs, leaveBy, lastArrival = null, onWholeTrip }: TodayProps) {
+export default function Today({ model, items, legs, leaveBy, lastArrival = null, onWholeTrip, onBooking, onFlights }: TodayProps) {
   const at = model.views.findIndex(v => v.date === model.today);
   if (at < 0) return null;
   const view = model.views[at];
@@ -37,12 +38,12 @@ export default function Today({ model, items, legs, leaveBy, lastArrival = null,
     <section className="td-today" aria-label="Today">
       {view.area && <div className="tt-postmark" aria-hidden="true"><span>{view.area}</span><span>{dayMonth(view.date!)}</span><span>{view.date!.slice(0, 4)}</span></div>}
       <div className="tt-card">
-        <TripDay view={{ ...view, tonight: null }} items={items} legs={legs} />
+        <TripDay view={{ ...view, tonight: null }} items={items} legs={legs} onBooking={onBooking} onFlights={onFlights} />
       </div>
       {britt && <p className="tt-britt"><b>Britt says:</b> {britt}</p>}
       {leg && leg.t && (
         <div role="group" className={`tt-box tt-leg${motion() === 'full' ? ' go' : ''}`} aria-label="Next leg">
-          <b>Day {leg.n}</b>
+          <b>Next drive · Day {leg.n}</b>
           <TransportLine t={leg.t} />
         </div>
       )}
@@ -55,13 +56,13 @@ export default function Today({ model, items, legs, leaveBy, lastArrival = null,
       )}
       {view.n === 1 && lastArrival && <p className="tt-note">Last arrival: {lastArrival}</p>}
       {last && leaveBy && <p className="tt-box tt-leave">Leave for the airport by {leaveBy}</p>}
-      <button type="button" className="tt-whole" onClick={() => onWholeTrip(view.n)}>See the whole trip</button>
+      {onWholeTrip && <button type="button" className="tt-whole" onClick={() => onWholeTrip(view.n)}>See the whole trip</button>}
     </section>
   );
 }
 
 /** Reads the app's own state. Leave-by and last arrival come from arrivals.ts here. Someone outside the five has no flights of their own, so they see the group's leave-by. */
-export function TodayScreen({ group, today, onWholeTrip }: { group: GroupResult; today?: string; onWholeTrip(n: number): void }) {
+export function TodayScreen({ group, today, onWholeTrip, onBooking, onFlights }: { group: GroupResult; today?: string } & Pick<TodayProps, 'onWholeTrip' | 'onBooking' | 'onFlights'>) {
   const { state, me, items, legs } = useApp();
   const model = useTripModel(group, today);
   const days = model.plan?.days ?? [];
@@ -72,7 +73,7 @@ export function TodayScreen({ group, today, onWholeTrip }: { group: GroupResult;
   const landed = model.start ? lastArrivalOf(travellers, model.start) : null;
   return (
     <Today
-      model={model} items={items} legs={legs} onWholeTrip={onWholeTrip}
+      model={model} items={items} legs={legs} onWholeTrip={onWholeTrip} onBooking={onBooking} onFlights={onFlights}
       leaveBy={leave && leave.slice(0, 10) === lastDate ? leave.slice(11) : null}
       lastArrival={landed ? landed.slice(11) : null}
     />

@@ -1,5 +1,6 @@
 import './TripView.css';
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import ItemSheet from '../components/ItemSheet';
 import RouteMap from '../components/Map';
 import { motion } from '../components/motion';
@@ -15,9 +16,8 @@ const COPY = {
   empty: 'The trip appears here once the route is set.',
   back: 'Back to the trip',
   stayLink: 'Open the stay',
-  noStay: 'No stay chosen yet. Suggest one on the Stays tab.',
+  noStay: 'No stay chosen yet.',
   unclaimed: 'nobody has claimed it yet',
-  replay: 'Replay mission',
 };
 
 const DAY_HASH = /^#\/day-(\d+)$/;
@@ -46,10 +46,20 @@ function StaySheet({ model, day, area, onClose }: { model: TripModel; day: numbe
   );
 }
 
+interface BodyProps {
+  model: TripModel; items: Item[]; legs: Leg[];
+  /** The trip day that is today: the chip starts pressed and the strip and card come before the map. A day in the hash still wins. */
+  todayDay?: number;
+  /** Shown instead of the plain day card while today's chip is the one pressed. */
+  todayCard?: ReactNode;
+  onBooking?(id: string): void; onFlights?(): void;
+}
+
 /** Props-in Trip view: the map, a strip of day chips, and the one selected day as a postcard. */
-export function TripViewBody({ model, items, legs, onReplay }: { model: TripModel; items: Item[]; legs: Leg[]; onReplay?(): void }) {
+export function TripViewBody({ model, items, legs, todayDay, todayCard, onBooking, onFlights }: BodyProps) {
   const count = model.views.length;
-  const [picked, setDay] = useState(() => hashDay(count));
+  const onTrip = todayDay !== undefined && todayDay >= 1 && todayDay <= count;
+  const [picked, setDay] = useState(() => (DAY_HASH.test(window.location.hash) || !onTrip ? hashDay(count) : todayDay));
   // A re-solve to fewer days can leave the pick past the end.
   const day = Math.min(picked, Math.max(count, 1));
   const [place, setPlace] = useState<Item | null>(null);
@@ -58,7 +68,7 @@ export function TripViewBody({ model, items, legs, onReplay }: { model: TripMode
   const pick = (n: number) => {
     setDay(n);
     // Only the day-N part of the hash is ours; a raw or guest hash stays as it is.
-    if (window.location.hash === '' || DAY_HASH.test(window.location.hash)) window.history.replaceState(null, '', `#/day-${n}`);
+    if (window.location.hash === '' || DAY_HASH.test(window.location.hash)) window.history.replaceState(window.history.state, '', `#/day-${n}`);
   };
 
   useEffect(() => {
@@ -79,9 +89,10 @@ export function TripViewBody({ model, items, legs, onReplay }: { model: TripMode
 
   if (!model.plan || count === 0) return <section className="body" aria-label="Trip view"><p className="tv-empty">{COPY.empty}</p></section>;
   const view = model.views[day - 1];
+  const map = <div className="tv-map"><RouteMap route={model.plan.route} drive legs={view.legs} parkAt={view.parkAt} dayN={day} /></div>;
   return (
     <section className="body tv" aria-label="Trip view">
-      <div className="tv-map"><RouteMap route={model.plan.route} drive legs={view.legs} parkAt={view.parkAt} dayN={day} /></div>
+      {!onTrip && map}
       <div ref={strip} className="tv-strip" role="group" aria-label="Days">
         {model.views.map(v => (
           <button key={v.n} type="button" className="tv-chip" aria-pressed={v.n === day} onClick={() => pick(v.n)}>
@@ -90,12 +101,14 @@ export function TripViewBody({ model, items, legs, onReplay }: { model: TripMode
         ))}
       </div>
       <div key={day} className={motion() === 'full' ? 'tv-card flip' : 'tv-card'}>
-        <TripDay
-          view={view} items={items} legs={legs} rainSlack={model.plan.days[day - 1].rainSlack}
-          onPlace={id => setPlace(items.find(i => i.id === id) ?? null)} onStay={setStay}
-        />
+        {todayCard && day === todayDay ? todayCard : (
+          <TripDay
+            view={view} items={items} legs={legs} visited={model.plan.chosen} rainSlack={model.plan.days[day - 1].rainSlack}
+            onPlace={id => setPlace(items.find(i => i.id === id) ?? null)} onStay={setStay} onBooking={onBooking} onFlights={onFlights}
+          />
+        )}
       </div>
-      {onReplay && <button type="button" className="cta alt" onClick={onReplay}>{COPY.replay}</button>}
+      {onTrip && map}
       {place && <ItemSheet items={[place]} title={place.name} onClose={() => setPlace(null)} />}
       {stay && <StaySheet model={model} day={day} area={stay} onClose={() => setStay(null)} />}
     </section>
@@ -103,7 +116,7 @@ export function TripViewBody({ model, items, legs, onReplay }: { model: TripMode
 }
 
 // Not mounted in App yet on purpose: where Trip view lives is review item A11, an open plan change.
-export default function TripView({ group, today, onReplay }: { group: GroupResult; today?: string; onReplay?(): void }) {
+export default function TripView({ group, today }: { group: GroupResult; today?: string }) {
   const { items, legs } = useApp();
-  return <TripViewBody model={useTripModel(group, today)} items={items} legs={legs} onReplay={onReplay} />;
+  return <TripViewBody model={useTripModel(group, today)} items={items} legs={legs} />;
 }

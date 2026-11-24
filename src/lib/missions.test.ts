@@ -15,7 +15,7 @@ import type { AppState, Area, DayBooking, Item, Leg, Person, PlaceSuggestion, Pl
 import { groupResult } from './group';
 import { RELEASE } from './release';
 import * as stayflow from './stayflow';
-import { crewReadiness, levelOf, LEVEL_AT, missionFiles, nextMove, spyActive, toNextLevel } from './missions';
+import { crewReadiness, gameOn, levelOf, LEVEL_AT, missionFiles, nextMove, spyActive, toNextLevel } from './missions';
 import type { MissionInput } from './missions';
 
 const group = groupResult(seedState(), (catalogue as unknown as { items: Item[] }).items, legsData as Leg[], [], RELEASE);
@@ -43,8 +43,8 @@ const input = (state: AppState, m = model()): MissionInput => ({ state, plan, mo
 afterEach(() => { vi.restoreAllMocks(); });
 
 describe('missionFiles', () => {
-  it('is Stays, Supply runs, Touchdown in that order', () => {
-    expect(missionFiles(input(pins([]))).map(f => f.title)).toEqual(['Stays', 'Supply runs', 'Touchdown']);
+  it('is Stays, Bookings, Flights in that order', () => {
+    expect(missionFiles(input(pins([]))).map(f => f.title)).toEqual(['Stays', 'Bookings', 'Flights']);
   });
 
   it('Stays counts decided areas of the areas that need a stay', () => {
@@ -58,7 +58,7 @@ describe('missionFiles', () => {
     expect(missionFiles(input(pins(AREAS5)))[0].done).toBe(0);
   });
 
-  it('Supply runs counts done bookings, the unclaimed ones, and the earliest deadline still to meet', () => {
+  it('Bookings counts done bookings, the unclaimed ones, and the earliest deadline still to meet', () => {
     const bookings = [
       booking('a', { status: 'done', bookBy: '2026-11-01' }),
       booking('b', { bookBy: '2026-12-01' }),
@@ -69,7 +69,7 @@ describe('missionFiles', () => {
     expect(supply).toMatchObject({ done: 1, total: 4, unclaimed: 2, status: '1 of 4 secured · 2 unclaimed', tag: { text: 'Book by 25 Nov', tone: 'warn' } });
   });
 
-  it('Supply runs has no tag and no unclaimed wording when nothing is open', () => {
+  it('Bookings has no tag and no unclaimed wording when nothing is open', () => {
     const [, supply] = missionFiles(input(pins([]), model([booking('a', { status: 'done' })])));
     expect(supply).toMatchObject({ complete: true, unclaimed: 0, status: '1 of 1 secured' });
     expect(supply.tag).toBeUndefined();
@@ -77,7 +77,7 @@ describe('missionFiles', () => {
 
   it('Touchdown counts travellers with both flights and names who is missing', () => {
     const [, , td] = missionFiles(input(pins([]), model([], ['Antek', 'Saulie'])));
-    expect(td).toMatchObject({ done: 3, total: 5, missing: ['Antek', 'Saulie'], status: 'Antek and Saulie still dark', tag: { text: '3 of 5 in', tone: 'dim' } });
+    expect(td).toMatchObject({ done: 3, total: 5, missing: ['Antek', 'Saulie'], status: 'Waiting on Antek and Saulie', tag: { text: '3 of 5 in', tone: 'dim' } });
   });
 });
 
@@ -203,6 +203,24 @@ describe('spyActive', () => {
     expect(spyActive(input(pins(AREAS5.slice(1)), model()))).toBe(true);
     expect(spyActive(input(pins(AREAS5), model([booking('a')])))).toBe(true);
     expect(spyActive(input(pins(AREAS5), model([booking('a', { status: 'done' })])))).toBe(false);
+  });
+});
+
+describe('gameOn', () => {
+  it('is true while a file has work to do', () => {
+    expect(gameOn(input(pins(AREAS5), model([booking('a')])))).toBe(true);
+    expect(gameOn(input(pins(AREAS5.slice(1)), model()))).toBe(true);
+  });
+
+  it('is still true when every file is complete', () => {
+    const i = input(pins(AREAS5), model([booking('a', { status: 'done' })]));
+    expect(spyActive(i)).toBe(false);
+    expect(gameOn(i)).toBe(true);
+  });
+
+  it('with no route is false once every flight is in, and true while one is missing', () => {
+    expect(gameOn({ state: pins([]), plan: null, model: model([]) })).toBe(false);
+    expect(gameOn({ state: pins([]), plan: null, model: model([], ['Antek']) })).toBe(true);
   });
 });
 

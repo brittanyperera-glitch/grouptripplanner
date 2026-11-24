@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { finalSub } from '../lib/stayflow';
 import type { Outcome } from '../lib/stayflow';
+import { AdminNav } from '../components/AdminNav';
 import { AppProvider } from '../state';
 import { LocalStore } from '../store/local';
 import { PEOPLE } from '../types';
@@ -10,6 +11,9 @@ import type { CrewStays, GroupResult, Plan, PlaceSuggestion, Player } from '../t
 import Stays from './Stays';
 
 const grp = vi.hoisted(() => ({ current: null as unknown }));
+// The test setup turns the release off; a friend is whoever releaseFor answers for.
+const rel = vi.hoisted(() => ({ on: false }));
+vi.mock('../lib/release', () => ({ RELEASE: null, releaseFor: () => (rel.on ? { days: 9, pace: 1, items: [], ruledOut: [] } : null) }));
 vi.mock('../workers/usePlan', async orig => ({ ...(await orig<typeof import('../workers/usePlan')>()), useGroupResult: () => ({ data: grp.current, loading: false }) }));
 
 const day = (n: number, area: Plan['days'][number]['area']) => ({ n, area, entries: [], spare: 0, rainSlack: false });
@@ -30,6 +34,7 @@ const mount = async (me: Player, spy = false) => {
 const row = (text: string) => screen.getByRole('button', { name: new RegExp(`^${text}`) });
 
 beforeEach(() => {
+  rel.on = false;
   localStorage.clear();
   grp.current = { final: plan, locked: true } as unknown as GroupResult;
   PEOPLE.forEach(p => localStorage.setItem(`tp:stays:${p}`, JSON.stringify(crewRow(p))));
@@ -145,6 +150,51 @@ describe('decided areas carry no scout tag, and spy mode swaps the stepper for t
     const fold = screen.getByText('Organiser tools').closest('details') as HTMLDetailsElement;
     expect(fold.open).toBe(false);
     expect(within(fold).getByRole('button', { name: 'Unlock Antek' })).toBeInTheDocument();
+  });
+});
+
+describe('task screen shell (A2c)', () => {
+  const settled = () => {
+    places([place('a1', 'Ella'), place('a2', 'Ella'), place('a3', 'Hill country'), place('a4', 'Hill country')]);
+    admin({ pins: [pin('Ella', 'a1'), pin('Hill country', 'a3')] });
+  };
+  const mountWith = async (me: Player, props: Record<string, unknown> = {}, opener: (() => void) | null = null) => {
+    localStorage.setItem('tp:me', me);
+    const user = userEvent.setup();
+    render(<AdminNav.Provider value={opener}><AppProvider store={new LocalStore()}><Stays spy {...props} /></AppProvider></AdminNav.Provider>);
+    await screen.findByRole('heading', { name: 'Stays' });
+    return user;
+  };
+  it('a friend sees no Next: book your stays and no empty Organiser tools fold', async () => {
+    settled();
+    rel.on = true;
+    await mountWith('Alex', {}, vi.fn());
+    expect(screen.getByText('Your stays are set')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next: book your stays' })).toBeNull();
+    expect(screen.queryByText('Organiser tools')).toBeNull();
+  });
+  it('with no release (the guest demo) Next: book your stays is still offered', async () => {
+    settled();
+    await mountWith('Alex', {}, vi.fn());
+    expect(screen.getByRole('button', { name: 'Next: book your stays' })).toBeInTheDocument();
+  });
+  it('Brittany sees no fold when nobody is locked', async () => {
+    PEOPLE.forEach(p => localStorage.setItem(`tp:stays:${p}`, JSON.stringify({ ...crewRow(p), locked: false })));
+    await mountWith('Brittany');
+    expect(screen.queryByText('Organiser tools')).toBeNull();
+  });
+  it('renders the shared Back with the label it is given', async () => {
+    const back = vi.fn();
+    const user = await mountWith('Alex', { back, backLabel: 'To do' });
+    await user.click(screen.getByRole('button', { name: '‹ To do' }));
+    expect(back).toHaveBeenCalledTimes(1);
+  });
+  it('scrolls the target area row into view', async () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    await mountWith('Alex', { target: 'Hill country' });
+    expect(scroll.mock.contexts.some(el => el === row('Hill country, 1 night, 0 stays').closest('li'))).toBe(true);
+    delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
   });
 });
 

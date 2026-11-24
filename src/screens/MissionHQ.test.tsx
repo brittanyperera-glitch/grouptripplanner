@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,9 +31,9 @@ function seed(o: { me?: Person; start?: string | null; lone?: Area; dark?: Perso
   put('tp:travellers', Object.fromEntries(PEOPLE.filter(p => !o.dark?.includes(p)).map(p => [p, { name: p, arriveLocal: '2026-12-08T09:00', arriveFlight: null, departLocal: '2026-12-16T09:00', departFlight: null, updatedAt: AT }])));
   put('tp:tripadmin:Brittany', { name: 'Brittany', items: Object.fromEntries(ADMIN_IDS.map(id => [id, { done: !o.open, doneAt: AT }])), updatedAt: AT });
 }
-const cbs = () => ({ onGo: vi.fn(), onOpen: vi.fn(), onExit: vi.fn() });
-const mount = (props: Partial<{ replay: boolean }> = {}, c = cbs()) => {
-  render(<AppProvider store={new LocalStore()}><MissionHQ group={group} today="2026-12-01" {...props} {...c} /></AppProvider>);
+const cbs = () => ({ onGo: vi.fn(), onOpen: vi.fn() });
+const mount = (c = cbs()) => {
+  render(<AppProvider store={new LocalStore()}><MissionHQ group={group} today="2026-12-01" {...c} /></AppProvider>);
   return c;
 };
 
@@ -72,31 +72,13 @@ describe('Mission HQ', () => {
     expect(document.body.textContent).not.toMatch(/T-\d+d/);
   });
 
-  it('with every mission done it falls back to the normal look, with no spy class', async () => {
+  it('with every mission done it keeps the stamped board: three Done stamps, no plain fallback', async () => {
     seed();
     mount();
-    expect(await screen.findByText('Every mission is done.')).toBeInTheDocument();
-    expect(document.querySelector('.spy')).toBeNull();
-  });
-
-  it('replay is read-only: Exit, no Start, three done stamps and the Mission complete stamp', async () => {
-    seed({ lone: areas[0], dark: ['Antek'], open: true });
-    const { onExit, onGo, onOpen } = mount({ replay: true });
-    await userEvent.click(await screen.findByRole('button', { name: 'Exit' }));
-    expect(onExit).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: /start|claim/i })).toBeNull();
-    expect(screen.queryByText(/Your next move/)).toBeNull();
-    const board = document.querySelector('.spyhq-board') as HTMLElement;
-    expect(within(board).getAllByText('Done')).toHaveLength(3);
-    expect(screen.getByText('Mission complete')).toBeInTheDocument();
-    expect(screen.getByText('Crew 5/5')).toBeInTheDocument();
-    expect(within(board).getByText(/^\d+ of \d+ decided$/)).toBeInTheDocument();
-    expect(within(board).getByText(/^\d+ of \d+ secured$/)).toBeInTheDocument();
-    expect(within(board).getByText('Everyone is down')).toBeInTheDocument();
-    expect(within(board).queryByText('Secured')).toBeNull();
-    await userEvent.click(within(board).getAllByRole('button')[0]);
-    expect(onGo).not.toHaveBeenCalled();
-    expect(onOpen).not.toHaveBeenCalled();
+    expect(await screen.findByRole('heading', { name: 'Mission HQ' })).toBeInTheDocument();
+    expect(document.querySelector('.spy')).not.toBeNull();
+    expect(document.querySelectorAll('.spy-mission .spy-stamp')).toHaveLength(3);
+    expect(screen.queryByText('Every mission is done.')).toBeNull();
   });
 
   it('renders nothing for someone who is not one of the five', async () => {

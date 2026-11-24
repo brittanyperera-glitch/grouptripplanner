@@ -39,7 +39,7 @@ describe('TripAdmin', () => {
     localStorage.setItem('tp:me', 'Alex');
     grp.current = null; grp.loading = true;
     render(<AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} /></AppProvider>);
-    await screen.findByRole('heading', { name: 'Supply runs' });
+    await screen.findByRole('heading', { name: 'Bookings' });
     expect(screen.getByText('Loading')).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/All done|Group bookings appear/);
   });
@@ -387,7 +387,7 @@ describe('Supply runs', () => {
     expect(await screen.findByText(/Not saved yet/)).toBeInTheDocument();
   });
 
-  it('wears the spy look only while a mission has work in it', async () => {
+  it('keeps the game look once every mission is done', async () => {
     const on = await mountAs('Alex');
     expect(on.view.container.querySelector('.spy')).not.toBeNull();
     cleanup();
@@ -396,8 +396,29 @@ describe('Supply runs', () => {
     localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-11-03T09:00' }], scouts: {}, closed: [] }));
     seed('Brittany', { 'book:sigiriya': { done: true, doneAt: 't' }, 'book:train': { done: true, doneAt: 't' }, 'book:crab': { done: true, doneAt: 't' }, 'stay:Ella': { done: true, doneAt: '2026-11-04T00:00' } });
     const off = await mountAs('Alex');
-    expect(off.view.container.querySelector('.spy')).toBeNull();
+    expect(off.view.container.querySelector('.spy')).not.toBeNull();
     expect(screen.getByRole('status')).toHaveTextContent('All done');
+  });
+});
+
+describe('task screen shell', () => {
+  const mountWith = async (props: Record<string, unknown>) => {
+    localStorage.setItem('tp:me', 'Alex');
+    render(<AppProvider store={new LocalStore()}><TripAdmin {...props} /></AppProvider>);
+    await screen.findByRole('checkbox', { name: 'Sigiriya Rock' });
+  };
+  it('renders the shared Back with the label it is given and calls back', async () => {
+    const back = vi.fn();
+    await mountWith({ back, backLabel: 'To do' });
+    await userEvent.click(screen.getByRole('button', { name: '‹ To do' }));
+    expect(back).toHaveBeenCalledTimes(1);
+  });
+  it('scrolls the target booking row into view', async () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    await mountWith({ target: 'book:train' });
+    expect(scroll.mock.contexts.some(el => el === screen.getByRole('checkbox', { name: 'Nanu Oya to Ella train' }).closest('li'))).toBe(true);
+    delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
   });
 });
 

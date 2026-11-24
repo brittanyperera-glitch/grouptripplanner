@@ -10,7 +10,7 @@ import { RELEASE } from '../lib/release';
 import { AppProvider } from '../state';
 import { LocalStore } from '../store/local';
 import type { GroupResult, Item, Leg } from '../types';
-import Plan from './Plan';
+import RouteTab from './RouteTab';
 
 const group: GroupResult = groupResult(seedState(), (catalogue as unknown as { items: Item[] }).items, legsData as Leg[], [], RELEASE);
 const AT = '2026-11-02T00:00:00Z';
@@ -25,12 +25,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const print = async (g: GroupResult) => {
-  render(<AppProvider store={new LocalStore()}><Plan group={g} /></AppProvider>);
+  render(<AppProvider store={new LocalStore()}><RouteTab group={g} next={null} onOpen={() => undefined} /></AppProvider>);
   fireEvent.click(await screen.findByRole('button', { name: 'Save itinerary as PDF' }));
   return screen.findByTestId('itinerary');
 };
 
-describe('the Group trip screen prints from the trip model', () => {
+describe('the Route screen prints from the trip model', () => {
   it('dates the days and lists flights and nights when the plan is the released one', async () => {
     const doc = await print(group);
     await waitFor(() => expect(within(doc).getAllByRole('heading', { name: /^Day 1 · Tue 8 Dec/ })).toHaveLength(1));

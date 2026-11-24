@@ -56,6 +56,20 @@ describe('Organiser', () => {
     expect(view.container.innerHTML).toBe('');
   });
 
+  it('puts the shared Back on the password screen and on the panel', async () => {
+    localStorage.setItem('tp:me', 'Brittany');
+    const back = vi.fn();
+    const { unmount } = render(<AppProvider store={new Spy()}><Organiser back={back} backLabel="Me" /></AppProvider>);
+    await userEvent.click(await screen.findByRole('button', { name: '‹ Me' }));
+    expect(screen.getByLabelText('Organiser password')).toBeInTheDocument();
+    expect(back).toHaveBeenCalledTimes(1);
+    unmount();
+    localStorage.setItem('tp-admin-key', 'k');
+    render(<AppProvider store={new Spy()}><Organiser back={back} backLabel="Me" /></AppProvider>);
+    await userEvent.click(await screen.findByRole('button', { name: '‹ Me' }));
+    expect(back).toHaveBeenCalledTimes(2);
+  });
+
   it('asks the organiser password first, refuses a wrong one and opens on the right one', async () => {
     localStorage.setItem('tp-local-admin-key', 'secret');
     const { user } = await mount('Brittany', {}, false);
@@ -346,7 +360,7 @@ const mountProbe = async (over: Partial<TripSettings> = {}) => {
   return { user };
 };
 
-describe('Organiser as Command', () => {
+describe('Organiser panel', () => {
   // B1: a flex-basis on a child of a column container becomes a height there.
   it('no rule sets a flex-basis on a child of a column flex container', () => {
     const css = fs.readFileSync(path.resolve(process.cwd(), 'src/screens/Organiser.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -368,15 +382,15 @@ describe('Organiser as Command', () => {
   });
 
   // Hard case 1
-  it('Missing intel counts bookings, stays and flights the way missionFiles does', async () => {
+  it('Still missing counts bookings, stays and flights the way missionFiles does', async () => {
     landed(['Antek', 'Saulie']);
     const { user } = await mountProbe({ startDate: '2026-12-08' });
     const { files } = await probe();
     const open = (id: string) => { const f = files.find(x => x.id === id)!; return f.total - f.done; };
     expect(open('touchdown')).toBe(2);
     expect(open('supply')).toBeGreaterThan(0);
-    await user.click(await screen.findByRole('button', { name: /^Missing intel/ }));
-    const intel = within(screen.getByRole('list', { name: 'Missing intel' }));
+    await user.click(await screen.findByRole('button', { name: /^Still missing/ }));
+    const intel = within(screen.getByRole('list', { name: 'Still missing' }));
     expect(intel.getByText(/^Bookings/).closest('li')).toHaveTextContent(`Bookings: ${open('supply')} to secure`);
     expect(intel.getByText(/^Stays/).closest('li')).toHaveTextContent(`Stays: ${open('stays')} to decide`);
     expect(intel.getByText(/^Flights/).closest('li')).toHaveTextContent('Flights: 2 to add, Antek and Saulie');
@@ -431,7 +445,7 @@ describe('Organiser as Command', () => {
     expect(document.querySelector('.og')!.textContent).not.toMatch(/will retry/);
   });
 
-  it('wears the spy look while a mission file is open and the normal look once all are done', async () => {
+  it('wears the game look while a mission file is open and keeps it once all are done', async () => {
     await mountProbe({ startDate: '2026-12-08' });
     expect((await probe()).active).toBe(true);
     expect(document.querySelector('.spy')).not.toBeNull();
@@ -446,7 +460,7 @@ describe('Organiser as Command', () => {
     put('tp:tripadmin:Brittany', { name: 'Brittany', items: Object.fromEntries(ids.map(id => [id, { done: true, doneAt: '2026-11-20T00:00:00Z' }])), updatedAt: AT });
     await mountProbe({ startDate: '2026-12-08' });
     await waitFor(async () => expect((await probe()).active).toBe(false));
-    expect(document.querySelector('.spy')).toBeNull();
+    expect(document.querySelector('.spy')).not.toBeNull();
   });
 
   it('Save dates keeps its row and shows Saved beside it, even though the dates in use change', async () => {
@@ -465,7 +479,7 @@ describe('Organiser as Command', () => {
     expect(row).toHaveTextContent(`Book by ${DAY_MONTH.format(new Date(`${next}T00:00:00Z`))}`);
   });
 
-  it('keeps an open section and an unsaved route when the last mission file completes and the spy look goes', async () => {
+  it('keeps an open section and an unsaved route when the last mission file completes and the game look stays', async () => {
     put('tp:placesug', AREAS5.map(area => ({ id: `s-${area}`, name: 'Alex', area, kind: 'stay', title: `House ${area}`, status: 'live', createdAt: AT })));
     put('tp:staysadmin', { pins: AREAS5.map(area => ({ area, suggestionId: `s-${area}`, at: AT })), scouts: {}, closed: [] });
     landed([]);
@@ -480,17 +494,18 @@ describe('Organiser as Command', () => {
     await user.selectOptions(await screen.findByLabelText('Days'), '12');
     put('tp:tripadmin:Brittany', ticks(ids));
     window.dispatchEvent(new StorageEvent('storage', { key: 'tp:tripadmin:Brittany' }));
-    await waitFor(() => expect(document.querySelector('.spy')).toBeNull());
+    await waitFor(async () => expect((await probe()).active).toBe(false));
+    expect(document.querySelector('.spy')).not.toBeNull();
     expect(screen.getByLabelText('Days')).toHaveValue('12');
     expect(screen.getByRole('button', { name: /^Route/ })).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('with no route set, Missing intel says so instead of listing zeros and five missing flights', async () => {
+  it('with no route set, Still missing says so instead of listing zeros and five missing flights', async () => {
     const { user } = await mountProbe({ plan: { ...seed, items: [] } });
-    const head = await screen.findByRole('button', { name: /^Missing intel/ });
+    const head = await screen.findByRole('button', { name: /^Still missing/ });
     await waitFor(() => expect(head).toHaveTextContent('No route is set yet'));
     await user.click(head);
-    expect(screen.queryByRole('list', { name: 'Missing intel' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Still missing' })).toBeNull();
     expect(document.querySelector('.og')!.textContent).not.toMatch(/to add/);
   });
 
@@ -500,10 +515,10 @@ describe('Organiser as Command', () => {
     for (const name of PEOPLE) put(`tp:resp:${name}`, { name, days: 9, flex: false, pace: 1, ranking: { ...emptyRanking(), must: must.map(id => [id]) }, rated: must, submitted: true, updatedAt: AT });
     const { user } = await mountProbe({ plan: { ...seed, items: [] } });
     await waitFor(() => expect(screen.getByTestId('cand')).toHaveTextContent('candidate'));
-    const head = await screen.findByRole('button', { name: /^Missing intel/ });
+    const head = await screen.findByRole('button', { name: /^Still missing/ });
     expect(head).toHaveTextContent('No route is set yet');
     await user.click(head);
-    expect(screen.queryByRole('list', { name: 'Missing intel' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Still missing' })).toBeNull();
   });
 });
 
@@ -521,10 +536,10 @@ describe('Organiser fix round', () => {
     expect(css).toMatch(/^\.og-main \{[^}]*flex-direction: column; gap: 14px/m);
   });
 
-  it('Route headline and Missing intel read the same condition, also while the plan is still being worked out', async () => {
+  it('Route headline and Still missing read the same condition, also while the plan is still being worked out', async () => {
     await mountProbe({ startDate: '2026-12-08' });
     const route = await screen.findByRole('button', { name: /^Route/ });
-    const intel = screen.getByRole('button', { name: /^Missing intel/ });
+    const intel = screen.getByRole('button', { name: /^Still missing/ });
     expect(/ places/.test(route.textContent ?? '')).toBe(/ open/.test(intel.textContent ?? ''));
   });
 

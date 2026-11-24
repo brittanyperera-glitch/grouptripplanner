@@ -34,4 +34,17 @@ describe('pickScreen', () => {
   it('only the tab bar under awards stays', () => {
     expect(['base', 'awards', 'reveal', 'items', 'quiz', 'bingo', 'profile', 'walkthrough'].filter(s => !hidesTabs(s as never))).toEqual(['base', 'awards']);
   });
+
+  describe('the finale', () => {
+    const on = { shown: 'tabs', overlay: null, awardsUnseen: false, revealUnseen: false, finaleUnseen: true, walkEligible: false } as const;
+    it('comes after the reveal and before awards and the walkthrough', () => {
+      expect(pickScreen({ ...on, revealUnseen: true })).toBe('reveal');
+      expect(pickScreen({ ...on, awardsUnseen: true, walkEligible: true })).toBe('finale');
+    });
+    it('never covers a page the member opened, or a screen before the tabs, and it covers the tab bar', () => {
+      expect(pickScreen({ ...on, overlay: 'bingo' })).toBe('bingo');
+      expect(pickScreen({ ...on, shown: 'rate' })).toBe('base');
+      expect(hidesTabs('finale')).toBe(true);
+    });
+  });
 });

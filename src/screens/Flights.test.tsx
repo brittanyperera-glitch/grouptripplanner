@@ -149,7 +149,7 @@ describe('Flights honest saves, flight length and row sync', () => {
   });
 });
 
-describe('Touchdown board', () => {
+describe('Flights board', () => {
   const when = /Leave by \w{3} (\d+) Dec (\d{2}):(\d{2})/;
   const crew = (s: LocalStore) => Promise.all([
     s.saveTripSettings({ startDate: '2026-12-08', plan: { ...releaseJson, pace: releaseJson.pace as Pace, dayEdits: [] } }),
@@ -168,10 +168,20 @@ describe('Touchdown board', () => {
     expect(+aHour).toBeGreaterThanOrEqual(6);
   });
 
-  it('a person with no flights reads as dark, and no raw ISO date is shown anywhere (B2)', async () => {
+  it('a person with no flights reads No flights yet, and no raw ISO date is shown anywhere (B2)', async () => {
     await mount('Brittany', crew);
-    for (const p of ['Antek', 'Saulie']) expect(within(screen.getByRole('listitem', { name: p })).getByText(/dark/i)).toBeInTheDocument();
+    for (const p of ['Antek', 'Saulie']) expect(within(screen.getByRole('listitem', { name: p })).getByText('No flights yet')).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/\d{4}-\d{2}-\d{2}/);
+  });
+
+  it('renders the shared Back with the label it is given, in both looks', () => {
+    const back = vi.fn();
+    const p = { me: 'Alex' as const, travellers: {}, startDate: null, days: null, onSave: vi.fn(async () => true), back, backLabel: 'To do' };
+    const { rerender } = render(<Flights {...p} />);
+    fireEvent.click(screen.getByRole('button', { name: '‹ To do' }));
+    rerender(<Flights {...p} spy />);
+    fireEvent.click(screen.getByRole('button', { name: '‹ To do' }));
+    expect(back).toHaveBeenCalledTimes(2);
   });
 
   it('shows Not saved yet, then Saved once the queue clears the app error (INT3)', () => {
@@ -201,7 +211,7 @@ describe('Touchdown board', () => {
     await mount('Brittany', s => s.saveTraveller('Antek', { arriveLocal: '2026-12-08T06:40', arriveFlight: 'QR 664', departLocal: null }));
     const antek = screen.getByRole('listitem', { name: 'Antek' });
     expect(antek).toHaveClass('fx-dark');
-    expect(within(antek).getByText('Dark')).toBeInTheDocument();
+    expect(within(antek).getByText('Waiting on flights')).toBeInTheDocument();
     expect(within(antek).getByText(/QR 664/)).toBeInTheDocument();
     expect(within(antek).getByText(/Tue 8 Dec 06:40/)).toBeInTheDocument();
   });
@@ -243,11 +253,11 @@ describe('Touchdown board', () => {
     expect(props.onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('is called Touchdown in the spy look, as the Menu and the HQ file call it, and Flights in the normal look', () => {
+  it('is called Flights in both looks', () => {
     const props = { me: 'Alex' as const, travellers: {}, startDate: null, days: null, onSave: vi.fn(async () => true) };
     const { rerender } = render(<Flights {...props} spy />);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Touchdown$/);
-    expect(screen.getByRole('region', { name: 'Touchdown' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Flights$/);
+    expect(screen.getByRole('region', { name: 'Flights' })).toBeInTheDocument();
     rerender(<Flights {...props} />);
     expect(screen.getByRole('heading', { name: 'Flights' })).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Flights' })).toBeInTheDocument();

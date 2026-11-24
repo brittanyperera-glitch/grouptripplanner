@@ -1,0 +1,9 @@
+/* Route tab: the next line, the countdown line, small links; and the day card's doors. */
+.rt { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.rt-next { all: unset; box-sizing: border-box; display: flex; align-items: center; min-height: 44px; padding: 10px 14px; border-radius: var(--r-md); background: var(--red-deep); color: var(--on-red); box-shadow: var(--shadow-btn); font-weight: 800; line-height: 1.3; cursor: pointer; overflow-wrap: anywhere; }
+.rt-next:focus-visible, .rt-door:focus-visible, .rt-link:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; border-radius: 6px; }
+.rt-count { margin: 0; font-size: 14px; font-weight: 700; color: var(--muted); }
+.rt-links { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.rt-link { all: unset; box-sizing: border-box; min-height: 44px; display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 800; color: var(--teal); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+/* A booking or flights line that opens its screen. */
+.rt-door { all: unset; box-sizing: border-box; min-height: 44px; display: inline-flex; align-items: center; font: inherit; font-weight: 700; color: var(--teal); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }

@@ -160,3 +160,42 @@ describe('TripDay carries what DayRows carries', () => {
     expect(screen.getByText('By the lake')).toBeInTheDocument();
   });
 });
+
+describe('TripDay doors', () => {
+  const booking = (o: Partial<DayBooking>): DayBooking => ({ id: 'book:train', label: 'Ella train', status: 'open', opensOn: null, bookBy: '2026-12-01', owner: 'Alex', ...o });
+  const v = view(1, { bookingsByDay: { 1: [booking({})] }, travellers: { Saulie: { name: 'Saulie', arriveLocal: '2026-12-09T09:30', arriveFlight: 'UL 504', departLocal: null, departFlight: null, updatedAt: '' } } });
+
+  it('passes the booking id to onBooking and calls onFlights from the flights line', () => {
+    const onBooking = vi.fn(), onFlights = vi.fn();
+    render(<TripDay view={v} onBooking={onBooking} onFlights={onFlights} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ella train' }));
+    expect(onBooking).toHaveBeenCalledWith('book:train');
+    fireEvent.click(screen.getByRole('button', { name: /Saulie arrives 09:30/ }));
+    expect(onFlights).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws no buttons for them when no handler is given', () => {
+    render(<TripDay view={v} />);
+    expect(screen.queryByRole('button', { name: 'Ella train' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Saulie arrives/ })).toBeNull();
+  });
+});
+
+// Her review 24 Nov: day 1 (airport drive) drew a plain beige header while every visit day had a photo.
+describe('TripDay header photo on a day with no visit', () => {
+  it("takes a photo from a place in the day's area", () => {
+    const { container } = render(<TripDay view={view(1)} items={ITEMS} />);
+    expect(container.querySelector('.strip.plain')).toBeNull();
+    expect(container.querySelector('.strip.scene.cover')).not.toBeNull();
+  });
+  it('skips a place the trip visits, so the photo repeats no other day', () => {
+    const area = ITEMS.filter(i => i.area === 'Colombo' && i.photo);
+    const { container } = render(<TripDay view={view(1)} items={ITEMS} visited={[area[0].id]} />);
+    expect(area.length).toBeGreaterThan(1);
+    expect(container.querySelector('.strip img')?.getAttribute('src')).toBe(`/img/${area[1].photo}.jpg`);
+  });
+  it('stays plain when no place in the area is known', () => {
+    const { container } = render(<TripDay view={view(1)} items={[]} />);
+    expect(container.querySelector('.strip.plain')).not.toBeNull();
+  });
+});
