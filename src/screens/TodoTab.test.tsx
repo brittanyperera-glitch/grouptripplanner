@@ -25,7 +25,7 @@ const AT = '2026-11-02T00:00:00Z';
 const put = (key: string, v: unknown) => localStorage.setItem(key, JSON.stringify(v));
 const stay = (area: Area) => ({ id: `s-${area}-1`, name: 'Alex' as const, area, kind: 'stay' as const, title: area, status: 'live' as const, createdAt: AT });
 
-// Same stored state as MissionHQ.test.tsx: every booking ticked, every flight in, every area pinned, unless `o` leaves one open.
+// The stored state of a finished crew: every booking ticked, every flight in, every area pinned, unless `o` leaves one open.
 function seed(o: { me?: Person; dark?: Person[]; open?: boolean } = {}) {
   localStorage.setItem('tp:me', o.me ?? 'Lazza');
   put('tp:settings', { startDate: '2026-12-08', plan: null, bookingDates: {}, overrides: [], updatedAt: AT });

@@ -393,15 +393,15 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   };
   useEffect(() => {
     if (step !== 'tabs') return;
-    history.replaceState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined, tpFile: undefined, tpTarget: undefined }, '');
+    history.replaceState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined, tpFile: undefined, tpTarget: undefined, tpReplay: undefined }, '');
     const onPop = (e: PopStateEvent) => {
       if (selfPop.current) { selfPop.current = false; return; }
-      const st = e.state as { tpTab?: Tab; tpOverlay?: Overlay; tpFile?: string; tpTarget?: string } | null;
+      const st = e.state as { tpTab?: Tab; tpOverlay?: Overlay; tpFile?: string; tpTarget?: string; tpReplay?: boolean } | null;
       const t = st?.tpTab;
       // The entry says what was open: Back from a file onto an overlay entry lands on that overlay.
       const sub = st?.tpFile ? normaliseSub(st.tpFile) : null;
       // A friend's entry may name a tab from before the four-tab bar; the render maps it onto one that exists.
-      if (t && (released || TABS.includes(t))) navigate('back', () => { setReplay(false); setOverlay(st.tpOverlay ?? null); setFile(sub ? { id: sub, target: st.tpTarget } : null); setTabState(t); });
+      if (t && (released || TABS.includes(t))) navigate('back', () => { setReplay(!!st.tpReplay); setOverlay(st.tpOverlay ?? null); setFile(sub ? { id: sub, target: st.tpTarget } : null); setTabState(t); });
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);

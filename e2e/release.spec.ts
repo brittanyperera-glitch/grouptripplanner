@@ -483,3 +483,18 @@ test('Play route reveal again: phone Back closes it onto Route, and its own Clos
   await expect(page.getByText('Mission unlocked')).toHaveCount(0);
   expect(page.url()).not.toContain('localhost');
 });
+
+test('Play route reveal again: Forward after Back reopens it, and its Close then pops only its own entry', async ({ page }) => {
+  await openApp(page);
+  await page.getByRole('button', { name: 'Play route reveal' }).click();
+  await expect(page.getByText('Mission unlocked')).toBeVisible();
+  await page.goBack();
+  await expect(page.getByText('Mission unlocked')).toHaveCount(0);
+  // The entry still says the replay is open, so Forward shows it again rather than a Route that thinks it is the replay.
+  await page.goForward();
+  await expect(page.getByText('Mission unlocked')).toBeVisible();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('tab', { name: 'Route' })).toHaveAttribute('aria-selected', 'true');
+  await page.goBack();
+  expect(page.url()).not.toContain('localhost');
+});
