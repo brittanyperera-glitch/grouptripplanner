@@ -143,7 +143,7 @@ export function TripViewBody({ model, items, legs, todayDay, todayCard, onBookin
     />
   ));
   const chips = (
-    <div ref={strip} className="tv-strip" role="group" aria-label="Days">
+    <div ref={strip} className={view === 'all' ? 'tv-strip tv-pin' : 'tv-strip'} role="group" aria-label="Days">
       {model.views.map(v => (
         <button key={v.n} type="button" className="tv-chip" aria-pressed={v.n === day} onClick={() => pick(v.n)}>
           <b>Day {v.n}</b>{v.date && <small>{dateLabel(v.date)}</small>}

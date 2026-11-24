@@ -1,4 +1,4 @@
-/* Trip view: map, a strip of day chips, one postcard. Stacked in normal flow so none can overlap. */
+/* Trip view: map, a strip of day chips, then one day's postcard (One day) or every day stacked (All days). Normal flow, so none can overlap. */
 .tv { min-width: 0; }
 .tv-map { min-width: 0; }
 /* The island is tall; capping it keeps the chips on the first screen (the sea fills the letterbox). */
@@ -21,5 +21,7 @@
 .tv-seg { all: unset; box-sizing: border-box; cursor: pointer; min-height: 44px; min-width: 96px; padding: 0 16px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-pill); font: 800 14px/1 var(--font-body); color: var(--ink); transition: background var(--dur-fast) var(--ease); }
 .tv-seg[aria-pressed="true"] { background: var(--red-deep); color: var(--on-red); box-shadow: var(--shadow-btn); }
 .tv-seg:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
-/* A chip's scroll lands the card's top clear of the app's own bar. */
-.tv-day { scroll-margin-top: calc(var(--top-h) + 16px); }
+/* All days: the chips stay pinned under the app's bar while the days scroll, so any day is one tap away. */
+.tv-pin { position: sticky; top: var(--top-h); z-index: 20; padding-top: 6px; padding-bottom: 6px; background: var(--bg); }
+/* A chip's scroll lands the card's top clear of the app's bar and the pinned chips (52px chip + 12px padding). */
+.tv-day { scroll-margin-top: calc(var(--top-h) + 64px + 12px); }

@@ -46,14 +46,15 @@ export interface TripDayProps {
 }
 
 /**
- * The place whose photo heads a day: the first visit, else (a drive-and-flight day has none) a place from its area the
- * plan does not visit, so every day's header is a photo. The saved itinerary calls this too, so file and app agree.
+ * The place whose photo heads a day: the first visit with a photo, else (a drive-and-flight day, or visits with none)
+ * a place from its area the plan does not visit, so every day's header is a photo. The saved itinerary calls this too.
  */
 export function dayCover(view: DayView, items: Item[], visited?: string[]): Item | undefined {
   const byId = new Map(items.map(i => [i.id, i]));
   const inArea = items.filter(i => i.area === view.area && i.photo);
-  return view.entries.map(e => (e.itemId ? byId.get(e.itemId) : undefined)).find(Boolean)
-    ?? inArea.find(i => !visited?.includes(i.id)) ?? inArea[0];
+  const visits = view.entries.flatMap(e => (e.itemId && byId.has(e.itemId) ? [byId.get(e.itemId) as Item] : []));
+  // The last fallback is a photo-less visit: its header stays plain only when the area has no photo at all.
+  return visits.find(i => i.photo) ?? inArea.find(i => !visited?.includes(i.id)) ?? inArea[0] ?? visits[0];
 }
 
 function Bookings({ list, onBooking }: { list: DayBooking[]; onBooking?(id: string): void }) {
