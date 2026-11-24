@@ -1,0 +1,4 @@
+/* The "Add details" fold in the add-a-stay sheet. Only sa- classes lead a rule here. */
+.sa-sum { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 800; color: var(--teal-deep); }
+.sa-sum:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
+.sa-body { display: flex; flex-direction: column; gap: 14px; padding-top: 6px; }
