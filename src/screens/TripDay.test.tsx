@@ -6,7 +6,7 @@ import { sideQuests } from '../lib/sideQuests';
 import { emptyRanking } from '../types';
 import type { DayBooking, DayView, Item, Plan, Response } from '../types';
 import { DayRows } from './MyTrip';
-import TripDay, { dateLabel } from './TripDay';
+import TripDay, { dateLabel, dayCover } from './TripDay';
 import type { DayTip } from './BookCard';
 
 const ITEMS = (catalogue as unknown as { items: Item[] }).items;
@@ -193,6 +193,12 @@ describe('TripDay header photo on a day with no visit', () => {
     const { container } = render(<TripDay view={view(1)} items={ITEMS} visited={[area[0].id]} />);
     expect(area.length).toBeGreaterThan(1);
     expect(container.querySelector('.strip img')?.getAttribute('src')).toBe(`/img/${area[1].photo}.jpg`);
+  });
+  it('a day whose first visit has no photo takes the next visit that has one, not a plain header', () => {
+    const [first, later] = ITEMS.filter(i => i.area === 'Hill country' && i.photo);
+    const v = { ...view(4), entries: [act(first), act(later)] };
+    const items = ITEMS.map(i => (i.id === first.id ? { ...i, photo: undefined } : i));
+    expect(dayCover(v, items)?.id).toBe(later.id);
   });
   it('stays plain when no place in the area is known', () => {
     const { container } = render(<TripDay view={view(1)} items={[]} />);
