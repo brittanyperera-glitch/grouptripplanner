@@ -46,6 +46,10 @@ test('the guest demo opens on the sample trip with Route, To do, Guide and Me, a
 
   await page.getByRole('tab', { name: 'To do' }).click();
   await expect(page.getByRole('tabpanel', { name: 'To do' })).toBeVisible();
+  // Real content, not just the empty tabpanel wrapper: D11 wants the board to work for a guest.
+  await expect(page.getByText('Your files')).toBeVisible();
+  await expect(page.getByText(/^Agent Aunty · Level \d/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /Stays/ })).toBeVisible();
 
   await page.getByRole('tab', { name: 'Me' }).click();
   await expect(page.getByRole('button', { name: 'Leave the demo' })).toBeVisible();

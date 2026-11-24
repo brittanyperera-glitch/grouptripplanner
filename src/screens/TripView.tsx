@@ -8,7 +8,7 @@ import Sheet from '../components/Sheet';
 import { releaseFor } from '../lib/release';
 import { stayItemId } from '../lib/tripadmin';
 import { useApp } from '../state';
-import { AREAS } from '../types';
+import { AREAS, isMember } from '../types';
 import type { Area, GroupResult, Item, Leg } from '../types';
 import { bookingText } from './bookingText';
 import IdeaSheet, { parseIdea } from './IdeaSheet';
@@ -120,7 +120,7 @@ export function TripViewBody({ model, items, legs, todayDay, todayCard, onBookin
           <TripDay
             view={view} items={items} legs={legs} visited={model.plan.chosen} rainSlack={model.plan.days[day - 1].rainSlack}
             onPlace={id => setPlace(items.find(i => i.id === id) ?? null)} onStay={setStay} onBooking={onBooking} onFlights={onFlights}
-            ideas={ideas} onIdea={app?.me && releaseFor(app.me) ? () => setIdea({ day, area }) : undefined}
+            ideas={ideas} onIdea={app && isMember(app.me) && releaseFor(app.me) ? () => setIdea({ day, area }) : undefined}
           />
         )}
       </div>
