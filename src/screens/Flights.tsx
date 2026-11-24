@@ -14,6 +14,7 @@ import { useGroupResult } from '../workers/usePlan';
 import { useSaveStatus } from './saveStatus';
 import { useTripModel } from './useTripModel';
 import './Flights.css';
+import './FlightsFirst.css';
 
 const COPY = {
   title: 'Flights',
@@ -30,6 +31,7 @@ const COPY = {
   darkNote: 'No flights yet',
   leaveBy: 'Leave by',
   back: 'Back',
+  others: 'Everyone else',
   save: 'Save',
   half: 'Fill in both the date and the time, or clear both.',
 };
@@ -110,9 +112,7 @@ export function Flights({ me, travellers, startDate, lastDayStart, days, onSave,
   const shared = back && <SubBack label={backLabel} onClick={back} />;
   const flags = arrivalFlags(travellers, startDate, days, lastDay, lastDayStart).filter(x => x.kind !== 'missing');
   const leave = lastDay ? leaveByEach(travellers, lastDay) : {};
-  const list = (
-    <ul className="fx-list" aria-label={COPY.title}>
-      {PEOPLE.map(p => {
+  const row = (p: Person) => {
         const t = travellers[p];
         // Dark here means a missing arrival or a missing departure. Someone who gave nothing at all has no lines to show.
         const dark = flightsDark(t);
@@ -131,9 +131,18 @@ export function Flights({ me, travellers, startDate, lastDayStart, days, onSave,
             {leave[p] && <p className="fx-line"><span className="fx-fl">{COPY.leaveBy}</span> {when(leave[p]!)}</p>}
           </li>
         );
-      })}
-    </ul>
-  );
+  };
+  // Released friends see their own row first and the other four folded; guests keep the plain five-row order.
+  const fold = releaseFor(me) !== null && !isGuest(me);
+  const list = fold ? (
+    <>
+      <ul className="fx-list" aria-label={COPY.title}>{row(me)}</ul>
+      <details className={spy ? 'ff-fold ff-spy' : 'ff-fold'}>
+        <summary className="ff-sum">{COPY.others}</summary>
+        <ul className="fx-list" aria-label={COPY.others}>{PEOPLE.filter(p => p !== me).map(row)}</ul>
+      </details>
+    </>
+  ) : <ul className="fx-list" aria-label={COPY.title}>{PEOPLE.map(row)}</ul>;
   if (spy) return <SpyScreen code="Operation Homecoming · Flights" title={COPY.spyTitle} back={!back && onBack ? { label: COPY.back, onClick: onBack } : undefined}><section className="fx fx-spy" aria-label={COPY.spyTitle}>{shared}<p className="sub">{COPY.sub}</p>{list}</section></SpyScreen>;
   return (
     <section className="body fx" aria-label={COPY.title}>

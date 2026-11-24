@@ -1,0 +1,5 @@
+/* Flights: the fold holding everyone but me. Only ff- classes lead a rule here. */
+.ff-fold { margin-top: 8px; }
+.ff-sum { display: flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 700; color: var(--muted); }
+.ff-fold[open] > .ff-sum { margin-bottom: 8px; }
+.ff-spy .ff-sum { color: var(--s-dim); }
