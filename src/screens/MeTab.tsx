@@ -21,9 +21,9 @@ function Row({ title, onClick }: { title: string; onClick: () => void }) {
 }
 
 /** The Me tab: my card with no Back, then the Crew rows, What would you change?, Not you? and Log out, and Organiser for Brittany. */
-export default function MeTab({ me, players, onOpen, onQuiz, onBingo, onAwards, onNotYou, onLogout }: {
+export default function MeTab({ me, players, onOpen, onQuiz, onBingo, onAwards, onNotYou, onLogout, logoutLabel = 'Log out' }: {
   me: Player; players?: NonNullable<Copy['players']>; onOpen: (o: Open) => void; onQuiz: () => void; onBingo: () => void;
-  onAwards?: () => void; onNotYou: () => void; onLogout?: () => void;
+  onAwards?: () => void; onNotYou: () => void; onLogout?: () => void; logoutLabel?: string;
 }) {
   const { state } = useApp();
   const stats = !isGuest(me) && allSubmitted(state.responses);
@@ -42,7 +42,7 @@ export default function MeTab({ me, players, onOpen, onQuiz, onBingo, onAwards, 
         <Row title="What would you change?" onClick={sub('complaints')} />
         {isAdmin(me) && <Row title={NAMES.organiser} onClick={sub('organiser')} />}
         <Row title="Not you?" onClick={onNotYou} />
-        {onLogout && <Row title="Log out" onClick={onLogout} />}
+        {onLogout && <Row title={logoutLabel} onClick={onLogout} />}
       </section>
     </>
   );

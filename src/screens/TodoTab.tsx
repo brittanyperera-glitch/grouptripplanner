@@ -7,11 +7,11 @@ import SpyScreen from '../components/spy/SpyScreen';
 import { NAMES } from '../lib/names';
 import { crewReadiness, missionFiles } from '../lib/missions';
 import type { MissionId, MissionInput } from '../lib/missions';
-import { nextTask, youLine } from '../lib/todo';
+import { nextTask, owedCount, youLine } from '../lib/todo';
 import type { Open, SubId, Task } from '../lib/todo';
 import { useApp } from '../state';
-import { PEOPLE } from '../types';
-import type { GroupResult, Person } from '../types';
+import { isGuest, isMember } from '../types';
+import type { GroupResult } from '../types';
 import { HqStanding } from './MissionHQ';
 import { CODE } from './MissionComplete';
 import { useTripModel } from './useTripModel';
@@ -24,13 +24,15 @@ export default function TodoTab({ group, tasks, onOpen, today }: { group: GroupR
   const { state, me } = useApp();
   const model = useTripModel(group, today);
   const input = useMemo<MissionInput>(() => ({ state, plan: model.plan, model }), [state, model]);
-  if (!me || !PEOPLE.includes(me as Person)) return null;
+  if (!isMember(me) && !isGuest(me)) return null;
   const crew = crewReadiness(input);
-  const mine = crew.people.find(p => p.name === me) ?? { done: 0, total: 1 };
+  // The crew rows are the five members; a guest's own count comes from the tasks passed in.
+  const owed = owedCount(tasks);
+  const mine = crew.people.find(p => p.name === me) ?? { done: owed ? 0 : 1, total: Math.max(owed, 1) };
   const fun = tasks.filter(t => !t.owed);
   return (
     <SpyScreen code={CODE} title={NAMES.todo}>
-      <NextMove me={me as Person} move={nextTask(tasks)} done={mine.done} total={mine.total} cta="Start" onStart={t => onOpen(t.open)} />
+      <NextMove me={me} move={nextTask(tasks)} done={mine.done} total={mine.total} cta="Start" onStart={t => onOpen(t.open)} />
       <HqStanding start={model.start} crew={crew} />
       <div className="spyhq-board">
         <span className="spy-code">{COPY.files}</span>

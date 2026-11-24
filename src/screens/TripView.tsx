@@ -8,7 +8,7 @@ import Sheet from '../components/Sheet';
 import { releaseFor } from '../lib/release';
 import { stayItemId } from '../lib/tripadmin';
 import { useApp } from '../state';
-import { AREAS } from '../types';
+import { AREAS, isMember } from '../types';
 import type { Area, DayView, GroupResult, Item, Leg } from '../types';
 import { bookingText } from './bookingText';
 import IdeaSheet, { parseIdea } from './IdeaSheet';
@@ -139,7 +139,7 @@ export function TripViewBody({ model, items, legs, todayDay, todayCard, onBookin
     <TripDay
       view={v} items={items} legs={legs} visited={plan.chosen} rainSlack={plan.days[v.n - 1].rainSlack}
       onPlace={id => setPlace(items.find(i => i.id === id) ?? null)} onStay={a => setStay({ day: v.n, area: a })} onBooking={onBooking} onFlights={onFlights}
-      ideas={ideasOf(v.n)} onIdea={app?.me && releaseFor(app.me) ? () => setIdea({ day: v.n, area: areaOf(v) }) : undefined}
+      ideas={ideasOf(v.n)} onIdea={app && isMember(app.me) && releaseFor(app.me) ? () => setIdea({ day: v.n, area: areaOf(v) }) : undefined}
     />
   ));
   const chips = (

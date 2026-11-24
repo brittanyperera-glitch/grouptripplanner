@@ -1,4 +1,5 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { useEffect } from 'react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -6,15 +7,16 @@ vi.unmock('../lib/release');
 vi.mock('../components/sound', () => ({ thud: vi.fn(), jingle: vi.fn() }));
 import catalogue from '../data/catalogue.json';
 import legsData from '../data/legs.json';
-import { seedState } from '../guest/seed';
+import { MemoryStore } from '../guest/MemoryStore';
+import { guestSeed, seedState } from '../guest/seed';
 import { groupResult } from '../lib/group';
-import { RELEASE } from '../lib/release';
+import { GUEST_SAMPLE, RELEASE } from '../lib/release';
 import type { Task } from '../lib/todo';
 import { ADMIN_IDS } from '../lib/tripadmin';
-import { AppProvider } from '../state';
+import { AppProvider, useApp } from '../state';
 import { LocalStore } from '../store/local';
 import { PEOPLE } from '../types';
-import type { Area, GroupResult, Item, Leg, Person } from '../types';
+import type { Area, GroupResult, Item, Leg, Person, Player } from '../types';
 import TodoTab from './TodoTab';
 
 const group: GroupResult = groupResult(seedState(), (catalogue as unknown as { items: Item[] }).items, legsData as Leg[], [], RELEASE);
@@ -114,5 +116,22 @@ describe('To do board', () => {
     const { view } = mount([]);
     await waitFor(() => expect(localStorage.getItem('tp:me')).toBe('Mum'));
     expect(view.container.innerHTML).toBe('');
+  });
+
+  // Changed deliberately (D11, 24 Nov 2026, "Show the new four tabs"): a demo guest is not one of the five, and now gets the board.
+  it('renders the next move and the files for a demo guest on a guest store, and for a member', async () => {
+    const guestGroup = groupResult(guestSeed(), (catalogue as unknown as { items: Item[] }).items, legsData as Leg[], [], GUEST_SAMPLE);
+    const Guest = ({ name }: { name: Player }) => { const { me, setMe } = useApp(); useEffect(() => { setMe(name); }, [name, setMe]); return me === name ? <TodoTab group={guestGroup} tasks={[top2, bingo]} onOpen={vi.fn()} /> : null; };
+    render(<AppProvider store={new MemoryStore(guestSeed())} sandbox={{ onFinish: () => {} }}><Guest name="Aunty" /></AppProvider>);
+    expect(await screen.findByRole('heading', { name: 'To do' })).toBeInTheDocument();
+    expect(screen.getByText('Your next move')).toBeInTheDocument();
+    expect(screen.getByText('Your files')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Stays/ })).toBeInTheDocument();
+    expect(screen.getByText(/^Agent Aunty · Level 1 · 1 task to Level 2$/)).toBeInTheDocument();
+    cleanup();
+    seed({ open: true });
+    mount([top2]);
+    expect(await screen.findByText('Your files')).toBeInTheDocument();
+    expect(screen.getByText('Your next move')).toBeInTheDocument();
   });
 });

@@ -41,6 +41,7 @@ export const PEOPLE: Person[] = ['Brittany', 'Alex', 'Antek', 'Lazza', 'Saulie']
 export const GUESTS = ['Tuktuk', 'Aunty', 'Groom'] as const;
 export type Guest = typeof GUESTS[number];
 export type Player = Person | Guest;
+export const isMember = (p: Player | null): p is Person => p !== null && PEOPLE.includes(p as Person);
 export const isGuest = (p: Player | null): p is Guest => p !== null && (GUESTS as readonly string[]).includes(p);
 export interface Response {
   name: Player; days: number | null; flex: boolean; pace: Pace | null;
