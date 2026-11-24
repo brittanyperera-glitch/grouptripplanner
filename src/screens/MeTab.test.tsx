@@ -67,7 +67,7 @@ describe('MeTab', () => {
 
   it('has no Group stats row until all five have submitted', async () => {
     const s = seedState();
-    s.responses.Lazza = { ...s.responses.Lazza, submitted: false };
+    s.responses.Lazza = { ...s.responses.Lazza!, submitted: false };
     show('Alex', {}, s);
     await screen.findByRole('button', { name: /How we decided/ });
     expect(screen.queryByRole('button', { name: /^Group stats/ })).toBeNull();
