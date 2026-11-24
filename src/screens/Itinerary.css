@@ -3,10 +3,11 @@
 
 /* The screen button: plain text, secondary to the plan itself. */
 .it-save { all: unset; box-sizing: border-box; align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; cursor: pointer; font-weight: 800; font-size: 14px; color: var(--teal); text-decoration: underline; text-underline-offset: 3px; }
+.it-wait { margin: 0; font-size: 13px; font-weight: 600; color: var(--muted); }
 .it-save:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; border-radius: 6px; }
 
-/* A4 with 14mm margins. The page number is a margin box: Chrome draws it, a browser without them prints the document as is. */
-@page { size: A4; margin: 14mm; @bottom-right { content: counter(page) " / " counter(pages); font: 8pt "Manrope", system-ui, sans-serif; color: #555; } }
+/* No page size: the dialog offers the reader's own paper, A4 or Letter. The page number is a margin box: Chrome draws it, a browser without them prints the document as is. */
+@page { margin: 14mm; @bottom-right { content: counter(page) " / " counter(pages); font: 8pt "Manrope", system-ui, sans-serif; color: #555; } }
 
 @media print {
   /* Everything the app renders sits under #root or in a portal on body: hide all of it, so the fixed header and tab bar go too. */
@@ -17,16 +18,17 @@
   .it-print * { box-sizing: border-box; }
   .it-print b { font-weight: 800; }
   .it-print img[hidden] { display: none; }
-  .it-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
   /* Cover: one page. */
   .it-cover { break-after: page; page-break-after: always; }
   .it-hero { display: block; width: 100%; height: 70mm; object-fit: cover; margin: 0 0 calc(var(--it-s) * 2); }
-  .it-kind { margin: 0 0 var(--it-h); font: 800 11pt/1.2 var(--font-head, sans-serif); letter-spacing: .14em; text-transform: uppercase; color: var(--card-red, #b8381f); }
-  .it-title { margin: 0 0 var(--it-s); font: 800 52pt/.95 var(--font-head, sans-serif); text-transform: uppercase; }
+  /* No letter-spacing and no case change on the words the file is searched by: tracked glyphs come out of a PDF as "G R O U P". */
+  .it-kind { margin: 0 0 var(--it-h); font: 800 12pt/1.2 var(--font-head, sans-serif); color: var(--card-red, #b8381f); }
+  .it-title { margin: 0 0 var(--it-s); font: 800 52pt/.95 var(--font-head, sans-serif); }
+  .it-title small { display: block; font-size: 22pt; line-height: 1.2; }
   .it-range { margin: 0 0 var(--it-s); font: 700 16pt/1.2 var(--font-head, sans-serif); }
   .it-meta { margin: 0 0 var(--it-h); color: #333; font-size: 10.5pt; }
-  .it-label { margin-right: var(--it-h); font-size: 8pt; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--card-red, #b8381f); }
+  .it-label { margin-right: var(--it-h); font-size: 8pt; font-weight: 800; text-transform: uppercase; color: var(--card-red, #b8381f); }
   .it-routebox { display: grid; grid-template-columns: minmax(0, 1fr) 46mm; gap: calc(var(--it-s) * 2); align-items: start; margin-top: var(--it-s); }
   .it-map svg { display: block; width: 100%; height: auto; max-height: 96mm; }
   .it-route { list-style: none; counter-reset: stop; margin: 0; padding: 0; }
@@ -37,7 +39,7 @@
   .it-daywrap { break-inside: avoid; page-break-inside: avoid; margin: 0 0 calc(var(--it-s) * 2); padding-top: var(--it-s); border-top: 0.4mm solid #111; }
   .it-photo { display: block; width: 100%; height: 30mm; object-fit: cover; margin: 0 0 var(--it-s); }
   .it-dayhead { margin: 0 0 var(--it-h); display: flex; align-items: baseline; gap: var(--it-s); font: 800 16pt/1.1 var(--font-head, sans-serif); }
-  .it-area { font-size: 8.5pt; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--card-red, #b8381f); }
+  .it-area { font-size: 8.5pt; font-weight: 800; text-transform: uppercase; color: var(--card-red, #b8381f); }
   .it-list { list-style: none; margin: 0; padding: 0; }
   .it-list > li { margin: 0 0 var(--it-h); }
   .it-name { font-weight: 800; overflow-wrap: anywhere; }

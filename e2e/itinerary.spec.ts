@@ -55,7 +55,8 @@ test('the group plan saves as a real PDF: A4 and Letter, plan content in, app ch
   // The document does not exist until asked for, and is hidden on screen once it does.
   await expect(page.getByTestId('itinerary')).toHaveCount(0);
   await page.getByRole('button', { name: 'Save itinerary as PDF' }).click();
-  expect(await page.evaluate(() => (window as unknown as { __prints: number }).__prints)).toBe(1);
+  // The dialog opens once the pictures have settled (4 s at most), not inside the tap.
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __prints: number }).__prints), { timeout: 6000 }).toBe(1);
   await expect(page.getByTestId('itinerary')).toBeHidden();
   expect(await page.title()).toBe('Sri Lanka group itinerary');
 
@@ -77,6 +78,10 @@ test('the group plan saves as a real PDF: A4 and Letter, plan content in, app ch
     expect(text).toContain('Sri Lanka itinerary');
     expect(text).toContain('Group itinerary');
     expect(text).toContain('Day 1');
+    // The cover is a page of its own on either paper size: the page size is the reader's, not the stylesheet's.
+    const cover = flat(run('pdftotext', ['-f', '1', '-l', '1', file, '-']));
+    expect(cover, `${format} cover page`).toContain('Group itinerary');
+    expect(cover, `${format} cover page`).not.toContain('Day 1');
     expect(text).toContain('Bookings');
     for (const n of names) expect(text, `${format}: ${n}`).toContain(flat(n));
     for (const d of drives) expect(text, `${format}: ${d}`).toContain(d);

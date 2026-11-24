@@ -116,6 +116,12 @@ export function TripViewBody({ model, items, legs, todayDay, todayCard, onBookin
   useEffect(() => {
     if (count > 0 && picked > count) pick(count);
   }, [count, picked]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Opening All days on a day from the hash, from today or from One day: the pressed chip must be what is on screen. Day 1 is already at the top.
+  const shown = useRef(day);
+  shown.current = day;
+  useEffect(() => {
+    if (view === 'all' && shown.current > 1) reveal(shown.current);
+  }, [view, count > 0]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     strip.current?.querySelector('[aria-pressed="true"]')?.scrollIntoView?.({ inline: 'center', block: 'nearest', behavior: motion() === 'full' ? 'smooth' : 'auto' });
   }, [day]);

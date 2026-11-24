@@ -137,6 +137,17 @@ describe('Save itinerary waits for the pictures', () => {
     expect(window.print).toHaveBeenCalledTimes(1);
   });
 
+  it('says it is preparing while it waits, and stops saying so once the dialog is asked for', async () => {
+    const all = await click();
+    expect(screen.getByRole('status')).toHaveTextContent(/Preparing/);
+    expect(screen.getByRole('button', { name: 'Save itinerary as PDF' })).toHaveAttribute('aria-busy', 'true');
+    all.forEach(el => settle(el, 'load'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(window.print).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Save itinerary as PDF' })).toHaveAttribute('aria-busy', 'false');
+  });
+
   it('prints once after 4 s even when one picture never settles, and not a moment before', async () => {
     const all = await click();
     all.slice(1).forEach(el => settle(el, 'load'));

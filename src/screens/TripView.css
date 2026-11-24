@@ -22,4 +22,4 @@
 .tv-seg[aria-pressed="true"] { background: var(--red-deep); color: var(--on-red); box-shadow: var(--shadow-btn); }
 .tv-seg:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
 /* A chip's scroll lands the card's top clear of the app's own bar. */
-.tv-day { scroll-margin-top: 72px; }
+.tv-day { scroll-margin-top: calc(var(--top-h) + 16px); }

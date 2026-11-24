@@ -3,6 +3,8 @@
    are ink on light, so they match; a screen that needs a different ground redefines the --ground-* set in one place.
    The older names (--coconut, --must, --sunset...) are aliases so every screen takes the theme without its own edits. */
 :root {
+  /* The sticky .top bar is 51px at every width (measured); anything that scrolls to sit under it reads this. */
+  --top-h: 51px;
   /* Fixed palette: these never flip. */
   --paper: #f4ede0; --paper-deep: #ebe1cf; --white: #fff; --sand: #e6dcc8;
   --red: #d6452c; --red-deep: #bf3a22; --teal-deep: #1f6f6b;
@@ -71,7 +73,7 @@ svg { flex: none; }
 .screen { flex: 1; display: flex; flex-direction: column; min-height: 0; view-transition-name: screen; }
 
 /* header */
-.top { position: sticky; top: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 16px; background: var(--glass); backdrop-filter: blur(var(--blur)) saturate(1.4); -webkit-backdrop-filter: blur(var(--blur)) saturate(1.4); border-bottom: 1px solid var(--line); font-size: var(--fs-sm); color: var(--muted); view-transition-name: top; }
+.top { position: sticky; top: 0; min-height: var(--top-h); z-index: 30; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 16px; background: var(--glass); backdrop-filter: blur(var(--blur)) saturate(1.4); -webkit-backdrop-filter: blur(var(--blur)) saturate(1.4); border-bottom: 1px solid var(--line); font-size: var(--fs-sm); color: var(--muted); view-transition-name: top; }
 .top .who { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .top .who b { font-size: 22px; line-height: 1; color: var(--ink); }
 /* The header's avatar and name open the profile: the old span is now a button, same look. */

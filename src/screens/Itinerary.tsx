@@ -68,7 +68,7 @@ export function Itinerary({ plan, items, legs, heading, stays = [], provisional 
       <section className="it-cover" aria-label="Cover">
         {hero && <img className="it-hero" src={hero} alt="" onError={dropBroken} />}
         <p className="it-kind">{heading}</p>
-        <h1 className="it-title">Sri Lanka<span className="it-sr"> itinerary</span></h1>
+        <h1 className="it-title">Sri Lanka <small>itinerary</small></h1>
         {range && <p className="it-range">{range}</p>}
         <p className="it-meta">{plan.days.length} days · about {plan.travelHours.toFixed(1)} h driving</p>
         {travellers.length > 0 && <p className="it-meta"><span className="it-label">Travelling</span> {travellers.join(', ')}</p>}
@@ -167,6 +167,7 @@ const unsettled = (done: WeakSet<Element>) => [...document.querySelectorAll<HTML
 export function SaveItinerary({ plan, kind, provisional = false, group }: { plan: Plan; kind: 'Group' | 'My'; provisional?: boolean; group?: GroupResult }) {
   const { state, items, legs, me } = useApp();
   const [printing, setPrinting] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const waiting = useRef<(() => void) | null>(null);
   useEffect(() => () => waiting.current?.(), []);
   const heading = `${kind} itinerary`;
@@ -182,6 +183,7 @@ export function SaveItinerary({ plan, kind, provisional = false, group }: { plan
     if (unsettled(done).length === 0) { window.print(); return; }
     let timer: ReturnType<typeof setTimeout> | undefined;
     let cancelled = false;
+    setPreparing(true);
     // Leaving the screen mid-wait drops the document, and printing now would be a blank page.
     waiting.current = () => { cancelled = true; clearTimeout(timer); window.removeEventListener('afterprint', restore); restore(); };
     const loaded = async () => {
@@ -198,12 +200,14 @@ export function SaveItinerary({ plan, kind, provisional = false, group }: { plan
       if (cancelled) return;
       clearTimeout(timer);
       waiting.current = null;
+      setPreparing(false);
       window.print();
     });
   };
   return (
     <>
-      <button type="button" className="it-save" onClick={save}>Save itinerary as PDF</button>
+      <button type="button" className="it-save" aria-busy={preparing} onClick={save}>Save itinerary as PDF</button>
+      {preparing && <p className="it-wait" role="status">Preparing the pictures, then the print dialog opens.</p>}
       {printing && createPortal(
         group
           ? <ModelItinerary group={group} plan={plan} items={items} legs={legs} heading={heading} provisional={provisional} travellers={travellers} />

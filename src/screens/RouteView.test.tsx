@@ -112,6 +112,40 @@ describe('Route view: One day and All days', () => {
     expect(call.behavior).toBe('auto');
   });
 
+  describe('opening All days brings the pressed day into view', () => {
+    const revealed = (scroll: ReturnType<typeof vi.fn>) => scroll.mock.contexts.map(el => (el as Element).id).filter(id => id.startsWith('day-'));
+    const spy = () => {
+      const scroll = vi.fn();
+      (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView = scroll;
+      return scroll;
+    };
+
+    it('on a remount in All days with a day in the hash', async () => {
+      const scroll = spy();
+      localStorage.setItem('tp:route-view', 'all');
+      // Let the hashchange from beforeEach's reset land first, and use replaceState, not an assignment: a hashchange scrolls on its own.
+      await new Promise(r => setTimeout(r));
+      window.history.replaceState(null, '', '#/day-5');
+      await mount();
+      expect(revealed(scroll)).toEqual(['day-5']);
+    });
+
+    it('on switching from One day, to the day that chip had', async () => {
+      const scroll = spy();
+      const user = await mount();
+      await user.click(chip(4));
+      await user.click(screen.getByRole('button', { name: 'All days' }));
+      expect(revealed(scroll)).toEqual(['day-4']);
+    });
+
+    it('not for day 1, which is already at the top', async () => {
+      const scroll = spy();
+      localStorage.setItem('tp:route-view', 'all');
+      await mount();
+      expect(revealed(scroll)).toEqual([]);
+    });
+  });
+
   it('smooth scrolling only when motion is full', async () => {
     const scroll = vi.fn();
     (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView = scroll;
