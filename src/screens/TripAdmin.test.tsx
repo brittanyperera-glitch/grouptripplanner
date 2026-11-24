@@ -1,7 +1,10 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppProvider } from '../state';
+import { MemoryStore } from '../guest/MemoryStore';
+import { seedState } from '../guest/seed';
+import { AppProvider, useApp } from '../state';
 import { LocalStore } from '../store/local';
 import { emptyRanking, PEOPLE } from '../types';
 import type { DayBooking, GroupResult, Person, Plan, Player, TripAdminRow } from '../types';
@@ -19,6 +22,10 @@ const plan: Plan = { route: ['AIR'], areas: ['Ella'], chosen: ['sigiriya', 'trai
 const seed = (name: Player, items: TripAdminRow['items']) =>
   localStorage.setItem(`tp:tripadmin:${name}`, JSON.stringify({ name, items, updatedAt: '2026-10-17T00:00:00Z' }));
 const stored = (name: Player) => JSON.parse(localStorage.getItem(`tp:tripadmin:${name}`) ?? 'null') as TripAdminRow | null;
+
+// D8 (C3): a friend's tick exists only on a claimed row, so tests that tick or count ticks seed a claim, and tests that only find a row look for its label.
+const claim = (id: string, owner: Person, updatedAt = '2026-11-02T00:00:00Z') =>
+  localStorage.setItem('tp:claims', JSON.stringify({ ...JSON.parse(localStorage.getItem('tp:claims') ?? '{}'), [id]: { itemId: id, owner, updatedAt } }));
 
 const mount = async (me: Player = 'Alex') => {
   localStorage.setItem('tp:me', me);
@@ -132,7 +139,7 @@ describe('TripAdmin', () => {
       seed('Brittany', { 'stay:Ella': { done: true, doneAt } });
       localStorage.setItem('tp:me', 'Alex');
       render(<AppProvider store={new FallenStore()}><TripAdmin onBack={vi.fn()} /></AppProvider>);
-      return (await screen.findByRole('checkbox', { name: 'Stay in Ella' })).closest('li')!;
+      return (await screen.findByText('Stay in Ella')).closest('li')!;
     };
 
     it('a tick from before the fall is not shown as done, not counted, and has no avatar', async () => {
@@ -197,10 +204,10 @@ describe('TripAdmin', () => {
       grp.current = { final: dated, locked: true } as unknown as GroupResult;
       const user = userEvent.setup();
       render(<AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} today={today} /></AppProvider>);
-      await screen.findByRole('checkbox', { name: 'Nanu Oya to Ella train' });
+      await screen.findByText('Nanu Oya to Ella train');
       return user;
     };
-    const rowOf = (name: string) => screen.getByRole('checkbox', { name }).closest('li')!;
+    const rowOf = (name: string) => screen.getByText(name).closest('li')!;
 
     it('I will book this on the train row calls the claim setter with the train id and my name', async () => {
       startOn('2026-12-08');
@@ -237,6 +244,7 @@ describe('TripAdmin', () => {
     it('shows opens-on, book-by and secured chips, sorted by date with undated last', async () => {
       startOn('2026-12-08');
       seed('Brittany', { 'book:sigiriya': { done: true, doneAt: 't' } });
+      for (const id of ['book:sigiriya', 'book:train', 'book:crab']) claim(id, 'Alex');
       await mountOn('2026-11-05');
       expect(within(rowOf('Nanu Oya to Ella train')).getByText('Opens 10 Nov')).toBeInTheDocument();
       expect(within(rowOf('Ministry of Crab dinner')).getByText('Book by 25 Nov')).toBeInTheDocument();
@@ -286,6 +294,7 @@ describe('TripAdmin', () => {
       localStorage.setItem('tp:placesug', JSON.stringify([{ id: 's1', name: 'Alex', area: 'Ella', kind: 'stay', title: 'Stay s1', status: 'live', createdAt: '2026-10-10' }]));
       localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-11-03T09:00' }], scouts: {}, closed: [] }));
       seed('Alex', { 'stay:Ella': { done: true, doneAt: '2026-11-01T08:00' } });
+      claim('stay:Ella', 'Alex', '2026-11-03T12:00:00Z');
       localStorage.setItem('tp:me', 'Alex');
       render(<AppProvider store={new FallenStore()}><TripAdmin onBack={vi.fn()} /></AppProvider>);
       expect(await screen.findByRole('checkbox', { name: 'Stay in Ella' })).toHaveAttribute('aria-checked', 'false');
@@ -303,13 +312,14 @@ describe('Supply runs', () => {
     grp.current = g;
     const user = userEvent.setup();
     const view = render(<AppProvider store={store}><TripAdmin onBack={vi.fn()} today="2026-12-01" /></AppProvider>);
-    await screen.findByRole('checkbox', { name: 'Nanu Oya to Ella train' });
+    await screen.findByText('Nanu Oya to Ella train');
     return { user, view };
   };
-  const train = () => screen.getByRole('checkbox', { name: 'Nanu Oya to Ella train' }).closest('li')!;
+  const train = () => screen.getByText('Nanu Oya to Ella train').closest('li')!;
 
   it('A6: no money word and no price input anywhere, over the real catalogue', async () => {
     const ids = (catalogue as unknown as { items: { id: string; book?: string }[] }).items.filter(i => i.book).map(i => i.id);
+    for (const id of ids) claim(`book:${id}`, 'Alex');
     const { user, view } = await mountAs('Alex', new LocalStore(), { final: { ...dated, chosen: ids }, locked: true });
     for (const b of screen.getAllByRole('button', { name: /^Details:/ })) await user.click(b);
     expect(screen.getAllByRole('checkbox')).toHaveLength(ids.length);
@@ -336,7 +346,7 @@ describe('Supply runs', () => {
   it('A3: marking it secured stamps Secured and leaves no claim control on the row', async () => {
     const { user } = await mountAs('Lazza');
     await user.click(within(train()).getByRole('button', { name: "I'll book this" }));
-    await user.click(screen.getByRole('checkbox', { name: 'Nanu Oya to Ella train' }));
+    await user.click(await screen.findByRole('checkbox', { name: 'Nanu Oya to Ella train' }));
     const row = within(train());
     expect(await row.findByText('Secured')).toBeInTheDocument();
     expect(row.queryByRole('button', { name: /book this|Unclaim/ })).toBeNull();
@@ -374,6 +384,7 @@ describe('Supply runs', () => {
   });
 
   it('B5: a tick and a claim say Saved beside their own control; a refused write says Not saved yet', async () => {
+    claim('book:sigiriya', 'Alex');
     const { user } = await mountAs('Alex');
     await user.click(screen.getByRole('checkbox', { name: 'Sigiriya Rock' }));
     expect(await within(screen.getByRole('checkbox', { name: 'Sigiriya Rock' }).closest('li')!).findByText('Saved')).toBeInTheDocument();
@@ -398,6 +409,144 @@ describe('Supply runs', () => {
     const off = await mountAs('Alex');
     expect(off.view.container.querySelector('.spy')).not.toBeNull();
     expect(screen.getByRole('status')).toHaveTextContent('All done');
+  });
+});
+
+describe('C3: the claimer or the organiser ticks a booking', () => {
+  const e = (kind: 'activity' | 'train', itemId: string) => ({ kind, label: itemId, hours: 1, itemId });
+  const dated: Plan = { ...plan, chosen: ['sigiriya', 'train', 'crab'], days: [{ ...day(1), entries: [e('activity', 'sigiriya')] }, { ...day(2), entries: [e('activity', 'crab')] }, { ...day(3), entries: [e('train', 'train')] }] };
+  const mountC3 = async (me: Player) => {
+    localStorage.setItem('tp:me', me);
+    localStorage.setItem('tp:settings', JSON.stringify({ startDate: '2026-12-08', plan: null, bookingDates: {}, overrides: [], updatedAt: '2026-11-01T00:00:00Z' }));
+    grp.current = { final: dated, locked: true };
+    const user = userEvent.setup();
+    render(<AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} today="2026-12-01" /></AppProvider>);
+    await screen.findByText('Nanu Oya to Ella train');
+    return user;
+  };
+  const rowOf = (label: string) => screen.getByText(label).closest('li')!;
+  const box = (label: string) => within(rowOf(label)).queryByRole('checkbox', { name: label });
+
+  it("Lazza cannot tick Alex's claim: no checkbox, and the row says who can", async () => {
+    claim('book:train', 'Alex');
+    await mountC3('Lazza');
+    expect(box('Nanu Oya to Ella train')).toBeNull();
+    expect(within(rowOf('Nanu Oya to Ella train')).getByText('Only Alex or Brittany can mark this secured')).toBeInTheDocument();
+  });
+
+  it('Alex can tick and un-tick his own claim', async () => {
+    claim('book:train', 'Alex');
+    const user = await mountC3('Alex');
+    await user.click(box('Nanu Oya to Ella train')!);
+    await waitFor(() => expect(stored('Alex')?.items['book:train']?.done).toBe(true));
+    expect(box('Nanu Oya to Ella train')).toHaveAttribute('aria-checked', 'true');
+    await user.click(box('Nanu Oya to Ella train')!);
+    await waitFor(() => expect(stored('Alex')?.items['book:train']?.done).toBe(false));
+  });
+
+  it("Brittany can tick and un-tick Alex's claim", async () => {
+    claim('book:train', 'Alex');
+    const user = await mountC3('Brittany');
+    await user.click(box('Nanu Oya to Ella train')!);
+    await waitFor(() => expect(stored('Brittany')?.items['book:train']?.done).toBe(true));
+    await user.click(box('Nanu Oya to Ella train')!);
+    await waitFor(() => expect(stored('Brittany')?.items['book:train']?.done).toBe(false));
+  });
+
+  it('nobody, the organiser included, can tick an unclaimed row: it says Claim it first, and claiming opens the tick', async () => {
+    for (const me of ['Alex', 'Brittany'] as const) {
+      const user = await mountC3(me);
+      expect(box('Nanu Oya to Ella train')).toBeNull();
+      expect(within(rowOf('Nanu Oya to Ella train')).getByText('Claim it first')).toBeInTheDocument();
+      if (me === 'Alex') {
+        await user.click(within(rowOf('Nanu Oya to Ella train')).getByRole('button', { name: "I'll book this" }));
+        expect(await within(rowOf('Nanu Oya to Ella train')).findByRole('checkbox', { name: 'Nanu Oya to Ella train' })).toBeInTheDocument();
+        expect(within(rowOf('Nanu Oya to Ella train')).queryByText('Claim it first')).toBeNull();
+      }
+      cleanup(); localStorage.clear();
+    }
+  });
+
+  it('a tick I made before the rule can still be taken back', () => {
+    render(<SupplyBoard spy={false} pending={false} rows={[{ id: 'book:train', label: 'Ella train', hint: '', done: ['Lazza'], mine: true, note: '', saved: '', booking: { id: 'book:train', label: 'Ella train', status: 'done', opensOn: null, bookBy: null, owner: null } }]} left={0} me="Lazza" hasCalendar={false} onBack={vi.fn()} onCalendar={vi.fn()} onTick={vi.fn()} onClaim={vi.fn()} onNote={vi.fn()} />);
+    expect(screen.getByRole('checkbox', { name: 'Ella train' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it("a guest's rows are as before: a checkbox on every row, none of the new lines", async () => {
+    const store = new MemoryStore(seedState());
+    await store.saveBookingClaim('book:train', 'Alex');
+    grp.current = { final: dated, locked: true };
+    const Pick = () => { const { setMe, me } = useApp(); useEffect(() => { setMe('Tuktuk'); }, [setMe]); return me === 'Tuktuk' ? <TripAdmin onBack={vi.fn()} today="2026-12-01" /> : null; };
+    render(<AppProvider store={store} sandbox={{ onFinish: () => {} }}><Pick /></AppProvider>);
+    await screen.findByText('Nanu Oya to Ella train');
+    expect(screen.getAllByRole('checkbox').map(b => b.getAttribute('aria-label')).sort()).toEqual(['Ministry of Crab dinner', 'Nanu Oya to Ella train', 'Sigiriya Rock']);
+    expect(document.body.textContent).not.toMatch(/Claim it first|can mark this secured/);
+  });
+
+  it('a stay is claimed like any booking: unclaimed, Lazza gets Claim it first', async () => {
+    localStorage.setItem('tp:placesug', JSON.stringify([{ id: 's1', name: 'Alex', area: 'Ella', kind: 'stay', title: 'Stay s1', status: 'live', createdAt: '2026-10-10' }]));
+    localStorage.setItem('tp:staysadmin', JSON.stringify({ pins: [{ area: 'Ella', suggestionId: 's1', at: '2026-11-03T09:00' }], scouts: {}, closed: [] }));
+    await mountC3('Lazza');
+    expect(within(rowOf('Stay in Ella')).queryByRole('checkbox')).toBeNull();
+    expect(within(rowOf('Stay in Ella')).getByText('Claim it first')).toBeInTheDocument();
+  });
+
+  it('a row with no booking behind it, which nobody can claim, keeps its tick', () => {
+    render(<SupplyBoard spy={false} pending={false} rows={[{ id: 'book:x', label: 'No booking', hint: '', done: [], mine: false, note: '', saved: '' }]} left={1} me="Lazza" hasCalendar={false} onBack={vi.fn()} onCalendar={vi.fn()} onTick={vi.fn()} onClaim={vi.fn()} onNote={vi.fn()} />);
+    expect(screen.getByRole('checkbox', { name: 'No booking' })).toBeInTheDocument();
+  });
+});
+
+describe('C3 over the real catalogue', () => {
+  const real = (catalogue as unknown as { items: { id: string; name: string; book?: string }[] }).items.filter(i => i.book);
+  const ids = real.map(i => i.id);
+  const owned = real[0];
+  const mountReal = async (me: Player) => {
+    localStorage.setItem('tp:me', me);
+    localStorage.setItem('tp:settings', JSON.stringify({ startDate: '2026-12-08', plan: null, bookingDates: {}, overrides: [], updatedAt: '2026-11-01T00:00:00Z' }));
+    const entries = ids.map(itemId => ({ kind: 'activity' as const, label: itemId, hours: 1, itemId }));
+    grp.current = { final: { ...plan, chosen: ids, days: [{ ...day(1), entries }] }, locked: true };
+    const user = userEvent.setup();
+    render(<AppProvider store={new LocalStore()}><TripAdmin onBack={vi.fn()} today="2026-12-01" /></AppProvider>);
+    await screen.findByText(owned.name);
+    return user;
+  };
+  const rowOf = (name: string) => screen.getByText(name).closest('li')!;
+
+  it("Alex owns one booking: Lazza gets a line and no tick on it; Alex and Brittany tick and un-tick it", async () => {
+    claim(`book:${owned.id}`, 'Alex');
+    await mountReal('Lazza');
+    expect(within(rowOf(owned.name)).queryByRole('checkbox')).toBeNull();
+    expect(within(rowOf(owned.name)).getByText('Only Alex or Brittany can mark this secured')).toBeInTheDocument();
+    cleanup();
+    for (const me of ['Alex', 'Brittany'] as const) {
+      const user = await mountReal(me);
+      const tick = () => within(rowOf(owned.name)).getByRole('checkbox', { name: owned.name });
+      await user.click(tick());
+      await waitFor(() => expect(tick()).toHaveAttribute('aria-checked', 'true'));
+      await user.click(tick());
+      await waitFor(() => expect(tick()).toHaveAttribute('aria-checked', 'false'));
+      cleanup();
+    }
+  });
+
+  it('with nothing claimed, none of the five sees a checkbox on any row, and each row says Claim it first', async () => {
+    for (const me of PEOPLE) {
+      await mountReal(me);
+      expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+      expect(screen.getAllByText('Claim it first')).toHaveLength(ids.length);
+      cleanup();
+    }
+  });
+
+  it('a guest sees a checkbox on every row and none of the new lines', async () => {
+    const store = new MemoryStore(seedState());
+    grp.current = { final: { ...plan, chosen: ids, days: [{ ...day(1), entries: ids.map(itemId => ({ kind: 'activity' as const, label: itemId, hours: 1, itemId })) }] }, locked: true };
+    const Pick = () => { const { setMe, me } = useApp(); useEffect(() => { setMe('Aunty'); }, [setMe]); return me === 'Aunty' ? <TripAdmin onBack={vi.fn()} today="2026-12-01" /> : null; };
+    render(<AppProvider store={store} sandbox={{ onFinish: () => {} }}><Pick /></AppProvider>);
+    await screen.findByText(owned.name);
+    expect(screen.getAllByRole('checkbox')).toHaveLength(ids.length);
+    expect(document.body.textContent).not.toMatch(/Claim it first|can mark this secured/);
   });
 });
 
