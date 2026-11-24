@@ -9,7 +9,7 @@ import { releaseFor } from '../lib/release';
 import { stayItemId } from '../lib/tripadmin';
 import { useApp } from '../state';
 import { AREAS } from '../types';
-import type { Area, GroupResult, Item, Leg } from '../types';
+import type { Area, DayView, GroupResult, Item, Leg } from '../types';
 import { bookingText } from './bookingText';
 import IdeaSheet, { parseIdea } from './IdeaSheet';
 import TripDay, { dateLabel } from './TripDay';
@@ -21,6 +21,18 @@ const COPY = {
   stayLink: 'Open the stay',
   noStay: 'No stay chosen yet.',
   unclaimed: 'nobody has claimed it yet',
+  one: 'One day',
+  all: 'All days',
+};
+
+const VIEW_KEY = 'tp:route-view';
+type View = 'one' | 'all';
+const readView = (): View => {
+  try { return localStorage.getItem(VIEW_KEY) === 'all' ? 'all' : 'one'; } catch { return 'one'; }
+};
+// A view preference like mute: with storage blocked the switch still works, it just forgets on reload.
+const saveView = (v: View) => {
+  try { localStorage.setItem(VIEW_KEY, v); } catch { /* storage unavailable */ }
 };
 
 const DAY_HASH = /^#\/day-(\d+)$/;
@@ -63,26 +75,37 @@ interface BodyProps {
   onBooking?(id: string): void; onFlights?(): void;
 }
 
-/** Props-in Trip view: the map, a strip of day chips, and the one selected day as a postcard. */
+/** Props-in Trip view: the map, a strip of day chips, and the selected day as a postcard, or every day one under the other. */
 export function TripViewBody({ model, items, legs, todayDay, todayCard, onBooking, onFlights }: BodyProps) {
   const count = model.views.length;
   const onTrip = todayDay !== undefined && todayDay >= 1 && todayDay <= count;
   const [picked, setDay] = useState(() => (DAY_HASH.test(window.location.hash) || !onTrip ? hashDay(count) : todayDay));
   // A re-solve to fewer days can leave the pick past the end.
   const day = Math.min(picked, Math.max(count, 1));
+  const [view, setViewState] = useState<View>(readView);
   const [place, setPlace] = useState<Item | null>(null);
-  const [stay, setStay] = useState<Area | null>(null);
+  const [stay, setStay] = useState<{ day: number; area: Area } | null>(null);
   const [idea, setIdea] = useState<{ day: number; area: Area } | null>(null);
   const app = useAppIfAny();
   const strip = useRef<HTMLDivElement>(null);
+  const all = useRef(view === 'all');
+  all.current = view === 'all';
+  const setView = (v: View) => { setViewState(v); saveView(v); };
+  // All days: the card is already on the page, so picking a day brings it into view.
+  const reveal = (n: number) => document.getElementById(`day-${n}`)?.scrollIntoView?.({ block: 'start', behavior: motion() === 'full' ? 'smooth' : 'auto' });
   const pick = (n: number) => {
     setDay(n);
     // Only the day-N part of the hash is ours; a raw or guest hash stays as it is.
     if (window.location.hash === '' || DAY_HASH.test(window.location.hash)) window.history.replaceState(window.history.state, '', `#/day-${n}`);
+    if (all.current) reveal(n);
   };
 
   useEffect(() => {
-    const onHash = () => { if (DAY_HASH.test(window.location.hash)) setDay(hashDay(count)); };
+    const onHash = () => {
+      if (!DAY_HASH.test(window.location.hash)) return;
+      setDay(hashDay(count));
+      if (all.current) reveal(hashDay(count));
+    };
     // The model can fill after the first render, when the hash day had no day to point at yet.
     const n = Number(DAY_HASH.exec(window.location.hash)?.[1]);
     if (n >= 1 && n <= count) setDay(n);
@@ -93,41 +116,65 @@ export function TripViewBody({ model, items, legs, todayDay, todayCard, onBookin
   useEffect(() => {
     if (count > 0 && picked > count) pick(count);
   }, [count, picked]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Opening All days on a day from the hash, from today or from One day: the pressed chip must be what is on screen. Day 1 is already at the top.
+  const shown = useRef(day);
+  shown.current = day;
+  useEffect(() => {
+    if (view === 'all' && shown.current > 1) reveal(shown.current);
+  }, [view, count > 0]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     strip.current?.querySelector('[aria-pressed="true"]')?.scrollIntoView?.({ inline: 'center', block: 'nearest', behavior: motion() === 'full' ? 'smooth' : 'auto' });
   }, [day]);
 
   if (!model.plan || count === 0) return <section className="body" aria-label="Trip view"><p className="tv-empty">{COPY.empty}</p></section>;
-  const view = model.views[day - 1];
-  const map = <div className="tv-map"><RouteMap route={model.plan.route} drive legs={view.legs} parkAt={view.parkAt} dayN={day} /></div>;
-  const ideas = (app?.state.suggestions ?? []).filter(s => s.status === 'pending').flatMap(s => {
+  const plan = model.plan;
+  const one = model.views[day - 1];
+  const map = <div className="tv-map"><RouteMap route={plan.route} drive legs={one.legs} parkAt={one.parkAt} dayN={day} /></div>;
+  const ideasOf = (n: number) => (app?.state.suggestions ?? []).filter(s => s.status === 'pending').flatMap(s => {
     const p = parseIdea(s.note);
-    return p.day === day ? [{ id: s.id, name: s.name, title: s.title, text: p.text }] : [];
+    return p.day === n ? [{ id: s.id, name: s.name, title: s.title, text: p.text }] : [];
   });
-  const area = view.area ?? view.tonight?.area ?? AREAS[0];
+  const areaOf = (v: DayView) => v.area ?? v.tonight?.area ?? AREAS[0];
+  const card = (v: DayView) => (todayCard && v.n === todayDay ? todayCard : (
+    <TripDay
+      view={v} items={items} legs={legs} visited={plan.chosen} rainSlack={plan.days[v.n - 1].rainSlack}
+      onPlace={id => setPlace(items.find(i => i.id === id) ?? null)} onStay={a => setStay({ day: v.n, area: a })} onBooking={onBooking} onFlights={onFlights}
+      ideas={ideasOf(v.n)} onIdea={app?.me && releaseFor(app.me) ? () => setIdea({ day: v.n, area: areaOf(v) }) : undefined}
+    />
+  ));
+  const chips = (
+    <div ref={strip} className={view === 'all' ? 'tv-strip tv-pin' : 'tv-strip'} role="group" aria-label="Days">
+      {model.views.map(v => (
+        <button key={v.n} type="button" className="tv-chip" aria-pressed={v.n === day} onClick={() => pick(v.n)}>
+          <b>Day {v.n}</b>{v.date && <small>{dateLabel(v.date)}</small>}
+        </button>
+      ))}
+    </div>
+  );
   return (
     <section className="body tv" aria-label="Trip view">
-      {!onTrip && map}
-      <div ref={strip} className="tv-strip" role="group" aria-label="Days">
-        {model.views.map(v => (
-          <button key={v.n} type="button" className="tv-chip" aria-pressed={v.n === day} onClick={() => pick(v.n)}>
-            <b>Day {v.n}</b>{v.date && <small>{dateLabel(v.date)}</small>}
-          </button>
+      <div className="tv-view" role="group" aria-label="View">
+        {([['one', COPY.one], ['all', COPY.all]] as const).map(([v, label]) => (
+          <button key={v} type="button" className="tv-seg" aria-pressed={view === v} onClick={() => setView(v)}>{label}</button>
         ))}
       </div>
-      <div key={day} className={motion() === 'full' ? 'tv-card flip' : 'tv-card'}>
-        {todayCard && day === todayDay ? todayCard : (
-          <TripDay
-            view={view} items={items} legs={legs} visited={model.plan.chosen} rainSlack={model.plan.days[day - 1].rainSlack}
-            onPlace={id => setPlace(items.find(i => i.id === id) ?? null)} onStay={setStay} onBooking={onBooking} onFlights={onFlights}
-            ideas={ideas} onIdea={app?.me && releaseFor(app.me) ? () => setIdea({ day, area }) : undefined}
-          />
-        )}
-      </div>
-      {onTrip && map}
+      {view === 'all' ? (
+        <>
+          <div className="tv-map"><RouteMap route={plan.route} /></div>
+          {chips}
+          {model.views.map(v => <div key={v.n} id={`day-${v.n}`} className="tv-card tv-day">{card(v)}</div>)}
+        </>
+      ) : (
+        <>
+          {!onTrip && map}
+          {chips}
+          <div key={day} className={motion() === 'full' ? 'tv-card flip' : 'tv-card'}>{card(one)}</div>
+          {onTrip && map}
+        </>
+      )}
       {place && <ItemSheet items={[place]} title={place.name} onClose={() => setPlace(null)} />}
       {idea && <IdeaSheet day={idea.day} area={idea.area} onClose={() => setIdea(null)} />}
-      {stay && <StaySheet model={model} day={day} area={stay} onClose={() => setStay(null)} />}
+      {stay && <StaySheet model={model} day={stay.day} area={stay.area} onClose={() => setStay(null)} />}
     </section>
   );
 }
