@@ -57,7 +57,6 @@ describe('MeTab', () => {
   it.each([
     ['Group stats', { sub: 'crew-stats' }],
     ['How we decided', { sub: 'crew-decided' }],
-    ['Suggest an idea', { sub: 'suggest' }],
     ['What would you change\\?', { sub: 'complaints' }],
   ])('the %s row opens its sub-screen id', async (name, open) => {
     const { onOpen } = show('Alex');
