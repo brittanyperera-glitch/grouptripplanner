@@ -43,7 +43,7 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
   // Only a stay has a fold; the other kinds show every field already.
   const reveal = (nm: string, pr: string, guided: boolean, focus: boolean) => {
     if (!isStay) return;
-    const empty = nm.trim() === '' ? 'name' : isStay && pr.trim() === '' && !guided ? 'price' : null;
+    const empty = nm.trim() === '' ? 'name' : pr.trim() === '' && !guided ? 'price' : null;
     if (!empty) return;
     setOpen(true);
     if (focus) setFocusField(empty);
@@ -58,7 +58,7 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
   const pickHostel = (id: string) => {
     setHostelId(id);
     const h = hostelOf(id);
-    if (!h) { reveal(name, price, false, false); return; }
+    if (!h) return;
     const p = hostelPrice(h);
     setName(h.name); setPrice(p === null ? '' : String(p)); setLink(h.bookUrl);
     setRooms(h.bunkGbp !== null ? 'dorm' : 'private'); setType('hostel');
@@ -173,7 +173,7 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
       </div>
       {isStay ? (
         <details className="sa-fold" open={open} onToggle={e => setOpen(e.currentTarget.open)}>
-          <summary className="sa-sum">{C.fold}</summary>
+          <summary className="sa-sum" onClick={e => { if (open && !photoOk.ok) e.preventDefault(); }}>{C.fold}</summary>
           <div className="sa-body">{fields}</div>
         </details>
       ) : fields}
