@@ -32,6 +32,8 @@ const COPY = {
   leaveBy: 'Leave by',
   back: 'Back',
   others: 'Everyone else',
+  lookOne: 'needs a look',
+  lookMany: 'need a look',
   save: 'Save',
   half: 'Fill in both the date and the time, or clear both.',
 };
@@ -111,38 +113,41 @@ function MyRow({ mine, onSave, appError }: { mine: Traveller | undefined; onSave
 export function Flights({ me, travellers, startDate, lastDayStart, days, onSave, lastDay, appError = null, onBack, spy = false, back, backLabel = COPY.back }: FlightsProps) {
   const shared = back && <SubBack label={backLabel} onClick={back} />;
   const flags = arrivalFlags(travellers, startDate, days, lastDay, lastDayStart).filter(x => x.kind !== 'missing');
+  const flagged = new Set(flags.map(x => x.name));
   const leave = lastDay ? leaveByEach(travellers, lastDay) : {};
   const row = (p: Person) => {
-        const t = travellers[p];
-        // Dark here means a missing arrival or a missing departure. Someone who gave nothing at all has no lines to show.
-        const dark = flightsDark(t);
-        const empty = !t?.arriveLocal && !t?.departLocal && !t?.arriveFlight && !t?.departFlight;
-        const bare = p !== me && empty;
-        return (
-          <li key={p} className={dark && p !== me ? 'fx-row fx-dark' : 'fx-row'} aria-label={p}>
-            <div className="fx-who"><Avatar name={p} size={28} /><span className="fx-name">{p}</span>{dark && !bare && <span className="fx-tag">{COPY.dark}</span>}</div>
-            {flags.filter(x => x.name === p).map(x => <p key={x.kind} className="fx-flag">{when(x.text)}</p>)}
-            {p === me ? <MyRow mine={t} onSave={onSave} appError={appError} /> : bare ? <p className="fx-line fx-tag">{COPY.darkNote}</p> : (
-              <>
-                <p className="fx-line"><span className="fx-fl">{COPY.arrival}</span> {show(t?.arriveLocal, t?.arriveFlight)}</p>
-                <p className="fx-line"><span className="fx-fl">{COPY.departure}</span> {show(t?.departLocal, t?.departFlight)}</p>
-              </>
-            )}
-            {leave[p] && <p className="fx-line"><span className="fx-fl">{COPY.leaveBy}</span> {when(leave[p]!)}</p>}
-          </li>
-        );
+    const t = travellers[p];
+    // Dark here means a missing arrival or a missing departure. Someone who gave nothing at all has no lines to show.
+    const dark = flightsDark(t);
+    const empty = !t?.arriveLocal && !t?.departLocal && !t?.arriveFlight && !t?.departFlight;
+    const bare = p !== me && empty;
+    return (
+      <li key={p} className={dark && p !== me ? 'fx-row fx-dark' : 'fx-row'} aria-label={p}>
+        <div className="fx-who"><Avatar name={p} size={28} /><span className="fx-name">{p}</span>{dark && !bare && <span className="fx-tag">{COPY.dark}</span>}</div>
+        {flags.filter(x => x.name === p).map(x => <p key={x.kind} className="fx-flag">{when(x.text)}</p>)}
+        {p === me ? <MyRow mine={t} onSave={onSave} appError={appError} /> : bare ? <p className="fx-line fx-tag">{COPY.darkNote}</p> : (
+          <>
+            <p className="fx-line"><span className="fx-fl">{COPY.arrival}</span> {show(t?.arriveLocal, t?.arriveFlight)}</p>
+            <p className="fx-line"><span className="fx-fl">{COPY.departure}</span> {show(t?.departLocal, t?.departFlight)}</p>
+          </>
+        )}
+        {leave[p] && <p className="fx-line"><span className="fx-fl">{COPY.leaveBy}</span> {when(leave[p]!)}</p>}
+      </li>
+    );
   };
-  // Released friends see their own row first and the other four folded; guests keep the plain five-row order.
-  const fold = releaseFor(me) !== null && !isGuest(me);
-  const list = fold ? (
+  // Only the five friends reach this (FlightsScreen returns null for a guest), so the order never depends on the release.
+  const others = PEOPLE.filter(p => p !== me);
+  // The fold hides the flags and the "Waiting on flights" tags, so its label counts the people who carry one.
+  const look = others.filter(p => flagged.has(p) || flightsDark(travellers[p])).length;
+  const list = (
     <>
       <ul className="fx-list" aria-label={COPY.title}>{row(me)}</ul>
       <details className={spy ? 'ff-fold ff-spy' : 'ff-fold'}>
-        <summary className="ff-sum">{COPY.others}</summary>
-        <ul className="fx-list" aria-label={COPY.others}>{PEOPLE.filter(p => p !== me).map(row)}</ul>
+        <summary className="ff-sum">{look > 0 ? `${COPY.others} (${look} ${look === 1 ? COPY.lookOne : COPY.lookMany})` : COPY.others}</summary>
+        <ul className="fx-list" aria-label={COPY.others}>{others.map(row)}</ul>
       </details>
     </>
-  ) : <ul className="fx-list" aria-label={COPY.title}>{PEOPLE.map(row)}</ul>;
+  );
   if (spy) return <SpyScreen code="Operation Homecoming · Flights" title={COPY.spyTitle} back={!back && onBack ? { label: COPY.back, onClick: onBack } : undefined}><section className="fx fx-spy" aria-label={COPY.spyTitle}>{shared}<p className="sub">{COPY.sub}</p>{list}</section></SpyScreen>;
   return (
     <section className="body fx" aria-label={COPY.title}>

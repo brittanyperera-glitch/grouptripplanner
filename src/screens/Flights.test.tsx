@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppProvider } from '../state';
+import { AppProvider, useApp } from '../state';
 import { seedState } from '../guest/seed';
 import { PEOPLE } from '../types';
 import * as release from '../lib/release';
@@ -280,7 +281,7 @@ describe('Flights first (audit 11)', () => {
     expect(within(screen.getByRole('list', { name: 'Flights' })).getAllByRole('listitem').map(li => li.getAttribute('aria-label'))).toEqual([me]);
     const fold = container.querySelector('details.ff-fold') as HTMLDetailsElement;
     expect(fold.open).toBe(false);
-    expect(fold.querySelector('summary')).toHaveTextContent('Everyone else');
+    expect(fold.querySelector('summary')).toHaveTextContent(/^Everyone else/);
     expect([...fold.querySelectorAll('li.fx-row')].map(li => li.getAttribute('aria-label'))).toEqual(PEOPLE.filter(p => p !== me));
   });
 
@@ -288,17 +289,39 @@ describe('Flights first (audit 11)', () => {
     const user = userEvent.setup();
     const late = { ...travellers, Antek: { name: 'Antek' as const, arriveLocal: '2026-12-08T06:40', arriveFlight: null, departLocal: '2026-12-17T21:15', departFlight: null, updatedAt: '' } };
     const { container } = render(<Flights {...props('Alex')} travellers={late} startDate="2026-12-07" />);
-    await user.click(screen.getByText('Everyone else'));
+    await user.click(screen.getByText(/^Everyone else/, { selector: 'summary' }));
     expect((container.querySelector('details.ff-fold') as HTMLDetailsElement).open).toBe(true);
     expect(within(screen.getByRole('list', { name: 'Everyone else' })).getAllByRole('listitem')).toHaveLength(4);
     expect(within(screen.getByRole('listitem', { name: 'Antek' })).getByText(/lands on/)).toBeInTheDocument();
   });
 
-  it('a guest, who gets no released plan, keeps the five rows in the old order with no fold', () => {
+  it('on the vote-flow build, where there is no released plan, a friend still gets the fold', () => {
     vi.mocked(release.releaseFor).mockReturnValue(null);
     const { container } = render(<Flights {...props('Lazza')} />);
-    expect([...container.querySelectorAll('li.fx-row')].map(li => li.getAttribute('aria-label'))).toEqual(PEOPLE);
+    expect([...container.querySelectorAll('li.fx-row')].map(li => li.getAttribute('aria-label'))).toEqual(['Lazza', ...PEOPLE.filter(p => p !== 'Lazza')]);
+    expect(container.querySelector('details.ff-fold')).not.toBeNull();
+  });
+
+  it('a guest gets no Flights screen at all, so no rows and no fold', async () => {
+    const Probe = () => { const { me, setMe } = useApp(); useEffect(() => { setMe('Aunty'); }, [setMe]); return <p>me:{String(me)}</p>; };
+    const { container } = render(<AppProvider store={new LocalStore()} sandbox={{ onFinish: () => undefined }}><Probe /><FlightsScreen /></AppProvider>);
+    await screen.findByText('me:Aunty');
+    expect(container.querySelector('li.fx-row')).toBeNull();
     expect(container.querySelector('details')).toBeNull();
+  });
+
+  describe('the fold label says when it holds something that needs a look', () => {
+    const ok = (name: Person) => ({ name, arriveLocal: '2026-12-07T10:00', arriveFlight: null, departLocal: '2026-12-17T10:00', departFlight: null, updatedAt: '' });
+    const all = Object.fromEntries(PEOPLE.map(p => [p, ok(p)])) as typeof travellers;
+    const label = (t: typeof travellers) => { render(<Flights {...props('Alex')} travellers={t} startDate="2026-12-07" />); return document.querySelector('summary')!.textContent; };
+
+    it('plain when everyone else is fine', () => { expect(label(all)).toBe('Everyone else'); });
+    it('counts one person, not me, who lands late', () => {
+      expect(label({ ...all, Antek: { ...ok('Antek'), arriveLocal: '2026-12-08T06:40' }, Alex: { ...ok('Alex'), arriveLocal: '2026-12-09T06:40' } })).toBe('Everyone else (1 needs a look)');
+    });
+    it('counts a late arrival and a missing flight together', () => {
+      expect(label({ ...all, Antek: { ...ok('Antek'), arriveLocal: '2026-12-08T06:40' }, Lazza: { ...ok('Lazza'), departLocal: null } })).toBe('Everyone else (2 need a look)');
+    });
   });
 
   it('signed out, the screen renders nothing at all', () => {
