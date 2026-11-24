@@ -422,3 +422,79 @@ test('a Crew page opened from Me closes onto Me with the phone Back', async ({ p
   await expect(page.getByRole('tab', { name: 'Me' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('button', { name: 'Group stats' })).toBeVisible();
 });
+
+test('a day card\'s stay line with no stay chosen opens a sheet whose door lands on that area in Stays, and Back returns to Route', async ({ page }) => {
+  await openApp(page);
+  await page.getByRole('button', { name: /Day 8/ }).click();
+  await page.getByRole('button', { name: /No stay chosen yet in/ }).click();
+  const door = page.getByRole('dialog').getByRole('button', { name: /^Stays in / });
+  const area = (await door.textContent())!.replace(/^Stays in /, '');
+  await door.click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Back to Route/ })).toBeVisible();
+  await expect(page.getByRole('tablist')).toBeVisible();
+  await expect(page.getByRole('tabpanel', { name: 'Stays' }).getByRole('button', { name: new RegExp(`^${area}`) }).first()).toBeInViewport();
+  await page.goBack();
+  await expect(page.getByRole('tab', { name: 'Route' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByLabel('Trip view')).toBeVisible();
+  await expect(page.getByRole('tablist')).toBeVisible();
+});
+
+test('on a trip day, a stop on today\'s card opens its place sheet and tonight\'s stay opens the stay sheet with the Stays door', async ({ page }) => {
+  await openApp(page, true);
+  await page.evaluate(([day]) => {
+    const s = JSON.parse(localStorage.getItem('tp:settings')!);
+    // Day 3, which has stops: day 1 is the arrival day.
+    const d = new Date(`${day}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - 2);
+    localStorage.setItem('tp:settings', JSON.stringify({ ...s, startDate: d.toISOString().slice(0, 10) }));
+    localStorage.setItem('tp:mission-complete-seen', '1');
+    localStorage.removeItem('tp:staysadmin');
+  }, [colomboToday()]);
+  await page.reload();
+  const today = page.getByLabel('Today');
+  await today.locator('.it-row').first().click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
+  await today.getByLabel('Tonight').getByRole('button').click();
+  const door = page.getByRole('dialog').getByRole('button', { name: /^Stays in / });
+  await door.click();
+  await expect(page.getByRole('button', { name: /Back to Route/ })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole('tab', { name: 'Route' })).toHaveAttribute('aria-selected', 'true');
+});
+
+test('Play route reveal again: phone Back closes it onto Route, and its own Close leaves no entry behind', async ({ page }) => {
+  await openApp(page);
+  await page.getByRole('button', { name: 'Play route reveal' }).click();
+  await expect(page.getByText('Mission unlocked')).toBeVisible();
+  await page.goBack();
+  await expect(page.getByText('Mission unlocked')).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: 'Route' })).toHaveAttribute('aria-selected', 'true');
+  expect(page.url()).toContain('localhost');
+
+  await page.getByRole('button', { name: 'Play route reveal' }).click();
+  await expect(page.getByText('Mission unlocked')).toBeVisible();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByText('Mission unlocked')).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: 'Route' })).toHaveAttribute('aria-selected', 'true');
+  // Its entry is gone with it: one more Back leaves the app (to the page before it), not onto the reveal or another Route entry.
+  await page.goBack();
+  await expect(page.getByText('Mission unlocked')).toHaveCount(0);
+  expect(page.url()).not.toContain('localhost');
+});
+
+test('Play route reveal again: Forward after Back reopens it, and its Close then pops only its own entry', async ({ page }) => {
+  await openApp(page);
+  await page.getByRole('button', { name: 'Play route reveal' }).click();
+  await expect(page.getByText('Mission unlocked')).toBeVisible();
+  await page.goBack();
+  await expect(page.getByText('Mission unlocked')).toHaveCount(0);
+  // The entry still says the replay is open, so Forward shows it again rather than a Route that thinks it is the replay.
+  await page.goForward();
+  await expect(page.getByText('Mission unlocked')).toBeVisible();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('tab', { name: 'Route' })).toHaveAttribute('aria-selected', 'true');
+  await page.goBack();
+  expect(page.url()).not.toContain('localhost');
+});

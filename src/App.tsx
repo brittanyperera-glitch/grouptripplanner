@@ -380,17 +380,28 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
     if (history.state?.tpFile) { selfPop.current = true; history.back(); }
   };
   const closeFile = () => navigate('back', dropFile);
+  // The replay owns an entry like an overlay does (tpReplay): Back closes it onto Route, and its own Close pops that entry.
+  const showReplay = () => {
+    unlock();
+    setReplay(true);
+    const entry = { ...history.state, tpTab: tabRef.current, tpReplay: true };
+    if (history.state?.tpReplay) history.replaceState(entry, ''); else history.pushState(entry, '');
+  };
+  const closeReplay = () => {
+    setReplay(false);
+    if (history.state?.tpReplay) { selfPop.current = true; history.back(); }
+  };
   useEffect(() => {
     if (step !== 'tabs') return;
-    history.replaceState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined, tpFile: undefined, tpTarget: undefined }, '');
+    history.replaceState({ ...history.state, tpTab: tabRef.current, tpOverlay: undefined, tpFile: undefined, tpTarget: undefined, tpReplay: undefined }, '');
     const onPop = (e: PopStateEvent) => {
       if (selfPop.current) { selfPop.current = false; return; }
-      const st = e.state as { tpTab?: Tab; tpOverlay?: Overlay; tpFile?: string; tpTarget?: string } | null;
+      const st = e.state as { tpTab?: Tab; tpOverlay?: Overlay; tpFile?: string; tpTarget?: string; tpReplay?: boolean } | null;
       const t = st?.tpTab;
       // The entry says what was open: Back from a file onto an overlay entry lands on that overlay.
       const sub = st?.tpFile ? normaliseSub(st.tpFile) : null;
       // A friend's entry may name a tab from before the four-tab bar; the render maps it onto one that exists.
-      if (t && (released || TABS.includes(t))) navigate('back', () => { setOverlay(st.tpOverlay ?? null); setFile(sub ? { id: sub, target: st.tpTarget } : null); setTabState(t); });
+      if (t && (released || TABS.includes(t))) navigate('back', () => { setReplay(!!st.tpReplay); setOverlay(st.tpOverlay ?? null); setFile(sub ? { id: sub, target: st.tpTarget } : null); setTabState(t); });
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -552,7 +563,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
       : tab === 'Me' ? <MeTab me={me} players={copy.players} onOpen={openTask} onQuiz={() => showOverlay('quiz')} onBingo={() => showOverlay('bingo')} onAwards={awardList.length > 0 ? () => showOverlay('awards') : undefined} onNotYou={() => navigate('back', clearMe)} onLogout={finishSandbox ?? logout ?? undefined} logoutLabel={finishSandbox ? GUEST_EXIT : undefined} />
       : !group ? wait
       : tab === 'To do' ? <TodoTab group={group} tasks={tasks} onOpen={openTask} />
-      : <RouteTab group={group} next={nextTask(tasks)} onOpen={openTask} reveal={group.locked ? () => { unlock(); setReplay(true); } : undefined} />;
+      : <RouteTab group={group} next={nextTask(tasks)} onOpen={openTask} reveal={group.locked ? showReplay : undefined} />;
     content = <div role="tabpanel" aria-label={tab} className="panel">{nav(panel)}</div>;
   } else if (tab === 'Picks') {
     // Your picks lives in the tab bar (Brittany 2026-10-15); after submitting, a reorder saves as you go.
@@ -580,7 +591,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
 
   const enter = cssEnter() ? lastNav() : null;
   if (screen === 'reveal' && group?.final) content = <Reveal plan={group.final} cards={compromises(group, state, items)} onClose={closeReveal} />;
-  if (replay && group?.final) content = <Reveal plan={group.final} cards={compromises(group, state, items)} onClose={() => setReplay(false)} />;
+  if (replay && group?.final) content = <Reveal plan={group.final} cards={compromises(group, state, items)} onClose={closeReplay} />;
   if (screen === 'items') content = <OpenItems items={todo} onGo={goItem} onBack={closeOverlay} />;
   if (screen === 'walkthrough') content = <Walkthrough name={me} items={todo} onGo={goItem} onDone={finishWalk} />;
   if (screen === 'quiz') content = <Interview me={me} initial={state.stays?.crew[me]?.prefs} onSave={prefs => { void store.saveCrewStays(me, { prefs, quizDone: prefs.some(a => !a.skipped && (a.noPreference || Object.keys(a.picks).length > 0)) }); }} onDone={closeOverlay} onClose={closeOverlay} />;

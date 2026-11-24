@@ -8,9 +8,8 @@ import Everyone from './Everyone';
 import Extras from './Extras';
 import Friends from './Friends';
 import GroupAnswers from './GroupAnswers';
-import Suggest from './Suggest';
 
-export type CrewWhich = Extract<SubId, 'crew-stats' | 'crew-decided' | 'suggest' | 'complaints'>;
+export type CrewWhich = Extract<SubId, 'crew-stats' | 'crew-decided' | 'complaints'>;
 
 /** The Crew sub-screens under Me: the shared Back over one existing screen. Extras needs the group result, so it shows only when `group` is given. */
 export default function CrewPage({ which, back, backLabel, group }: { which: CrewWhich; back: () => void; backLabel: string; group?: GroupResult }) {
@@ -27,7 +26,6 @@ export default function CrewPage({ which, back, backLabel, group }: { which: Cre
           {group && <Extras group={group} />}
         </>
       )}
-      {which === 'suggest' && <Suggest open={submitted} />}
       {which === 'complaints' && <Complaints>{null}</Complaints>}
     </>
   );

@@ -1,7 +1,7 @@
 import './RouteTab.css';
 import type { Open, Task } from '../lib/todo';
 import { useApp } from '../state';
-import type { GroupResult } from '../types';
+import type { Area, GroupResult } from '../types';
 import { PlanSave } from './Plan';
 import { TodayScreen } from './Today';
 import { dateLabel } from './TripDay';
@@ -17,6 +17,7 @@ export default function RouteTab({ group, next, onOpen, reveal, today }: { group
   const todayDay = model.views.findIndex(v => v.date === model.today) + 1 || undefined;
   const before = !!model.plan && !todayDay && (!model.start || model.today < model.start);
   const doors = { onBooking: (id: string) => onOpen({ sub: 'bookings', target: id }), onFlights: () => onOpen({ sub: 'flights' }) };
+  const onStays = (area: Area) => onOpen({ sub: 'stays', target: area });
   return (
     <section className="body rt" aria-label="Route">
       {next && <button type="button" className="rt-next" onClick={() => onOpen(next.open)}>{COPY.next}: {next.label}</button>}
@@ -24,8 +25,8 @@ export default function RouteTab({ group, next, onOpen, reveal, today }: { group
         <p className="rt-count">{model.start ? `Trip starts ${dateLabel(model.start)} · ` : ''}{model.plan.days.length} days, about {model.plan.travelHours.toFixed(1)} h driving</p>
       )}
       <TripViewBody
-        key={todayDay ?? 0} model={model} items={items} legs={legs} todayDay={todayDay} {...doors}
-        todayCard={todayDay ? <TodayScreen group={group} today={today} {...doors} /> : undefined}
+        key={todayDay ?? 0} model={model} items={items} legs={legs} todayDay={todayDay} {...doors} onStays={onStays}
+        todayCard={todayDay ? sheets => <TodayScreen group={group} today={today} {...doors} {...sheets} /> : undefined}
       />
       <div className="rt-links">
         {reveal && <button type="button" className="rt-link" onClick={reveal}>{COPY.reveal}</button>}
