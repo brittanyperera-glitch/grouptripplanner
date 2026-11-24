@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { AppProvider } from '../state';
 import { IdleWarning } from './IdleWarning';
 import { MemoryStore } from './MemoryStore';
+import { guestSeed } from './seed';
 import { beginGuest, endGuest } from './deviceState';
 import { GUEST_IDLE_MS, GUEST_WARN_MS } from './timing';
 import { useIdleReset } from './useIdleReset';
 
 export default function GuestRoot({ onExit, children }: { onExit(): void; children: ReactNode }) {
   const [ready, setReady] = useState(false);
-  const store = useMemo(() => new MemoryStore(), []);
+  const store = useMemo(() => new MemoryStore(guestSeed()), []);
   const exited = useRef(false);
   const onExitRef = useRef(onExit);
   onExitRef.current = onExit;

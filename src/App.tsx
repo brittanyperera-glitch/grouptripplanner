@@ -45,7 +45,7 @@ import Plan from './screens/Plan';
 import { PosterWhen, tripWhen } from './screens/Poster';
 import Premiere, { Reveal } from './screens/Reveal';
 import { compromises } from './lib/compromises';
-import { RELEASE, releaseFor } from './lib/release';
+import { releaseFor } from './lib/release';
 import { effectiveRelease, releaseState } from './lib/tripPlan';
 import { StaysNav } from './components/StaysNav';
 import Profile from './screens/Profile';
@@ -87,7 +87,6 @@ const readSeen = (): string | null => { try { return localStorage.getItem(AWARDS
 // The released route plays once per device; a new release (different places or days) plays again.
 const REVEAL_SEEN_KEY = 'tp:reveal-seen';
 const readRevealSeen = (): string | null => { try { return localStorage.getItem(REVEAL_SEEN_KEY); } catch { return null; } };
-const releaseKey = RELEASE ? `${RELEASE.days}:${RELEASE.items.join(',')}` : null;
 const TAB_ICON: Record<Tab, (p: { size?: number }) => JSX.Element> = { 'My trip': IconRoute, 'Picks': IconList, 'Group': IconGroup, 'Stays': IconPin, 'Suggest': IconSpark, 'Guide': IconBook, 'Profile': IconGroup, 'Route': IconRoute, 'To do': IconList, 'Me': IconGroup };
 type Say = (t?: string, kind?: QuipKind) => void;
 
@@ -273,6 +272,8 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const { data: computed } = useGroupResult(state, items, legs, release);
   const group = seed && state.tripSettings === undefined ? null : computed;
   const released = !!seed;
+  // Keyed on the plan this person sees, so a guest's sample trip never marks the real group's reveal as seen (or the other way round).
+  const releaseKey = seed ? `${seed.days}:${seed.items.join(',')}` : null;
   const [file, setFile] = useState<SubFile | null>(null);
   // The finale is the shell's: `finale` is on while every mission is done and unpressed; it plays once per open of the app.
   const [finale, setFinale] = useState(false);
@@ -287,7 +288,8 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const [replay, setReplay] = useState(false);
   const [draft, setDraft] = useState<Response>(() => {
     const saved = state.responses[me];
-    return saved ? structuredClone(saved) : blank(me);
+    // A guest has no row of their own: on a released sample they arrive already past the setup steps, as the members do.
+    return saved ? structuredClone(saved) : seed && isGuest(me) ? { ...blank(me), days: seed.days, pace: seed.pace, submitted: true } : blank(me);
   });
   const ref = useRef(draft);
   const [step, setStep] = useState<Step>(() => (draft.days === null ? 'days' : draft.pace === null ? 'pace' : draft.submitted ? 'tabs' : 'rate'));
@@ -443,7 +445,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   const arrivedSubmitted = useRef(draft.submitted).current;
   // Awards open on their own first; the walkthrough follows with whatever is still to do.
   const walkEligible = arrivedSubmitted && !isGuest(me) && walkShould(todo, today, walkDay);
-  const revealDue = !isGuest(me) && releaseKey !== null && revealSeen !== releaseKey && !!group?.final && group.locked;
+  const revealDue = releaseKey !== null && revealSeen !== releaseKey && !!group?.final && group.locked;
   // A slow plan worker can finish after someone has opened a page (Trip admin): the reveal waits for the next visit rather than pulling them out.
   const revealWaived = useRef(false);
   if (overlay && !revealDue && releaseKey !== null && revealSeen !== releaseKey) revealWaived.current = true;
@@ -547,7 +549,7 @@ function Flow({ me, say, onStartOver }: { me: Player; say: Say; onStartOver(): v
   } else if (released) {
     const wait = <div className="body"><div className="sub">Working out the plan...</div></div>;
     const panel = tab === 'Guide' ? <Guide />
-      : tab === 'Me' ? <MeTab me={me} players={copy.players} onOpen={openTask} onQuiz={() => showOverlay('quiz')} onBingo={() => showOverlay('bingo')} onAwards={awardList.length > 0 ? () => showOverlay('awards') : undefined} onNotYou={() => navigate('back', clearMe)} onLogout={logout ?? undefined} />
+      : tab === 'Me' ? <MeTab me={me} players={copy.players} onOpen={openTask} onQuiz={() => showOverlay('quiz')} onBingo={() => showOverlay('bingo')} onAwards={awardList.length > 0 ? () => showOverlay('awards') : undefined} onNotYou={() => navigate('back', clearMe)} onLogout={finishSandbox ?? logout ?? undefined} logoutLabel={finishSandbox ? GUEST_EXIT : undefined} />
       : !group ? wait
       : tab === 'To do' ? <TodoTab group={group} tasks={tasks} onOpen={openTask} />
       : <RouteTab group={group} next={nextTask(tasks)} onOpen={openTask} reveal={group.locked ? () => { unlock(); setReplay(true); } : undefined} />;

@@ -34,8 +34,10 @@ describe('releaseState and effectiveRelease', () => {
   it('yields the stored plan when there is one', () => {
     expect(effectiveRelease({ state: 'value', plan: plan9 }, RELEASE, null)).toBe(plan9);
   });
-  it('a guest still gets no release', () => {
-    expect(releaseFor('Tuktuk')).toBeNull();
+  // Changed deliberately (D11, 24 Nov 2026, "Show the new four tabs"): a guest gets the made-up sample trip, never the group's release.
+  it('a guest gets the sample release, not the real one', () => {
+    expect(releaseFor('Tuktuk')).not.toBeNull();
+    expect(releaseFor('Tuktuk')).not.toBe(RELEASE);
   });
 });
 
