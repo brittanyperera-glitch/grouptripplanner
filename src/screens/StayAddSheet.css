@@ -1,0 +1,7 @@
+/* The "Name, price and details" fold in the add-a-stay sheet. Only sa- classes lead a rule here. */
+.sa-sum { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 800; color: var(--teal-deep); }
+.sa-sum::-webkit-details-marker { display: none; }
+.sa-sum::after { content: '›'; margin-left: auto; padding: 0 4px; font-size: 22px; transform: rotate(90deg); }
+.sa-fold[open] > .sa-sum::after { transform: rotate(-90deg); }
+.sa-sum:focus-visible { outline: 2px solid var(--coconut); outline-offset: 2px; }
+.sa-body { display: flex; flex-direction: column; gap: 14px; padding-top: 6px; }

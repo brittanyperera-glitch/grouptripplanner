@@ -54,10 +54,10 @@ describe('MeTab', () => {
     expect(screen.queryByRole('button', { name: /^Back$/ })).toBeNull();
   });
 
+  // Changed deliberately (C4, her 24 Nov "No database change"): the 'Suggest an idea' row left Me; ideas start on a day card.
   it.each([
     ['Group stats', { sub: 'crew-stats' }],
     ['How we decided', { sub: 'crew-decided' }],
-    ['Suggest an idea', { sub: 'suggest' }],
     ['What would you change\\?', { sub: 'complaints' }],
   ])('the %s row opens its sub-screen id', async (name, open) => {
     const { onOpen } = show('Alex');

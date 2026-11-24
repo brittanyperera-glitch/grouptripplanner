@@ -5,10 +5,13 @@ import ItemSheet from '../components/ItemSheet';
 import RouteMap from '../components/Map';
 import { motion } from '../components/motion';
 import Sheet from '../components/Sheet';
+import { releaseFor } from '../lib/release';
 import { stayItemId } from '../lib/tripadmin';
 import { useApp } from '../state';
+import { AREAS } from '../types';
 import type { Area, GroupResult, Item, Leg } from '../types';
 import { bookingText } from './bookingText';
+import IdeaSheet, { parseIdea } from './IdeaSheet';
 import TripDay, { dateLabel } from './TripDay';
 import { useTripModel, type TripModel } from './useTripModel';
 
@@ -46,6 +49,11 @@ function StaySheet({ model, day, area, onClose }: { model: TripModel; day: numbe
   );
 }
 
+// The body's tests mount it with no provider, and a card with no app behind it simply has no ideas.
+function useAppIfAny() {
+  try { return useApp(); } catch { return null; }
+}
+
 interface BodyProps {
   model: TripModel; items: Item[]; legs: Leg[];
   /** The trip day that is today: the chip starts pressed and the strip and card come before the map. A day in the hash still wins. */
@@ -64,6 +72,8 @@ export function TripViewBody({ model, items, legs, todayDay, todayCard, onBookin
   const day = Math.min(picked, Math.max(count, 1));
   const [place, setPlace] = useState<Item | null>(null);
   const [stay, setStay] = useState<Area | null>(null);
+  const [idea, setIdea] = useState<{ day: number; area: Area } | null>(null);
+  const app = useAppIfAny();
   const strip = useRef<HTMLDivElement>(null);
   const pick = (n: number) => {
     setDay(n);
@@ -90,6 +100,11 @@ export function TripViewBody({ model, items, legs, todayDay, todayCard, onBookin
   if (!model.plan || count === 0) return <section className="body" aria-label="Trip view"><p className="tv-empty">{COPY.empty}</p></section>;
   const view = model.views[day - 1];
   const map = <div className="tv-map"><RouteMap route={model.plan.route} drive legs={view.legs} parkAt={view.parkAt} dayN={day} /></div>;
+  const ideas = (app?.state.suggestions ?? []).filter(s => s.status === 'pending').flatMap(s => {
+    const p = parseIdea(s.note);
+    return p.day === day ? [{ id: s.id, name: s.name, title: s.title, text: p.text }] : [];
+  });
+  const area = view.area ?? view.tonight?.area ?? AREAS[0];
   return (
     <section className="body tv" aria-label="Trip view">
       {!onTrip && map}
@@ -105,11 +120,13 @@ export function TripViewBody({ model, items, legs, todayDay, todayCard, onBookin
           <TripDay
             view={view} items={items} legs={legs} visited={model.plan.chosen} rainSlack={model.plan.days[day - 1].rainSlack}
             onPlace={id => setPlace(items.find(i => i.id === id) ?? null)} onStay={setStay} onBooking={onBooking} onFlights={onFlights}
+            ideas={ideas} onIdea={app?.me && releaseFor(app.me) ? () => setIdea({ day, area }) : undefined}
           />
         )}
       </div>
       {onTrip && map}
       {place && <ItemSheet items={[place]} title={place.name} onClose={() => setPlace(null)} />}
+      {idea && <IdeaSheet day={idea.day} area={idea.area} onClose={() => setIdea(null)} />}
       {stay && <StaySheet model={model} day={day} area={stay} onClose={() => setStay(null)} />}
     </section>
   );

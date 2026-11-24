@@ -11,7 +11,7 @@ import { effectiveRelease, releaseState } from '../lib/tripPlan';
 import { AppProvider, useApp } from '../state';
 import { LocalStore } from '../store/local';
 import { emptyRanking, PEOPLE } from '../types';
-import type { GroupResult, Player, ReleasePlan, TripSettings } from '../types';
+import type { GroupResult, Player, ReleasePlan, Suggestion, TripSettings } from '../types';
 import { useGroupResult } from '../workers/usePlan';
 import Organiser from './Organiser';
 
@@ -562,5 +562,35 @@ describe('Organiser fix round', () => {
     await user.click(within(row).getByRole('button', { name: 'Save dates' }));
     await waitFor(() => expect(store.saves).toHaveLength(2));
     expect(store.saves[1].bookingDates).toEqual({});
+  });
+});
+
+describe('Organiser Ideas section', () => {
+  const idea = (o: Partial<Suggestion>): Suggestion => ({ id: 'i1', name: 'Lazza', title: 'Tea factory', area: 'Hill country', note: 'Day 3: go early', status: 'pending', createdAt: '2026-11-20T00:00:00Z', ...o });
+  const stash = (...l: Suggestion[]) => localStorage.setItem('tp:sugg', JSON.stringify(l));
+
+  it('is a closed section with its count, and Not this time rejects the idea without touching the route', async () => {
+    stash(idea({}));
+    const { store, user } = await mount();
+    const head = await screen.findByRole('button', { name: /^Ideas/ });
+    expect(head).toHaveAttribute('aria-expanded', 'false');
+    expect(head).toHaveTextContent('1 waiting');
+    await user.click(head);
+    await user.click(screen.getByRole('button', { name: 'Not this time: Tea factory' }));
+    await waitFor(async () => expect((await store.load()).suggestions[0].status).toBe('rejected'));
+    expect(store.saves).toEqual([]);
+  });
+
+  it('a second stop is numbered after the first, and a tag past the last day counts as No day', async () => {
+    const edit = { kind: 'custom' as const, id: 'c:1', day: 2, title: 'Sunset walk', area: 'Colombo' as const, hours: 1 };
+    stash(idea({}), idea({ id: 'i2', title: 'Far day', note: 'Day 30: later' }));
+    const { store, user } = await mount('Brittany', { plan: { ...seed, dayEdits: [edit] } });
+    await open(user, /^Ideas/);
+    expect(within(screen.getByRole('group', { name: 'No day' })).getByText('Far day')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /^Add to the day/ })).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Add to the day: Tea factory' }));
+    await waitFor(() => expect(store.saves).toHaveLength(1));
+    expect(store.saves[0].plan?.dayEdits.map(e => e.id)).toEqual(['c:1', 'c:2']);
+    expect(store.saves[0].overrides?.at(-1)?.what).toMatch(/Tea factory.*day 3/);
   });
 });

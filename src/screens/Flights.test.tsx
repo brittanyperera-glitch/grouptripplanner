@@ -1,14 +1,20 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppProvider } from '../state';
+import { AppProvider, useApp } from '../state';
+import { seedState } from '../guest/seed';
+import { PEOPLE } from '../types';
+import * as release from '../lib/release';
 import { LocalStore } from '../store/local';
 import releaseJson from '../content/release.json';
 import type { Pace, Person } from '../types';
 import { SAVE_COPY } from './saveStatus';
 import FlightsScreen, { Flights } from './Flights';
 
-beforeEach(() => { localStorage.clear(); });
+vi.mock('../lib/release', async orig => { const m = await orig<typeof import('../lib/release')>(); return { ...m, releaseFor: vi.fn(m.releaseFor) }; });
+const realRelease = (await vi.importActual<typeof import('../lib/release')>('../lib/release')).releaseFor;
+beforeEach(() => { localStorage.clear(); vi.mocked(release.releaseFor).mockImplementation(realRelease); });
 afterEach(() => cleanup());
 
 const mount = async (me: Person, seed?: (s: LocalStore) => Promise<void>) => {
@@ -261,5 +267,66 @@ describe('Flights board', () => {
     rerender(<Flights {...props} />);
     expect(screen.getByRole('heading', { name: 'Flights' })).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Flights' })).toBeInTheDocument();
+  });
+});
+
+describe('Flights first (audit 11)', () => {
+  const travellers = seedState().travellers ?? {};
+  const props = (me: Person) => ({ me, travellers, startDate: null, days: null, onSave: vi.fn(async () => true) });
+
+  it.each(PEOPLE)('for %s the first row is their own and the other four sit in a closed fold', me => {
+    const { container } = render(<Flights {...props(me)} />);
+    const rows = [...container.querySelectorAll('li.fx-row')].map(li => li.getAttribute('aria-label'));
+    expect(rows).toEqual([me, ...PEOPLE.filter(p => p !== me)]);
+    expect(within(screen.getByRole('list', { name: 'Flights' })).getAllByRole('listitem').map(li => li.getAttribute('aria-label'))).toEqual([me]);
+    const fold = container.querySelector('details.ff-fold') as HTMLDetailsElement;
+    expect(fold.open).toBe(false);
+    expect(fold.querySelector('summary')).toHaveTextContent(/^Everyone else/);
+    expect([...fold.querySelectorAll('li.fx-row')].map(li => li.getAttribute('aria-label'))).toEqual(PEOPLE.filter(p => p !== me));
+  });
+
+  it('opening the fold shows the other four, and their flags still show', async () => {
+    const user = userEvent.setup();
+    const late = { ...travellers, Antek: { name: 'Antek' as const, arriveLocal: '2026-12-08T06:40', arriveFlight: null, departLocal: '2026-12-17T21:15', departFlight: null, updatedAt: '' } };
+    const { container } = render(<Flights {...props('Alex')} travellers={late} startDate="2026-12-07" />);
+    await user.click(screen.getByText(/^Everyone else/, { selector: 'summary' }));
+    expect((container.querySelector('details.ff-fold') as HTMLDetailsElement).open).toBe(true);
+    expect(within(screen.getByRole('list', { name: 'Everyone else' })).getAllByRole('listitem')).toHaveLength(4);
+    expect(within(screen.getByRole('listitem', { name: 'Antek' })).getByText(/lands on/)).toBeInTheDocument();
+  });
+
+  it('on the vote-flow build, where there is no released plan, a friend still gets the fold', () => {
+    vi.mocked(release.releaseFor).mockReturnValue(null);
+    const { container } = render(<Flights {...props('Lazza')} />);
+    expect([...container.querySelectorAll('li.fx-row')].map(li => li.getAttribute('aria-label'))).toEqual(['Lazza', ...PEOPLE.filter(p => p !== 'Lazza')]);
+    expect(container.querySelector('details.ff-fold')).not.toBeNull();
+  });
+
+  it('a guest gets no Flights screen at all, so no rows and no fold', async () => {
+    const Probe = () => { const { me, setMe } = useApp(); useEffect(() => { setMe('Aunty'); }, [setMe]); return <p>me:{String(me)}</p>; };
+    const { container } = render(<AppProvider store={new LocalStore()} sandbox={{ onFinish: () => undefined }}><Probe /><FlightsScreen /></AppProvider>);
+    await screen.findByText('me:Aunty');
+    expect(container.querySelector('li.fx-row')).toBeNull();
+    expect(container.querySelector('details')).toBeNull();
+  });
+
+  describe('the fold label says when it holds something that needs a look', () => {
+    const ok = (name: Person) => ({ name, arriveLocal: '2026-12-07T10:00', arriveFlight: null, departLocal: '2026-12-17T10:00', departFlight: null, updatedAt: '' });
+    const all = Object.fromEntries(PEOPLE.map(p => [p, ok(p)])) as typeof travellers;
+    const label = (t: typeof travellers) => { render(<Flights {...props('Alex')} travellers={t} startDate="2026-12-07" />); return document.querySelector('summary')!.textContent; };
+
+    it('plain when everyone else is fine', () => { expect(label(all)).toBe('Everyone else'); });
+    it('counts one person, not me, who lands late', () => {
+      expect(label({ ...all, Antek: { ...ok('Antek'), arriveLocal: '2026-12-08T06:40' }, Alex: { ...ok('Alex'), arriveLocal: '2026-12-09T06:40' } })).toBe('Everyone else (1 needs a look)');
+    });
+    it('counts a late arrival and a missing flight together', () => {
+      expect(label({ ...all, Antek: { ...ok('Antek'), arriveLocal: '2026-12-08T06:40' }, Lazza: { ...ok('Lazza'), departLocal: null } })).toBe('Everyone else (2 need a look)');
+    });
+  });
+
+  it('signed out, the screen renders nothing at all', () => {
+    const { container } = render(<AppProvider store={new LocalStore()}><FlightsScreen /></AppProvider>);
+    expect(container.querySelector('li.fx-row')).toBeNull();
+    expect(container.querySelector('details')).toBeNull();
   });
 });

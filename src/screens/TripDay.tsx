@@ -1,6 +1,7 @@
 import './MyTrip.css';
 import './TripDay.css';
 import './RouteTab.css';
+import './IdeaSheet.css';
 import { IconPin } from '../components/Icons';
 import { Cover } from '../components/PhotoCard';
 import TransportLine, { hm, transportOf, transportText } from '../components/TransportLine';
@@ -21,12 +22,17 @@ export function dateLabel(date: string): string {
 export const flightText = (f: DayView['flights'][number]) => `${f.name} ${f.kind === 'arrive' ? 'arrives' : 'leaves'} ${f.time.slice(11)}${f.flight ? ` · ${f.flight}` : ''}`;
 const tonightText = (t: NonNullable<DayView['tonight']>) => `${t.checkIn ? 'Tonight, check in' : 'Tonight'}: ${t.title ? `${t.title}, ${t.area}` : `No stay chosen yet in ${t.area}`}`;
 
+/** A friend's pending idea for this day, with the "Day N: " tag already taken off the note. */
+export interface DayIdea { id: string; name: string; title: string; text: string }
+
 export interface TripDayProps {
   view: DayView;
   quests?: SideQuest[]; tips?: DayTip[]; skippedBy?: (id: string) => string[];
   onPlace?(itemId: string): void; onStay?(area: Area): void;
   /** The day card's doors: when given, a booking or the flights line is a button that opens its screen. */
   onBooking?(id: string): void; onFlights?(): void;
+  /** Pending ideas for this day; the door is there only when onIdea is given (released friends). */
+  ideas?: DayIdea[]; onIdea?(): void;
   /** The print layout: the saved itinerary's own list markup, no photo strip and no buttons. */
   compact?: boolean;
   /** Only for the photo strip and the print facts. */
@@ -97,7 +103,7 @@ function Print({ view, items = [], legs = [], quests = [], tips = [], skippedBy,
 /** One day from the trip model. The print layout is the Itinerary's; the photo-strip card is Trip view's and Today's. */
 export default function TripDay(props: TripDayProps) {
   if (props.compact) return <Print {...props} />;
-  const { view, items = [], legs = [], quests = [], tips = [], skippedBy, onPlace, onStay, onBooking, onFlights, note, rainSlack } = props;
+  const { view, items = [], legs = [], quests = [], tips = [], skippedBy, onPlace, onStay, onBooking, onFlights, ideas = [], onIdea, note, rainSlack } = props;
   const byId = new Map(items.map(i => [i.id, i]));
   // A drive-and-flight day has no visit; a place from its area keeps the header a photo like every other day's.
   const inArea = items.filter(i => i.area === view.area && i.photo);
@@ -144,6 +150,9 @@ export default function TripDay(props: TripDayProps) {
           </span>
         ))}
         {note && <small className="jf-note">{note}</small>}
+        {ideas.map(i => (
+          <span key={i.id} className="is-idea"><b>{i.title}</b>{i.text && <small>{i.text}</small>}<small>Idea · {i.name} · waiting on Brittany</small></span>
+        ))}
         {quests.filter(q => q.day === view.n).map(q => <small key={q.itemId} className="day-quest">Side quest: {q.what}</small>)}
         {tips.filter(t => t.day === view.n).map(t => <small key={t.name} className="day-quest">{t.name}: {t.text}</small>)}
         {(driving >= LONG_DRIVE_HOURS || rainSlack || view.overBudget) && (
@@ -158,6 +167,7 @@ export default function TripDay(props: TripDayProps) {
           : <span className="td-tonight">{tonightText(view.tonight)}</span>)}
         {view.bookings.length > 0 && <Bookings list={view.bookings} onBooking={onBooking} />}
         {view.flights.length > 0 && <ul className="td-list" aria-label="Day flights">{view.flights.map(f => <li key={`${f.name}${f.kind}`}>{onFlights ? <button type="button" className="rt-door" onClick={onFlights}>{flightText(f)}</button> : flightText(f)}</li>)}</ul>}
+        {onIdea && <button type="button" className="is-door" onClick={onIdea}>Add an idea for this day</button>}
       </span>
     </section>
   );

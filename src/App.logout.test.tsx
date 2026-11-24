@@ -45,7 +45,8 @@ describe('Log out', () => {
     await screen.findByRole('button', { name: 'Menu' });
     openMenu();
     expect(screen.queryByRole('button', { name: 'Finish and reset' })).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Log out' }));
+    // Changed deliberately (audit 25, C5): a guest leaves the demo; members keep Log out.
+    await user.click(screen.getByRole('button', { name: 'Leave the demo' }));
     await onLanding();
   });
 });

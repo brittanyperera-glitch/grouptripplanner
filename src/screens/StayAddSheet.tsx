@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Sheet from '../components/Sheet';
 import { hostelOf, hostelPrice, hostelsFor, KIND_LABEL, parseUrl, ROOM_LABEL, STAY_COPY, TYPE_LABEL } from '../lib/stayflow';
 import { useApp } from '../state';
 import type { Area, PlaceDraft, PlaceKind, PlaceSuggestion, RoomType, StayType } from '../types';
 import './Stays.css';
+import './StayAddSheet.css';
 
 const C = STAY_COPY.sheet;
 const MAX_TITLE = 80, MAX_WHY = 140;
@@ -23,6 +24,10 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
   const [type, setType] = useState<StayType | undefined>(editing?.stayType);
   const [why, setWhy] = useState(editing?.why ?? '');
   const [photo, setPhoto] = useState(editing?.photo ?? '');
+  const [open, setOpen] = useState(!!editing);
+  const [focusField, setFocusField] = useState<'name' | 'price' | null>(null);
+  const nameRef = useRef<HTMLInputElement>(null), priceRef = useRef<HTMLInputElement>(null);
+  const pasting = useRef(false);
   const hostels = hostelsFor(where);
   const chosen = hostelOf(hostelId);
   const linkOk = parseUrl(link), photoOk = parseUrl(photo);
@@ -34,6 +39,22 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
   const priceFine = isStay ? priceOk || (chosen !== undefined && price.trim() === '') : price.trim() === '' || priceOk;
   const ready = !!me && name.trim() !== '' && priceFine && linkOk.ok && photoOk.ok && areas.includes(where);
 
+  // A shortcut (guide pick or link) opens the fold only when it leaves a required field empty; a paste also lands the cursor there.
+  // Only a stay has a fold; the other kinds show every field already.
+  const reveal = (nm: string, pr: string, guided: boolean, focus: boolean) => {
+    if (!isStay) return;
+    const empty = nm.trim() === '' ? 'name' : pr.trim() === '' && !guided ? 'price' : null;
+    if (!empty) return;
+    setOpen(true);
+    if (focus) setFocusField(empty);
+  };
+  // The cursor can only land once the fold is open, so wait for the render that opens it.
+  useEffect(() => {
+    if (!focusField || !open) return;
+    (focusField === 'name' ? nameRef : priceRef).current?.focus();
+    setFocusField(null);
+  }, [focusField, open]);
+
   const pickHostel = (id: string) => {
     setHostelId(id);
     const h = hostelOf(id);
@@ -41,7 +62,24 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
     const p = hostelPrice(h);
     setName(h.name); setPrice(p === null ? '' : String(p)); setLink(h.bookUrl);
     setRooms(h.bunkGbp !== null ? 'dorm' : 'private'); setType('hostel');
+    reveal(h.name, p === null ? '' : String(p), true, false);
   };
+  // Reveal when the link turns into a web link, not on every later keystroke, so a fold shut by hand stays shut.
+  const typeLink = (v: string) => {
+    const wasLink = link.trim() !== '' && linkOk.ok, isLink = v.trim() !== '' && parseUrl(v).ok;
+    setLink(v);
+    if (isLink && !wasLink) reveal(name, price, !!chosen, pasting.current);
+    pasting.current = false;
+  };
+  // The browser inserts the clipboard text after the paste event, into whatever has focus by then. So the cursor
+  // may only move from the change that follows, never from the paste itself.
+  const pasteLink = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const r = parseUrl(e.clipboardData.getData('text'));
+    pasting.current = r.ok && !!r.url;
+    setTimeout(() => { pasting.current = false; }, 0);
+  };
+  // A fold shut by hand must not hide the reason Save is off for a bad photo link.
+  useEffect(() => { if (!photoOk.ok) setOpen(true); }, [photoOk.ok, open]);
 
   const save = () => {
     if (!ready || !me) return;
@@ -67,6 +105,35 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
         ))}
       </div>
     </div>
+  );
+
+  const fields = (
+    <>
+      <label className="st-field">
+        <span className="st-label">{C.name}</span>
+        <input ref={nameRef} className="field" maxLength={MAX_TITLE} value={name} onChange={e => setName(e.target.value)} />
+      </label>
+      <div className="st-field">
+        <label className="st-field">
+          <span className="st-label">{isStay ? C.price : C.cost}</span>
+          <input ref={priceRef} className="field" inputMode="decimal" placeholder="12" value={price} onChange={e => setPrice(e.target.value)} />
+        </label>
+        {isStay && !chosen && <span className="st-hint">{C.priceHint}</span>}
+      </div>
+      {isStay && chips(C.rooms, ROOM_LABEL, rooms, setRooms)}
+      {isStay && chips(C.type, TYPE_LABEL, type, setType)}
+      <label className="st-field">
+        <span className="st-label">{isStay ? C.why : C.whyIdea}</span>
+        <input className="field" maxLength={MAX_WHY} value={why} onChange={e => setWhy(e.target.value)} />
+      </label>
+      <div className="st-field">
+        <label className="st-field">
+          <span className="st-label">{C.photo}</span>
+          <input className="field" inputMode="url" autoCapitalize="none" placeholder="https://" value={photo} onChange={e => setPhoto(e.target.value)} />
+        </label>
+        {!photoOk.ok && <span className="st-err" role="alert">{C.badLink}</span>}
+      </div>
+    </>
   );
 
   return (
@@ -100,34 +167,16 @@ export default function StayAddSheet({ area, kind: startKind = 'stay', areas, ed
       <div className="st-field">
         <label className="st-field">
           <span className="st-label">{C.link}</span>
-          <input className="field" inputMode="url" autoCapitalize="none" placeholder="https://" value={link} onChange={e => setLink(e.target.value)} />
+          <input className="field" inputMode="url" autoCapitalize="none" placeholder="https://" value={link} onChange={e => typeLink(e.target.value)} onPaste={pasteLink} />
         </label>
         {!linkOk.ok && <span className="st-err" role="alert">{C.badLink}</span>}
       </div>
-      <label className="st-field">
-        <span className="st-label">{C.name}</span>
-        <input className="field" maxLength={MAX_TITLE} value={name} onChange={e => setName(e.target.value)} />
-      </label>
-      <div className="st-field">
-        <label className="st-field">
-          <span className="st-label">{isStay ? C.price : C.cost}</span>
-          <input className="field" inputMode="decimal" placeholder="12" value={price} onChange={e => setPrice(e.target.value)} />
-        </label>
-        {isStay && !chosen && <span className="st-hint">{C.priceHint}</span>}
-      </div>
-      {isStay && chips(C.rooms, ROOM_LABEL, rooms, setRooms)}
-      {isStay && chips(C.type, TYPE_LABEL, type, setType)}
-      <label className="st-field">
-        <span className="st-label">{isStay ? C.why : C.whyIdea}</span>
-        <input className="field" maxLength={MAX_WHY} value={why} onChange={e => setWhy(e.target.value)} />
-      </label>
-      <div className="st-field">
-        <label className="st-field">
-          <span className="st-label">{C.photo}</span>
-          <input className="field" inputMode="url" autoCapitalize="none" placeholder="https://" value={photo} onChange={e => setPhoto(e.target.value)} />
-        </label>
-        {!photoOk.ok && <span className="st-err" role="alert">{C.badLink}</span>}
-      </div>
+      {isStay ? (
+        <details className="sa-fold" open={open} onToggle={e => setOpen(e.currentTarget.open)}>
+          <summary className="sa-sum" onClick={e => { if (open && !photoOk.ok) e.preventDefault(); }}>{C.fold}</summary>
+          <div className="sa-body">{fields}</div>
+        </details>
+      ) : fields}
     </Sheet>
   );
 }

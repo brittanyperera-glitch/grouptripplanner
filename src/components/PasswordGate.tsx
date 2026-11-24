@@ -8,7 +8,7 @@ import './PasswordGate.css';
 type Phase = 'idle' | 'checking' | 'wrong' | 'offline';
 
 /** Stands in front of the app until the trip password is right. A wrong one keeps what was typed. */
-export default function PasswordGate({ onAccept }: { onAccept(password: string): void }) {
+export default function PasswordGate({ onAccept, onBack }: { onAccept(password: string): void; onBack?(): void }) {
   const [value, setValue] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
 
@@ -41,6 +41,7 @@ export default function PasswordGate({ onAccept }: { onAccept(password: string):
         </p>
         <button type="submit" className="landing-cta" disabled={!value.trim() || phase === 'checking'}>Let me in</button>
       </form>
+      {onBack && <button type="button" className="link gate-back" onClick={onBack}>Back</button>}
       <LandingRoad />
     </main>
   );

@@ -129,7 +129,8 @@ describe('tasksFor: scout, flights, ideas, fun', () => {
 
   it('Brittany with 2 pending ideas gets Ideas waiting (2), and a friend never does', () => {
     const extra = { ...EXTRA, ideasPending: 2 };
-    expect(tasksFor('Brittany', input(decided()), extra)).toEqual([{ id: 'ideas', kind: 'ideas', label: 'Ideas waiting (2)', owed: true, open: { sub: 'suggest' } }]);
+    // Changed deliberately (C4): Ideas waiting opens the Organiser's Ideas section, no longer the Suggest screen.
+    expect(tasksFor('Brittany', input(decided()), extra)).toEqual([{ id: 'ideas', kind: 'ideas', label: 'Ideas waiting (2)', owed: true, open: { sub: 'organiser', target: 'ideas' } }]);
     expect(tasksFor('Lazza', input(decided()), extra)).toEqual([]);
   });
 

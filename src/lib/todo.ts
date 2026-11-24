@@ -44,7 +44,7 @@ export function tasksFor(me: Person, i: MissionInput, extra: Extra): Task[] {
   const flights: Task[] = i.model.missing.flights.includes(me)
     ? [{ id: 'flights', kind: 'flights', file: 'touchdown', label: 'Add your flights', owed: true, open: { sub: 'flights' } }] : [];
   const ideas: Task[] = isAdmin(me) && extra.ideasPending > 0
-    ? [{ id: 'ideas', kind: 'ideas', label: `Ideas waiting (${extra.ideasPending})`, owed: true, open: { sub: 'suggest' } }] : [];
+    ? [{ id: 'ideas', kind: 'ideas', label: `Ideas waiting (${extra.ideasPending})`, owed: true, open: { sub: 'organiser', target: 'ideas' } }] : [];
   const fun: Task[] = [
     ...(extra.bingoMade ? [] : [{ id: 'bingo', kind: 'bingo' as const, label: 'Make your travel bingo card', owed: false, open: { overlay: 'bingo' as const } }]),
     ...(extra.awardsUnseen ? [{ id: 'awards', kind: 'awards' as const, label: 'See the group awards', owed: false, open: { overlay: 'awards' as const } }] : []),

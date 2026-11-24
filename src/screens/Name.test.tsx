@@ -184,3 +184,16 @@ describe('the opening stamp month', () => {
     expect(document.querySelector('.landing-stamp')?.textContent).toBe('Sri LankaJan 2027');
   });
 });
+
+// Audit finding 25: a guest read "Log out" for leaving a demo they never logged into.
+describe('the exit button names what it does', () => {
+  it('reads the label it is given', () => {
+    render(<Name welcome="The Homecoming." players={players} onPick={() => {}} onLogout={() => {}} logoutLabel="Leave the demo" />);
+    expect(screen.getByRole('button', { name: 'Leave the demo' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
+  });
+  it('reads Log out by default', () => {
+    render(<Name welcome="The Homecoming." players={players} onPick={() => {}} onLogout={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument();
+  });
+});

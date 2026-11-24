@@ -34,6 +34,8 @@ const COPY = {
   private: 'Only you see this here; not secret: anyone with the trip password can read it.',
   loading: 'Loading',
   claim: "I'll book this",
+  claimFirst: 'Claim it first',
+  onlyOwner: (owner: Person) => (isAdmin(owner) ? `Only ${owner} can mark this secured` : `Only ${owner} or Brittany can mark this secured`),
   calendar: 'Add to calendar',
   stillWaiting: 'Waiting on replacement stays',
 };
@@ -96,6 +98,16 @@ export function SupplyBoard(p: SupplyProps) {
   // A stamp is the quiet mark in the postcard look.
   const mark = (text: string, quiet = false) => (spy ? <Stamp text={text} tone={quiet ? 'quiet' : 'accent'} /> : <span className="ta-mark">{text}</span>);
   const claimable = (r: SupplyRow) => me !== null && !r.waiting && !!r.booking && !r.booking.owner && r.done.length === 0;
+  // The five friends tick only a booking someone claimed, and only its claimer or the organiser; a guest (me null) and a row with no booking behind it (nothing to claim) tick as before.
+  // A tick of mine stays undoable, so one made before this rule is not stuck.
+  const canTick = (r: SupplyRow) => {
+    const owner = r.booking?.owner ?? null;
+    return me === null || !r.booking || r.mine || (owner !== null && (owner === me || isAdmin(me)));
+  };
+  const notTickable = (r: SupplyRow) => {
+    const owner = r.booking?.owner ?? null;
+    return owner === null ? COPY.claimFirst : COPY.onlyOwner(owner);
+  };
   // One bright thing per screen: only the most urgent claim carries the accent.
   const primary = p.rows.find(claimable)?.id;
   const btn = (id: string) => (spy ? `ta-claim spy-btn${id === primary ? ' spy-btn-solid' : ''}` : 'ta-claim');
@@ -120,12 +132,15 @@ export function SupplyBoard(p: SupplyProps) {
     }
     return (
       <li key={r.id} ref={r.id === p.target ? targetRow : undefined} className="ta-row" data-done={r.done.length > 0}>
-        <button type="button" role="checkbox" aria-checked={r.mine} aria-label={r.label} className="ta-box" onClick={() => p.onTick(r.id, !r.mine)}>
-          {r.mine && <IconCheck size={18} />}
-        </button>
+        {canTick(r) ? (
+          <button type="button" role="checkbox" aria-checked={r.mine} aria-label={r.label} className="ta-box" onClick={() => p.onTick(r.id, !r.mine)}>
+            {r.mine && <IconCheck size={18} />}
+          </button>
+        ) : <span className="ta-box ta-nobox" aria-hidden="true" />}
         <div className="ta-main">
           <p className="ta-label">{r.label}</p>
           <p className="ta-hint">{r.hint}</p>
+          {!canTick(r) && r.done.length === 0 && <p className="ta-hint">{notTickable(r)}</p>}
           <div className="ta-status">
             {r.booking && r.done.length === 0 && <span className="ta-chip" data-status={r.booking.status}>{deadlineTag(r.booking)}</span>}
             {status(r)}
